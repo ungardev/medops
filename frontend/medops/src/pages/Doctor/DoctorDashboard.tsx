@@ -10,7 +10,7 @@ import { useInstitutions } from "@/hooks/settings/useInstitutions";
 import type { InstitutionSettings } from "@/types/config";
 export default function DoctorDashboard() {
   const { tokens, user } = useAuth();
-  const token = tokens.authToken;
+  const token = tokens.access;
   const navigate = useNavigate();
   
   const { 

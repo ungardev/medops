@@ -11,28 +11,31 @@ async function doFetch<T>(
     ? endpoint
     : `${API_BASE}/${endpoint}`.replace(/([^:]\/)\/+/g, "$1");
   
-  // Determine token and portal based on subdomain
   const isPatientPortal = isPatientSubdomain();
   
-  // Use portal-specific token first, then fallback
-  const token = isPatientPortal
-    ? (localStorage.getItem("patient_drf_token") || localStorage.getItem("patient_access_token"))
-    : (localStorage.getItem("authToken") || localStorage.getItem("patient_drf_token"));
-  
+  let authToken: string | null = null;
+  let tokenType: 'Bearer' | 'Token' = 'Bearer';
+
+  if (isPatientPortal) {
+    authToken = localStorage.getItem("patient_drf_token") || localStorage.getItem("patient_access_token");
+    tokenType = 'Token';
+  } else {
+    authToken = localStorage.getItem("doctor_access_token") || localStorage.getItem("authToken");
+    tokenType = 'Bearer';
+  }
+
   const headers: Record<string, string> = {
     Accept: "application/json",
-    ...(token ? { Authorization: `Token ${token}` } : {}),
+    ...(authToken ? { Authorization: `${tokenType} ${authToken}` } : {}),
     ...(options.headers as Record<string, string>),
     'X-Portal': getCurrentPortal(),
   };
 
-  // Institution ID header
   const activeInstitutionId = localStorage.getItem("active_institution_id");
   if (activeInstitutionId) {
     headers["X-Institution-ID"] = activeInstitutionId;
   }
 
-  // NO establecer Content-Type si hay FormData
   if (options.body && options.body instanceof FormData) {
     delete headers["Content-Type"];
   } else if (options.body && !(options.body instanceof FormData)) {
@@ -41,27 +44,21 @@ async function doFetch<T>(
 
   const response = await fetch(url, { ...options, headers });
 
-  // Handle 401 with subdomain-aware redirect - SELECTIVE token clearing
   if (response.status === 401) {
     const portal = getCurrentPortal();
     const config = getPortalConfig(portal);
     
-    // Only clear tokens for the CURRENT portal, not the other portal
     if (isPatientPortal) {
-      // Only clear patient tokens - doctor tokens remain valid for doctor portal
       localStorage.removeItem("patient_access_token");
       localStorage.removeItem("patient_drf_token");
       localStorage.removeItem("patient_refresh_token");
-      localStorage.removeItem("patient_id");
-      localStorage.removeItem("patient_name");
     } else {
-      // Only clear doctor token - patient tokens remain valid for patient portal
+      localStorage.removeItem("doctor_access_token");
       localStorage.removeItem("authToken");
-      // Don't clear patient tokens here
     }
     
     window.location.href = config.loginPath;
-    throw new Error("Sesión expirada. Redirigiendo al login...");
+    throw new Error("Sesion expirada. Redirigiendo al login...");
   }
 
   return response;

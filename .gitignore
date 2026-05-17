@@ -10,7 +10,8 @@ build/
 
 # --- Entornos virtuales ---
 .env
-.env.*
+.env.local
+.env.development
 .venv/
 venv/
 env/
@@ -73,6 +74,7 @@ data/
 *.xlsx
 *.yaml
 *.txt
+db.sqlite3.old
 
 # --- Archivos de respuesta y reportes temporales ---
 response.*
@@ -84,4 +86,15 @@ bcv.html
 schema.yaml
 nginx.conf
 core/migrations/0001_initial.py
-.aider*
+
+# --- Aider AI assistant ---
+.aider.chat.history.md
+.aider.input.history
+.aider.tags.cache.v4/
+
+# --- Data migration scripts ---
+migrate_medical_data.py
+restore_fast.py
+restore_large.py
+restore_priority.py
+restore_remaining.py

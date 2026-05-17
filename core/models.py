@@ -1,5 +1,9 @@
 from django.db import models, transaction
-from django.core.validators import RegexValidator, MinLengthValidator, MaxLengthValidator
+from django.core.validators import (
+    RegexValidator,
+    MinLengthValidator,
+    MaxLengthValidator,
+)
 from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 from django.utils.timezone import now
@@ -12,7 +16,16 @@ from decimal import Decimal
 from django.utils import timezone
 from django.apps import apps
 from django.conf import settings
-from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES, PRESENTATION_CHOICES, MEDICATION_STATUS_CHOICES, BANK_CHOICES, SERVICE_CATEGORY_CHOICES, SERVICE_APPOINTMENT_STATUS_CHOICES
+from .choices import (
+    UNIT_CHOICES,
+    ROUTE_CHOICES,
+    FREQUENCY_CHOICES,
+    PRESENTATION_CHOICES,
+    MEDICATION_STATUS_CHOICES,
+    BANK_CHOICES,
+    SERVICE_CATEGORY_CHOICES,
+    SERVICE_APPOINTMENT_STATUS_CHOICES,
+)
 # === NUEVO: Importar choices de servicios ===
 
 import hashlib
@@ -31,54 +44,70 @@ def normalize_title_case(value):
 class GeneticPredisposition(models.Model):
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True, null=True)
+
     class Meta:
         verbose_name = "Genetic Predisposition"
         verbose_name_plural = "Genetic Predispositions"
+
     def save(self, *args, **kwargs):
         self.name = normalize_title_case(self.name)
         if self.description:
             self.description = normalize_title_case(self.description)
         super().save(*args, **kwargs)
+
     def __str__(self):
         return self.name
 
 
 class Country(models.Model):
     name = models.CharField(max_length=100, unique=True)
+
     class Meta:
         verbose_name = "Country"
         verbose_name_plural = "Countries"
+
     def save(self, *args, **kwargs):
         self.name = normalize_title_case(self.name)
         super().save(*args, **kwargs)
+
     def __str__(self):
         return self.name
 
 
 class State(models.Model):
-    country = models.ForeignKey(Country, on_delete=models.CASCADE, related_name="states")
+    country = models.ForeignKey(
+        Country, on_delete=models.CASCADE, related_name="states"
+    )
     name = models.CharField(max_length=100)
+
     class Meta:
         unique_together = ("country", "name")
         verbose_name = "State"
         verbose_name_plural = "States"
+
     def save(self, *args, **kwargs):
         self.name = normalize_title_case(self.name)
         super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.name}, {self.country.name}"
 
 
 class Municipality(models.Model):
-    state = models.ForeignKey(State, on_delete=models.CASCADE, related_name="municipalities")
+    state = models.ForeignKey(
+        State, on_delete=models.CASCADE, related_name="municipalities"
+    )
     name = models.CharField(max_length=100)
+
     class Meta:
         unique_together = ("state", "name")
         verbose_name = "Municipality"
         verbose_name_plural = "Municipalities"
+
     def save(self, *args, **kwargs):
         self.name = normalize_title_case(self.name)
         super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.name}, {self.state.name}"
 
@@ -86,13 +115,16 @@ class Municipality(models.Model):
 class City(models.Model):
     state = models.ForeignKey(State, on_delete=models.CASCADE, related_name="cities")
     name = models.CharField(max_length=100)
+
     class Meta:
         unique_together = ("state", "name")
         verbose_name = "City"
         verbose_name_plural = "Cities"
+
     def save(self, *args, **kwargs):
         self.name = normalize_title_case(self.name)
         super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.name}, {self.state.name}"
 
@@ -103,21 +135,23 @@ class Parish(models.Model):
         on_delete=models.CASCADE,
         related_name="parishes",
         null=True,
-        blank=True
+        blank=True,
     )
     name = models.CharField(max_length=100)
+
     class Meta:
         verbose_name = "Parish"
         verbose_name_plural = "Parishes"
         constraints = [
             models.UniqueConstraint(
-                fields=["municipality", "name"],
-                name="unique_parish_per_municipality"
+                fields=["municipality", "name"], name="unique_parish_per_municipality"
             )
         ]
+
     def save(self, *args, **kwargs):
         self.name = normalize_title_case(self.name)
         super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.name}, {self.municipality.name if self.municipality else 'SIN-MUNICIPIO'}"
 
@@ -128,48 +162,52 @@ class Neighborhood(models.Model):
         on_delete=models.CASCADE,
         related_name="neighborhoods",
         null=True,
-        blank=True
+        blank=True,
     )
     name = models.CharField(max_length=100)
+
     class Meta:
         verbose_name = "Neighborhood"
         verbose_name_plural = "Neighborhoods"
         constraints = [
             models.UniqueConstraint(
-                fields=["parish", "name"],
-                name="unique_neighborhood_per_parish"
+                fields=["parish", "name"], name="unique_neighborhood_per_parish"
             )
         ]
+
     def save(self, *args, **kwargs):
         self.name = normalize_title_case(self.name)
         super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.name}, {self.parish.name if self.parish else 'SIN-PARROQUIA'}"
 
 
 class Patient(models.Model):
     GENDER_CHOICES = [
-        ('M', 'Masculino'),
-        ('F', 'Femenino'),
-        ('Other', 'Otro'),
-        ('Unknown', 'No especificado'),
+        ("M", "Masculino"),
+        ("F", "Femenino"),
+        ("Other", "Otro"),
+        ("Unknown", "No especificado"),
     ]
     BLOOD_TYPES = [
-        ("A+", "A+"), ("A-", "A-"),
-        ("B+", "B+"), ("B-", "B-"),
-        ("AB+", "AB+"), ("AB-", "AB-"),
-        ("O+", "O+"), ("O-", "O-"),
+        ("A+", "A+"),
+        ("A-", "A-"),
+        ("B+", "B+"),
+        ("B-", "B-"),
+        ("AB+", "AB+"),
+        ("AB-", "AB-"),
+        ("O+", "O+"),
+        ("O-", "O-"),
     ]
     # --- Identificación ---
     national_id = models.CharField(
         max_length=12,
         unique=True,
         verbose_name="Documento de Identidad",
-        null=True, blank=True,
-        validators=[
-            MinLengthValidator(5),
-            MaxLengthValidator(12)
-        ]
+        null=True,
+        blank=True,
+        validators=[MinLengthValidator(5), MaxLengthValidator(12)],
     )
     first_name = models.CharField(max_length=100)
     middle_name = models.CharField(max_length=100, blank=True, null=True)
@@ -181,154 +219,165 @@ class Patient(models.Model):
     is_minor = models.BooleanField(
         default=False,
         verbose_name="¿Es menor de edad?",
-        help_text="Determina si el paciente es menor de 18 años"
+        help_text="Determina si el paciente es menor de 18 años",
     )
     representative = models.ForeignKey(
-        'self',
+        "self",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='dependent_patients',
-        verbose_name="Representante (padre/madre/tutor)"
+        related_name="dependent_patients",
+        verbose_name="Representante (padre/madre/tutor)",
     )
     RELATIONSHIP_CHOICES = [
-        ('father', 'Padre'),
-        ('mother', 'Madre'),
-        ('legal_guardian', 'Tutor Legal'),
-        ('grandfather', 'Abuelo'),
-        ('grandmother', 'Abuela'),
-        ('sibling', 'Hermano/Hermana'),
-        ('other', 'Otro'),
+        ("father", "Padre"),
+        ("mother", "Madre"),
+        ("legal_guardian", "Tutor Legal"),
+        ("grandfather", "Abuelo"),
+        ("grandmother", "Abuela"),
+        ("sibling", "Hermano/Hermana"),
+        ("other", "Otro"),
     ]
     relationship_type = models.CharField(
         max_length=20,
         choices=RELATIONSHIP_CHOICES,
         null=True,
         blank=True,
-        verbose_name="Tipo de relación con el representante"
+        verbose_name="Tipo de relación con el representante",
     )
     parental_consent = models.BooleanField(
         default=False,
         verbose_name="Consentimiento parental firmado",
-        help_text="Confirmación de consentimiento para tratamiento de menor"
+        help_text="Confirmación de consentimiento para tratamiento de menor",
     )
     consent_date = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name="Fecha de consentimiento parental"
+        null=True, blank=True, verbose_name="Fecha de consentimiento parental"
     )
     representative_doc = models.CharField(
-        max_length=12,
-        null=True,
-        blank=True,
-        verbose_name="Cédula del representante"
+        max_length=12, null=True, blank=True, verbose_name="Cédula del representante"
     )
     representative_phone = models.CharField(
-        max_length=20,
-        null=True,
-        blank=True,
-        verbose_name="Teléfono del representante"
+        max_length=20, null=True, blank=True, verbose_name="Teléfono del representante"
     )
     representative_email = models.EmailField(
-        max_length=255,
+        max_length=255, null=True, blank=True, verbose_name="Email del representante"
+    )
+
+    birth_place = models.CharField(max_length=255, blank=True, null=True)
+
+    birth_country = models.ForeignKey(
+        "Country",
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name="Email del representante"
-    )
-    
-    birth_place = models.CharField(max_length=255, blank=True, null=True)
-    
-    birth_country = models.ForeignKey(
-        "Country", 
-        on_delete=models.SET_NULL, 
-        null=True, blank=True, 
         related_name="born_patients",
-        verbose_name="País de nacimiento"
+        verbose_name="País de nacimiento",
     )
-    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, default='Unknown')
-    
+    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, default="Unknown")
+
     # --- Información Adicional ---
     TATTOO_CHOICES = [
-        (True, 'Sí'),
-        (False, 'No'),
+        (True, "Sí"),
+        (False, "No"),
     ]
     FITZPATRICK_SCALE = [
-        ('I', 'Tipo I - Muy clara, siempre se quema'),
-        ('II', 'Tipo II - Clara, usualmente se quema'),
-        ('III', 'Tipo III - Intermedia, a veces se quema'),
-        ('IV', 'Tipo IV - Mate, rara vez se quema'),
-        ('V', 'Tipo V - Morena, muy rara vez se quema'),
-        ('VI', 'Tipo VI - Negra, nunca se quema'),
+        ("I", "Tipo I - Muy clara, siempre se quema"),
+        ("II", "Tipo II - Clara, usualmente se quema"),
+        ("III", "Tipo III - Intermedia, a veces se quema"),
+        ("IV", "Tipo IV - Mate, rara vez se quema"),
+        ("V", "Tipo V - Morena, muy rara vez se quema"),
+        ("VI", "Tipo VI - Negra, nunca se quema"),
     ]
     tattoo = models.BooleanField(
-        choices=TATTOO_CHOICES, 
-        null=True, 
-        blank=True,
-        verbose_name="Tiene tatuajes"
+        choices=TATTOO_CHOICES, null=True, blank=True, verbose_name="Tiene tatuajes"
     )
     profession = models.CharField(
-        max_length=150,
-        blank=True,
-        null=True,
-        verbose_name="Profesión/Ocupación"
+        max_length=150, blank=True, null=True, verbose_name="Profesión/Ocupación"
     )
     skin_type = models.CharField(
         max_length=3,  # ✅ Cabe 'I', 'II', 'III', 'IV', 'V', 'VI'
         choices=FITZPATRICK_SCALE,
         null=True,
         blank=True,
-        verbose_name="Tipo de piel (Fitzpatrick)"
+        verbose_name="Tipo de piel (Fitzpatrick)",
     )
-    
+
     # --- Contacto ---
     email = models.EmailField(max_length=255, blank=True, null=True)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
-    contact_info = models.TextField(blank=True, null=True, help_text="Contactos de emergencia, etc.")
+    contact_info = models.TextField(
+        blank=True, null=True, help_text="Contactos de emergencia, etc."
+    )
     # --- Ubicación (Jerarquía Geográfica) ---
     neighborhood = models.ForeignKey(
         "Neighborhood",
         on_delete=models.SET_NULL,
-        null=True, blank=True,
-        related_name="patients"
-    )
-    address = models.CharField(max_length=255, blank=True, null=True, verbose_name="Dirección detallada")
-    # --- Perfil Clínico Base ---
-    weight = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text="Peso base en kg")
-    height = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text="Altura base en cm")
-    blood_type = models.CharField(max_length=3, choices=BLOOD_TYPES, null=True, blank=True)
-    genetic_predispositions = models.ManyToManyField(
-        "GeneticPredisposition",
+        null=True,
         blank=True,
-        related_name="patients"
+        related_name="patients",
+    )
+    address = models.CharField(
+        max_length=255, blank=True, null=True, verbose_name="Dirección detallada"
+    )
+    # --- Perfil Clínico Base ---
+    weight = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Peso base en kg",
+    )
+    height = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Altura base en cm",
+    )
+    blood_type = models.CharField(
+        max_length=3, choices=BLOOD_TYPES, null=True, blank=True
+    )
+    genetic_predispositions = models.ManyToManyField(
+        "GeneticPredisposition", blank=True, related_name="patients"
     )
     # --- Metadatos y Auditoría ---
     history = HistoricalRecords()
     active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
     class Meta:
         db_table = "patients"
         verbose_name = "Paciente"
         verbose_name_plural = "Pacientes"
-        ordering = ['last_name', 'first_name']
+        ordering = ["last_name", "first_name"]
+
     @property
     def full_name(self):
         """Retorna el nombre completo formateado."""
-        parts = [self.first_name, self.middle_name, self.last_name, self.second_last_name]
+        parts = [
+            self.first_name,
+            self.middle_name,
+            self.last_name,
+            self.second_last_name,
+        ]
         return " ".join([p for p in parts if p]).strip()
-    
+
     @property
     def age(self):
         """Retorna la edad del paciente."""
         if not self.birthdate:
             return None
         from datetime import date
+
         today = date.today()
-        age = today.year - self.birthdate.year - (
-            (today.month, today.day) < (self.birthdate.month, self.birthdate.day)
+        age = (
+            today.year
+            - self.birthdate.year
+            - ((today.month, today.day) < (self.birthdate.month, self.birthdate.day))
         )
         return age
-    
+
     @property
     def age_category(self):
         """Retorna la categoría de edad."""
@@ -346,29 +395,29 @@ class Patient(models.Model):
             return "adolescent"
         else:
             return "adult"
-    
+
     @property
     def is_pediatric(self):
         """Retorna True si es paciente pediátrico."""
         return self.is_minor or (self.age and self.age < 18)
-    
+
     @property
     def guardian_info(self):
         """Retorna información del representante para menores."""
         if not self.is_minor or not self.representative:
             return None
         return {
-            'name': self.representative.full_name,
-            'relationship': self.get_relationship_type_display(),
-            'phone': self.representative_phone,
-            'email': self.representative_email,
-            'consent_date': self.consent_date,
-            'consent_given': self.parental_consent
+            "name": self.representative.full_name,
+            "relationship": self.get_relationship_type_display(),
+            "phone": self.representative_phone,
+            "email": self.representative_email,
+            "consent_date": self.consent_date,
+            "consent_given": self.parental_consent,
         }
-    
+
     def __str__(self):
         return f"{self.national_id or 'S/I'} - {self.full_name}"
-    
+
     def save(self, *args, **kwargs):
         self.first_name = normalize_title_case(self.first_name)
         if self.middle_name:
@@ -376,205 +425,220 @@ class Patient(models.Model):
         self.last_name = normalize_title_case(self.last_name)
         if self.second_last_name:
             self.second_last_name = normalize_title_case(self.second_last_name)
-        
+
         # Auto-detectar si es menor de edad basado en fecha de nacimiento
         if self.birthdate:
             from datetime import date
+
             today = date.today()
-            age = today.year - self.birthdate.year - (
-                (today.month, today.day) < (self.birthdate.month, self.birthdate.day)
+            age = (
+                today.year
+                - self.birthdate.year
+                - (
+                    (today.month, today.day)
+                    < (self.birthdate.month, self.birthdate.day)
+                )
             )
             self.is_minor = age < 18
-        
+
         super().save(*args, **kwargs)
-        
+
     def delete(self, *args, **kwargs):
         """Soft delete."""
         self.active = False
         self.save(update_fields=["active"])
-    
+
     def clean(self):
         from django.core.exceptions import ValidationError
+
         super().clean()
-        
+
         # Validar que menores tengan representante
         if self.is_minor and not self.representative:
-            raise ValidationError({
-                'representative': 'Los pacientes menores de edad deben tener un representante.'
-            })
-        
+            raise ValidationError(
+                {
+                    "representative": "Los pacientes menores de edad deben tener un representante."
+                }
+            )
+
         # Validar consentimiento parental
         if self.is_minor and self.parental_consent and not self.consent_date:
-            raise ValidationError({
-                'consent_date': 'Debe especificar la fecha del consentimiento parental.'
-            })
-        
+            raise ValidationError(
+                {
+                    "consent_date": "Debe especificar la fecha del consentimiento parental."
+                }
+            )
+
         # Validar datos del representante para menores
         if self.is_minor and self.representative:
             if not self.representative_phone:
-                raise ValidationError({
-                    'representative_phone': 'El teléfono del representante es obligatorio para menores.'
-                })
+                raise ValidationError(
+                    {
+                        "representative_phone": "El teléfono del representante es obligatorio para menores."
+                    }
+                )
 
 
 class Appointment(models.Model):
     STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('tentative', 'Tentativa'),
-        ('arrived', 'Arrived'),
-        ('in_consultation', 'In Consultation'),
-        ('completed', 'Completed'),
-        ('canceled', 'Canceled'),
-        ('rejected', 'Rechazada'),
+        ("pending", "Pending"),
+        ("tentative", "Tentativa"),
+        ("arrived", "Arrived"),
+        ("in_consultation", "In Consultation"),
+        ("completed", "Completed"),
+        ("canceled", "Canceled"),
+        ("rejected", "Rechazada"),
     ]
     TYPE_CHOICES = [
-        ('general', 'Consulta General'),
-        ('specialized', 'Consulta Especializada'),
+        ("general", "Consulta General"),
+        ("specialized", "Consulta Especializada"),
     ]
     # --- RELACIONES DE PODER ---
     patient = models.ForeignKey(
-        'Patient', 
-        on_delete=models.CASCADE, 
-        related_name='appointments'
+        "Patient", on_delete=models.CASCADE, related_name="appointments"
     )
-    
+
     institution = models.ForeignKey(
-        'InstitutionSettings', 
-        on_delete=models.PROTECT, 
-        related_name='appointments',
-        verbose_name="Sede de atención"
+        "InstitutionSettings",
+        on_delete=models.PROTECT,
+        related_name="appointments",
+        verbose_name="Sede de atención",
     )
-    
+
     doctor = models.ForeignKey(
-        'DoctorOperator', 
-        on_delete=models.CASCADE, 
-        related_name='appointments',
-        verbose_name="Médico tratante"
+        "DoctorOperator",
+        on_delete=models.CASCADE,
+        related_name="appointments",
+        verbose_name="Médico tratante",
     )
     # === NUEVO CAMPO ===
     doctor_service = models.ForeignKey(
-        'DoctorService',
+        "DoctorService",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='appointments',
-        verbose_name="Servicio específico agendado"
+        related_name="appointments",
+        verbose_name="Servicio específico agendado",
     )
-    
+
     # --- DATOS TEMPORALES Y ESTADO ---
     appointment_date = models.DateField()
-    status = models.CharField(
-        max_length=20, 
-        choices=STATUS_CHOICES, 
-        default='pending'  
-    )
-    
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+
     # === NUEVOS CAMPOS PARA FLUJO TENTATIVO ===
     tentative_date = models.DateField(
-        null=True,
-        blank=True,
-        verbose_name="Fecha tentativa seleccionada"
+        null=True, blank=True, verbose_name="Fecha tentativa seleccionada"
     )
     tentative_time = models.TimeField(
-        null=True,
-        blank=True,
-        verbose_name="Hora tentativa seleccionada"
+        null=True, blank=True, verbose_name="Hora tentativa seleccionada"
     )
     confirmed_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name="Fecha de confirmación"
+        null=True, blank=True, verbose_name="Fecha de confirmación"
     )
-    
+
     arrival_time = models.TimeField(blank=True, null=True)
-    
+
     appointment_type = models.CharField(
         max_length=20,
         choices=TYPE_CHOICES,
-        default='general',
-        verbose_name="Tipo de consulta"
+        default="general",
+        verbose_name="Tipo de consulta",
     )
     # --- BRAZO FINANCIERO INICIAL ---
     expected_amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        default=Decimal('0.00'),
-        verbose_name="Monto esperado (Sede)"
+        default=Decimal("0.00"),
+        verbose_name="Monto esperado (Sede)",
     )
-    
+
     # --- MÉTRICAS ANTROPOMÉTRICAS (🆕 AGREGADOS) ---
     weight = models.DecimalField(
-        max_digits=5, 
-        decimal_places=2, 
-        null=True, 
-        blank=True, 
-        help_text="Peso del paciente en kg"
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Peso del paciente en kg",
     )
     height = models.DecimalField(
-        max_digits=5, 
-        decimal_places=2, 
-        null=True, 
-        blank=True, 
-        help_text="Altura del paciente en cm"
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Altura del paciente en cm",
     )
-    
+
     notes = models.TextField(blank=True, null=True)
     # --- MÉTRICAS DE TIEMPO ---
-    started_at = models.DateTimeField(blank=True, null=True, verbose_name="Inicio de consulta")
-    completed_at = models.DateTimeField(blank=True, null=True, verbose_name="Finalización de consulta")
+    started_at = models.DateTimeField(
+        blank=True, null=True, verbose_name="Inicio de consulta"
+    )
+    completed_at = models.DateTimeField(
+        blank=True, null=True, verbose_name="Finalización de consulta"
+    )
     history = HistoricalRecords()
-    
+
     class Meta:
         verbose_name = "Cita Médica"
         verbose_name_plural = "Citas Médicas"
-        ordering = ['-appointment_date', 'arrival_time']
-        
+        ordering = ["-appointment_date", "arrival_time"]
+
     def __str__(self):
         return f"{self.patient} - {self.institution.name} - {self.appointment_date}"
+
     # --- PROPIEDADES DE VALIDACIÓN PARA EL ADMIN ---
     @property
     def is_fully_paid(self):
         """
-        Calcula si la cita está pagada. 
+        Calcula si la cita está pagada.
         Requerido por core.admin.AppointmentAdmin (list_display[8])
         """
         # Si no hay saldo pendiente, está totalmente pagada
         return self.balance_due() <= 0
+
     # --- FINANZAS POR SEDE ---
     def total_paid(self):
         # Filtramos pagos confirmados en esta cita
         # Usamos 'completed' o 'confirmed' según tu lógica de Payment.status
-        agg = self.payments.filter(status__in=['confirmed', 'completed']).aggregate(total=Sum('amount'))
-        return agg.get('total') or Decimal('0.00')
+        agg = self.payments.filter(status__in=["confirmed", "completed"]).aggregate(
+            total=Sum("amount")
+        )
+        return agg.get("total") or Decimal("0.00")
+
     def balance_due(self):
         # El balance es específico a la ChargeOrder de esta cita en esta sede
-        orders = self.charge_orders.exclude(status='void')
+        orders = self.charge_orders.exclude(status="void")
         if orders.exists():
-            agg = orders.aggregate(b=Sum('balance_due'))
-            return agg.get('b') or Decimal('0.00')
-        return max(self.expected_amount - self.total_paid(), Decimal('0.00'))
+            agg = orders.aggregate(b=Sum("balance_due"))
+            return agg.get("b") or Decimal("0.00")
+        return max(self.expected_amount - self.total_paid(), Decimal("0.00"))
+
     # --- LÓGICA DE SINCRONIZACIÓN (SALA DE ESPERA) ---
     def sync_waiting_room_status(self):
-        WR_Entry = apps.get_model('core', 'WaitingRoomEntry')
+        WR_Entry = apps.get_model("core", "WaitingRoomEntry")
         status_map = {
-            'arrived': 'waiting',
-            'in_consultation': 'in_consultation',
-            'completed': 'completed',
-            'canceled': 'canceled'
+            "arrived": "waiting",
+            "in_consultation": "in_consultation",
+            "completed": "completed",
+            "canceled": "canceled",
         }
         if self.status in status_map:
-            WR_Entry.objects.filter(appointment=self).update(status=status_map[self.status])
+            WR_Entry.objects.filter(appointment=self).update(
+                status=status_map[self.status]
+            )
+
     # --- FLUJO DE ESTADOS Y SEGURIDAD ---
     def save(self, *args, **kwargs):
         # 1. Validación de Verificación Profesional
         if not self.doctor.is_verified:
             # Aquí podrías lanzar una excepción si fuera necesario
-            pass 
+            pass
         # 2. Registro automático de hora de llegada
-        if self.status == 'arrived' and not self.arrival_time:
+        if self.status == "arrived" and not self.arrival_time:
             self.arrival_time = timezone.now().time()
         super().save(*args, **kwargs)
         self.sync_waiting_room_status()
+
     def update_status(self, new_status: str):
         self.status = new_status
         updated_fields = ["status"]
@@ -586,49 +650,52 @@ class Appointment(models.Model):
             updated_fields.append("completed_at")
         elif new_status == "canceled":
             # Sincronizar ChargeOrder: solo se puede cancelar si no hay pagos confirmados
-            for order in self.charge_orders.exclude(status__in=['void', 'waived', 'canceled']):
-                if order.payments.filter(status='confirmed').exists():
+            for order in self.charge_orders.exclude(
+                status__in=["void", "waived", "canceled"]
+            ):
+                if order.payments.filter(status="confirmed").exists():
                     raise ValidationError(
                         f"No se puede cancelar: La orden #{order.id} tiene pagos confirmados. "
                         "Reversa los pagos primero."
                     )
                 try:
-                    order.status = 'void'
-                    order.save(update_fields=['status'])
+                    order.status = "void"
+                    order.save(update_fields=["status"])
                     # Registrar evento de auditoría
-                    Event = apps.get_model('core', 'Event')
+                    Event = apps.get_model("core", "Event")
                     Event.objects.create(
-                        entity='ChargeOrder',
+                        entity="ChargeOrder",
                         entity_id=order.pk,
-                        action='void_by_appointment_cancel',
+                        action="void_by_appointment_cancel",
                         metadata={
-                            'appointment_id': self.pk,
-                            'reason': 'Appointment canceled by user'
+                            "appointment_id": self.pk,
+                            "reason": "Appointment canceled by user",
                         },
                         institution=self.institution,
-                        severity='warning',
-                        notify=True
+                        severity="warning",
+                        notify=True,
                     )
                 except Exception:
                     pass  # Si ya está void, ignorar
         self.save(update_fields=updated_fields)
+
     def mark_arrived(self, priority: str = "normal", source_type: str = "scheduled"):
         if self.status == "pending":
             self.status = "arrived"
             self.arrival_time = timezone.now().time()
             self.save(update_fields=["status", "arrival_time"])
-            
-            WR_Entry = apps.get_model('core', 'WaitingRoomEntry')
+
+            WR_Entry = apps.get_model("core", "WaitingRoomEntry")
             WR_Entry.objects.get_or_create(
                 appointment=self,
                 patient=self.patient,
                 defaults={
-                    "institution": self.institution, # La sala de espera hereda la sede
+                    "institution": self.institution,  # La sala de espera hereda la sede
                     "arrival_time": timezone.now(),
                     "status": "waiting",
                     "priority": priority,
                     "source_type": source_type,
-                }
+                },
             )
 
 
@@ -655,7 +722,7 @@ class Appointment(models.Model):
 class WaitingRoomEntry(models.Model):
     PRIORITY_CHOICES = [
         ("normal", "Normal"),
-        ("preference", "Preferencial"), # Agregamos valor humano/legal
+        ("preference", "Preferencial"),  # Agregamos valor humano/legal
         ("emergency", "Emergencia"),
     ]
 
@@ -675,38 +742,38 @@ class WaitingRoomEntry(models.Model):
     # --- RELACIONES DE PODER ---
     # Segmentación por Sede: Fundamental para el Multi-Sede
     institution = models.ForeignKey(
-        "InstitutionSettings", 
-        on_delete=models.CASCADE, 
-        related_name="waiting_room_entries"
+        "InstitutionSettings",
+        on_delete=models.CASCADE,
+        related_name="waiting_room_entries",
     )
 
     patient = models.ForeignKey(
-        "Patient", 
-        on_delete=models.CASCADE,
-        related_name="waiting_room_records"
+        "Patient", on_delete=models.CASCADE, related_name="waiting_room_records"
     )
-    
+
     # OneToOne garantiza que una cita no se duplique en la cola
     appointment = models.OneToOneField(
-        "Appointment", 
-        on_delete=models.CASCADE, # Si se borra la cita, sale de la sala
+        "Appointment",
+        on_delete=models.CASCADE,  # Si se borra la cita, sale de la sala
         related_name="waiting_room_entry",
-        null=True, 
-        blank=True
+        null=True,
+        blank=True,
     )
 
     # --- CONTROL DE TIEMPOS Y FLUJO ---
     arrival_time = models.DateTimeField(default=timezone.now)
     called_at = models.DateTimeField(
-        null=True, 
-        blank=True, 
-        verbose_name="Hora de llamado a consultorio"
+        null=True, blank=True, verbose_name="Hora de llamado a consultorio"
     )
-    
+
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="waiting")
-    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default="normal")
-    source_type = models.CharField(max_length=20, choices=SOURCE_CHOICES, default="scheduled")
-    
+    priority = models.CharField(
+        max_length=20, choices=PRIORITY_CHOICES, default="normal"
+    )
+    source_type = models.CharField(
+        max_length=20, choices=SOURCE_CHOICES, default="scheduled"
+    )
+
     # Campo para reordenamiento manual por la secretaria si es necesario
     order = models.PositiveIntegerField(default=0)
 
@@ -715,7 +782,7 @@ class WaitingRoomEntry(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        # ORDENAMIENTO DE ÉLITE: 
+        # ORDENAMIENTO DE ÉLITE:
         # 1. Emergencias primero.
         # 2. Preferenciales (ancianos/niños) segundo.
         # 3. Orden de llegada (arrival_time) para el resto.
@@ -730,7 +797,7 @@ class WaitingRoomEntry(models.Model):
             "order",
         ]
         indexes = [
-            models.Index(fields=['institution', 'status']),
+            models.Index(fields=["institution", "status"]),
         ]
         verbose_name = "Entrada de Sala de Espera"
         verbose_name_plural = "Entradas de Sala de Espera"
@@ -752,20 +819,22 @@ class WaitingRoomEntry(models.Model):
             "in_consultation": ["completed", "canceled"],
             "completed": [],
             "canceled": [],
-            "no_show": ["waiting"], # Por si llegó tarde y se re-activa
+            "no_show": ["waiting"],  # Por si llegó tarde y se re-activa
         }
         return new_status in valid_transitions.get(self.status, [])
 
     def update_status(self, new_status: str):
         if not self.can_transition(new_status):
-             raise ValueError(f"Transición de estado inválida: {self.status} -> {new_status}")
-        
+            raise ValueError(
+                f"Transición de estado inválida: {self.status} -> {new_status}"
+            )
+
         self.status = new_status
         if new_status == "in_consultation":
             self.called_at = timezone.now()
-        
+
         self.save()
-        
+
         # Sincronización automática con la Cita Madre
         if self.appointment:
             self.appointment.status = new_status
@@ -773,15 +842,20 @@ class WaitingRoomEntry(models.Model):
                 self.appointment.started_at = timezone.now()
             elif new_status == "completed":
                 self.appointment.completed_at = timezone.now()
-            self.appointment.save(update_fields=['status', 'started_at', 'completed_at'])
+            self.appointment.save(
+                update_fields=["status", "started_at", "completed_at"]
+            )
 
     def place_in_queue(self):
         """Ubica al paciente al final de su categoría de prioridad en esta sede específica"""
-        last = WaitingRoomEntry.objects.filter(
-            institution=self.institution,
-            priority=self.priority
-        ).order_by("-order").first()
-        
+        last = (
+            WaitingRoomEntry.objects.filter(
+                institution=self.institution, priority=self.priority
+            )
+            .order_by("-order")
+            .first()
+        )
+
         self.order = (last.order + 1) if last else 1
         self.save(update_fields=["order"])
 
@@ -789,38 +863,36 @@ class WaitingRoomEntry(models.Model):
 class Diagnosis(models.Model):
     # Niveles de madurez de la decisión médica
     TYPE_CHOICES = [
-        ('presumptive', 'Presuntivo (Sospecha)'),
-        ('definitive', 'Definitivo (Decretado/Confirmado)'),
-        ('differential', 'Diferencial (Opción en estudio)'),
-        ('provisional', 'Provisional'),
+        ("presumptive", "Presuntivo (Sospecha)"),
+        ("definitive", "Definitivo (Decretado/Confirmado)"),
+        ("differential", "Diferencial (Opción en estudio)"),
+        ("provisional", "Provisional"),
     ]
 
     # Estado del "Decreto"
     DECREE_STATUS_CHOICES = [
-        ('under_investigation', 'En Investigación / Estudio'),
-        ('awaiting_results', 'Esperando Resultados (Lab/Imagen)'),
-        ('confirmed', 'Decretado / Confirmado'),
-        ('ruled_out', 'Descartado / Excluido'),
-        ('chronic', 'Pre-existente / Crónico'),
+        ("under_investigation", "En Investigación / Estudio"),
+        ("awaiting_results", "Esperando Resultados (Lab/Imagen)"),
+        ("confirmed", "Decretado / Confirmado"),
+        ("ruled_out", "Descartado / Excluido"),
+        ("chronic", "Pre-existente / Crónico"),
     ]
-    
+
     # Agregar CATALOG_CHOICES antes del campo appointment:
     CATALOG_CHOICES = [
-        ('icd11', 'CIE-11 (OMS)'),
-        ('snomed', 'SNOMED CT'),
+        ("icd11", "CIE-11 (OMS)"),
+        ("snomed", "SNOMED CT"),
     ]
 
     appointment = models.ForeignKey(
-        "Appointment", 
-        on_delete=models.CASCADE, 
-        related_name='diagnoses'
+        "Appointment", on_delete=models.CASCADE, related_name="diagnoses"
     )
-    
+
     catalog = models.CharField(
-        max_length=10, 
-        choices=CATALOG_CHOICES, 
-        default='icd11',
-        verbose_name="Catálogo de codificación"
+        max_length=10,
+        choices=CATALOG_CHOICES,
+        default="icd11",
+        verbose_name="Catálogo de codificación",
     )
     # --- VINCULACIÓN ICD-11 ---
     icd_code = models.CharField(max_length=20, verbose_name="Código CIE-11")
@@ -828,40 +900,28 @@ class Diagnosis(models.Model):
     foundation_id = models.CharField(max_length=100, blank=True, null=True)
 
     # --- MÉTRICAS DE CERTEZA Y DECRETO ---
-    type = models.CharField(
-        max_length=20, 
-        choices=TYPE_CHOICES, 
-        default='presumptive'
-    )
+    type = models.CharField(max_length=20, choices=TYPE_CHOICES, default="presumptive")
     status = models.CharField(
-        max_length=20, 
-        choices=DECREE_STATUS_CHOICES, 
-        default='under_investigation'
+        max_length=20, choices=DECREE_STATUS_CHOICES, default="under_investigation"
     )
-    
+
     clinical_certainty = models.PositiveIntegerField(
-        default=50,
-        help_text="Certeza clínica estimada (0-100%)"
+        default=50, help_text="Certeza clínica estimada (0-100%)"
     )
-    
+
     is_main_diagnosis = models.BooleanField(
-        default=False, 
-        verbose_name="Diagnóstico Principal"
+        default=False, verbose_name="Diagnóstico Principal"
     )
 
     description = models.TextField(
-        blank=True, 
-        null=True, 
-        verbose_name="Justificación / Notas del Decreto"
+        blank=True, null=True, verbose_name="Justificación / Notas del Decreto"
     )
 
     # Auditoría forense
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.SET_NULL, 
-        null=True
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True
     )
 
     history = HistoricalRecords()
@@ -870,8 +930,8 @@ class Diagnosis(models.Model):
         verbose_name = "Diagnóstico"
         verbose_name_plural = "Diagnósticos"
         indexes = [
-            models.Index(fields=['appointment', 'status']),
-            models.Index(fields=['icd_code']),
+            models.Index(fields=["appointment", "status"]),
+            models.Index(fields=["icd_code"]),
         ]
 
     def __str__(self):
@@ -880,26 +940,33 @@ class Diagnosis(models.Model):
     def clean(self):
         # Validación institucional del catálogo
         from .models import ICD11Entry
-        if self.icd_code and not ICD11Entry.objects.filter(icd_code=self.icd_code).exists():
-            raise ValidationError({"icd_code": "El código CIE-11 no está en el catálogo institucional."})
+
+        if (
+            self.icd_code
+            and not ICD11Entry.objects.filter(icd_code=self.icd_code).exists()
+        ):
+            raise ValidationError(
+                {"icd_code": "El código CIE-11 no está en el catálogo institucional."}
+            )
 
     def save(self, *args, **kwargs):
         """
-        Lógica Elite: Si un diagnóstico es 'Confirmado' o 'Crónico', 
+        Lógica Elite: Si un diagnóstico es 'Confirmado' o 'Crónico',
         se crea/actualiza automáticamente en el historial médico del paciente.
         """
         is_new = self.pk is None
         super().save(*args, **kwargs)
 
-        if self.status in ['confirmed', 'chronic']:
+        if self.status in ["confirmed", "chronic"]:
             MedicalHistory.objects.update_or_create(
                 patient=self.appointment.patient,
                 condition=self.title,
                 defaults={
-                    'status': 'active',
-                    'source': f"Diagnóstico en Cita #{self.appointment.id}",
-                    'notes': self.description or "Añadido automáticamente por decreto médico."
-                }
+                    "status": "active",
+                    "source": f"Diagnóstico en Cita #{self.appointment.id}",
+                    "notes": self.description
+                    or "Añadido automáticamente por decreto médico.",
+                },
             )
 
 
@@ -920,9 +987,7 @@ class Treatment(models.Model):
     ]
     # --- Relaciones ---
     diagnosis = models.ForeignKey(
-        "Diagnosis", 
-        on_delete=models.CASCADE, 
-        related_name="treatments"
+        "Diagnosis", on_delete=models.CASCADE, related_name="treatments"
     )
     # NUEVO: CACHÉ de patient, doctor e institution para rendimiento y reportes
     patient = models.ForeignKey(
@@ -932,7 +997,7 @@ class Treatment(models.Model):
         blank=True,
         editable=False,
         related_name="treatments",
-        verbose_name="Paciente asociado"
+        verbose_name="Paciente asociado",
     )
     doctor = models.ForeignKey(
         "DoctorOperator",
@@ -941,7 +1006,7 @@ class Treatment(models.Model):
         blank=True,
         editable=False,
         related_name="treatments",
-        verbose_name="Médico asociado"
+        verbose_name="Médico asociado",
     )
     institution = models.ForeignKey(
         "InstitutionSettings",
@@ -950,49 +1015,51 @@ class Treatment(models.Model):
         blank=True,
         editable=False,
         related_name="treatments",
-        verbose_name="Sede asociada"
+        verbose_name="Sede asociada",
     )
-    
+
     # --- Definición ---
     treatment_type = models.CharField(
-        max_length=30, 
-        choices=TREATMENT_TYPE_CHOICES, 
-        default="pharmacological"
+        max_length=30, choices=TREATMENT_TYPE_CHOICES, default="pharmacological"
     )
     title = models.CharField(
-        max_length=200, 
-        help_text="Ej: Fisioterapia lumbar, Bypass gástrico, etc."
+        max_length=200, help_text="Ej: Fisioterapia lumbar, Bypass gástrico, etc."
     )
-    plan = models.TextField(
-        help_text="Descripción detallada del protocolo a seguir"
-    )
-    
+    plan = models.TextField(help_text="Descripción detallada del protocolo a seguir")
+
     # --- Cronología ---
     start_date = models.DateField(default=timezone.now)
     end_date = models.DateField(blank=True, null=True)
-    
+
     # --- Estado y Control ---
-    status = models.CharField(
-        max_length=20, 
-        choices=STATUS_CHOICES, 
-        default="active"
-    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
     is_permanent = models.BooleanField(
-        default=False, 
-        help_text="Marcar si es un tratamiento de por vida (ej: Insulina, Dieta para celíacos)"
+        default=False,
+        help_text="Marcar si es un tratamiento de por vida (ej: Insulina, Dieta para celíacos)",
     )
-    notes = models.TextField(blank=True, null=True, help_text="Observaciones de evolución")
+    notes = models.TextField(
+        blank=True, null=True, help_text="Observaciones de evolución"
+    )
+
     class Meta:
         verbose_name = "Tratamiento"
         verbose_name_plural = "Tratamientos"
         ordering = ["-start_date"]
         indexes = [
-            models.Index(fields=['doctor', 'status']), # NUEVO: Optimización para reportes por médico
-            models.Index(fields=['patient', 'status']), # NUEVO: Optimización para historial por paciente
-            models.Index(fields=['institution', 'status']), # NUEVO: Optimización para reportes por sede
+            models.Index(
+                fields=["doctor", "status"]
+            ),  # NUEVO: Optimización para reportes por médico
+            models.Index(
+                fields=["patient", "status"]
+            ),  # NUEVO: Optimización para historial por paciente
+            models.Index(
+                fields=["institution", "status"]
+            ),  # NUEVO: Optimización para reportes por sede
         ]
+
     def __str__(self):
         return f"{self.title} ({self.get_status_display()}) - {self.diagnosis.title}"
+
     def save(self, *args, **kwargs):
         # NUEVO: Auto-completar patient, doctor e institution desde diagnosis → appointment
         if self.diagnosis and self.diagnosis.appointment:
@@ -1003,27 +1070,26 @@ class Treatment(models.Model):
                 self.doctor = app.doctor
             if not self.institution:
                 self.institution = app.institution
-        
+
         super().save(*args, **kwargs)
-        
+
         # Si es Quirúrgico y se acaba de crear, lo registramos como antecedente quirúrgico
         is_new = self.pk is None
         if is_new and self.treatment_type == "surgical":
             from .models import MedicalHistory
+
             MedicalHistory.objects.get_or_create(
                 patient=self.diagnosis.appointment.patient,
                 condition=f"Cirugía: {self.title}",
                 source="surgical",
-                notes=f"Realizado según plan en cita {self.diagnosis.appointment.id}. Plan: {self.plan}"
+                notes=f"Realizado según plan en cita {self.diagnosis.appointment.id}. Plan: {self.plan}",
             )
 
 
 class Prescription(models.Model):
     # Relación base obligatoria
     diagnosis = models.ForeignKey(
-        "Diagnosis", 
-        on_delete=models.CASCADE, 
-        related_name="prescriptions"
+        "Diagnosis", on_delete=models.CASCADE, related_name="prescriptions"
     )
 
     # --- HÍBRIDO: CATÁLOGO O TEXTO LIBRE ---
@@ -1032,28 +1098,42 @@ class Prescription(models.Model):
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
-        related_name="prescriptions"
+        related_name="prescriptions",
     )
     medication_text = models.CharField(
-        max_length=200, 
-        blank=True, 
+        max_length=200,
+        blank=True,
         null=True,
-        help_text="Nombre comercial o genérico manual"
+        help_text="Nombre comercial o genérico manual",
     )
 
     # --- POSOLOGÍA ---
-    dosage_form = models.CharField(max_length=100, blank=True, help_text="Ej: 1 tableta, 5ml, 2 gotas")
+    dosage_form = models.CharField(
+        max_length=100, blank=True, help_text="Ej: 1 tableta, 5ml, 2 gotas"
+    )
     route = models.CharField(max_length=20, choices=ROUTE_CHOICES, default="oral")
-    frequency = models.CharField(max_length=20, choices=FREQUENCY_CHOICES, default="once_daily")
-    duration = models.CharField(max_length=200, blank=True, null=True, help_text="Ej: Por 7 días")
-    indications = models.TextField(blank=True, null=True, help_text="Instrucciones: 'Tomar con abundante agua'")
+    frequency = models.CharField(
+        max_length=20, choices=FREQUENCY_CHOICES, default="once_daily"
+    )
+    duration = models.CharField(
+        max_length=200, blank=True, null=True, help_text="Ej: Por 7 días"
+    )
+    indications = models.TextField(
+        blank=True, null=True, help_text="Instrucciones: 'Tomar con abundante agua'"
+    )
 
     # --- CACHÉ DE IDENTIDAD (Optimización Élite) ---
     # Almacenamos estas IDs directamente para reportes rápidos y auditoría
-    doctor = models.ForeignKey("DoctorOperator", on_delete=models.SET_NULL, null=True, editable=False)
-    institution = models.ForeignKey("InstitutionSettings", on_delete=models.SET_NULL, null=True, editable=False)
-    patient = models.ForeignKey("Patient", on_delete=models.CASCADE, null=True, editable=False)
-    
+    doctor = models.ForeignKey(
+        "DoctorOperator", on_delete=models.SET_NULL, null=True, editable=False
+    )
+    institution = models.ForeignKey(
+        "InstitutionSettings", on_delete=models.SET_NULL, null=True, editable=False
+    )
+    patient = models.ForeignKey(
+        "Patient", on_delete=models.CASCADE, null=True, editable=False
+    )
+
     issued_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -1068,21 +1148,24 @@ class Prescription(models.Model):
             self.doctor = app.doctor
             self.institution = app.institution
             self.patient = app.patient
-        
+
         # Si viene del catálogo, podemos autocompletar componentes si no existen
         super().save(*args, **kwargs)
 
     def __str__(self):
-        med = self.medication_catalog.name if self.medication_catalog else self.medication_text or "Medicamento"
+        med = (
+            self.medication_catalog.name
+            if self.medication_catalog
+            else self.medication_text or "Medicamento"
+        )
         return f"{med} — {self.patient.full_name if self.patient else 'Sin Paciente'}"
 
 
 class PrescriptionComponent(models.Model):
     """Componentes activos (Ej: Trimetoprim + Sulfametoxazol)"""
+
     prescription = models.ForeignKey(
-        "Prescription",
-        on_delete=models.CASCADE,
-        related_name="components"
+        "Prescription", on_delete=models.CASCADE, related_name="components"
     )
     substance = models.CharField(max_length=100, verbose_name="Principio Activo")
     dosage = models.CharField(max_length=50, verbose_name="Concentración (Ej: 500)")
@@ -1094,169 +1177,153 @@ class PrescriptionComponent(models.Model):
 
 class Payment(models.Model):
     STATUS_CHOICES = [
-        ('pending', 'Pendiente'),
-        ('confirmed', 'Confirmado'),
-        ('rejected', 'Rechazado'),
-        ('void', 'Anulado'),
+        ("pending", "Pendiente"),
+        ("confirmed", "Confirmado"),
+        ("rejected", "Rechazado"),
+        ("void", "Anulado"),
     ]
-    
+
     METHOD_CHOICES = [
-        ('cash', 'Efectivo'),
-        ('card', 'Tarjeta / Punto de Venta'),
-        ('transfer', 'Transferencia / Pago Móvil'),
-        ('zelle', 'Zelle / Divisas'),
-        ('crypto', 'Criptomonedas'),
-        ('other', 'Otro'),
+        ("cash", "Efectivo"),
+        ("card", "Tarjeta / Punto de Venta"),
+        ("transfer", "Transferencia / Pago Móvil"),
+        ("zelle", "Zelle / Divisas"),
+        ("crypto", "Criptomonedas"),
+        ("other", "Otro"),
     ]
-    
-    VERIFICATION_CHOICES = [
-        ('automatic', 'Automático'),
-        ('manual', 'Manual')
-    ]
-    
+
+    VERIFICATION_CHOICES = [("automatic", "Automático"), ("manual", "Manual")]
+
     # --- RELACIONES ---
     institution = models.ForeignKey(
-        'InstitutionSettings',
-        on_delete=models.PROTECT,
-        related_name='payments'
+        "InstitutionSettings", on_delete=models.PROTECT, related_name="payments"
     )
     appointment = models.ForeignKey(
-        'Appointment', 
-        on_delete=models.CASCADE, 
+        "Appointment",
+        on_delete=models.CASCADE,
         related_name="payments",
         null=True,
-        blank=True
+        blank=True,
     )
-    charge_order = models.ForeignKey('ChargeOrder', on_delete=models.CASCADE, related_name='payments')
+    charge_order = models.ForeignKey(
+        "ChargeOrder", on_delete=models.CASCADE, related_name="payments"
+    )
     # NUEVO: CACHÉ de doctor para rendimiento y reportes
     doctor = models.ForeignKey(
-        'DoctorOperator',
+        "DoctorOperator",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         editable=False,
-        related_name='payments',
-        verbose_name="Médico asociado al pago"
+        related_name="payments",
+        verbose_name="Médico asociado al pago",
     )
-    
+
     # --- TRANSACCIÓN ---
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    currency = models.CharField(max_length=10, default='USD')
-    
+    currency = models.CharField(max_length=10, default="USD")
+
     amount_ves = models.DecimalField(
-        max_digits=12, 
-        decimal_places=2, 
-        null=True, 
+        max_digits=12,
+        decimal_places=2,
+        null=True,
         blank=True,
-        verbose_name="Monto en Bs (BCV del día)"
+        verbose_name="Monto en Bs (BCV del día)",
     )
     exchange_rate_bcv = models.DecimalField(
-        max_digits=10, 
-        decimal_places=2, 
-        null=True, 
+        max_digits=10,
+        decimal_places=2,
+        null=True,
         blank=True,
-        verbose_name="Tasa BCV usada"
+        verbose_name="Tasa BCV usada",
     )
-    
+
     method = models.CharField(max_length=20, choices=METHOD_CHOICES)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+
     # --- TRAZABILIDAD EXTERNA (ELITE) ---
     gateway_transaction_id = models.CharField(
-        max_length=255, 
-        blank=True, null=True, 
+        max_length=255,
+        blank=True,
+        null=True,
         unique=True,
-        verbose_name="ID Transacción Pasarela"
+        verbose_name="ID Transacción Pasarela",
     )
-    
+
     reference_number = models.CharField(
-        max_length=100, blank=True, null=True,
-        verbose_name="Nro. Referencia Manual / Comprobante"
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name="Nro. Referencia Manual / Comprobante",
     )
-    
+
     # === VERIFICACIÓN DE PAGO (NUEVO) ===
     verification_type = models.CharField(
         max_length=20,
         choices=VERIFICATION_CHOICES,
         null=True,
         blank=True,
-        verbose_name="Tipo de verificación"
+        verbose_name="Tipo de verificación",
     )
-    
+
     verified_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,  # ✅ CORREGIDO: usar settings.AUTH_USER_MODEL
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='verified_payments',
-        verbose_name="Verificado por"
+        related_name="verified_payments",
+        verbose_name="Verificado por",
     )
-    
+
     verified_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name="Fecha de verificación"
+        null=True, blank=True, verbose_name="Fecha de verificación"
     )
-    
+
     verification_notes = models.TextField(
-        blank=True,
-        verbose_name="Notas de verificación"
+        blank=True, verbose_name="Notas de verificación"
     )
-    
+
     bank_reference = models.CharField(
-        max_length=100,
-        blank=True,
-        verbose_name="Referencia bancaria"
+        max_length=100, blank=True, verbose_name="Referencia bancaria"
     )
-    
+
     screenshot = models.ImageField(
-        upload_to='payments/screenshots/%Y/%m/',
+        upload_to="payments/screenshots/%Y/%m/",
         null=True,
         blank=True,
-        verbose_name="Captura de pago"
+        verbose_name="Captura de pago",
     )
-    
+
     sender_phone = models.CharField(
-        max_length=20,
-        blank=True,
-        null=True,
-        verbose_name="Teléfono del emisor"
+        max_length=20, blank=True, null=True, verbose_name="Teléfono del emisor"
     )
-    
+
     sender_national_id = models.CharField(
-        max_length=20,
-        blank=True,
-        null=True,
-        verbose_name="Cédula del emisor"
+        max_length=20, blank=True, null=True, verbose_name="Cédula del emisor"
     )
-    
+
     sender_bank_code = models.CharField(
-        max_length=10,
-        blank=True,
-        null=True,
-        verbose_name="Código banco del emisor"
+        max_length=10, blank=True, null=True, verbose_name="Código banco del emisor"
     )
-    
+
     ocr_data = models.JSONField(
-        blank=True,
-        null=True,
-        verbose_name="Datos extraídos por OCR"
+        blank=True, null=True, verbose_name="Datos extraídos por OCR"
     )
-    
+
     patient = models.ForeignKey(
-        'Patient',
+        "Patient",
         on_delete=models.CASCADE,
-        related_name='payments',
+        related_name="payments",
         null=True,
         blank=True,
-        verbose_name="Paciente asociado al pago"
+        verbose_name="Paciente asociado al pago",
     )
-    
+
     # --- AUDITORÍA ---
     received_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
-    
+
     class Meta:
         ordering = ["-created_at"]
         indexes = [
@@ -1264,62 +1331,64 @@ class Payment(models.Model):
             models.Index(fields=["doctor", "status"]),
             models.Index(fields=["charge_order", "status"]),
         ]
-    
+
     def __str__(self):
         return f"Pago #{self.id} - {self.amount} {self.currency}"
-    
+
     def save(self, *args, **kwargs):
-        if self.status == 'confirmed' and not self.received_at:
+        if self.status == "confirmed" and not self.received_at:
             self.received_at = timezone.now()
         super().save(*args, **kwargs)
+
     # --- LÓGICA DE NEGOCIO ---
     def clean(self):
-        if self.amount and self.amount <= Decimal('0.00'):
+        if self.amount and self.amount <= Decimal("0.00"):
             raise ValidationError("El monto debe ser positivo.")
-        
-        if self.charge_order and self.charge_order.status in ['void', 'waived']:
+
+        if self.charge_order and self.charge_order.status in ["void", "waived"]:
             raise ValidationError("Orden no apta para pagos.")
+
     def confirm(self, actor_user=None):
         """Confirmación atómica con sincronización de saldos"""
         with transaction.atomic():
             order = ChargeOrder.objects.select_for_update().get(pk=self.charge_order.pk)
-            
-            self.status = 'confirmed'
+
+            self.status = "confirmed"
             self.cleared_at = timezone.now()
-            self.save(update_fields=['status', 'cleared_at'])
+            self.save(update_fields=["status", "cleared_at"])
             order.recalc_totals()
             order.save()
             # Notificación al log de eventos
-            Event = apps.get_model('core', 'Event')
+            Event = apps.get_model("core", "Event")
             Event.objects.create(
-                entity='Payment',
+                entity="Payment",
                 entity_id=self.pk,
                 institution=self.institution,
-                action='confirm',
+                action="confirm",
                 actor_user=actor_user,
                 severity="info",
-                notify=True
+                notify=True,
             )
 
 
 class Event(models.Model):
     SEVERITY_CHOICES = [
-        ('info', 'Informativo'),
-        ('warning', 'Advertencia'),
-        ('critical', 'Crítico'),
+        ("info", "Informativo"),
+        ("warning", "Advertencia"),
+        ("critical", "Crítico"),
     ]
 
     timestamp = models.DateTimeField(auto_now_add=True)
-    
-    # NUEVO: El evento ahora pertenece a un nodo. 
+
+    # NUEVO: El evento ahora pertenece a un nodo.
     # Si es un evento global (ej: sistema), puede ser null.
     institution = models.ForeignKey(
-        'InstitutionSettings',
+        "InstitutionSettings",
         on_delete=models.CASCADE,
-        related_name='events',
+        related_name="events",
         null=True,
         blank=True,
-        verbose_name="Sede del evento"
+        verbose_name="Sede del evento",
     )
 
     # NUEVO: Trazabilidad por usuario real
@@ -1328,39 +1397,43 @@ class Event(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='events_initiated',
-        verbose_name="Usuario responsable"
+        related_name="events_initiated",
+        verbose_name="Usuario responsable",
     )
     # Mantenemos actor como CharField por si el evento lo dispara un sistema externo
     actor_name = models.CharField(max_length=100, blank=True, null=True)
 
-    entity = models.CharField(max_length=50, help_text="Ej: ChargeOrder, Appointment, Payment")
+    entity = models.CharField(
+        max_length=50, help_text="Ej: ChargeOrder, Appointment, Payment"
+    )
     entity_id = models.IntegerField()
-    action = models.CharField(max_length=100, help_text="Ej: void, cancel, confirm_payment")
-    
+    action = models.CharField(
+        max_length=100, help_text="Ej: void, cancel, confirm_payment"
+    )
+
     metadata = models.JSONField(
-        blank=True, 
-        null=True, 
-        help_text="Snapshot de datos relevantes en formato JSON"
+        blank=True, null=True, help_text="Snapshot de datos relevantes en formato JSON"
     )
 
     severity = models.CharField(
         max_length=20,
         choices=SEVERITY_CHOICES,
-        default='info',
+        default="info",
     )
-    
+
     # Este flag sirve para el sistema de notificaciones en tiempo real (WebSockets)
     notify = models.BooleanField(default=False)
-    is_read = models.BooleanField(default=False, verbose_name="Visto por administración")
+    is_read = models.BooleanField(
+        default=False, verbose_name="Visto por administración"
+    )
 
     class Meta:
         verbose_name = "Evento de Auditoría"
         verbose_name_plural = "Eventos de Auditoría"
-        ordering = ['-timestamp']
+        ordering = ["-timestamp"]
         indexes = [
-            models.Index(fields=['institution', 'severity']),
-            models.Index(fields=['entity', 'entity_id']),
+            models.Index(fields=["institution", "severity"]),
+            models.Index(fields=["entity", "entity_id"]),
         ]
 
     def __str__(self):
@@ -1370,16 +1443,13 @@ class Event(models.Model):
     @property
     def color_tag(self):
         """Útil para el frontend: devuelve el color del evento según severidad"""
-        tags = {
-            'info': 'blue',
-            'warning': 'orange',
-            'critical': 'red'
-        }
-        return tags.get(self.severity, 'gray')
+        tags = {"info": "blue", "warning": "orange", "critical": "red"}
+        return tags.get(self.severity, "gray")
 
 
 # Nuevo modelo para documentos clínicos
 User = get_user_model()
+
 
 class DocumentCategory(models.TextChoices):
     PRESCRIPTION = "prescription", "Prescripción"
@@ -1389,7 +1459,7 @@ class DocumentCategory(models.TextChoices):
     MEDICAL_REPORT = "medical_report", "Informe Médico General"
     EXTERNAL_STUDY = "external_study", "Estudio Externo (Laboratorio/Imagen)"
     OTHER = "other", "Otro"
-    
+
 
 class DocumentSource(models.TextChoices):
     SYSTEM_GENERATED = "system_generated", "Generado por el sistema"
@@ -1401,10 +1471,25 @@ class MedicalDocument(models.Model):
     Repositorio centralizado de documentos médicos.
     Soporta generación automática (PDF) y carga manual de evidencias.
     """
+
     # Relaciones de contexto
-    patient = models.ForeignKey("Patient", on_delete=models.CASCADE, related_name="documents")
-    appointment = models.ForeignKey("Appointment", on_delete=models.SET_NULL, blank=True, null=True, related_name="documents")
-    diagnosis = models.ForeignKey("Diagnosis", on_delete=models.SET_NULL, blank=True, null=True, related_name="documents")
+    patient = models.ForeignKey(
+        "Patient", on_delete=models.CASCADE, related_name="documents"
+    )
+    appointment = models.ForeignKey(
+        "Appointment",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="documents",
+    )
+    diagnosis = models.ForeignKey(
+        "Diagnosis",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="documents",
+    )
     # NUEVO: CACHÉ de doctor e institution para rendimiento y reportes
     doctor = models.ForeignKey(
         "DoctorOperator",
@@ -1413,7 +1498,7 @@ class MedicalDocument(models.Model):
         blank=True,
         editable=False,
         related_name="medical_documents",
-        verbose_name="Médico asociado"
+        verbose_name="Médico asociado",
     )
     institution = models.ForeignKey(
         "InstitutionSettings",
@@ -1422,34 +1507,62 @@ class MedicalDocument(models.Model):
         blank=True,
         editable=False,
         related_name="medical_documents",
-        verbose_name="Sede asociada"
+        verbose_name="Sede asociada",
     )
     # Clasificación
-    category = models.CharField(max_length=40, choices=DocumentCategory.choices, default=DocumentCategory.OTHER)
-    source = models.CharField(max_length=20, choices=DocumentSource.choices, default=DocumentSource.SYSTEM_GENERATED)
-    origin_panel = models.CharField(max_length=50, blank=True, null=True, help_text="Módulo de origen: prescriptions, tests, etc.")
+    category = models.CharField(
+        max_length=40, choices=DocumentCategory.choices, default=DocumentCategory.OTHER
+    )
+    source = models.CharField(
+        max_length=20,
+        choices=DocumentSource.choices,
+        default=DocumentSource.SYSTEM_GENERATED,
+    )
+    origin_panel = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        help_text="Módulo de origen: prescriptions, tests, etc.",
+    )
     # Archivo y Metadatos Técnicos
     file = models.FileField(
         upload_to="medical_documents/%Y/%m/%d/",
-        validators=[FileExtensionValidator(allowed_extensions=["pdf", "png", "jpg", "jpeg"])]
+        validators=[
+            FileExtensionValidator(allowed_extensions=["pdf", "png", "jpg", "jpeg"])
+        ],
     )
     mime_type = models.CharField(max_length=100, default="application/pdf")
     size_bytes = models.PositiveIntegerField(editable=False, null=True)
-    checksum_sha256 = models.CharField(max_length=64, editable=False, blank=True, null=True)
-    
+    checksum_sha256 = models.CharField(
+        max_length=64, editable=False, blank=True, null=True
+    )
+
     # Información de Validez y Auditoría
     description = models.CharField(max_length=255, blank=True, null=True)
     template_version = models.CharField(max_length=20, blank=True, null=True)
     is_signed = models.BooleanField(default=False)
     signer_name = models.CharField(max_length=100, blank=True, null=True)
     signer_registration = models.CharField(max_length=50, blank=True, null=True)
-    
+
     # Identificador Único de Verificación (QR/Auditoría)
     audit_code = models.CharField(max_length=64, unique=True, editable=False, null=True)
     # Trazabilidad de Usuarios
     uploaded_at = models.DateTimeField(auto_now_add=True)
-    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name="uploaded_documents")
-    generated_by = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name="generated_documents")
+    uploaded_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="uploaded_documents",
+    )
+    generated_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="generated_documents",
+    )
+
     class Meta:
         verbose_name = "Documento Médico"
         verbose_name_plural = "Documentos Médicos"
@@ -1458,35 +1571,51 @@ class MedicalDocument(models.Model):
             models.Index(fields=["patient", "category"]),
             models.Index(fields=["audit_code"]),
             models.Index(fields=["uploaded_at"]),
-            models.Index(fields=["doctor", "category"]), # NUEVO: Optimización para reportes por médico
-            models.Index(fields=["institution", "category"]), # NUEVO: Optimización para reportes por sede
+            models.Index(
+                fields=["doctor", "category"]
+            ),  # NUEVO: Optimización para reportes por médico
+            models.Index(
+                fields=["institution", "category"]
+            ),  # NUEVO: Optimización para reportes por sede
         ]
+
     def __str__(self):
         return f"{self.get_category_display()} — {self.patient.full_name}"
+
     def clean(self):
         """Validación de integridad de negocio."""
-        if self.source == DocumentSource.SYSTEM_GENERATED and self.mime_type != "application/pdf":
-            raise ValidationError({"mime_type": "Los documentos generados por el sistema deben ser PDF."})
+        if (
+            self.source == DocumentSource.SYSTEM_GENERATED
+            and self.mime_type != "application/pdf"
+        ):
+            raise ValidationError(
+                {"mime_type": "Los documentos generados por el sistema deben ser PDF."}
+            )
         # Categorías que requieren contexto clínico obligatorio
         clinical_categories = {
-            DocumentCategory.PRESCRIPTION, 
-            DocumentCategory.TREATMENT, 
-            DocumentCategory.MEDICAL_TEST_ORDER, 
-            DocumentCategory.MEDICAL_REFERRAL
+            DocumentCategory.PRESCRIPTION,
+            DocumentCategory.TREATMENT,
+            DocumentCategory.MEDICAL_TEST_ORDER,
+            DocumentCategory.MEDICAL_REFERRAL,
         }
         if self.category in clinical_categories and not self.appointment:
-            raise ValidationError({"appointment": "Este documento requiere estar vinculado a una consulta activa."})
+            raise ValidationError(
+                {
+                    "appointment": "Este documento requiere estar vinculado a una consulta activa."
+                }
+            )
+
     def save(self, *args, **kwargs):
         """Lógica automática de metadatos y seguridad."""
         # NUEVO: Auto-completar doctor e institution desde appointment
         if self.appointment:
             self.doctor = self.appointment.doctor
             self.institution = self.appointment.institution
-        
+
         if self.file:
             # 1. Almacenar tamaño automáticamente
             self.size_bytes = self.file.size
-            
+
             # 2. Generar Checksum SHA256 para integridad (si es archivo nuevo)
             if not self.checksum_sha256:
                 sha256 = hashlib.sha256()
@@ -1495,106 +1624,108 @@ class MedicalDocument(models.Model):
                 self.checksum_sha256 = sha256.hexdigest()
             # 3. Generar Audit Code único (para validación externa vía QR)
             if not self.audit_code:
-                unique_str = f"{self.patient_id}-{self.uploaded_at}-{self.checksum_sha256}"
-                self.audit_code = hashlib.sha1(unique_str.encode()).hexdigest()[:16].upper()
+                unique_str = (
+                    f"{self.patient_id}-{self.uploaded_at}-{self.checksum_sha256}"
+                )
+                self.audit_code = (
+                    hashlib.sha1(unique_str.encode()).hexdigest()[:16].upper()
+                )
         super().save(*args, **kwargs)
 
 
 class ChargeOrder(models.Model):
     STATUS_CHOICES = [
-        ('open', 'Open'),
-        ('partially_paid', 'Partially Paid'),
-        ('paid', 'Paid'),
-        ('void', 'Void'),
-        ('waived', 'Waived'),
+        ("open", "Open"),
+        ("partially_paid", "Partially Paid"),
+        ("paid", "Paid"),
+        ("void", "Void"),
+        ("waived", "Waived"),
     ]
-    
+
     appointment = models.ForeignKey(
-        'Appointment', 
-        on_delete=models.CASCADE, 
-        related_name='charge_orders',
+        "Appointment",
+        on_delete=models.CASCADE,
+        related_name="charge_orders",
         null=True,
-        blank=True
+        blank=True,
     )
-    
+
     institution = models.ForeignKey(
-        'InstitutionSettings',
+        "InstitutionSettings",
         on_delete=models.PROTECT,
-        related_name='charge_orders',
-        verbose_name="Sede emisora de cobro"
+        related_name="charge_orders",
+        verbose_name="Sede emisora de cobro",
     )
-    
+
     patient = models.ForeignKey(
-        'Patient', 
-        on_delete=models.CASCADE, 
-        related_name='charge_orders'
+        "Patient", on_delete=models.CASCADE, related_name="charge_orders"
     )
-    
+
     doctor = models.ForeignKey(
-        'DoctorOperator',
+        "DoctorOperator",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         editable=False,
-        related_name='charge_orders',
-        verbose_name="Médico emisor de cobro"
+        related_name="charge_orders",
+        verbose_name="Médico emisor de cobro",
     )
-    
-    currency = models.CharField(max_length=10, default='USD')
-    total = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
-    balance_due = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
-    
+
+    currency = models.CharField(max_length=10, default="USD")
+    total = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    balance_due = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="open")
+
     issued_at = models.DateTimeField(auto_now_add=True)
     issued_by = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
-    
+
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="charge_orders_created"
+        related_name="charge_orders_created",
     )
-    
+
     updated_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="charge_order_updates",
-        verbose_name="Usuario que actualizó la orden"
+        verbose_name="Usuario que actualizó la orden",
     )
-    
+
     # === NUEVOS CAMPOS PARA FECHA TENTATIVA ===
     tentative_date = models.DateField(
-        null=True,
-        blank=True,
-        verbose_name="Fecha tentativa seleccionada por paciente"
+        null=True, blank=True, verbose_name="Fecha tentativa seleccionada por paciente"
     )
     tentative_time = models.TimeField(
-        null=True,
-        blank=True,
-        verbose_name="Hora tentativa seleccionada por paciente"
+        null=True, blank=True, verbose_name="Hora tentativa seleccionada por paciente"
     )
-    
+
     history = HistoricalRecords()
-    
+
     class Meta:
-        ordering = ['-issued_at']  # ← AGREGAR ESTA LÍNEA
+        ordering = ["-issued_at"]  # ← AGREGAR ESTA LÍNEA
         indexes = [
-            models.Index(fields=['appointment', 'status']),
-            models.Index(fields=['patient', 'status']),
-            models.Index(fields=['institution', 'status']),
-            models.Index(fields=['doctor', 'status']),
+            models.Index(fields=["appointment", "status"]),
+            models.Index(fields=["patient", "status"]),
+            models.Index(fields=["institution", "status"]),
+            models.Index(fields=["doctor", "status"]),
         ]
         verbose_name = "Orden de Cobro"
         verbose_name_plural = "Órdenes de Cobro"
-    
+
     def __str__(self):
         return f"Order #{self.pk} — {self.institution.name} — {self.status}"
-    
+
     def save(self, *args, **kwargs):
         if self.appointment:
             if not self.doctor:
@@ -1602,161 +1733,179 @@ class ChargeOrder(models.Model):
             if not self.institution:
                 self.institution = self.appointment.institution
         super().save(*args, **kwargs)
-    
+
     def recalc_totals(self):
-        items_sum = self.items.aggregate(s=Sum('subtotal')).get('s') or Decimal('0.00')
+        items_sum = self.items.aggregate(s=Sum("subtotal")).get("s") or Decimal("0.00")
         self.total = items_sum
-        confirmed_payments = self.payments.filter(status='confirmed').aggregate(s=Sum('amount')).get('s') or Decimal('0.00')
-        self.balance_due = max(self.total - confirmed_payments, Decimal('0.00'))
-        if self.status in ['void', 'waived']:
+        confirmed_payments = self.payments.filter(status="confirmed").aggregate(
+            s=Sum("amount")
+        ).get("s") or Decimal("0.00")
+        self.balance_due = max(self.total - confirmed_payments, Decimal("0.00"))
+        if self.status in ["void", "waived"]:
             return
         if self.balance_due <= 0 and self.total > 0:
-            self.status = 'paid'
+            self.status = "paid"
         elif confirmed_payments > 0:
-            self.status = 'partially_paid'
+            self.status = "partially_paid"
         else:
-            self.status = 'open'
-    
+            self.status = "open"
+
     def clean(self):
-        if self.status == 'paid' and self.balance_due != Decimal('0.00'):
-            raise ValidationError("Inconsistencia: Una orden pagada no puede tener deuda pendiente.")
-        if self.status == 'waived' and self.balance_due != Decimal('0.00'):
-            raise ValidationError("Inconsistencia: Una orden exonerada debe quedar con deuda cero.")
-    
-    def mark_void(self, reason: str = '', actor: str = ''):
-        if self.status == 'paid':
-            raise ValidationError("Operación Denegada: No se puede anular un ingreso ya confirmado en caja.")
-        self.status = 'void'
-        self.save(update_fields=['status'])
-        Event = apps.get_model('core', 'Event')
+        if self.status == "paid" and self.balance_due != Decimal("0.00"):
+            raise ValidationError(
+                "Inconsistencia: Una orden pagada no puede tener deuda pendiente."
+            )
+        if self.status == "waived" and self.balance_due != Decimal("0.00"):
+            raise ValidationError(
+                "Inconsistencia: Una orden exonerada debe quedar con deuda cero."
+            )
+
+    def mark_void(self, reason: str = "", actor: str = ""):
+        if self.status == "paid":
+            raise ValidationError(
+                "Operación Denegada: No se puede anular un ingreso ya confirmado en caja."
+            )
+        self.status = "void"
+        self.save(update_fields=["status"])
+        Event = apps.get_model("core", "Event")
         Event.objects.create(
-            entity='ChargeOrder',
+            entity="ChargeOrder",
             entity_id=self.pk,
-            action='void',
-            metadata={'actor': actor, 'reason': reason, 'institution': self.institution.name},
+            action="void",
+            metadata={
+                "actor": actor,
+                "reason": reason,
+                "institution": self.institution.name,
+            },
             severity="critical",
-            notify=True
+            notify=True,
         )
 
 
 # --- EL DETALLE DEL COBRO ---
 class ChargeItem(models.Model):
-    order = models.ForeignKey('ChargeOrder', on_delete=models.CASCADE, related_name='items')
+    order = models.ForeignKey(
+        "ChargeOrder", on_delete=models.CASCADE, related_name="items"
+    )
     code = models.CharField(max_length=50, help_text="Código de servicio o baremo")
     description = models.CharField(max_length=255, blank=True, null=True)
-    qty = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('1.00'))
+    qty = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("1.00"))
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
-    
+
     # === NUEVO CAMPO ===
     doctor_service = models.ForeignKey(
-        'DoctorService',
+        "DoctorService",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='charge_items',
-        verbose_name="Servicio facturado"
+        related_name="charge_items",
+        verbose_name="Servicio facturado",
     )
-    
+
     class Meta:
         verbose_name = "Ítem de Cobro"
         verbose_name_plural = "Ítems de Cobro"
-        
+
     def __str__(self):
         return f"{self.description or self.code} (x{self.qty})"
-    
+
     def save(self, *args, **kwargs):
-        self.subtotal = (self.qty or Decimal('0')) * (self.unit_price or Decimal('0'))
+        self.subtotal = (self.qty or Decimal("0")) * (self.unit_price or Decimal("0"))
         super().save(*args, **kwargs)
         self.order.recalc_totals()
-        self.order.save(update_fields=['total', 'balance_due', 'status'])
-    
+        self.order.save(update_fields=["total", "balance_due", "status"])
+
     def delete(self, *args, **kwargs):
         order = self.order
         super().delete(*args, **kwargs)
         order.recalc_totals()
-        order.save(update_fields=['total', 'balance_due', 'status'])
+        order.save(update_fields=["total", "balance_due", "status"])
 
 
 class InstitutionSettings(models.Model):
     # --- IDENTIDAD FISCAL Y MARCA ---
     name = models.CharField(max_length=255, verbose_name="Nombre del centro médico")
     tax_id = models.CharField(
-        max_length=50, 
-        unique=True, 
-        verbose_name="RIF / NIT / Identificación Fiscal"
+        max_length=50, unique=True, verbose_name="RIF / NIT / Identificación Fiscal"
     )
     logo = models.ImageField(upload_to="logos/", verbose_name="Logo institucional")
     phone = models.CharField(max_length=50, verbose_name="Teléfono de contacto")
     # --- CONFIGURACIÓN DE PASARELA UNIVERSAL (FINTECH READY) ---
     GATEWAY_PROVIDERS = [
-        ('none', 'Manual / Registro Interno'),
-        ('mercantil_ve', 'Mercantil API (VE)'),
-        ('banesco_ve', 'Banesco Hub (VE)'),
-        ('stripe', 'Stripe Global'),
-        ('binance_pay', 'Binance Pay'),
-        ('paypal', 'PayPal Business'),
+        ("none", "Manual / Registro Interno"),
+        ("mercantil_ve", "Mercantil API (VE)"),
+        ("banesco_ve", "Banesco Hub (VE)"),
+        ("stripe", "Stripe Global"),
+        ("binance_pay", "Binance Pay"),
+        ("paypal", "PayPal Business"),
     ]
     active_gateway = models.CharField(
-        max_length=50, 
-        choices=GATEWAY_PROVIDERS, 
-        default='none',
-        verbose_name="Pasarela de Pagos Activa"
+        max_length=50,
+        choices=GATEWAY_PROVIDERS,
+        default="none",
+        verbose_name="Pasarela de Pagos Activa",
     )
     # Credenciales Genéricas: Se mapean dinámicamente según el proveedor
-    gateway_api_key = models.CharField(max_length=255, blank=True, null=True, verbose_name="Client ID / API Key")
-    gateway_api_secret = models.CharField(max_length=255, blank=True, null=True, verbose_name="Client Secret / Token")
-    
-    # Liquidación de Fondos (Settlement)
-    settlement_bank_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Banco de Destino")
-    settlement_account_id = models.CharField(
-        max_length=100, 
-        blank=True, 
-        null=True, 
-        help_text="Cta Bancaria, Email PayPal o Wallet Address"
+    gateway_api_key = models.CharField(
+        max_length=255, blank=True, null=True, verbose_name="Client ID / API Key"
     )
-    
+    gateway_api_secret = models.CharField(
+        max_length=255, blank=True, null=True, verbose_name="Client Secret / Token"
+    )
+
+    # Liquidación de Fondos (Settlement)
+    settlement_bank_name = models.CharField(
+        max_length=100, blank=True, null=True, verbose_name="Banco de Destino"
+    )
+    settlement_account_id = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="Cta Bancaria, Email PayPal o Wallet Address",
+    )
+
     is_gateway_test_mode = models.BooleanField(
-        default=True, 
+        default=True,
         verbose_name="Modo Sandbox / Pruebas",
-        help_text="Si está activo, no procesará dinero real."
+        help_text="Si está activo, no procesará dinero real.",
     )
     # --- STATUS OPERATIVO ---
     is_active = models.BooleanField(default=True, verbose_name="Nodo Activo")
     # --- DIRECCIÓN ---
     neighborhood = models.ForeignKey(
-        "core.Neighborhood",
-        on_delete=models.PROTECT,
-        null=True, blank=True
+        "core.Neighborhood", on_delete=models.PROTECT, null=True, blank=True
     )
     address = models.CharField(max_length=255, blank=True, null=True)
     # --- AUDITORÍA ---
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.SET_NULL, 
-        null=True, blank=True,
-        related_name="institution_updates"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="institution_updates",
     )
     history = HistoricalRecords()
+
     class Meta:
         verbose_name = "Configuración de Sede"
         verbose_name_plural = "Configuraciones de Sedes"
-        ordering = ['name']
-        
+        ordering = ["name"]
+
     def __str__(self):
         return f"{self.name} ({self.tax_id})"
-    
+
     @property
     def full_address(self):
         """Genera la dirección completa incluyendo jerarquía geográfica."""
         parts = []
-        
+
         # Dirección detallada
         if self.address:
             parts.append(self.address)
-        
+
         # Jerarquía geográfica
         if self.neighborhood:
             parts.append(self.neighborhood.name)
@@ -1766,9 +1915,9 @@ class InstitutionSettings(models.Model):
                     parts.append(self.neighborhood.parish.municipality.name)
                     if self.neighborhood.parish.municipality.state:
                         parts.append(self.neighborhood.parish.municipality.state.name)
-        
+
         return ", ".join(parts) if parts else "Sin dirección"
-    
+
     def save(self, *args, **kwargs):
         self.name = normalize_title_case(self.name)
         if self.address:
@@ -1779,58 +1928,50 @@ class InstitutionSettings(models.Model):
 class DoctorOperator(models.Model):
     # --- RELACIÓN CON EL USUARIO DE DJANGO (ACCESO AL SISTEMA) ---
     user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, 
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="doctor_profile"
+        related_name="doctor_profile",
     )
-    
+
     # --- IDENTIDAD Y VERIFICACIÓN ELITE ---
     full_name = models.CharField(max_length=255)
-    
+
     # Nuevo campo para trato formal automático
     GENDER_CHOICES = [
-        ('M', 'Masculino'),
-        ('F', 'Femenino'),
-        ('O', 'Otro'),
+        ("M", "Masculino"),
+        ("F", "Femenino"),
+        ("O", "Otro"),
     ]
     gender = models.CharField(
-        max_length=1, 
-        choices=GENDER_CHOICES, 
-        default='M',
-        verbose_name="Sexo/Género"
+        max_length=1, choices=GENDER_CHOICES, default="M", verbose_name="Sexo/Género"
     )
-    
+
     is_verified = models.BooleanField(
-        default=False, 
-        help_text="Designa si el cirujano ha sido validado por el Colegio de Médicos."
+        default=False,
+        help_text="Designa si el cirujano ha sido validado por el Colegio de Médicos.",
     )
-    
+
     colegiado_id = models.CharField(
         max_length=100,
         unique=True,
-        verbose_name="Número de colegiado / ID de ejercicio"
+        verbose_name="Número de colegiado / ID de ejercicio",
     )
-    
+
     license = models.CharField(
-        max_length=100, 
-        unique=True,
-        verbose_name="Licencia Sanitaria / MPPS"
+        max_length=100, unique=True, verbose_name="Licencia Sanitaria / MPPS"
     )
-    
+
     # --- RELACIONES DE PODER ---
     # ManyToMany: El doctor opera en múltiples nodos (sedes)
     institutions = models.ManyToManyField(
-        "InstitutionSettings", 
+        "InstitutionSettings",
         related_name="operators",
         blank=True,
-        help_text="Nodos de operación donde este Practitioner ejerce."
+        help_text="Nodos de operación donde este Practitioner ejerce.",
     )
-    
-    specialties = models.ManyToManyField(
-        "Specialty", 
-        related_name="doctors"
-    )
-    
+
+    specialties = models.ManyToManyField("Specialty", related_name="doctors")
+
     # --- INSTITUCIÓN ACTIVA (PREDETERMINADA) ---
     active_institution = models.ForeignKey(
         "InstitutionSettings",
@@ -1839,107 +1980,171 @@ class DoctorOperator(models.Model):
         blank=True,
         related_name="active_for_doctors",
         verbose_name="Institución Activa (Predeterminada)",
-        help_text="La institución preferida del doctor. Se usa por defecto."
+        help_text="La institución preferida del doctor. Se usa por defecto.",
     )
-    
+
     # --- CONTACTO Y FIRMA ---
     email = models.EmailField(blank=True, null=True)
     phone = models.CharField(max_length=50, blank=True, null=True)
-    
+
     signature = models.ImageField(
-        upload_to="signatures/", 
-        blank=True, 
+        upload_to="signatures/",
+        blank=True,
         null=True,
-        help_text="Firma digitalizada para validación de documentos oficiales."
+        help_text="Firma digitalizada para validación de documentos oficiales.",
     )
-    
+
     # --- AUDITORÍA DE SISTEMA ---
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.SET_NULL, 
-        null=True, 
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
-        related_name="doctor_updates"
+        related_name="doctor_updates",
     )
-    
+
     # --- WHATSAPP BUSINESS ---
     whatsapp_business_number = models.CharField(
-        max_length=20, 
-        null=True, 
-        blank=True,
-        verbose_name="Número WhatsApp Business"
+        max_length=20, null=True, blank=True, verbose_name="Número WhatsApp Business"
     )
     whatsapp_access_token = models.CharField(
-        max_length=255, 
-        null=True, 
-        blank=True,
-        verbose_name="WhatsApp Access Token"
+        max_length=255, null=True, blank=True, verbose_name="WhatsApp Access Token"
     )
     whatsapp_business_id = models.CharField(
-        max_length=50, 
-        null=True, 
-        blank=True,
-        verbose_name="WhatsApp Business ID"
+        max_length=50, null=True, blank=True, verbose_name="WhatsApp Business ID"
     )
     whatsapp_webhook_verify_token = models.CharField(
-        max_length=100, 
-        null=True, 
-        blank=True,
-        verbose_name="Webhook Verify Token"
+        max_length=100, null=True, blank=True, verbose_name="Webhook Verify Token"
     )
     whatsapp_enabled = models.BooleanField(
-        default=False,
-        verbose_name="WhatsApp habilitado"
+        default=False, verbose_name="WhatsApp habilitado"
     )
     reminder_hours_before = models.IntegerField(
-        default=24,
-        verbose_name="Horas antes para recordatorio"
+        default=24, verbose_name="Horas antes para recordatorio"
     )
-    
+
     history = HistoricalRecords()
-    
+
     # --- PERFIL PÚBLICO (Portal Paciente) ---
     bio = models.TextField(
-        blank=True, 
-        null=True, 
-        help_text="Biografía corta del doctor para el perfil público"
+        blank=True,
+        null=True,
+        help_text="Biografía corta del doctor para el perfil público",
     )
     photo = models.ImageField(
-        upload_to="doctor_photos/", 
-        blank=True, 
+        upload_to="doctor_photos/",
+        blank=True,
         null=True,
-        help_text="Foto de perfil del doctor"
+        help_text="Foto de perfil del doctor",
     )
-    
-    
+
     class Meta:
         verbose_name = "Médico Operador"
         verbose_name_plural = "Médicos Operadores"
-        ordering = ['full_name']
-    
+        ordering = ["full_name"]
+
     # --- PROPERTIES INTELIGENTES ---
     @property
     def formal_title(self):
         """Devuelve Dr. o Dra. según el sexo registrado"""
-        prefix = "Dra." if self.gender == 'F' else "Dr."
+        prefix = "Dra." if self.gender == "F" else "Dr."
         return f"{prefix} {self.full_name}"
-    
+
     def __str__(self):
         status = "[VERIFIED]" if self.is_verified else "[PENDING]"
         return f"{status} {self.formal_title} — {self.colegiado_id}"
-    
+
     def clean(self):
         """Validaciones de integridad antes de persistir en DB"""
         from django.core.exceptions import ValidationError
+
         if self.is_verified and not self.signature:
             raise ValidationError(
                 "Seguridad MedOpz: Un Médico Verificado requiere firma digitalizada para operar."
             )
-    
+
     def save(self, *args, **kwargs):
         self.full_name = normalize_title_case(self.full_name)
+        super().save(*args, **kwargs)
+
+
+class DoctorInvitation(models.Model):
+    email = models.EmailField(help_text="Email del médico invitado")
+    token = models.CharField(
+        max_length=64,
+        unique=True,
+        editable=False,
+        help_text="Token criptográfico único de 64 caracteres",
+    )
+    specialty = models.ForeignKey(
+        "Specialty",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="invitations",
+        help_text="Especialidad sugerida (opcional, puede confirmar/elegir en activación)",
+    )
+    invited_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="sent_invitations",
+    )
+    institution = models.ForeignKey(
+        "InstitutionSettings",
+        on_delete=models.CASCADE,
+        related_name="doctor_invitations",
+    )
+    expires_at = models.DateTimeField()
+    is_used = models.BooleanField(
+        default=False, help_text="Si True, la invitación ya fue canjeada"
+    )
+    used_at = models.DateTimeField(null=True, blank=True)
+    used_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="activated_invitation",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Invitación de Médico"
+        verbose_name_plural = "Invitaciones de Médicos"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        status = "USED" if self.is_used else "PENDING"
+        return f"[{status}] {self.email} → {self.institution}"
+
+    @classmethod
+    def generate_token(cls):
+        import secrets
+
+        return secrets.token_hex(32)
+
+    def is_expired(self):
+        return now() > self.expires_at
+
+    def is_valid(self):
+        return not self.is_used and not self.is_expired()
+
+    def activate(self, user):
+        if not self.is_valid():
+            raise ValidationError("Invitación inválida o expirada")
+        self.is_used = True
+        self.used_at = now()
+        self.used_by = user
+        self.save()
+
+    def save(self, *args, **kwargs):
+        if not self.token:
+            self.token = self.generate_token()
+        if not self.expires_at:
+            self.expires_at = now() + timedelta(days=7)
         super().save(*args, **kwargs)
 
 
@@ -1954,8 +2159,12 @@ class BCVRateCache(models.Model):
 
 class MedicalReport(models.Model):
     # Relaciones de contexto
-    appointment = models.ForeignKey("Appointment", on_delete=models.CASCADE, related_name="medical_reports")
-    patient = models.ForeignKey("Patient", on_delete=models.CASCADE, related_name="medical_reports")
+    appointment = models.ForeignKey(
+        "Appointment", on_delete=models.CASCADE, related_name="medical_reports"
+    )
+    patient = models.ForeignKey(
+        "Patient", on_delete=models.CASCADE, related_name="medical_reports"
+    )
     # NUEVO: CACHÉ de doctor e institution para rendimiento y reportes
     doctor = models.ForeignKey(
         "DoctorOperator",
@@ -1964,7 +2173,7 @@ class MedicalReport(models.Model):
         blank=True,
         editable=False,
         related_name="medical_reports",
-        verbose_name="Médico asociado"
+        verbose_name="Médico asociado",
     )
     institution = models.ForeignKey(
         "InstitutionSettings",
@@ -1973,21 +2182,30 @@ class MedicalReport(models.Model):
         blank=True,
         editable=False,
         related_name="medical_reports",
-        verbose_name="Sede asociada"
+        verbose_name="Sede asociada",
     )
     # Metadatos
     created_at = models.DateTimeField(default=timezone.now)
     status = models.CharField(max_length=20, default="generated")
-    file_url = models.CharField(max_length=255, blank=True, null=True)  # opcional, si guardas PDF
+    file_url = models.CharField(
+        max_length=255, blank=True, null=True
+    )  # opcional, si guardas PDF
+
     class Meta:
         verbose_name = "Informe Médico"
         verbose_name_plural = "Informes Médicos"
         indexes = [
-            models.Index(fields=['doctor', 'created_at']), # NUEVO: Optimización para reportes por médico
-            models.Index(fields=['institution', 'created_at']), # NUEVO: Optimización para reportes por sede
+            models.Index(
+                fields=["doctor", "created_at"]
+            ),  # NUEVO: Optimización para reportes por médico
+            models.Index(
+                fields=["institution", "created_at"]
+            ),  # NUEVO: Optimización para reportes por sede
         ]
+
     def __str__(self):
         return f"Informe Médico #{self.id} - Paciente {self.patient_id}"
+
     def save(self, *args, **kwargs):
         # NUEVO: Auto-completar doctor e institution desde appointment
         if self.appointment:
@@ -1998,15 +2216,21 @@ class MedicalReport(models.Model):
 
 # --- Catálogo institucional ICD‑11 ---
 class ICD11Entry(models.Model):
-    icd_code = models.CharField(max_length=20)   # Ej: "01", "CA23.0"
-    title = models.CharField(max_length=255)     # Ej: "Asma"
-    foundation_id = models.CharField(max_length=200, blank=True, null=True)  # ID foundation OMS o @id
-    definition = models.TextField(blank=True, null=True)      # Texto oficial OMS
-    synonyms = models.JSONField(blank=True, null=True)        # Lista de sinónimos
-    parent_code = models.CharField(max_length=20, blank=True, null=True)     # Jerarquía inmediata
-    exclusions = models.JSONField(blank=True, null=True)      # Exclusiones (lista de dicts)
-    children = models.JSONField(blank=True, null=True)        # Hijos (lista de URLs o códigos)
-    language = models.CharField(max_length=5, default="es")   # Idioma del entry
+    icd_code = models.CharField(max_length=20)  # Ej: "01", "CA23.0"
+    title = models.CharField(max_length=255)  # Ej: "Asma"
+    foundation_id = models.CharField(
+        max_length=200, blank=True, null=True
+    )  # ID foundation OMS o @id
+    definition = models.TextField(blank=True, null=True)  # Texto oficial OMS
+    synonyms = models.JSONField(blank=True, null=True)  # Lista de sinónimos
+    parent_code = models.CharField(
+        max_length=20, blank=True, null=True
+    )  # Jerarquía inmediata
+    exclusions = models.JSONField(blank=True, null=True)  # Exclusiones (lista de dicts)
+    children = models.JSONField(
+        blank=True, null=True
+    )  # Hijos (lista de URLs o códigos)
+    language = models.CharField(max_length=5, default="es")  # Idioma del entry
 
     # Auditoría mínima del catálogo
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
@@ -2025,10 +2249,11 @@ class ICD11Entry(models.Model):
         return f"{self.icd_code} — {self.title}"
 
 
-
 class ICD11UpdateLog(models.Model):
     run_at = models.DateTimeField(auto_now_add=True)
-    source = models.CharField(max_length=255, blank=True, null=True)   # URL/archivo/hash de origen
+    source = models.CharField(
+        max_length=255, blank=True, null=True
+    )  # URL/archivo/hash de origen
     added = models.IntegerField(default=0)
     updated = models.IntegerField(default=0)
     removed = models.IntegerField(default=0)
@@ -2047,19 +2272,26 @@ class SnomedEntry(models.Model):
     ~350,000 conceptos. Se sincroniza vía Snowstorm microservice.
     Este modelo sirve como cache local y fallback.
     """
+
     concept_id = models.CharField(max_length=20, unique=True, verbose_name="Concept ID")
     term = models.CharField(max_length=500, verbose_name="Término preferido")
     definition = models.TextField(blank=True, null=True, verbose_name="Definición")
-    semantic_tag = models.CharField(max_length=100, blank=True, null=True, verbose_name="Semantic Tag")
-    hierarchy = models.CharField(max_length=200, blank=True, null=True, verbose_name="Jerarquía completa")
-    parent_concept_id = models.CharField(max_length=20, blank=True, null=True, verbose_name="Concepto padre")
+    semantic_tag = models.CharField(
+        max_length=100, blank=True, null=True, verbose_name="Semantic Tag"
+    )
+    hierarchy = models.CharField(
+        max_length=200, blank=True, null=True, verbose_name="Jerarquía completa"
+    )
+    parent_concept_id = models.CharField(
+        max_length=20, blank=True, null=True, verbose_name="Concepto padre"
+    )
     synonyms = models.JSONField(blank=True, null=True, verbose_name="Sinónimos")
     language = models.CharField(max_length=5, default="es", verbose_name="Idioma")
     is_active = models.BooleanField(default=True, verbose_name="Activo")
-    
+
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
-    
+
     class Meta:
         verbose_name = "SNOMED CT entry"
         verbose_name_plural = "SNOMED CT entries"
@@ -2068,7 +2300,7 @@ class SnomedEntry(models.Model):
             models.Index(fields=["term"]),
             models.Index(fields=["semantic_tag"]),
         ]
-    
+
     def __str__(self):
         return f"{self.concept_id} — {self.term}"
 
@@ -2079,26 +2311,23 @@ class SnomedUpdateLog(models.Model):
     added = models.IntegerField(default=0)
     updated = models.IntegerField(default=0)
     removed = models.IntegerField(default=0)
-    
+
     class Meta:
         verbose_name = "SNOMED CT update log"
         verbose_name_plural = "SNOMED CT update logs"
-    
+
     def __str__(self):
         return f"SNOMED update @ {self.run_at} (+{self.added} ~{self.updated} -{self.removed})"
 
 
-
 class MedicalTestCatalog(models.Model):
     institution = models.ForeignKey(
-        "InstitutionSettings", 
-        on_delete=models.CASCADE, 
-        related_name="test_catalog"
+        "InstitutionSettings", on_delete=models.CASCADE, related_name="test_catalog"
     )
     name = models.CharField(max_length=255, help_text="Nombre del examen")
     code = models.CharField(max_length=50, help_text="Código interno, CUPS o CPT")
     category = models.CharField(
-        max_length=50, 
+        max_length=50,
         choices=[
             # === LABORATORIO CLÍNICO ===
             ("lab_hematology", "Laboratorio → Hematología"),
@@ -2111,7 +2340,6 @@ class MedicalTestCatalog(models.Model):
             ("lab_toxicology", "Laboratorio → Toxicología"),
             ("lab_coagulation", "Laboratorio → Coagulación"),
             ("lab_special", "Laboratorio → Pruebas Especiales"),
-            
             # === IMAGENOLOGÍA ===
             ("img_xray", "Imagenología → Rayos X"),
             ("img_ultrasound", "Imagenología → Ecografía"),
@@ -2122,54 +2350,53 @@ class MedicalTestCatalog(models.Model):
             ("img_fluoroscopy", "Imagenología → Fluoroscopía"),
             ("img_angiography", "Imagenología → Angiografía"),
             ("img_nuclear", "Imagenología → Medicina Nuclear"),
-            
             # === CARDIOLOGÍA ===
             ("card_ecg", "Cardiología → Electrocardiograma"),
             ("card_echo", "Cardiología → Ecocardiograma"),
             ("card_stress", "Cardiología → Prueba de Esfuerzo"),
             ("card_holter", "Cardiología → Holter / Monitoreo"),
-            
             # === NEUROLOGÍA ===
             ("neuro_eeg", "Neurología → Electroencefalograma"),
             ("neuro_emg", "Neurología → Electromiografía"),
             ("neuro_evoked", "Neurología → Potenciales Evocados"),
-            
             # === FUNCIÓN PULMONAR ===
             ("pulmo_spirometry", "Neumología → Espirometría"),
             ("pulmo_pft", "Neumología → Pruebas Funcionales"),
             ("pulmo_oximetry", "Neumología → Oximetría"),
-            
             # === ENDOSCOPIA ===
             ("endo_gastro", "Endoscopía → Gastroscopía"),
             ("endo_colono", "Endoscopía → Colonoscopía"),
             ("endo_broncho", "Endoscopía → Broncoscopía"),
-            
             # === OFTALMOLOGÍA ===
             ("ophth_slit", "Oftalmología → Lámpara de Hendidura"),
             ("ophth_oct", "Oftalmología → OCT"),
             ("ophth_visual", "Oftalmología → Campo Visual"),
             ("ophth_tonometry", "Oftalmología → Tonometría"),
-            
             # === OTROS ===
             ("other_audiometry", "Otros → Audiometría"),
             ("other_biopsy", "Otros → Biopsia"),
             ("other_genetic", "Otros → Genética"),
             ("other_special", "Otros → Especiales"),
         ],
-        default="lab_special"
+        default="lab_special",
     )
-    base_price = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    base_price = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
     is_active = models.BooleanField(default=True)
     description = models.TextField(blank=True, null=True)
+
     class Meta:
         verbose_name = "Catálogo de Examen"
         verbose_name_plural = "Catálogo de Exámenes"
-        unique_together = ('institution', 'code')
+        unique_together = ("institution", "code")
+
     def save(self, *args, **kwargs):
         self.name = normalize_title_case(self.name)
         if self.description:
             self.description = normalize_title_case(self.description)
         super().save(*args, **kwargs)
+
     def __str__(self):
         return f"[{self.institution.name}] {self.name} ({self.code})"
 
@@ -2185,7 +2412,6 @@ class MedicalTest(models.Model):
         ("blood_type", "Grupo Sanguíneo y Rh"),
         ("peripheral_smear", "Frotis de Sangre Periférica"),
         ("bone_marrow", "Aspirado de Médula Ósea"),
-        
         # === BIOQUÍMICA ===
         ("glucose", "Glucemia"),
         ("glucose_2h", "Glucemia Post-Prandial (2h)"),
@@ -2208,21 +2434,18 @@ class MedicalTest(models.Model):
         ("protein_total", "Proteínas Totales / Albúmina"),
         ("bilirubin", "Bilirrubinas"),
         ("creatinine_clearance", "Depuración de Creatinina"),
-        
         # === UROANÁLISIS ===
         ("urinalysis", "Uroanálisis Completo"),
         ("urine_culture", "Urocultivo"),
         ("urine_24h", "Orina 24 Horas"),
         ("urine_protein", "Proteinuria 24h"),
         ("urine_microalbumin", "Microalbuminuria"),
-        
         # === HECES ===
         ("stool_routine", "Examen de Heces"),
         ("stool_occult", "Sangre Oculta en Heces"),
         ("stool_parasites", "Parasitológico en Heces"),
         ("stool_culture", "Coprocultivo"),
         ("stool_elisa", "Antígeno en Heces (ELISA)"),
-        
         # === MICROBIOLOGÍA ===
         ("blood_culture", "Hemocultivo"),
         ("wound_culture", "Cultivo de Herida"),
@@ -2239,7 +2462,6 @@ class MedicalTest(models.Model):
         ("bacterial_panel", "Panel Bacteriano"),
         ("fungus_culture", "Cultivo de Hongos"),
         ("mycobacteria", "Micobacterias (BK)"),
-        
         # === INMUNOLOGÍA ===
         ("hiv_test", "Prueba VIH (ELISA/Rápida)"),
         ("hepatitis_panel", "Panel Hepatitis (A/B/C)"),
@@ -2252,7 +2474,6 @@ class MedicalTest(models.Model):
         ("immunoglobulins", "Inmunoglobulinas (IgG/IgA/IgM)"),
         ("complement", "Complemento (C3/C4)"),
         ("cryoglobulins", "Cryoglobulinas"),
-        
         # === HORMONAS ===
         ("cortisol", "Cortisol"),
         ("acth", "ACTH"),
@@ -2265,7 +2486,6 @@ class MedicalTest(models.Model):
         ("dhea", "DHEA-S"),
         ("insulin", "Insulina"),
         ("peptide_c", "Péptido C"),
-        
         # === IMAGENOLOGÍA - RAYOS X ===
         ("xray_chest", "Radiografía de Tórax"),
         ("xray_abdomen", "Radiografía de Abdomen"),
@@ -2279,7 +2499,6 @@ class MedicalTest(models.Model):
         ("xray_extremity", "Radiografía de Extremidades"),
         ("xray_dental", "Radiografía Dental"),
         ("xray_contrast", "Radiografía con Contraste"),
-        
         # === IMAGENOLOGÍA - ECOGRAFÍA ===
         ("ultrasound_abdo", "Ecografía Abdominal"),
         ("ultrasound_pelvic", "Ecografía Pélvica"),
@@ -2292,7 +2511,6 @@ class MedicalTest(models.Model):
         ("ultrasound_testicular", "Ecografía Testicular"),
         ("ultrasound_soft_tissue", "Ecografía de Partes Blandas"),
         ("ultrasound_joint", "Ecografía Articular"),
-        
         # === IMAGENOLOGÍA - TOMOGRAFÍA ===
         ("ct_head", "TC de Cráneo"),
         ("ct_brain_angio", "TC Cerebral con Angio"),
@@ -2304,7 +2522,6 @@ class MedicalTest(models.Model):
         ("ct_sinus", "TC de Senos Paranasales"),
         ("ct_cardiac", "TC Cardíaca"),
         ("ct_angio", "TC Angiografía"),
-        
         # === IMAGENOLOGÍA - RESONANCIA ===
         ("mri_brain", "RM Cerebral"),
         ("mri_spine", "RM de Columna"),
@@ -2315,7 +2532,6 @@ class MedicalTest(models.Model):
         ("mri_angio", "RM Angiografía"),
         ("mri_prostate", "RM Prostática"),
         ("mri_breast", "RM Mamaria"),
-        
         # === IMAGENOLOGÍA - OTROS ===
         ("mammography", "Mamografía"),
         ("mammography_3d", "Tomosíntesis Mamaria"),
@@ -2330,7 +2546,6 @@ class MedicalTest(models.Model):
         ("thyroid_scan", "Gammagrafía Tiroidea"),
         ("lung_scan", "Gammagrafía Pulmonar"),
         ("renal_scan", "Gammagrafía Renal"),
-        
         # === CARDIOLOGÍA ===
         ("ecg_12lead", "ECG 12 Derivaciones"),
         ("ecg_holter", "Holter 24h"),
@@ -2342,7 +2557,6 @@ class MedicalTest(models.Model):
         ("ambulatory_bp", "MAPA (Presión 24h)"),
         ("tilt_test", "Prueba de Mesa Inclinada"),
         ("abi", "Índice Tobillo-Brazo"),
-        
         # === NEUMOLOGÍA ===
         ("spirometry", "Espirometría"),
         ("spirometry_post", "Espirometría Post-Broncodilatador"),
@@ -2351,7 +2565,6 @@ class MedicalTest(models.Model):
         ("sleep_study", "Polisomnografía"),
         ("capnography", "Capnografía"),
         ("diffusion_capacity", "Capacidad de Difusión"),
-        
         # === NEUROLOGÍA ===
         ("eeg", "Electroencefalograma"),
         ("eeg_video", "Video-EEG"),
@@ -2361,7 +2574,6 @@ class MedicalTest(models.Model):
         ("vep", "Potenciales Evocados Visuales"),
         ("baep", "Potenciales Evocados Auditivos"),
         ("sep", "Potenciales Evocados Somatosensoriales"),
-        
         # === ENDOSCOPIA ===
         ("endoscopy_ugi", "Endoscopía Alta (EGD)"),
         ("colonoscopy", "Colonoscopía"),
@@ -2375,7 +2587,6 @@ class MedicalTest(models.Model):
         ("thoracoscopy", "Toracoscopía"),
         ("laparoscopy", "Laparoscopía Diagnóstica"),
         ("arthroscopy", "Artroscopía"),
-        
         # === OFTALMOLOGÍA ===
         ("visual_acuity", "Agudeza Visual"),
         ("tonometry", "Tonometría"),
@@ -2388,7 +2599,6 @@ class MedicalTest(models.Model):
         ("pachymetry", "Paquimetría"),
         ("biometry", "Biometría Ocular"),
         ("color_vision", "Test de Visión de Colores"),
-        
         # === OTORRINOLARINGOLOGÍA ===
         ("audiometry", "Audiometría"),
         ("audiometry_speech", "Audiometría con Logoaudiometría"),
@@ -2398,7 +2608,6 @@ class MedicalTest(models.Model):
         ("nasendoscopy", "Nasofibroscopía"),
         ("laryngoscopy", "Laringoscopía"),
         ("vestibular_test", "Pruebas Vestibulares"),
-        
         # === GINECO-OBSTETRICIA ===
         ("papanicolaou", "Papanicolaou"),
         ("colposcopy", "Colposcopía"),
@@ -2408,7 +2617,6 @@ class MedicalTest(models.Model):
         ("nfetal_monitoring", "Monitoreo Fetal"),
         ("biophysical_profile", "Perfil Biofísico Fetal"),
         ("semen_analysis", "Espermatograma"),
-        
         # === PROCEDIMIENTOS ESPECIALES ===
         ("biopsy", "Biopsia"),
         ("biopsy_skin", "Biopsia de Piel"),
@@ -2423,7 +2631,6 @@ class MedicalTest(models.Model):
         ("paracentesis", "Paracentesis"),
         ("arthrocentesis", "Artrocentesis"),
         ("bonemarrow_biopsy", "Biopsia de Médula Ósea"),
-        
         # === GENÉTICA ===
         ("genetic_test", "Prueba Genética"),
         ("karyotype", "Cariotipo"),
@@ -2432,13 +2639,11 @@ class MedicalTest(models.Model):
         ("newborn_screening", "Tamizaje Neonatal"),
         ("paternity_test", "Prueba de Paternidad"),
         ("pharmacogenomics", "Farmacogenómica"),
-        
         # === TOXICOLOGÍA ===
         ("drug_screen", "Tamizaje de Drogas"),
         ("alcohol_test", "Prueba de Alcohol"),
         ("heavy_metals", "Metales Pesados"),
         ("therapeutic_drug", "Monitoreo de Fármacos"),
-        
         # === OTROS ===
         ("pregnancy_test", "Prueba de Embarazo"),
         ("sweat_test", "Test del Sudor"),
@@ -2462,23 +2667,21 @@ class MedicalTest(models.Model):
     ]
     # --- Relaciones de Contexto ---
     appointment = models.ForeignKey(
-        "Appointment",
-        on_delete=models.CASCADE,
-        related_name="medical_tests"
+        "Appointment", on_delete=models.CASCADE, related_name="medical_tests"
     )
     institution = models.ForeignKey(
         "InstitutionSettings",
         on_delete=models.CASCADE,
         related_name="issued_medical_tests",
         null=True,
-        blank=True
+        blank=True,
     )
     diagnosis = models.ForeignKey(
         "Diagnosis",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="medical_tests"
+        related_name="medical_tests",
     )
     # --- El Vínculo con el Catálogo ---
     catalog_item = models.ForeignKey(
@@ -2487,48 +2690,41 @@ class MedicalTest(models.Model):
         null=True,
         blank=True,
         related_name="orders",
-        help_text="Vínculo al catálogo institucional para precios y códigos"
+        help_text="Vínculo al catálogo institucional para precios y códigos",
     )
     # --- Datos de la Orden ---
-    test_type = models.CharField(
-        max_length=50,
-        choices=TEST_TYPE_CHOICES
-    )
+    test_type = models.CharField(max_length=50, choices=TEST_TYPE_CHOICES)
     test_name_override = models.CharField(
         max_length=255,
         blank=True,
-        help_text="Se llena automáticamente del catálogo o manual si no existe en él"
+        help_text="Se llena automáticamente del catálogo o manual si no existe en él",
     )
     urgency = models.CharField(
-        max_length=20,
-        choices=URGENCY_CHOICES,
-        default="routine"
+        max_length=20, choices=URGENCY_CHOICES, default="routine"
     )
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default="pending"
-    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     description = models.TextField(
-        blank=True, 
-        help_text="Instrucciones para el paciente (ej: Ayuno, toma de agua)"
+        blank=True, help_text="Instrucciones para el paciente (ej: Ayuno, toma de agua)"
     )
     # Auditoría
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
     class Meta:
         verbose_name = "Orden de Examen"
         verbose_name_plural = "Órdenes de Exámenes"
+
     def save(self, *args, **kwargs):
         # 1. Heredar la institución de la cita si no se provee
         if not self.institution and self.appointment:
             self.institution = self.appointment.institution
-        
+
         # 2. Si hay un ítem de catálogo, asegurar que el nombre override esté sincronizado
         if self.catalog_item and not self.test_name_override:
             self.test_name_override = self.catalog_item.name
-            
+
         super().save(*args, **kwargs)
+
     def __str__(self):
         name = self.test_name_override or self.get_test_type_display()
         return f"{name} — {self.get_status_display()}"
@@ -2544,24 +2740,19 @@ class MedicalReferral(models.Model):
         ("issued", "Emitida"),
         ("accepted", "Aceptada"),
         ("rejected", "Rechazada"),
-        ("completed", "Completada"), # Para cuando el referido ya atendió al paciente
+        ("completed", "Completada"),  # Para cuando el referido ya atendió al paciente
     ]
     appointment = models.ForeignKey(
-        "Appointment",
-        on_delete=models.CASCADE,
-        related_name="referrals"
+        "Appointment", on_delete=models.CASCADE, related_name="referrals"
     )
     diagnosis = models.ForeignKey(
         "Diagnosis",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="referrals"
+        related_name="referrals",
     )
-    specialties = models.ManyToManyField(
-        "Specialty",
-        related_name="referrals"
-    )
+    specialties = models.ManyToManyField("Specialty", related_name="referrals")
     # NUEVO: CACHÉ de patient, doctor e institution para rendimiento y reportes
     patient = models.ForeignKey(
         "Patient",
@@ -2570,7 +2761,7 @@ class MedicalReferral(models.Model):
         blank=True,
         editable=False,
         related_name="referrals",
-        verbose_name="Paciente referido"
+        verbose_name="Paciente referido",
     )
     doctor = models.ForeignKey(
         "DoctorOperator",
@@ -2579,7 +2770,7 @@ class MedicalReferral(models.Model):
         blank=True,
         editable=False,
         related_name="issued_referrals",
-        verbose_name="Médico que emite la referencia"
+        verbose_name="Médico que emite la referencia",
     )
     institution = models.ForeignKey(
         "InstitutionSettings",
@@ -2588,7 +2779,7 @@ class MedicalReferral(models.Model):
         blank=True,
         editable=False,
         related_name="issued_referrals",
-        verbose_name="Sede donde se emitió"
+        verbose_name="Sede donde se emitió",
     )
     # --- El Corazón de la Red MedOpz ---
     referred_to_doctor = models.ForeignKey(
@@ -2597,38 +2788,57 @@ class MedicalReferral(models.Model):
         null=True,
         blank=True,
         related_name="received_referrals",
-        help_text="Médico interno registrado en MedOpz (DESTINO)"
+        help_text="Médico interno registrado en MedOpz (DESTINO)",
     )
-    
+
     referred_to_external = models.CharField(
         max_length=255,
         null=True,
         blank=True,
-        help_text="Nombre del doctor o clínica externa (si no está en MedOpz) (DESTINO)"
+        help_text="Nombre del doctor o clínica externa (si no está en MedOpz) (DESTINO)",
     )
     # Metadatos clínicos
-    urgency = models.CharField(max_length=20, choices=URGENCY_CHOICES, default="routine")
+    urgency = models.CharField(
+        max_length=20, choices=URGENCY_CHOICES, default="routine"
+    )
     reason = models.TextField(help_text="Motivo clínico de la referencia")
-    clinical_summary = models.TextField(blank=True, null=True, help_text="Resumen para el colega")
-    
+    clinical_summary = models.TextField(
+        blank=True, null=True, help_text="Resumen para el colega"
+    )
+
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="issued")
-    
+
     # Tracking para el futuro
     is_internal = models.BooleanField(default=False, editable=False)
     issued_at = models.DateTimeField(auto_now_add=True)
+
     class Meta:
         verbose_name = "Referencia Médica"
         verbose_name_plural = "Referencias Médicas"
         indexes = [
-            models.Index(fields=['doctor', 'issued_at']), # NUEVO: Referencias emitidas por médico
-            models.Index(fields=['institution', 'issued_at']), # NUEVO: Referencias emitidas por sede
-            models.Index(fields=['patient', 'issued_at']), # NUEVO: Referencias de paciente
-            models.Index(fields=['referred_to_doctor', 'status']), # Referencias recibidas
+            models.Index(
+                fields=["doctor", "issued_at"]
+            ),  # NUEVO: Referencias emitidas por médico
+            models.Index(
+                fields=["institution", "issued_at"]
+            ),  # NUEVO: Referencias emitidas por sede
+            models.Index(
+                fields=["patient", "issued_at"]
+            ),  # NUEVO: Referencias de paciente
+            models.Index(
+                fields=["referred_to_doctor", "status"]
+            ),  # Referencias recibidas
         ]
+
     def __str__(self):
-        destinatario = self.referred_to_doctor.full_name if self.referred_to_doctor else self.referred_to_external
+        destinatario = (
+            self.referred_to_doctor.full_name
+            if self.referred_to_doctor
+            else self.referred_to_external
+        )
         emisor = self.doctor.full_name if self.doctor else "Desconocido"
         return f"Referencia de {emisor} a {destinatario} ({self.get_status_display()})"
+
     def save(self, *args, **kwargs):
         # NUEVO: Auto-completar patient, doctor e institution desde appointment
         if self.appointment:
@@ -2638,7 +2848,7 @@ class MedicalReferral(models.Model):
                 self.doctor = self.appointment.doctor
             if not self.institution:
                 self.institution = self.appointment.institution
-        
+
         # Determinamos automáticamente si es una referencia interna
         if self.referred_to_doctor:
             self.is_internal = True
@@ -2682,6 +2892,7 @@ SPECIALTY_CHOICES = [
     ("other", "Other (Otro)"),
 ]
 
+
 class Specialty(models.Model):
     CATEGORY_CHOICES = [
         ("medical", "Médica (Clínica)"),
@@ -2692,37 +2903,35 @@ class Specialty(models.Model):
     ]
 
     code = models.CharField(
-        max_length=20, 
-        unique=True, 
-        help_text="Código estándar (ej: RNE, CPT o código interno)"
+        max_length=20,
+        unique=True,
+        help_text="Código estándar (ej: RNE, CPT o código interno)",
     )
     name = models.CharField(max_length=100)
-    
+
     # --- Clasificación ---
     category = models.CharField(
-        max_length=20, 
-        choices=CATEGORY_CHOICES, 
-        default="medical"
+        max_length=20, choices=CATEGORY_CHOICES, default="medical"
     )
-    
+
     # --- Jerarquía (Permite Sub-especialidades) ---
     parent = models.ForeignKey(
-        'self', 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
-        related_name='subspecialties',
-        help_text="Especialidad raíz (ej: Cardiología es hijo de Medicina Interna)"
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="subspecialties",
+        help_text="Especialidad raíz (ej: Cardiología es hijo de Medicina Interna)",
     )
 
     # --- Metadatos ---
     description = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
     icon_name = models.CharField(
-        max_length=50, 
-        blank=True, 
-        null=True, 
-        help_text="Nombre del icono para el Frontend (ej: 'heart-pulse')"
+        max_length=50,
+        blank=True,
+        null=True,
+        help_text="Nombre del icono para el Frontend (ej: 'heart-pulse')",
     )
 
     class Meta:
@@ -2734,7 +2943,7 @@ class Specialty(models.Model):
         if self.parent:
             return f"{self.parent.name} > {self.name}"
         return self.name
-    
+
     def save(self, *args, **kwargs):
         self.name = normalize_title_case(self.name)
         if self.description:
@@ -2745,50 +2954,49 @@ class Specialty(models.Model):
 class MedicationCatalog(models.Model):
     """
     Catálogo maestro de medicamentos para MEDOPZ.
-    
+
     Puede almacenar:
     1. Medicamentos del catálogo global (institution=NULL)
     2. Medicamentos personalizados por institución (institution=ID)
-    
+
     Los datos del INHRR se scrapean y guardan como catálogo global.
     """
+
     # --------------------------------------------------------------------------
     # IDENTIFICACIÓN CORE
     # --------------------------------------------------------------------------
     name = models.CharField(
         max_length=500,
-        help_text="Nombre comercial o genérico principal (ej: Atamel, Loratadina + Pseudoefedrina)"
+        help_text="Nombre comercial o genérico principal (ej: Atamel, Loratadina + Pseudoefedrina)",
     )
     generic_name = models.CharField(
         max_length=500,
         blank=True,
         null=True,
-        help_text="Principio activo (ej: Acetaminofén, Loratadina + Pseudoefedrina)"
+        help_text="Principio activo (ej: Acetaminofén, Loratadina + Pseudoefedrina)",
     )
-    
+
     # --------------------------------------------------------------------------
     # ESPECIFICACIONES TÉCNICAS
     # --------------------------------------------------------------------------
     presentation = models.CharField(
         max_length=50,
         choices=PRESENTATION_CHOICES,
-        help_text="Forma farmacéutica (tableta, jarabe, cápsula, etc.)"
+        help_text="Forma farmacéutica (tableta, jarabe, cápsula, etc.)",
     )
     concentration = models.CharField(
         max_length=200,
-        help_text="Concentración del medicamento (ej: 500 mg, 5mg/60mg por 5ml)"
+        help_text="Concentración del medicamento (ej: 500 mg, 5mg/60mg por 5ml)",
     )
     route = models.CharField(
-        max_length=20,
-        choices=ROUTE_CHOICES,
-        help_text="Vía de administración"
+        max_length=20, choices=ROUTE_CHOICES, help_text="Vía de administración"
     )
     unit = models.CharField(
         max_length=20,
         choices=UNIT_CHOICES,
-        help_text="Unidad de medida de la concentración"
+        help_text="Unidad de medida de la concentración",
     )
-    
+
     # --------------------------------------------------------------------------
     # PRESENTACIÓN COMPLETA
     # --------------------------------------------------------------------------
@@ -2797,9 +3005,9 @@ class MedicationCatalog(models.Model):
         max_length=100,
         blank=True,
         null=True,
-        help_text="Tamaño de la presentación (ej: Jarabe x 60 ml, Tableta x 30)"
+        help_text="Tamaño de la presentación (ej: Jarabe x 60 ml, Tableta x 30)",
     )
-    
+
     # --------------------------------------------------------------------------
     # CONCENTRACIÓN DETALLADA (PARA MEDICAMENTOS COMBINADOS)
     # --------------------------------------------------------------------------
@@ -2807,9 +3015,9 @@ class MedicationCatalog(models.Model):
     concentration_detail = models.JSONField(
         default=list,
         blank=True,
-        help_text="Concentración detallada para medicamentos combinados"
+        help_text="Concentración detallada para medicamentos combinados",
     )
-    
+
     # --------------------------------------------------------------------------
     # CLASIFICACIÓN Y CÓDIGOS
     # --------------------------------------------------------------------------
@@ -2818,39 +3026,39 @@ class MedicationCatalog(models.Model):
         unique=True,
         blank=True,
         null=True,
-        help_text="Código de barras, SKU o código nacional de fármaco"
+        help_text="Código de barras, SKU o código nacional de fármaco",
     )
-    
+
     # Código de registro del INHRR (ej: E.F.42.246)
     inhrr_code = models.CharField(
         max_length=50,
         blank=True,
         null=True,
-        help_text="Código de registro sanitario del INHRR (ej: E.F.42.246)"
+        help_text="Código de registro sanitario del INHRR (ej: E.F.42.246)",
     )
-    
+
     # Clasificación ATC (si está disponible)
     atc_code = models.CharField(
         max_length=20,
         blank=True,
         null=True,
-        help_text="Código ATC (Clasificación Anatómica Terapéutica)"
+        help_text="Código ATC (Clasificación Anatómica Terapéutica)",
     )
-    
+
     is_controlled = models.BooleanField(
         default=False,
-        help_text="Marcar si requiere receta médica especial (psicotrópicos, etc.)"
+        help_text="Marcar si requiere receta médica especial (psicotrópicos, etc.)",
     )
-    
+
     # --------------------------------------------------------------------------
     # ACCIÓN TERAPÉUTICA
     # --------------------------------------------------------------------------
     therapeutic_action = models.TextField(
         blank=True,
         null=True,
-        help_text="Acción terapéutica (ej: Antihistamínico, Antiinflamatorio)"
+        help_text="Acción terapéutica (ej: Antihistamínico, Antiinflamatorio)",
     )
-    
+
     # --------------------------------------------------------------------------
     # GESTIÓN INSTITUCIONAL
     # --------------------------------------------------------------------------
@@ -2860,45 +3068,42 @@ class MedicationCatalog(models.Model):
         null=True,
         blank=True,
         related_name="custom_medications",
-        help_text="Si es nulo, es parte del catálogo maestro global de MedOpz"
+        help_text="Si es nulo, es parte del catálogo maestro global de MedOpz",
     )
-    
+
     # --------------------------------------------------------------------------
     # ESTATUS Y AUDITORÍA
     # --------------------------------------------------------------------------
     inhrr_status = models.CharField(
         max_length=20,
         choices=MEDICATION_STATUS_CHOICES,
-        default='VIGENTE',
-        help_text="Estatus del medicamento según el INHRR"
+        default="VIGENTE",
+        help_text="Estatus del medicamento según el INHRR",
     )
-    
+
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     # --------------------------------------------------------------------------
     # METADATOS DEL SCRAPING
     # --------------------------------------------------------------------------
     source = models.CharField(
         max_length=20,
-        default='INHRR',
-        help_text="Fuente de los datos (INHRR, MANUAL, etc.)"
+        default="INHRR",
+        help_text="Fuente de los datos (INHRR, MANUAL, etc.)",
     )
     last_scraped_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        help_text="Fecha del último scraping"
+        null=True, blank=True, help_text="Fecha del último scraping"
     )
-    
+
     # --------------------------------------------------------------------------
     # BÚSQUEDA FULL-TEXT
     # --------------------------------------------------------------------------
     search_vector = models.TextField(
-        blank=True,
-        help_text="Vector de búsqueda para full-text search"
+        blank=True, help_text="Vector de búsqueda para full-text search"
     )
-    
+
     class Meta:
         verbose_name = "Medicamento"
         verbose_name_plural = "Catálogo de Medicamentos"
@@ -2907,42 +3112,42 @@ class MedicationCatalog(models.Model):
         ]
         ordering = ["name", "presentation"]
         indexes = [
-            models.Index(fields=['name']),
-            models.Index(fields=['generic_name']),
-            models.Index(fields=['presentation']),
-            models.Index(fields=['route']),
-            models.Index(fields=['institution']),
-            models.Index(fields=['inhrr_status']),
-            models.Index(fields=['is_active']),
+            models.Index(fields=["name"]),
+            models.Index(fields=["generic_name"]),
+            models.Index(fields=["presentation"]),
+            models.Index(fields=["route"]),
+            models.Index(fields=["institution"]),
+            models.Index(fields=["inhrr_status"]),
+            models.Index(fields=["is_active"]),
         ]
-    
+
     def __str__(self):
         """Representación legible del medicamento."""
         institution_suffix = f" ({self.institution.name})" if self.institution else ""
         return f"{self.name} {self.get_presentation_display()} {self.concentration}{institution_suffix}"
-    
+
     def save(self, *args, **kwargs):
         """Normalización de texto y actualización de search_vector."""
-        
+
         # Normalizar nombre y nombre genérico a Title Case
         if self.name:
             self.name = self.name.title()
         if self.generic_name:
             self.generic_name = self.generic_name.title()
-        
+
         # Generar search_vector para full-text search
         search_parts = [
-            self.name or '',
-            self.generic_name or '',
-            self.presentation or '',
-            self.concentration or '',
-            self.therapeutic_action or '',
-            self.inhrr_code or '',
+            self.name or "",
+            self.generic_name or "",
+            self.presentation or "",
+            self.concentration or "",
+            self.therapeutic_action or "",
+            self.inhrr_code or "",
         ]
-        self.search_vector = ' '.join(filter(None, search_parts))
-        
+        self.search_vector = " ".join(filter(None, search_parts))
+
         super().save(*args, **kwargs)
-    
+
     # --------------------------------------------------------------------------
     # PROPIEDADES PARA UI
     # --------------------------------------------------------------------------
@@ -2950,36 +3155,36 @@ class MedicationCatalog(models.Model):
     def full_name(self):
         """Nombre completo para display en UI."""
         return f"{self.name} {self.get_presentation_display()} {self.concentration}"
-    
+
     @property
     def display_name(self):
         """Nombre para mostrar en dropdowns."""
         return self.name
-    
+
     @property
     def medication_type(self):
         """Tipo de medicamento para display."""
         return self.presentation
-    
+
     def to_dict(self):
         """Convierte el modelo a diccionario para APIs."""
         return {
-            'id': self.id,
-            'name': self.name,
-            'generic_name': self.generic_name,
-            'presentation': self.presentation,
-            'concentration': self.concentration,
-            'route': self.route,
-            'unit': self.unit,
-            'presentation_size': self.presentation_size,
-            'concentration_detail': self.concentration_detail,
-            'code': self.code,
-            'inhrr_code': self.inhrr_code,
-            'atc_code': self.atc_code,
-            'is_controlled': self.is_controlled,
-            'therapeutic_action': self.therapeutic_action,
-            'is_active': self.is_active,
-            'source': self.source,
+            "id": self.id,
+            "name": self.name,
+            "generic_name": self.generic_name,
+            "presentation": self.presentation,
+            "concentration": self.concentration,
+            "route": self.route,
+            "unit": self.unit,
+            "presentation_size": self.presentation_size,
+            "concentration_detail": self.concentration_detail,
+            "code": self.code,
+            "inhrr_code": self.inhrr_code,
+            "atc_code": self.atc_code,
+            "is_controlled": self.is_controlled,
+            "therapeutic_action": self.therapeutic_action,
+            "is_active": self.is_active,
+            "source": self.source,
         }
 
 
@@ -2994,22 +3199,23 @@ class PersonalHistory(models.Model):
         ("gineco_obstetrico", "Gineco-Obstétrico"),
     ]
     patient = models.ForeignKey(
-        Patient,
-        on_delete=models.CASCADE,
-        related_name="personal_history"
+        Patient, on_delete=models.CASCADE, related_name="personal_history"
     )
     type = models.CharField(max_length=50, choices=HISTORY_TYPES)
     description = models.TextField()
     date = models.DateField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
     class Meta:
         verbose_name = "Personal History"
         verbose_name_plural = "Personal Histories"
+
     def save(self, *args, **kwargs):
         if self.description:
             self.description = normalize_title_case(self.description)
         super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.patient} — {self.get_type_display()}"
 
@@ -3034,34 +3240,30 @@ class FamilyHistory(models.Model):
         ("nephew", "Sobrino/a"),
         ("niece", "Sobrina/a"),
     ]
-    
+
     patient = models.ForeignKey(
-        Patient,
-        on_delete=models.CASCADE,
-        related_name="family_history"
+        Patient, on_delete=models.CASCADE, related_name="family_history"
     )
     condition = models.CharField(max_length=255)
     relative = models.CharField(max_length=100, choices=RELATIONSHIP_CHOICES)
-    
+
     # ✅ NUEVO: Edad al momento del diagnóstico (importante para ICD-10)
     age_at_diagnosis = models.PositiveIntegerField(
-        blank=True, 
-        null=True,
-        help_text="Edad del familiar al momento del diagnóstico"
+        blank=True, null=True, help_text="Edad del familiar al momento del diagnóstico"
     )
-    
+
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         verbose_name = "Family History"
         verbose_name_plural = "Family Histories"
-    
+
     def save(self, *args, **kwargs):
         self.condition = normalize_title_case(self.condition)
         super().save(*args, **kwargs)
-    
+
     def __str__(self):
         return f"{self.patient} — {self.get_relative_display()} — {self.condition}"
 
@@ -3070,48 +3272,51 @@ class Bed(models.Model):
     """
     Gestión de camas hospitalarias MEDOPZ
     """
+
     BED_STATUS_CHOICES = [
-        ('available', 'Disponible'),
-        ('occupied', 'Ocupada'),
-        ('maintenance', 'En Mantenimiento'),
-        ('reserved', 'Reservada'),
+        ("available", "Disponible"),
+        ("occupied", "Ocupada"),
+        ("maintenance", "En Mantenimiento"),
+        ("reserved", "Reservada"),
     ]
-    
+
     BED_TYPE_CHOICES = [
-        ('general', 'Cama General'),
-        ('icu', 'UCI'),
-        ('pediatric', 'Pediátrica'),
-        ('isolation', 'Aislamiento'),
-        ('maternity', 'Maternidad'),
+        ("general", "Cama General"),
+        ("icu", "UCI"),
+        ("pediatric", "Pediátrica"),
+        ("isolation", "Aislamiento"),
+        ("maternity", "Maternidad"),
     ]
-    
+
     institution = models.ForeignKey(
         InstitutionSettings, on_delete=models.CASCADE, related_name="beds"
     )
     ward = models.CharField(max_length=100, verbose_name="Pabellón / Sala")
-    room_number = models.CharField(max_length=20, blank=True, null=True, verbose_name="Número de habitación")
+    room_number = models.CharField(
+        max_length=20, blank=True, null=True, verbose_name="Número de habitación"
+    )
     bed_number = models.CharField(max_length=20, verbose_name="Número de cama")
     bed_type = models.CharField(
-        max_length=20, choices=BED_TYPE_CHOICES, default='general'
+        max_length=20, choices=BED_TYPE_CHOICES, default="general"
     )
     status = models.CharField(
-        max_length=20, choices=BED_STATUS_CHOICES, default='available'
+        max_length=20, choices=BED_STATUS_CHOICES, default="available"
     )
     is_active = models.BooleanField(default=True)
     notes = models.TextField(blank=True, null=True, verbose_name="Notas")
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         verbose_name = "Cama"
         verbose_name_plural = "Camas"
-        ordering = ['ward', 'room_number', 'bed_number']
-        unique_together = ['institution', 'bed_number']
-    
+        ordering = ["ward", "room_number", "bed_number"]
+        unique_together = ["institution", "bed_number"]
+
     def __str__(self):
         return f"{self.ward} - Cama {self.bed_number} [{self.get_status_display()}]"
-    
+
     def save(self, *args, **kwargs):
         if self.ward:
             self.ward = normalize_title_case(self.ward)
@@ -3125,152 +3330,206 @@ class Surgery(models.Model):
     - Intra-operatorio: Registro quirúrgico, anestesia, equipo médico
     - Post-operatorio: Seguimiento, complicaciones, evolución
     """
-    
+
     SURGERY_TYPE_CHOICES = [
-        ('elective', 'Electiva / Programada'),
-        ('emergency', 'Emergencia'),
-        ('ambulatory', 'Ambulatoria'),
-        ('minimally_invasive', 'Mínimamente Invasiva'),
-        ('open', 'Cirugía Abierta'),
-        ('robotic', 'Robótica / Asistida'),
+        ("elective", "Electiva / Programada"),
+        ("emergency", "Emergencia"),
+        ("ambulatory", "Ambulatoria"),
+        ("minimally_invasive", "Mínimamente Invasiva"),
+        ("open", "Cirugía Abierta"),
+        ("robotic", "Robótica / Asistida"),
     ]
-    
+
     SURGERY_STATUS_CHOICES = [
-        ('scheduled', 'Programada'),
-        ('pre_op', 'En Pre-operatorio'),
-        ('in_progress', 'En Curso'),
-        ('completed', 'Completada'),
-        ('canceled', 'Cancelada'),
-        ('postponed', 'Pospuesta'),
+        ("scheduled", "Programada"),
+        ("pre_op", "En Pre-operatorio"),
+        ("in_progress", "En Curso"),
+        ("completed", "Completada"),
+        ("canceled", "Cancelada"),
+        ("postponed", "Pospuesta"),
     ]
-    
+
     ASA_CHOICES = [
-        ('I', 'ASA I - Paciente sano'),
-        ('II', 'ASA II - Enfermedad sistémica leve'),
-        ('III', 'ASA III - Enfermedad sistémica severa'),
-        ('IV', 'ASA IV - Enfermedad que amenaza la vida'),
-        ('V', 'ASA V - Paciente moribundo'),
-        ('VI', 'ASA VI - Muerte cerebral declarada'),
+        ("I", "ASA I - Paciente sano"),
+        ("II", "ASA II - Enfermedad sistémica leve"),
+        ("III", "ASA III - Enfermedad sistémica severa"),
+        ("IV", "ASA IV - Enfermedad que amenaza la vida"),
+        ("V", "ASA V - Paciente moribundo"),
+        ("VI", "ASA VI - Muerte cerebral declarada"),
     ]
-    
+
     ANESTHESIA_CHOICES = [
-        ('general', 'General'),
-        ('regional', 'Regional'),
-        ('local', 'Local'),
-        ('sedation', 'Sedación Consciente'),
-        ('combined', 'Combinada'),
+        ("general", "General"),
+        ("regional", "Regional"),
+        ("local", "Local"),
+        ("sedation", "Sedación Consciente"),
+        ("combined", "Combinada"),
     ]
-    
+
     RISK_LEVEL_CHOICES = [
-        ('low', 'Bajo Riesgo'),
-        ('moderate', 'Riesgo Moderado'),
-        ('high', 'Alto Riesgo'),
-        ('critical', 'Crítico'),
+        ("low", "Bajo Riesgo"),
+        ("moderate", "Riesgo Moderado"),
+        ("high", "Alto Riesgo"),
+        ("critical", "Crítico"),
     ]
-    
+
     # === RELACIONES DE PODER ===
     patient = models.ForeignKey(
         Patient, on_delete=models.CASCADE, related_name="surgeries"
     )
     appointment = models.OneToOneField(
-        Appointment, on_delete=models.SET_NULL, null=True, blank=True,
-        related_name="surgery", verbose_name="Cita asociada"
+        Appointment,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="surgery",
+        verbose_name="Cita asociada",
     )
     charge_order = models.ForeignKey(
-        ChargeOrder, on_delete=models.SET_NULL, null=True, blank=True,
-        related_name="surgeries", verbose_name="Orden de cobro asociada"
+        ChargeOrder,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="surgeries",
+        verbose_name="Orden de cobro asociada",
     )
     institution = models.ForeignKey(
-        InstitutionSettings, on_delete=models.PROTECT, related_name="surgeries",
-        null=True, blank=True
+        InstitutionSettings,
+        on_delete=models.PROTECT,
+        related_name="surgeries",
+        null=True,
+        blank=True,
     )
     surgeon = models.ForeignKey(
-        DoctorOperator, on_delete=models.PROTECT, null=True, blank=True, related_name="surgeries_performed", verbose_name="Cirujano principal"
+        DoctorOperator,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="surgeries_performed",
+        verbose_name="Cirujano principal",
     )
     assistants = models.ManyToManyField(
-        DoctorOperator, related_name="surgeries_assisted", blank=True,
-        verbose_name="Asistentes"
+        DoctorOperator,
+        related_name="surgeries_assisted",
+        blank=True,
+        verbose_name="Asistentes",
     )
     anesthesiologist = models.ForeignKey(
-        DoctorOperator, on_delete=models.SET_NULL, null=True,
-        related_name="surgeries_anesthetized", verbose_name="Anestesiólogo"
+        DoctorOperator,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="surgeries_anesthetized",
+        verbose_name="Anestesiólogo",
     )
     specialty = models.ForeignKey(
-        Specialty, on_delete=models.SET_NULL, null=True,
-        verbose_name="Especialidad quirúrgica"
+        Specialty,
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name="Especialidad quirúrgica",
     )
     diagnosis = models.ForeignKey(
-        Diagnosis, on_delete=models.SET_NULL, null=True,
-        verbose_name="Diagnóstico que motiva la cirugía"
+        Diagnosis,
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name="Diagnóstico que motiva la cirugía",
     )
-    
+
     # === CLASIFICACIÓN ===
     surgery_type = models.CharField(
-        max_length=30, choices=SURGERY_TYPE_CHOICES, default='elective'
+        max_length=30, choices=SURGERY_TYPE_CHOICES, default="elective"
     )
     status = models.CharField(
-        max_length=20, choices=SURGERY_STATUS_CHOICES, default='scheduled'
+        max_length=20, choices=SURGERY_STATUS_CHOICES, default="scheduled"
     )
-    
+
     # === DATOS CLÍNICOS ===
-    name = models.CharField(max_length=255, blank=True, default='', verbose_name="Nombre del procedimiento")
-    procedure_description = models.TextField(blank=True, default='', verbose_name="Descripción del procedimiento")
-    surgical_technique = models.TextField(blank=True, null=True, verbose_name="Técnica quirúrgica")
-    
+    name = models.CharField(
+        max_length=255, blank=True, default="", verbose_name="Nombre del procedimiento"
+    )
+    procedure_description = models.TextField(
+        blank=True, default="", verbose_name="Descripción del procedimiento"
+    )
+    surgical_technique = models.TextField(
+        blank=True, null=True, verbose_name="Técnica quirúrgica"
+    )
+
     # === CLASIFICACIÓN DE RIESGO ===
     asa_classification = models.CharField(
-        max_length=3, choices=ASA_CHOICES, blank=True, null=True,
-        verbose_name="Clasificación ASA"
+        max_length=3,
+        choices=ASA_CHOICES,
+        blank=True,
+        null=True,
+        verbose_name="Clasificación ASA",
     )
     risk_level = models.CharField(
-        max_length=20, choices=RISK_LEVEL_CHOICES, default='moderate'
+        max_length=20, choices=RISK_LEVEL_CHOICES, default="moderate"
     )
-    
+
     # === CRONOLOGÍA ===
-    scheduled_date = models.DateField(null=True, blank=True, verbose_name="Fecha programada")
-    scheduled_time = models.TimeField(null=True, blank=True, verbose_name="Hora programada")
+    scheduled_date = models.DateField(
+        null=True, blank=True, verbose_name="Fecha programada"
+    )
+    scheduled_time = models.TimeField(
+        null=True, blank=True, verbose_name="Hora programada"
+    )
     anesthesia_start = models.DateTimeField(null=True, blank=True)
     surgery_start = models.DateTimeField(null=True, blank=True)
     surgery_end = models.DateTimeField(null=True, blank=True)
     anesthesia_end = models.DateTimeField(null=True, blank=True)
-    
+
     # === ANESTESIA ===
     anesthesia_type = models.CharField(
-        max_length=30, choices=ANESTHESIA_CHOICES, null=True, blank=True,
-        verbose_name="Tipo de anestesia"
+        max_length=30,
+        choices=ANESTHESIA_CHOICES,
+        null=True,
+        blank=True,
+        verbose_name="Tipo de anestesia",
     )
-    
+
     # === RESULTADOS ===
-    findings = models.TextField(blank=True, null=True, verbose_name="Hallazgos quirúrgicos")
-    complications = models.TextField(blank=True, null=True, verbose_name="Complicaciones")
-    estimated_blood_loss = models.DecimalField(
-        max_digits=6, decimal_places=1, null=True, blank=True,
-        verbose_name="Pérdida sanguínea estimada (ml)"
+    findings = models.TextField(
+        blank=True, null=True, verbose_name="Hallazgos quirúrgicos"
     )
-    specimens = models.TextField(blank=True, null=True, verbose_name="Muestras enviadas a patología")
-    
+    complications = models.TextField(
+        blank=True, null=True, verbose_name="Complicaciones"
+    )
+    estimated_blood_loss = models.DecimalField(
+        max_digits=6,
+        decimal_places=1,
+        null=True,
+        blank=True,
+        verbose_name="Pérdida sanguínea estimada (ml)",
+    )
+    specimens = models.TextField(
+        blank=True, null=True, verbose_name="Muestras enviadas a patología"
+    )
+
     # === POST-OPERATORIO ===
-    post_op_instructions = models.TextField(blank=True, null=True, verbose_name="Instrucciones post-operatorias")
-    follow_up_date = models.DateField(null=True, blank=True, verbose_name="Fecha de seguimiento")
-    
+    post_op_instructions = models.TextField(
+        blank=True, null=True, verbose_name="Instrucciones post-operatorias"
+    )
+    follow_up_date = models.DateField(
+        null=True, blank=True, verbose_name="Fecha de seguimiento"
+    )
+
     # === LEGACY / INFORMACIÓN ADICIONAL ===
     hospital = models.CharField(max_length=255, blank=True, null=True)
-    
+
     # === AUDITORÍA ===
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         verbose_name = "Cirugía"
         verbose_name_plural = "Cirugías"
-        ordering = ['-scheduled_date']
-    
+        ordering = ["-scheduled_date"]
+
     def save(self, *args, **kwargs):
         self.name = normalize_title_case(self.name)
         if self.hospital:
             self.hospital = normalize_title_case(self.hospital)
         super().save(*args, **kwargs)
-    
+
     def __str__(self):
         return f"{self.patient} — {self.name} [{self.get_status_display()}]"
 
@@ -3282,33 +3541,33 @@ class Hospitalization(models.Model):
     - Estancia: Seguimiento diario, evolución, signos vitales
     - Alta: Egreso, resumen de alta, indicaciones
     """
-    
+
     ADMISSION_TYPE_CHOICES = [
-        ('emergency', 'Emergencia'),
-        ('scheduled', 'Programada'),
-        ('transfer', 'Transferencia'),
-        ('observation', 'Observación'),
+        ("emergency", "Emergencia"),
+        ("scheduled", "Programada"),
+        ("transfer", "Transferencia"),
+        ("observation", "Observación"),
     ]
-    
+
     ADMISSION_STATUS_CHOICES = [
-        ('admitted', 'Admitido'),
-        ('stable', 'Estable'),
-        ('critical', 'Crítico'),
-        ('improving', 'En Mejoría'),
-        ('awaiting_discharge', 'Esperando Alta'),
-        ('discharged', 'Dado de Alta'),
-        ('transferred', 'Transferido'),
-        ('deceased', 'Fallecido'),
+        ("admitted", "Admitido"),
+        ("stable", "Estable"),
+        ("critical", "Crítico"),
+        ("improving", "En Mejoría"),
+        ("awaiting_discharge", "Esperando Alta"),
+        ("discharged", "Dado de Alta"),
+        ("transferred", "Transferido"),
+        ("deceased", "Fallecido"),
     ]
-    
+
     DISCHARGE_TYPE_CHOICES = [
-        ('voluntary', 'Alta Voluntaria'),
-        ('medical', 'Alta Médica'),
-        ('transfer', 'Transferencia'),
-        ('deceased', 'Fallecimiento'),
-        ('against_advice', 'Alta contra consejo médico'),
+        ("voluntary", "Alta Voluntaria"),
+        ("medical", "Alta Médica"),
+        ("transfer", "Transferencia"),
+        ("deceased", "Fallecimiento"),
+        ("against_advice", "Alta contra consejo médico"),
     ]
-    
+
     # === RELACIONES DE PODER ===
     patient = models.ForeignKey(
         Patient, on_delete=models.CASCADE, related_name="hospitalizations"
@@ -3317,73 +3576,107 @@ class Hospitalization(models.Model):
         InstitutionSettings, on_delete=models.PROTECT, related_name="hospitalizations"
     )
     attending_doctor = models.ForeignKey(
-        DoctorOperator, on_delete=models.PROTECT,
-        related_name="hospitalizations_attended", verbose_name="Médico tratante"
+        DoctorOperator,
+        on_delete=models.PROTECT,
+        related_name="hospitalizations_attended",
+        verbose_name="Médico tratante",
     )
     admission_diagnosis = models.ForeignKey(
-        Diagnosis, on_delete=models.SET_NULL, null=True,
-        related_name="hospitalizations", verbose_name="Diagnóstico de ingreso"
+        Diagnosis,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="hospitalizations",
+        verbose_name="Diagnóstico de ingreso",
     )
-    
+
     # === DATOS DE ADMISIÓN ===
     admission_type = models.CharField(
-        max_length=20, choices=ADMISSION_TYPE_CHOICES, default='emergency'
+        max_length=20, choices=ADMISSION_TYPE_CHOICES, default="emergency"
     )
     status = models.CharField(
-        max_length=20, choices=ADMISSION_STATUS_CHOICES, default='admitted'
+        max_length=20, choices=ADMISSION_STATUS_CHOICES, default="admitted"
     )
-    
+
     # === ASIGNACIÓN DE CAMA ===
     ward = models.CharField(max_length=100, verbose_name="Pabellón / Sala")
-    room_number = models.CharField(max_length=20, blank=True, null=True, verbose_name="Número de habitación")
+    room_number = models.CharField(
+        max_length=20, blank=True, null=True, verbose_name="Número de habitación"
+    )
     bed_number = models.CharField(max_length=20, verbose_name="Número de cama")
     bed = models.ForeignKey(
-        Bed, on_delete=models.SET_NULL, null=True, blank=True,
-        related_name="hospitalizations", verbose_name="Cama asignada"
+        Bed,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="hospitalizations",
+        verbose_name="Cama asignada",
     )
-    
+
     # === CRONOLOGÍA ===
     admission_date = models.DateTimeField(verbose_name="Fecha de ingreso")
-    expected_discharge_date = models.DateField(null=True, blank=True, verbose_name="Fecha estimada de alta")
-    actual_discharge_date = models.DateTimeField(null=True, blank=True, verbose_name="Fecha real de alta")
-    
+    expected_discharge_date = models.DateField(
+        null=True, blank=True, verbose_name="Fecha estimada de alta"
+    )
+    actual_discharge_date = models.DateTimeField(
+        null=True, blank=True, verbose_name="Fecha real de alta"
+    )
+
     # === CLÍNICA ===
     chief_complaint = models.TextField(verbose_name="Motivo principal de ingreso")
-    clinical_summary = models.TextField(blank=True, null=True, verbose_name="Resumen clínico")
-    vital_signs = models.JSONField(blank=True, null=True, verbose_name="Signos vitales (último registro)")
-    allergies_at_admission = models.TextField(blank=True, null=True, verbose_name="Alergias al ingreso")
-    
+    clinical_summary = models.TextField(
+        blank=True, null=True, verbose_name="Resumen clínico"
+    )
+    vital_signs = models.JSONField(
+        blank=True, null=True, verbose_name="Signos vitales (último registro)"
+    )
+    allergies_at_admission = models.TextField(
+        blank=True, null=True, verbose_name="Alergias al ingreso"
+    )
+
     # === EVOLUCIÓN ===
-    daily_notes = models.TextField(blank=True, null=True, verbose_name="Notas de evolución")
-    complications = models.TextField(blank=True, null=True, verbose_name="Complicaciones durante estancia")
-    
+    daily_notes = models.TextField(
+        blank=True, null=True, verbose_name="Notas de evolución"
+    )
+    complications = models.TextField(
+        blank=True, null=True, verbose_name="Complicaciones durante estancia"
+    )
+
     # === ALTA ===
     discharge_type = models.CharField(
-        max_length=20, choices=DISCHARGE_TYPE_CHOICES, null=True, blank=True,
-        verbose_name="Tipo de egreso"
+        max_length=20,
+        choices=DISCHARGE_TYPE_CHOICES,
+        null=True,
+        blank=True,
+        verbose_name="Tipo de egreso",
     )
-    discharge_summary = models.TextField(blank=True, null=True, verbose_name="Resumen de alta")
-    discharge_instructions = models.TextField(blank=True, null=True, verbose_name="Indicaciones al alta")
-    discharge_medications = models.TextField(blank=True, null=True, verbose_name="Medicamentos al alta")
-    
+    discharge_summary = models.TextField(
+        blank=True, null=True, verbose_name="Resumen de alta"
+    )
+    discharge_instructions = models.TextField(
+        blank=True, null=True, verbose_name="Indicaciones al alta"
+    )
+    discharge_medications = models.TextField(
+        blank=True, null=True, verbose_name="Medicamentos al alta"
+    )
+
     # === AUDITORÍA ===
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         verbose_name = "Hospitalización"
         verbose_name_plural = "Hospitalizaciones"
-        ordering = ['-admission_date']
-    
+        ordering = ["-admission_date"]
+
     def __str__(self):
         return f"{self.patient} — {self.ward} Cama {self.bed_number} [{self.get_status_display()}]"
-    
+
     @property
     def length_of_stay(self):
         """Calcula los días de estancia."""
         end = self.actual_discharge_date or timezone.now()
         return (end - self.admission_date).days
-    
+
     def save(self, *args, **kwargs):
         old_instance = None
         if self.pk:
@@ -3391,28 +3684,34 @@ class Hospitalization(models.Model):
                 old_instance = Hospitalization.objects.get(pk=self.pk)
             except Hospitalization.DoesNotExist:
                 pass
-        
+
         if self.ward:
             self.ward = normalize_title_case(self.ward)
-        
+
         super().save(*args, **kwargs)
-        
+
         # Actualizar estado de la cama
         if self.bed:
-            if self.status in ['admitted', 'stable', 'critical', 'improving', 'awaiting_discharge']:
-                self.bed.status = 'occupied'
-                self.bed.save(update_fields=['status'])
-            elif self.status == 'discharged':
-                self.bed.status = 'available'
-                self.bed.save(update_fields=['status'])
-        
+            if self.status in [
+                "admitted",
+                "stable",
+                "critical",
+                "improving",
+                "awaiting_discharge",
+            ]:
+                self.bed.status = "occupied"
+                self.bed.save(update_fields=["status"])
+            elif self.status == "discharged":
+                self.bed.status = "available"
+                self.bed.save(update_fields=["status"])
+
         # Si se cambió de cama, liberar la anterior
         if old_instance and old_instance.bed and self.bed != old_instance.bed:
             try:
                 old_bed = Bed.objects.get(pk=old_instance.bed.pk)
-                if old_bed.status == 'occupied':
-                    old_bed.status = 'available'
-                    old_bed.save(update_fields=['status'])
+                if old_bed.status == "occupied":
+                    old_bed.status = "available"
+                    old_bed.save(update_fields=["status"])
             except Bed.DoesNotExist:
                 pass
 
@@ -3426,16 +3725,14 @@ class Habit(models.Model):
         ("sueno", "Sueño"),
         ("drogas", "Drogas"),
     ]
-    
+
     # === CAMPOS COMUNES ===
     patient = models.ForeignKey(
-        Patient,
-        on_delete=models.CASCADE,
-        related_name="habits"
+        Patient, on_delete=models.CASCADE, related_name="habits"
     )
     type = models.CharField(max_length=50, choices=HABIT_TYPES)
     notes = models.TextField(blank=True, null=True)
-    
+
     # === TABACO ===
     SMOKING_STATUS = [
         ("yes", "Sí, fuma actualmente"),
@@ -3453,13 +3750,19 @@ class Habit(models.Model):
         ("weekly", "Semanal"),
         ("occasional", "Ocasional"),
     ]
-    
-    smokes_currently = models.CharField(max_length=10, choices=SMOKING_STATUS, blank=True, null=True)
-    tobacco_type = models.CharField(max_length=50, choices=TOBACCO_TYPES, blank=True, null=True)
-    smoking_frequency = models.CharField(max_length=50, choices=FREQUENCY_LEVELS, blank=True, null=True)
+
+    smokes_currently = models.CharField(
+        max_length=10, choices=SMOKING_STATUS, blank=True, null=True
+    )
+    tobacco_type = models.CharField(
+        max_length=50, choices=TOBACCO_TYPES, blank=True, null=True
+    )
+    smoking_frequency = models.CharField(
+        max_length=50, choices=FREQUENCY_LEVELS, blank=True, null=True
+    )
     cigarettes_per_day = models.PositiveIntegerField(blank=True, null=True)
     smoking_start_age = models.PositiveIntegerField(blank=True, null=True)
-    
+
     # === ALCOHOL ===
     ALCOHOL_STATUS = [
         ("yes", "Sí consume"),
@@ -3486,12 +3789,20 @@ class Habit(models.Model):
         ("weekly", "Semanal"),
         ("daily", "Diario o casi diario"),
     ]
-    
-    drinks_alcohol = models.CharField(max_length=10, choices=ALCOHOL_STATUS, blank=True, null=True)
-    alcohol_frequency = models.CharField(max_length=50, choices=ALCOHOL_FREQUENCY, blank=True, null=True)
-    alcohol_quantity = models.CharField(max_length=50, choices=ALCOHOL_QUANTITY, blank=True, null=True)
-    binge_frequency = models.CharField(max_length=50, choices=BINGE_FREQUENCY, blank=True, null=True)
-    
+
+    drinks_alcohol = models.CharField(
+        max_length=10, choices=ALCOHOL_STATUS, blank=True, null=True
+    )
+    alcohol_frequency = models.CharField(
+        max_length=50, choices=ALCOHOL_FREQUENCY, blank=True, null=True
+    )
+    alcohol_quantity = models.CharField(
+        max_length=50, choices=ALCOHOL_QUANTITY, blank=True, null=True
+    )
+    binge_frequency = models.CharField(
+        max_length=50, choices=BINGE_FREQUENCY, blank=True, null=True
+    )
+
     # === ACTIVIDAD FÍSICA ===
     EXERCISE_FREQUENCY = [
         ("sedentary", "Sedentario"),
@@ -3504,11 +3815,19 @@ class Habit(models.Model):
         ("moderate", "Moderada"),
         ("intense", "Intensa"),
     ]
-    
-    exercise_frequency = models.CharField(max_length=50, choices=EXERCISE_FREQUENCY, blank=True, null=True)
-    exercise_intensity = models.CharField(max_length=50, choices=EXERCISE_INTENSITY, blank=True, null=True)
-    activity_description = models.TextField(blank=True, null=True, help_text="Tipo de actividad: caminar, gimnasio, deportes, etc.")
-    
+
+    exercise_frequency = models.CharField(
+        max_length=50, choices=EXERCISE_FREQUENCY, blank=True, null=True
+    )
+    exercise_intensity = models.CharField(
+        max_length=50, choices=EXERCISE_INTENSITY, blank=True, null=True
+    )
+    activity_description = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Tipo de actividad: caminar, gimnasio, deportes, etc.",
+    )
+
     # === DIETA ===
     DIET_TYPES = [
         ("omnivore", "Omnívora"),
@@ -3517,37 +3836,55 @@ class Habit(models.Model):
         ("mediterranean", "Mediterránea"),
         ("other", "Otra"),
     ]
-    
-    diet_type = models.CharField(max_length=50, choices=DIET_TYPES, blank=True, null=True)
-    diet_restrictions = models.TextField(blank=True, null=True, help_text="Restricciones especiales: renal, diabética, etc.")
-    
+
+    diet_type = models.CharField(
+        max_length=50, choices=DIET_TYPES, blank=True, null=True
+    )
+    diet_restrictions = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Restricciones especiales: renal, diabética, etc.",
+    )
+
     # === SUEÑO ===
     SLEEP_QUALITY = [
         ("good", "Buena"),
         ("fair", "Regular"),
         ("poor", "Mala"),
     ]
-    
-    sleep_hours = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True, help_text="Horas de sueño por noche")
-    sleep_quality = models.CharField(max_length=20, choices=SLEEP_QUALITY, blank=True, null=True)
-    
+
+    sleep_hours = models.DecimalField(
+        max_digits=3,
+        decimal_places=1,
+        blank=True,
+        null=True,
+        help_text="Horas de sueño por noche",
+    )
+    sleep_quality = models.CharField(
+        max_length=20, choices=SLEEP_QUALITY, blank=True, null=True
+    )
+
     # === DROGAS ===
     DRUGS_STATUS = [
         ("yes", "Sí"),
         ("no", "No"),
     ]
-    
-    uses_drugs = models.CharField(max_length=10, choices=DRUGS_STATUS, blank=True, null=True)
-    drug_description = models.TextField(blank=True, null=True, help_text="Tipo de drogas consumidas")
+
+    uses_drugs = models.CharField(
+        max_length=10, choices=DRUGS_STATUS, blank=True, null=True
+    )
+    drug_description = models.TextField(
+        blank=True, null=True, help_text="Tipo de drogas consumidas"
+    )
     drug_frequency = models.CharField(max_length=50, blank=True, null=True)
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         verbose_name = "Habit"
         verbose_name_plural = "Habits"
-    
+
     def __str__(self):
         return f"{self.patient} — {self.get_type_display()}"
 
@@ -3557,23 +3894,24 @@ class Vaccine(models.Model):
     code = models.CharField(max_length=50, unique=True)
     description = models.TextField(blank=True, null=True)
     country = models.CharField(max_length=100, default="Venezuela")
+
     class Meta:
         verbose_name = "Vaccine"
         verbose_name_plural = "Vaccines"
+
     def save(self, *args, **kwargs):
         self.name = normalize_title_case(self.name)
         if self.country:
             self.country = normalize_title_case(self.country)
         super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.name} ({self.code})"
 
 
 class VaccinationSchedule(models.Model):
     vaccine = models.ForeignKey(
-        Vaccine,
-        on_delete=models.CASCADE,
-        related_name="schedule"
+        Vaccine, on_delete=models.CASCADE, related_name="schedule"
     )
     recommended_age_months = models.PositiveIntegerField()
     dose_number = models.PositiveIntegerField()
@@ -3590,9 +3928,7 @@ class VaccinationSchedule(models.Model):
 
 class PatientVaccination(models.Model):
     patient = models.ForeignKey(
-        Patient,
-        on_delete=models.CASCADE,
-        related_name="vaccinations"
+        Patient, on_delete=models.CASCADE, related_name="vaccinations"
     )
     vaccine = models.ForeignKey(Vaccine, on_delete=models.CASCADE)
     dose_number = models.PositiveIntegerField()
@@ -3613,36 +3949,37 @@ class PatientVaccination(models.Model):
 # 🔹 Modelo especializado para alergias
 class Allergy(models.Model):
     patient = models.ForeignKey(
-        "Patient",
-        on_delete=models.CASCADE,
-        related_name="allergies"
+        "Patient", on_delete=models.CASCADE, related_name="allergies"
     )
     name = models.CharField(max_length=100)
     severity = models.CharField(
         max_length=50,
         blank=True,
         null=True,
-        help_text="Gravedad de la alergia: leve, moderada, grave"
+        help_text="Gravedad de la alergia: leve, moderada, grave",
     )
     source = models.CharField(
         max_length=100,
         blank=True,
         null=True,
-        help_text="Fuente: historia clínica, verbal, prueba"
+        help_text="Fuente: historia clínica, verbal, prueba",
     )
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now_add=True)
     history = HistoricalRecords()
+
     class Meta:
         verbose_name = "Allergy"
         verbose_name_plural = "Allergies"
         indexes = [
             models.Index(fields=["patient", "name"]),
         ]
+
     def save(self, *args, **kwargs):
         self.name = normalize_title_case(self.name)
         super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.name} ({self.severity or 'N/A'})"
 
@@ -3657,63 +3994,54 @@ class MedicalHistory(models.Model):
         ("permanent", "Permanente / Crónico"),
     ]
     patient = models.ForeignKey(
-        "Patient",
-        on_delete=models.CASCADE,
-        related_name="medical_history"
+        "Patient", on_delete=models.CASCADE, related_name="medical_history"
     )
-    
+
     condition = models.CharField(max_length=255, verbose_name="Afección / Antecedente")
-    
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default="active"
-    )
-    
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
+
     source = models.CharField(
         max_length=150,
         blank=True,
         null=True,
-        help_text="Fuente: historia clínica previa, diagnóstico directo, verbal"
+        help_text="Fuente: historia clínica previa, diagnóstico directo, verbal",
     )
-    
+
     notes = models.TextField(
-        blank=True, 
-        null=True, 
-        verbose_name="Observaciones clínicas"
+        blank=True, null=True, verbose_name="Observaciones clínicas"
     )
     onset_date = models.DateField(
-        null=True, 
-        blank=True, 
-        verbose_name="Fecha de aparición aproximada"
+        null=True, blank=True, verbose_name="Fecha de aparición aproximada"
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now_add=True)
     history = HistoricalRecords()
+
     class Meta:
         verbose_name = "Antecedente Médico"
         verbose_name_plural = "Historial de Antecedentes"
         indexes = [
             models.Index(fields=["patient", "status"]),
         ]
+
     def save(self, *args, **kwargs):
         self.condition = normalize_title_case(self.condition)
         if self.notes:
             self.notes = normalize_title_case(self.notes)
         super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.condition} ({self.get_status_display()})"
 
 
 class ClinicalAlert(models.Model):
     patient = models.ForeignKey(
-        Patient,
-        on_delete=models.CASCADE,
-        related_name="alerts"
+        Patient, on_delete=models.CASCADE, related_name="alerts"
     )
     type = models.CharField(
         max_length=20,
-        choices=[("danger", "Danger"), ("warning", "Warning"), ("info", "Info")]
+        choices=[("danger", "Danger"), ("warning", "Warning"), ("info", "Info")],
     )
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -3725,22 +4053,36 @@ class ClinicalAlert(models.Model):
 
 class VitalSigns(models.Model):
     appointment = models.OneToOneField(
-        "Appointment", 
-        on_delete=models.CASCADE, 
-        related_name="vital_signs"
+        "Appointment", on_delete=models.CASCADE, related_name="vital_signs"
     )
     # Datos biométricos
-    weight = models.DecimalField(max_digits=5, decimal_places=2, help_text="Peso en kg", null=True, blank=True)
-    height = models.DecimalField(max_digits=5, decimal_places=2, help_text="Talla en cm", null=True, blank=True)
-    temperature = models.DecimalField(max_digits=4, decimal_places=1, help_text="°C", null=True, blank=True)
-    
+    weight = models.DecimalField(
+        max_digits=5, decimal_places=2, help_text="Peso en kg", null=True, blank=True
+    )
+    height = models.DecimalField(
+        max_digits=5, decimal_places=2, help_text="Talla en cm", null=True, blank=True
+    )
+    temperature = models.DecimalField(
+        max_digits=4, decimal_places=1, help_text="°C", null=True, blank=True
+    )
+
     # Presión Arterial (Sistólica/Diastólica)
-    bp_systolic = models.PositiveIntegerField(verbose_name="Sistólica", null=True, blank=True)
-    bp_diastolic = models.PositiveIntegerField(verbose_name="Diastólica", null=True, blank=True)
-    
-    heart_rate = models.PositiveIntegerField(verbose_name="Frecuencia Cardíaca (LPM)", null=True, blank=True)
-    respiratory_rate = models.PositiveIntegerField(verbose_name="Frecuencia Respiratoria (RPM)", null=True, blank=True)
-    oxygen_saturation = models.PositiveIntegerField(verbose_name="Saturación de O2 (%)", null=True, blank=True)
+    bp_systolic = models.PositiveIntegerField(
+        verbose_name="Sistólica", null=True, blank=True
+    )
+    bp_diastolic = models.PositiveIntegerField(
+        verbose_name="Diastólica", null=True, blank=True
+    )
+
+    heart_rate = models.PositiveIntegerField(
+        verbose_name="Frecuencia Cardíaca (LPM)", null=True, blank=True
+    )
+    respiratory_rate = models.PositiveIntegerField(
+        verbose_name="Frecuencia Respiratoria (RPM)", null=True, blank=True
+    )
+    oxygen_saturation = models.PositiveIntegerField(
+        verbose_name="Saturación de O2 (%)", null=True, blank=True
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -3749,7 +4091,7 @@ class VitalSigns(models.Model):
         """Calcula el Índice de Masa Corporal automáticamente"""
         if self.weight and self.height:
             height_m = self.height / 100
-            return round(float(self.weight) / float(height_m ** 2), 2)
+            return round(float(self.weight) / float(height_m**2), 2)
         return None
 
     class Meta:
@@ -3759,21 +4101,25 @@ class VitalSigns(models.Model):
 
 class ClinicalNote(models.Model):
     appointment = models.OneToOneField(
-        "Appointment", 
-        on_delete=models.CASCADE, 
-        related_name="note"
+        "Appointment", on_delete=models.CASCADE, related_name="note"
     )
-    
+
     # Estructura clásica SOAP (Subjetivo, Objetivo, Análisis, Plan)
     subjective = models.TextField(verbose_name="Motivo de consulta / Anamnesis")
-    objective = models.TextField(verbose_name="Hallazgos del examen físico", blank=True, null=True)
-    analysis = models.TextField(verbose_name="Análisis clínico / Evolución", blank=True, null=True)
-    plan = models.TextField(verbose_name="Plan de tratamiento / Próximos pasos", blank=True, null=True)
+    objective = models.TextField(
+        verbose_name="Hallazgos del examen físico", blank=True, null=True
+    )
+    analysis = models.TextField(
+        verbose_name="Análisis clínico / Evolución", blank=True, null=True
+    )
+    plan = models.TextField(
+        verbose_name="Plan de tratamiento / Próximos pasos", blank=True, null=True
+    )
 
     # El "Sello de Seguridad"
     is_locked = models.BooleanField(
-        default=False, 
-        help_text="Una vez bloqueada, la nota no puede editarse (Integridad Médica)"
+        default=False,
+        help_text="Una vez bloqueada, la nota no puede editarse (Integridad Médica)",
     )
     locked_at = models.DateTimeField(null=True, blank=True)
 
@@ -3796,29 +4142,25 @@ class InstitutionPermission(models.Model):
     Permiso híbrido mono-médico multi-institución
     Diseñado para evolucionar a multi-usuario sin rewrites
     """
-    
+
     ACCESS_LEVELS = [
-        ('full_access', 'Acceso Completo'),
-        ('emergency_access', 'Acceso de Emergencia'),
+        ("full_access", "Acceso Completo"),
+        ("emergency_access", "Acceso de Emergencia"),
     ]
-    
+
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='institution_permissions'
+        related_name="institution_permissions",
     )
     institution = models.ForeignKey(
-        'InstitutionSettings',
-        on_delete=models.CASCADE,
-        related_name='user_permissions'
+        "InstitutionSettings", on_delete=models.CASCADE, related_name="user_permissions"
     )
-    
+
     access_level = models.CharField(
-        max_length=20,
-        choices=ACCESS_LEVELS,
-        default='full_access'
+        max_length=20, choices=ACCESS_LEVELS, default="full_access"
     )
-    
+
     # Metadata para evolución futura
     granted_at = models.DateTimeField(auto_now_add=True)
     granted_by = models.ForeignKey(
@@ -3826,28 +4168,25 @@ class InstitutionPermission(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='granted_permissions'
+        related_name="granted_permissions",
     )
     expires_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        help_text="Para emergency access (24h default)"
+        null=True, blank=True, help_text="Para emergency access (24h default)"
     )
-    
+
     # Control de evolución
     is_own_institution = models.BooleanField(
-        default=True,
-        help_text="True si el médico 'posee' esta institución"
+        default=True, help_text="True si el médico 'posee' esta institución"
     )
-    
+
     # Auditoría
     last_accessed = models.DateTimeField(null=True, blank=True)
     access_count = models.PositiveIntegerField(default=0)
-    
+
     class Meta:
-        unique_together = ('user', 'institution')
-        ordering = ['-granted_at']
-    
+        unique_together = ("user", "institution")
+        ordering = ["-granted_at"]
+
     def __str__(self):
         return f"{self.user.doctor_profile.full_name} - {self.institution.name} ({self.access_level})"
 
@@ -3856,97 +4195,81 @@ class AuditLog(models.Model):
     """
     Log de auditoría para acceso institucional
     """
-    
+
     ACTION_TYPES = [
-        ('login', 'Login'),
-        ('view', 'View'),
-        ('edit', 'Edit'),
-        ('generate_pdf', 'Generate PDF'),
-        ('emergency_access', 'Emergency Access'),
-        ('emergency_access_refreshed', 'Emergency Access Refreshed'),
-        ('institution_switch', 'Switch Institution'),
+        ("login", "Login"),
+        ("view", "View"),
+        ("edit", "Edit"),
+        ("generate_pdf", "Generate PDF"),
+        ("emergency_access", "Emergency Access"),
+        ("emergency_access_refreshed", "Emergency Access Refreshed"),
+        ("institution_switch", "Switch Institution"),
     ]
-    
+
     # Relaciones
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='audit_logs'
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="audit_logs"
     )
     institution = models.ForeignKey(
-        'InstitutionSettings',
-        on_delete=models.CASCADE,
-        related_name='audit_logs'
+        "InstitutionSettings", on_delete=models.CASCADE, related_name="audit_logs"
     )
-    
+
     # Acción y contexto
     action = models.CharField(
-        max_length=50,
-        choices=ACTION_TYPES,
-        help_text="Tipo de acción realizada"
+        max_length=50, choices=ACTION_TYPES, help_text="Tipo de acción realizada"
     )
     access_level = models.CharField(
         max_length=20,
         choices=[
-            ('full_access', 'Full Access'),
-            ('emergency_access', 'Emergency Access'),
+            ("full_access", "Full Access"),
+            ("emergency_access", "Emergency Access"),
         ],
-        help_text="Nivel de acceso utilizado"
+        help_text="Nivel de acceso utilizado",
     )
-    
+
     # Metadata institucional
     is_own_institution = models.BooleanField(
-        default=True,
-        help_text="True si es institución propia del médico"
+        default=True, help_text="True si es institución propia del médico"
     )
     is_cross_institution = models.BooleanField(
-        default=False,
-        help_text="True si es cross-institution access"
+        default=False, help_text="True si es cross-institution access"
     )
-    
+
     # Información técnica
     ip_address = models.GenericIPAddressField(
-        null=True,
-        blank=True,
-        help_text="Dirección IP del acceso"
+        null=True, blank=True, help_text="Dirección IP del acceso"
     )
-    user_agent = models.TextField(
-        blank=True,
-        help_text="User Agent del navegador"
-    )
-    
+    user_agent = models.TextField(blank=True, help_text="User Agent del navegador")
+
     # Timestamps
     timestamp = models.DateTimeField(
-        auto_now_add=True,
-        help_text="Cuándo ocurrió el acceso"
+        auto_now_add=True, help_text="Cuándo ocurrió el acceso"
     )
-    
+
     # Metadata adicional
     metadata = models.JSONField(
-        default=dict,
-        blank=True,
-        help_text="Información adicional en formato JSON"
+        default=dict, blank=True, help_text="Información adicional en formato JSON"
     )
-    
+
     class Meta:
-        ordering = ['-timestamp']
+        ordering = ["-timestamp"]
         indexes = [
-            models.Index(fields=['user', 'timestamp']),
-            models.Index(fields=['institution', 'timestamp']),
-            models.Index(fields=['action', 'timestamp']),
-            models.Index(fields=['is_cross_institution']),
+            models.Index(fields=["user", "timestamp"]),
+            models.Index(fields=["institution", "timestamp"]),
+            models.Index(fields=["action", "timestamp"]),
+            models.Index(fields=["is_cross_institution"]),
         ]
         verbose_name = "Audit Log"
         verbose_name_plural = "Audit Logs"
-    
+
     def __str__(self):
         return f"{self.user.username} - {self.action} - {self.institution.name} ({self.timestamp})"
-    
+
     @property
     def is_emergency_access(self):
         """Verificar si fue acceso de emergencia"""
-        return self.access_level == 'emergency_access'
-    
+        return self.access_level == "emergency_access"
+
     @property
     def is_cross_access(self):
         """Verificar si fue cross-institution access"""
@@ -3958,64 +4281,59 @@ class MercantilP2CTransaction(models.Model):
     Registro de transacciones P2C Mercantil con QR.
     Almacena tanto pagos generados como confirmados.
     """
+
     STATUS_CHOICES = [
-        ('generated', 'QR Generado'),
-        ('pending', 'Pendiente de Pago'),
-        ('confirmed', 'Pago Confirmado'),
-        ('expired', 'QR Expirado'),
-        ('cancelled', 'Cancelado'),
-        ('failed', 'Fallido'),
+        ("generated", "QR Generado"),
+        ("pending", "Pendiente de Pago"),
+        ("confirmed", "Pago Confirmado"),
+        ("expired", "QR Expirado"),
+        ("cancelled", "Cancelado"),
+        ("failed", "Fallido"),
     ]
-    
+
     # --- RELACIONES ---
     institution = models.ForeignKey(
-        'InstitutionSettings',
+        "InstitutionSettings",
         on_delete=models.CASCADE,
-        related_name='p2c_transactions',
-        verbose_name="Institución"
+        related_name="p2c_transactions",
+        verbose_name="Institución",
     )
     charge_order = models.ForeignKey(
-        'ChargeOrder',
+        "ChargeOrder",
         on_delete=models.CASCADE,
-        related_name='p2c_transactions',
+        related_name="p2c_transactions",
         null=True,
         blank=True,
-        verbose_name="Orden de Cobro Asociada"
+        verbose_name="Orden de Cobro Asociada",
     )
     payment = models.ForeignKey(
-        'Payment',
+        "Payment",
         on_delete=models.CASCADE,
-        related_name='p2c_transactions',
+        related_name="p2c_transactions",
         null=True,
         blank=True,
-        verbose_name="Pago Confirmado"
+        verbose_name="Pago Confirmado",
     )
-    
+
     # --- DATOS DE TRANSACCIÓN ---
     amount = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        verbose_name="Monto de la Transacción"
+        max_digits=12, decimal_places=2, verbose_name="Monto de la Transacción"
     )
-    currency = models.CharField(
-        max_length=3,
-        default='VES',
-        verbose_name="Moneda"
-    )
-    
+    currency = models.CharField(max_length=3, default="VES", verbose_name="Moneda")
+
     # --- DATOS ESPECÍFICOS DE P2C ---
     qr_code_data = models.TextField(
         verbose_name="Datos del Código QR",
-        help_text="Contenido completo del QR generado por Mercantil"
+        help_text="Contenido completo del QR generado por Mercantil",
     )
     qr_image_url = models.URLField(
         max_length=500,
         blank=True,
         null=True,
         verbose_name="URL de Imagen QR",
-        help_text="URL de la imagen del QR generada (opcional)"
+        help_text="URL de la imagen del QR generada (opcional)",
     )
-    
+
     # --- IDs DE MERCANTIL ---
     mercantil_transaction_id = models.CharField(
         max_length=100,
@@ -4023,78 +4341,73 @@ class MercantilP2CTransaction(models.Model):
         null=True,
         unique=True,
         verbose_name="ID Transacción Mercantil",
-        help_text="ID único retornado por API de Mercantil"
+        help_text="ID único retornado por API de Mercantil",
     )
     merchant_order_id = models.CharField(
         max_length=100,
         unique=True,
         verbose_name="ID Orden Comerciante",
-        help_text="ID único de nuestra orden para rastreo"
+        help_text="ID único de nuestra orden para rastreo",
     )
-    
+
     # --- CONTROL DE ESTADOS ---
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
-        default='generated',
-        verbose_name="Estado de Transacción"
+        default="generated",
+        verbose_name="Estado de Transacción",
     )
-    
+
     # --- TIMING LIFECYCLE ---
     generated_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Fecha de Generación QR"
+        auto_now_add=True, verbose_name="Fecha de Generación QR"
     )
     expires_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name="Fecha de Expiración QR"
+        null=True, blank=True, verbose_name="Fecha de Expiración QR"
     )
     confirmed_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name="Fecha de Confirmación de Pago"
+        null=True, blank=True, verbose_name="Fecha de Confirmación de Pago"
     )
-    
+
     # --- METADATOS Y AUDITORÍA ---
     gateway_response_raw = models.JSONField(
         blank=True,
         null=True,
         verbose_name="Respuesta Raw Gateway",
-        help_text="Respuesta completa de API Mercantil"
+        help_text="Respuesta completa de API Mercantil",
     )
     callback_data = models.JSONField(
         blank=True,
         null=True,
         verbose_name="Datos de Callback",
-        help_text="Datos recibidos en webhook de confirmación"
+        help_text="Datos recibidos en webhook de confirmación",
     )
-    
+
     history = HistoricalRecords()
-    
+
     class Meta:
         verbose_name = "Transacción P2C Mercantil"
         verbose_name_plural = "Transacciones P2C Mercantil"
-        ordering = ['-generated_at']
+        ordering = ["-generated_at"]
         indexes = [
-            models.Index(fields=['institution', 'status']),
-            models.Index(fields=['mercantil_transaction_id']),
-            models.Index(fields=['merchant_order_id']),
-            models.Index(fields=['status', 'generated_at']),
+            models.Index(fields=["institution", "status"]),
+            models.Index(fields=["mercantil_transaction_id"]),
+            models.Index(fields=["merchant_order_id"]),
+            models.Index(fields=["status", "generated_at"]),
         ]
-    
+
     def __str__(self):
         return f"P2C-{self.merchant_order_id} - {self.amount} {self.currency} [{self.get_status_display()}]"
-    
+
     def is_expired(self):
         """Verifica si el QR ha expirado"""
         if self.expires_at and timezone.now() > self.expires_at:
             return True
         return False
-    
+
     def can_confirm_payment(self):
         """Verifica si la transacción puede ser confirmada"""
-        return self.status == 'pending' and not self.is_expired()
+        return self.status == "pending" and not self.is_expired()
 
 
 class MercantilP2CConfig(models.Model):
@@ -4102,80 +4415,71 @@ class MercantilP2CConfig(models.Model):
     Configuración específica para integración P2C Mercantil.
     Almacena credenciales y parámetros del servicio.
     """
-    
+
     institution = models.OneToOneField(
-        'InstitutionSettings',
+        "InstitutionSettings",
         on_delete=models.CASCADE,
-        related_name='p2c_config',
-        verbose_name="Institución"
+        related_name="p2c_config",
+        verbose_name="Institución",
     )
-    
+
     # --- CREDENCIALES DE API ---
     client_id = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        verbose_name="Client ID Mercantil"
+        max_length=100, blank=True, null=True, verbose_name="Client ID Mercantil"
     )
     secret_key = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True,
-        verbose_name="Secret Key Mercantil"
+        max_length=255, blank=True, null=True, verbose_name="Secret Key Mercantil"
     )
     webhook_secret = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        verbose_name="Webhook Secret"
+        max_length=100, blank=True, null=True, verbose_name="Webhook Secret"
     )
-    
+
     # --- CONFIGURACIÓN DE ENTORNO ---
     is_test_mode = models.BooleanField(
         default=True,
         verbose_name="Modo de Pruebas (Sandbox)",
-        help_text="Activar modo sandbox de Mercantil"
+        help_text="Activar modo sandbox de Mercantil",
     )
-    
+
     # --- PARÁMETROS DE TRANSACCIÓN ---
     qr_expiration_minutes = models.PositiveIntegerField(
         default=15,
         verbose_name="Tiempo de Expiración QR (minutos)",
-        help_text="Tiempo en minutos antes de que el QR expire"
+        help_text="Tiempo en minutos antes de que el QR expire",
     )
     max_amount = models.DecimalField(
         max_digits=12,
         decimal_places=2,
-        default=Decimal('1000000.00'),
-        verbose_name="Monto Máximo por Transacción"
+        default=Decimal("1000000.00"),
+        verbose_name="Monto Máximo por Transacción",
     )
     min_amount = models.DecimalField(
         max_digits=12,
         decimal_places=2,
-        default=Decimal('1.00'),
-        verbose_name="Monto Mínimo por Transacción"
+        default=Decimal("1.00"),
+        verbose_name="Monto Mínimo por Transacción",
     )
-    
+
     # --- CONFIGURACIÓN DE WEBHOOK ---
     webhook_url = models.URLField(
         max_length=500,
         blank=True,
         null=True,
         verbose_name="URL de Webhook",
-        help_text="URL donde Mercantil enviará confirmaciones de pago"
+        help_text="URL donde Mercantil enviará confirmaciones de pago",
     )
-    
+
     # --- AUDITORÍA ---
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         verbose_name = "Configuración P2C Mercantil"
         verbose_name_plural = "Configuraciones P2C Mercantil"
-    
+
     def __str__(self):
         return f"P2C Config - {self.institution.name}"
-    
+
     def get_api_environment(self):
         """Retorna el entorno de API correspondiente"""
         return "sandbox" if self.is_test_mode else "production"
@@ -4189,139 +4493,152 @@ class PatientUser(models.Model):
     Usuario autenticable para el Portal del Paciente.
     Relacionado 1:1 con Patient Y con Django User.
     """
+
     # === RELACIÓN CON DJANGO USER (autenticación unificada) ===
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='patient_profile',
+        related_name="patient_profile",
         null=True,
         blank=True,
-        verbose_name="Usuario Django"
+        verbose_name="Usuario Django",
     )
-    
+
     # === RELACIÓN CON PACIENTE CLÍNICO ===
     patient = models.OneToOneField(
         Patient,
         on_delete=models.CASCADE,
-        related_name='patient_user',
-        verbose_name="Paciente"
+        related_name="patient_user",
+        verbose_name="Paciente",
     )
-    
+
     # === EMAIL (duplicado para compatibilidad, sincronizado con user.email) ===
-    email = models.EmailField(
-        unique=True,
-        verbose_name="Email de acceso"
-    )
-    
+    email = models.EmailField(unique=True, verbose_name="Email de acceso")
+
     # === MIGRACIÓN: Mantener password_hash antiguo hasta migración completa ===
     # TODO: Eliminar después de migrar todas las contraseñas
     password_hash = models.CharField(
-        max_length=255,
-        blank=True,
-        verbose_name="Hash de contraseña (legacy)"
+        max_length=255, blank=True, verbose_name="Hash de contraseña (legacy)"
     )
-    
+
     # === ESTADO ===
     is_active = models.BooleanField(default=True, verbose_name="Activo")
     is_verified = models.BooleanField(default=False, verbose_name="Email verificado")
     verification_token = models.CharField(max_length=255, null=True, blank=True)
     verification_token_expires = models.DateTimeField(null=True, blank=True)
-    
+
     # === 2FA ===
-    two_factor_enabled = models.BooleanField(default=False, verbose_name="2FA habilitado")
+    two_factor_enabled = models.BooleanField(
+        default=False, verbose_name="2FA habilitado"
+    )
     two_factor_secret = models.CharField(max_length=32, null=True, blank=True)
-    two_factor_backup_codes = models.JSONField(default=list, verbose_name="Códigos de respaldo")
-    
+    two_factor_backup_codes = models.JSONField(
+        default=list, verbose_name="Códigos de respaldo"
+    )
+
     # === TELÉFONO ===
-    phone = models.CharField(max_length=20, null=True, blank=True, verbose_name="Teléfono")
-    phone_verified = models.BooleanField(default=False, verbose_name="Teléfono verificado")
-    
+    phone = models.CharField(
+        max_length=20, null=True, blank=True, verbose_name="Teléfono"
+    )
+    phone_verified = models.BooleanField(
+        default=False, verbose_name="Teléfono verificado"
+    )
+
     # === DOCUMENTOS DE IDENTIFICACIÓN ===
     id_document_type = models.CharField(
         max_length=20,
         choices=[
-            ('cedula', 'Cédula'),
-            ('pasaporte', 'Pasaporte'),
-            ('extranjero', 'Cédula Extranjería'),
+            ("cedula", "Cédula"),
+            ("pasaporte", "Pasaporte"),
+            ("extranjero", "Cédula Extranjería"),
         ],
         null=True,
         blank=True,
-        verbose_name="Tipo de documento"
+        verbose_name="Tipo de documento",
     )
     id_document_front = models.ImageField(
-        upload_to='patient_id/',
-        null=True,
-        blank=True,
-        verbose_name="Documento frontal"
+        upload_to="patient_id/", null=True, blank=True, verbose_name="Documento frontal"
     )
     id_document_back = models.ImageField(
-        upload_to='patient_id/',
-        null=True,
-        blank=True,
-        verbose_name="Documento reverso"
+        upload_to="patient_id/", null=True, blank=True, verbose_name="Documento reverso"
     )
-    id_verified = models.BooleanField(default=False, verbose_name="Identidad verificada")
+    id_verified = models.BooleanField(
+        default=False, verbose_name="Identidad verificada"
+    )
     id_verified_at = models.DateTimeField(null=True, blank=True)
-    
+
     # === PREFERENCIAS ===
-    notifications_email = models.BooleanField(default=True, verbose_name="Notificaciones por email")
-    notifications_sms = models.BooleanField(default=True, verbose_name="Notificaciones por SMS")
-    notifications_whatsapp = models.BooleanField(default=True, verbose_name="Notificaciones por WhatsApp")
-    
+    notifications_email = models.BooleanField(
+        default=True, verbose_name="Notificaciones por email"
+    )
+    notifications_sms = models.BooleanField(
+        default=True, verbose_name="Notificaciones por SMS"
+    )
+    notifications_whatsapp = models.BooleanField(
+        default=True, verbose_name="Notificaciones por WhatsApp"
+    )
+
     # === AUDITORÍA ===
-    last_login_at = models.DateTimeField(null=True, blank=True, verbose_name="Último login")
-    failed_login_attempts = models.IntegerField(default=0, verbose_name="Intentos fallidos")
-    locked_until = models.DateTimeField(null=True, blank=True, verbose_name="Bloqueado hasta")
-    
+    last_login_at = models.DateTimeField(
+        null=True, blank=True, verbose_name="Último login"
+    )
+    failed_login_attempts = models.IntegerField(
+        default=0, verbose_name="Intentos fallidos"
+    )
+    locked_until = models.DateTimeField(
+        null=True, blank=True, verbose_name="Bloqueado hasta"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Creado")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Actualizado")
-    
+
     class Meta:
         db_table = "patient_users"
         verbose_name = "Usuario Paciente"
         verbose_name_plural = "Usuarios Pacientes"
         indexes = [
-            models.Index(fields=['email']),
-            models.Index(fields=['patient']),
-            models.Index(fields=['is_active']),
-            models.Index(fields=['user']),
+            models.Index(fields=["email"]),
+            models.Index(fields=["patient"]),
+            models.Index(fields=["is_active"]),
+            models.Index(fields=["user"]),
         ]
-    
+
     def __str__(self):
         return f"PatientUser: {self.email} ({self.patient.full_name})"
-    
+
     def set_password(self, raw_password):
         """Guarda la contraseña en Django User."""
         if self.user:
             self.user.set_password(raw_password)
-            self.user.save(update_fields=['password'])
-    
+            self.user.save(update_fields=["password"])
+
     def check_password(self, raw_password):
         """Verifica la contraseña usando Django User."""
         if self.user:
             return self.user.check_password(raw_password)
         return False
-    
+
     def get_token(self):
         """Obtiene o crea el token DRF para este usuario."""
         from rest_framework.authtoken.models import Token
+
         if self.user:
             token, _ = Token.objects.get_or_create(user=self.user)
             return token.key
         return None
-    
+
     def is_locked(self):
         """Verifica si el usuario está bloqueado."""
         if self.locked_until and timezone.now() < self.locked_until:
             return True
         return False
-    
+
     def save(self, *args, **kwargs):
         """Sincroniza email con user.email si existe."""
         super().save(*args, **kwargs)
         if self.user and self.user.email != self.email:
             self.user.email = self.email
-            self.user.save(update_fields=['email'])
+            self.user.save(update_fields=["email"])
 
 
 # ==========================================
@@ -4331,126 +4648,119 @@ class PatientSubscription(models.Model):
     """
     Suscripciones de pacientes a planes de servicio.
     """
+
     PLAN_CHOICES = [
-        ('free', 'Free - Básico'),
-        ('basic', 'Básico'),
-        ('premium', 'Premium'),
-        ('enterprise', 'Empresarial'),
+        ("free", "Free - Básico"),
+        ("basic", "Básico"),
+        ("premium", "Premium"),
+        ("enterprise", "Empresarial"),
     ]
-    
+
     STATUS_CHOICES = [
-        ('active', 'Activa'),
-        ('pending', 'Pendiente'),
-        ('suspended', 'Suspendida'),
-        ('cancelled', 'Cancelada'),
-        ('expired', 'Expirada'),
+        ("active", "Activa"),
+        ("pending", "Pendiente"),
+        ("suspended", "Suspendida"),
+        ("cancelled", "Cancelada"),
+        ("expired", "Expirada"),
     ]
-    
+
     patient = models.ForeignKey(
         Patient,
         on_delete=models.CASCADE,
-        related_name='subscriptions',
-        verbose_name="Paciente"
+        related_name="subscriptions",
+        verbose_name="Paciente",
     )
     patient_user = models.ForeignKey(
         PatientUser,
         on_delete=models.CASCADE,
-        related_name='subscriptions',
+        related_name="subscriptions",
         null=True,
         blank=True,
-        verbose_name="Usuario paciente"
+        verbose_name="Usuario paciente",
     )
-    
+
     # Plan
     plan = models.CharField(
-        max_length=20,
-        choices=PLAN_CHOICES,
-        default='free',
-        verbose_name="Plan"
+        max_length=20, choices=PLAN_CHOICES, default="free", verbose_name="Plan"
     )
     status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default='pending',
-        verbose_name="Estado"
+        max_length=20, choices=STATUS_CHOICES, default="pending", verbose_name="Estado"
     )
-    
+
     # Precios
     monthly_price_usd = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        default=Decimal('0'),
-        verbose_name="Precio mensual USD"
+        default=Decimal("0"),
+        verbose_name="Precio mensual USD",
     )
     monthly_price_ves = models.DecimalField(
         max_digits=15,
         decimal_places=2,
-        default=Decimal('0'),
-        verbose_name="Precio mensual VES"
+        default=Decimal("0"),
+        verbose_name="Precio mensual VES",
     )
-    
+
     # Período
     start_date = models.DateField(verbose_name="Fecha de inicio")
     end_date = models.DateField(null=True, blank=True, verbose_name="Fecha de fin")
     billing_cycle_day = models.IntegerField(
-        default=1,
-        verbose_name="Día de facturación (1-28)"
+        default=1, verbose_name="Día de facturación (1-28)"
     )
     auto_renew = models.BooleanField(default=True, verbose_name="Renovación automática")
-    cancel_at_period_end = models.BooleanField(default=False, verbose_name="Cancelar al fin de período")
-    
+    cancel_at_period_end = models.BooleanField(
+        default=False, verbose_name="Cancelar al fin de período"
+    )
+
     # Payment
     payment_method = models.CharField(
-        max_length=30,
-        null=True,
-        blank=True,
-        verbose_name="Método de pago"
+        max_length=30, null=True, blank=True, verbose_name="Método de pago"
     )
     payment_reference = models.CharField(
-        max_length=100,
-        null=True,
-        blank=True,
-        verbose_name="Referencia de pago"
+        max_length=100, null=True, blank=True, verbose_name="Referencia de pago"
     )
-    
+
     # Características del plan
-    features = models.JSONField(
-        default=dict,
-        verbose_name="Características incluidas"
-    )
-    
+    features = models.JSONField(default=dict, verbose_name="Características incluidas")
+
     # Auditoría
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
-    
+
     class Meta:
         db_table = "patient_subscriptions"
         verbose_name = "Suscripción Paciente"
         verbose_name_plural = "Suscripciones Pacientes"
-        ordering = ['-start_date']
+        ordering = ["-start_date"]
         indexes = [
-            models.Index(fields=['patient', 'status']),
-            models.Index(fields=['status', 'end_date']),
+            models.Index(fields=["patient", "status"]),
+            models.Index(fields=["status", "end_date"]),
         ]
-    
+
     def __str__(self):
         return f"{self.patient.full_name} - {self.get_plan_display()} ({self.get_status_display()})"
-    
+
     @property
     def is_active(self):
         """Verifica si la suscripción está activa"""
         from datetime import date
-        return self.status == 'active' and (not self.end_date or self.end_date >= date.today())
-    
+
+        return self.status == "active" and (
+            not self.end_date or self.end_date >= date.today()
+        )
+
     @property
     def days_remaining(self):
         """Días restantes del período"""
         from datetime import date
+
         if not self.end_date:
             return None
         delta = self.end_date - date.today()
         return max(0, delta.days)
+
+
 # ==========================================
 # 22. SESIÓN DEL PACIENTE
 # ==========================================
@@ -4458,50 +4768,61 @@ class PatientSession(models.Model):
     """
     Sesiones de login del paciente.
     """
+
     patient_user = models.ForeignKey(
         PatientUser,
         on_delete=models.CASCADE,
-        related_name='sessions',
-        verbose_name="Usuario paciente"
+        related_name="sessions",
+        verbose_name="Usuario paciente",
     )
-    
+
     # Token
-    access_token = models.CharField(max_length=255, unique=True, verbose_name="Token de acceso")
-    refresh_token = models.CharField(max_length=255, null=True, blank=True, verbose_name="Token de refresh")
-    
+    access_token = models.CharField(
+        max_length=255, unique=True, verbose_name="Token de acceso"
+    )
+    refresh_token = models.CharField(
+        max_length=255, null=True, blank=True, verbose_name="Token de refresh"
+    )
+
     # Dispositivo
     ip_address = models.GenericIPAddressField(null=True, verbose_name="IP")
     user_agent = models.TextField(null=True, verbose_name="User Agent")
-    device_info = models.JSONField(default=dict, verbose_name="Información del dispositivo")
-    
+    device_info = models.JSONField(
+        default=dict, verbose_name="Información del dispositivo"
+    )
+
     # Estado
     is_active = models.BooleanField(default=True, verbose_name="Activa")
-    
+
     # Fechas
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Creada")
     expires_at = models.DateTimeField(verbose_name="Expira")
-    last_activity_at = models.DateTimeField(null=True, blank=True, verbose_name="Última actividad")
-    
+    last_activity_at = models.DateTimeField(
+        null=True, blank=True, verbose_name="Última actividad"
+    )
+
     class Meta:
         db_table = "patient_sessions"
         verbose_name = "Sesión Paciente"
         verbose_name_plural = "Sesiones Pacientes"
-        ordering = ['-created_at']
+        ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=['patient_user', 'is_active']),
-            models.Index(fields=['access_token']),
+            models.Index(fields=["patient_user", "is_active"]),
+            models.Index(fields=["access_token"]),
         ]
-    
+
     def __str__(self):
         return f"Session {self.id} - {self.patient_user.email}"
-    
+
     def is_expired(self):
         """Verifica si la sesión ha expirado"""
         return timezone.now() > self.expires_at
-    
+
     def is_valid(self):
         """Verifica si la sesión es válida"""
         return self.is_active and not self.is_expired()
+
+
 # ==========================================
 # 23. LOG DE ACCESO PACIENTE
 # ==========================================
@@ -4509,59 +4830,66 @@ class PatientAccessLog(models.Model):
     """
     Logs de auditoría de acceso del paciente.
     """
+
     ACTION_CHOICES = [
-        ('login', 'Login'),
-        ('logout', 'Logout'),
-        ('failed_login', 'Login fallido'),
-        ('password_change', 'Cambio de contraseña'),
-        ('profile_update', 'Actualización de perfil'),
-        ('view_history', 'Ver historia clínica'),
-        ('book_appointment', 'Reservar cita'),
-        ('cancel_appointment', 'Cancelar cita'),
-        ('view_payment', 'Ver pago'),
-        ('make_payment', 'Realizar pago'),
-        ('2fa_enable', 'Habilitar 2FA'),
-        ('2fa_disable', 'Deshabilitar 2FA'),
+        ("login", "Login"),
+        ("logout", "Logout"),
+        ("failed_login", "Login fallido"),
+        ("password_change", "Cambio de contraseña"),
+        ("profile_update", "Actualización de perfil"),
+        ("view_history", "Ver historia clínica"),
+        ("book_appointment", "Reservar cita"),
+        ("cancel_appointment", "Cancelar cita"),
+        ("view_payment", "Ver pago"),
+        ("make_payment", "Realizar pago"),
+        ("2fa_enable", "Habilitar 2FA"),
+        ("2fa_disable", "Deshabilitar 2FA"),
     ]
-    
+
     patient_user = models.ForeignKey(
         PatientUser,
         on_delete=models.CASCADE,
-        related_name='access_logs',
+        related_name="access_logs",
         null=True,
         blank=True,
-        verbose_name="Usuario paciente"
+        verbose_name="Usuario paciente",
     )
     patient = models.ForeignKey(
         Patient,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='access_logs',
-        verbose_name="Paciente"
+        related_name="access_logs",
+        verbose_name="Paciente",
     )
-    
-    action = models.CharField(max_length=30, choices=ACTION_CHOICES, verbose_name="Acción")
+
+    action = models.CharField(
+        max_length=30, choices=ACTION_CHOICES, verbose_name="Acción"
+    )
     ip_address = models.GenericIPAddressField(null=True, verbose_name="IP")
     user_agent = models.TextField(null=True, verbose_name="User Agent")
-    device_info = models.JSONField(default=dict, verbose_name="Información del dispositivo")
+    device_info = models.JSONField(
+        default=dict, verbose_name="Información del dispositivo"
+    )
     metadata = models.JSONField(default=dict, verbose_name="Metadatos adicionales")
     description = models.TextField(null=True, blank=True, verbose_name="Descripción")
-    
+
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha")
-    
+
     class Meta:
         db_table = "patient_access_logs"
         verbose_name = "Log de Acceso Paciente"
         verbose_name_plural = "Logs de Acceso Pacientes"
-        ordering = ['-created_at']
+        ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=['patient_user', '-created_at']),
-            models.Index(fields=['action', '-created_at']),
+            models.Index(fields=["patient_user", "-created_at"]),
+            models.Index(fields=["action", "-created_at"]),
         ]
-    
+
     def __str__(self):
-        return f"{self.action} - {self.patient_user.email if self.patient_user else 'N/A'}"
+        return (
+            f"{self.action} - {self.patient_user.email if self.patient_user else 'N/A'}"
+        )
 
 
 # ==========================================
@@ -4571,81 +4899,76 @@ class WhatsAppMessage(models.Model):
     """
     Registro de mensajes enviados por WhatsApp Business API.
     """
+
     MESSAGE_TYPES = [
-        ('reminder', 'Recordatorio'),
-        ('confirmation', 'Confirmación'),
-        ('cancellation', 'Cancelación'),
-        ('notification', 'Notificación'),
-        ('chat', 'Chat'),
+        ("reminder", "Recordatorio"),
+        ("confirmation", "Confirmación"),
+        ("cancellation", "Cancelación"),
+        ("notification", "Notificación"),
+        ("chat", "Chat"),
     ]
-    
+
     STATUS_CHOICES = [
-        ('pending', 'Pendiente'),
-        ('sent', 'Enviado'),
-        ('delivered', 'Entregado'),
-        ('read', 'Leído'),
-        ('failed', 'Fallido'),
+        ("pending", "Pendiente"),
+        ("sent", "Enviado"),
+        ("delivered", "Entregado"),
+        ("read", "Leído"),
+        ("failed", "Fallido"),
     ]
-    
+
     appointment = models.ForeignKey(
-        'Appointment', 
-        on_delete=models.CASCADE, 
-        null=True, 
+        "Appointment",
+        on_delete=models.CASCADE,
+        null=True,
         blank=True,
-        related_name='whatsapp_messages'
+        related_name="whatsapp_messages",
     )
     patient = models.ForeignKey(
-        'Patient', 
-        on_delete=models.CASCADE,
-        related_name='whatsapp_messages'
+        "Patient", on_delete=models.CASCADE, related_name="whatsapp_messages"
     )
     doctor = models.ForeignKey(
-        'DoctorOperator', 
-        on_delete=models.CASCADE,
-        related_name='whatsapp_messages'
+        "DoctorOperator", on_delete=models.CASCADE, related_name="whatsapp_messages"
     )
-    
+
     message_type = models.CharField(
-        max_length=20, 
+        max_length=20,
         choices=MESSAGE_TYPES,
-        default='notification',
-        verbose_name="Tipo de mensaje"
+        default="notification",
+        verbose_name="Tipo de mensaje",
     )
     content = models.TextField(verbose_name="Contenido del mensaje")
     phone_to = models.CharField(max_length=20, verbose_name="Teléfono destinatario")
-    
+
     status = models.CharField(
-        max_length=20, 
-        choices=STATUS_CHOICES,
-        default='pending',
-        verbose_name="Estado"
+        max_length=20, choices=STATUS_CHOICES, default="pending", verbose_name="Estado"
     )
-    
+
     sent_at = models.DateTimeField(null=True, blank=True, verbose_name="Enviado a las")
-    delivered_at = models.DateTimeField(null=True, blank=True, verbose_name="Entregado a las")
-    read_at = models.DateTimeField(null=True, blank=True, verbose_name="Leído a las")
-    
-    whatsapp_message_id = models.CharField(
-        max_length=100, 
-        null=True, 
-        blank=True,
-        verbose_name="ID de mensaje WhatsApp"
+    delivered_at = models.DateTimeField(
+        null=True, blank=True, verbose_name="Entregado a las"
     )
-    error_message = models.TextField(null=True, blank=True, verbose_name="Mensaje de error")
-    
+    read_at = models.DateTimeField(null=True, blank=True, verbose_name="Leído a las")
+
+    whatsapp_message_id = models.CharField(
+        max_length=100, null=True, blank=True, verbose_name="ID de mensaje WhatsApp"
+    )
+    error_message = models.TextField(
+        null=True, blank=True, verbose_name="Mensaje de error"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         db_table = "whatsapp_messages"
         verbose_name = "Mensaje WhatsApp"
         verbose_name_plural = "Mensajes WhatsApp"
-        ordering = ['-created_at']
+        ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=['patient', '-created_at']),
-            models.Index(fields=['doctor', '-created_at']),
-            models.Index(fields=['status']),
+            models.Index(fields=["patient", "-created_at"]),
+            models.Index(fields=["doctor", "-created_at"]),
+            models.Index(fields=["status"]),
         ]
-    
+
     def __str__(self):
         return f"WhatsApp to {self.phone_to} - {self.get_message_type_display()}"
 
@@ -4657,66 +4980,47 @@ class PaymentGateway(models.Model):
     """
     Catálogo de pasarelas y métodos de pago disponibles en la plataforma.
     """
+
     code = models.CharField(
         max_length=20,
         unique=True,
         verbose_name="Código",
-        help_text="Código único: mercantil, banesco, binance, manual"
+        help_text="Código único: mercantil, banesco, binance, manual",
     )
-    name = models.CharField(
-        max_length=100,
-        verbose_name="Nombre"
-    )
-    name_en = models.CharField(
-        max_length=100,
-        verbose_name="Nombre (English)"
-    )
-    description = models.TextField(
-        blank=True,
-        verbose_name="Descripción"
-    )
-    is_active = models.BooleanField(
-        default=True,
-        verbose_name="Activo"
-    )
+    name = models.CharField(max_length=100, verbose_name="Nombre")
+    name_en = models.CharField(max_length=100, verbose_name="Nombre (English)")
+    description = models.TextField(blank=True, verbose_name="Descripción")
+    is_active = models.BooleanField(default=True, verbose_name="Activo")
     requires_legal_account = models.BooleanField(
         default=False,
         verbose_name="Requiere cuenta jurídica",
-        help_text="Si True, el doctor debe tener cuenta jurídica para usar este método"
+        help_text="Si True, el doctor debe tener cuenta jurídica para usar este método",
     )
-    logo_url = models.URLField(
-        max_length=500,
-        blank=True,
-        verbose_name="URL del Logo"
-    )
+    logo_url = models.URLField(max_length=500, blank=True, verbose_name="URL del Logo")
     api_docs_url = models.URLField(
-        max_length=500,
-        blank=True,
-        verbose_name="URL de Documentación API"
+        max_length=500, blank=True, verbose_name="URL de Documentación API"
     )
     config_schema = models.JSONField(
         default=dict,
         verbose_name="Esquema de configuración",
-        help_text="JSON que define los campos de configuración requeridos"
+        help_text="JSON que define los campos de configuración requeridos",
     )
     supports_webhook = models.BooleanField(
-        default=False,
-        verbose_name="Soporta Webhook"
+        default=False, verbose_name="Soporta Webhook"
     )
     supports_api_verify = models.BooleanField(
-        default=False,
-        verbose_name="Soporta verificación por API"
+        default=False, verbose_name="Soporta verificación por API"
     )
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         db_table = "payment_gateways"
         verbose_name = "Pasarela de Pago"
         verbose_name_plural = "Pasarelas de Pago"
-        ordering = ['name']
-    
+        ordering = ["name"]
+
     def __str__(self):
         return f"{self.name} ({self.code})"
 
@@ -4726,211 +5030,172 @@ class DoctorPaymentConfig(models.Model):
     Configuración de pago por DOCTOR.
     Almacena credenciales bancarias y de API para cada método de pago.
     """
+
     ACCOUNT_TYPE_CHOICES = [
-        ('natural', 'Persona Natural'),
-        ('juridica', 'Persona Jurídica'),
+        ("natural", "Persona Natural"),
+        ("juridica", "Persona Jurídica"),
     ]
-    
+
     doctor = models.OneToOneField(
-        'DoctorOperator',
+        "DoctorOperator",
         on_delete=models.CASCADE,
-        related_name='payment_config',
-        verbose_name="Doctor"
+        related_name="payment_config",
+        verbose_name="Doctor",
     )
-    
+
     # Cuenta bancaria básica
     bank_name = models.CharField(
-        max_length=100,
-        blank=True,
-        verbose_name="Nombre del Banco"
+        max_length=100, blank=True, verbose_name="Nombre del Banco"
     )
     bank_account = models.CharField(
-        max_length=50,
-        blank=True,
-        verbose_name="Número de Cuenta"
+        max_length=50, blank=True, verbose_name="Número de Cuenta"
     )
-    bank_rif = models.CharField(
-        max_length=20,
-        blank=True,
-        verbose_name="RIF / Cédula"
-    )
+    bank_rif = models.CharField(max_length=20, blank=True, verbose_name="RIF / Cédula")
     bank_phone = models.CharField(
-        max_length=20,
-        blank=True,
-        verbose_name="Teléfono asociado al Pago Móvil"
+        max_length=20, blank=True, verbose_name="Teléfono asociado al Pago Móvil"
     )
     bank_account_holder = models.CharField(
-        max_length=200,
-        blank=True,
-        verbose_name="Titular de la Cuenta"
+        max_length=200, blank=True, verbose_name="Titular de la Cuenta"
     )
-    
+
     # === CREDENCIALES MERCANTIL ===
     mercantil_client_id = models.CharField(
-        max_length=100,
-        blank=True,
-        verbose_name="Mercantil - Client ID"
+        max_length=100, blank=True, verbose_name="Mercantil - Client ID"
     )
     mercantil_secret_key = models.CharField(
-        max_length=255,
-        blank=True,
-        verbose_name="Mercantil - Secret Key"
+        max_length=255, blank=True, verbose_name="Mercantil - Secret Key"
     )
     mercantil_webhook_secret = models.CharField(
-        max_length=100,
-        blank=True,
-        verbose_name="Mercantil - Webhook Secret"
+        max_length=100, blank=True, verbose_name="Mercantil - Webhook Secret"
     )
     mercantil_enabled = models.BooleanField(
-        default=False,
-        verbose_name="Mercantil habilitado"
+        default=False, verbose_name="Mercantil habilitado"
     )
     mercantil_is_test_mode = models.BooleanField(
-        default=True,
-        verbose_name="Mercantil modo prueba"
+        default=True, verbose_name="Mercantil modo prueba"
     )
-    
+
     # === CREDENCIALES BANESCO ===
     banesco_client_id = models.CharField(
-        max_length=100,
-        blank=True,
-        verbose_name="Banesco - Client ID"
+        max_length=100, blank=True, verbose_name="Banesco - Client ID"
     )
     banesco_secret_key = models.CharField(
-        max_length=255,
-        blank=True,
-        verbose_name="Banesco - Secret Key"
+        max_length=255, blank=True, verbose_name="Banesco - Secret Key"
     )
     banesco_enabled = models.BooleanField(
-        default=False,
-        verbose_name="Banesco habilitado"
+        default=False, verbose_name="Banesco habilitado"
     )
     banesco_is_test_mode = models.BooleanField(
-        default=True,
-        verbose_name="Banesco modo prueba"
+        default=True, verbose_name="Banesco modo prueba"
     )
-    
+
     # === CREDENCIALES BINANCE ===
     binance_merchant_id = models.CharField(
-        max_length=100,
-        blank=True,
-        verbose_name="Binance - Merchant ID"
+        max_length=100, blank=True, verbose_name="Binance - Merchant ID"
     )
     binance_api_key = models.CharField(
-        max_length=255,
-        blank=True,
-        verbose_name="Binance - API Key"
+        max_length=255, blank=True, verbose_name="Binance - API Key"
     )
     binance_api_secret = models.CharField(
-        max_length=255,
-        blank=True,
-        verbose_name="Binance - API Secret"
+        max_length=255, blank=True, verbose_name="Binance - API Secret"
     )
     binance_webhook_secret = models.CharField(
-        max_length=100,
-        blank=True,
-        verbose_name="Binance - Webhook Secret"
+        max_length=100, blank=True, verbose_name="Binance - Webhook Secret"
     )
     binance_enabled = models.BooleanField(
-        default=False,
-        verbose_name="Binance habilitado"
+        default=False, verbose_name="Binance habilitado"
     )
-    
+
     # === CONFIGURACIÓN GENERAL ===
     account_type = models.CharField(
         max_length=20,
         choices=ACCOUNT_TYPE_CHOICES,
-        default='natural',
-        verbose_name="Tipo de Cuenta"
+        default="natural",
+        verbose_name="Tipo de Cuenta",
     )
     manual_verification_enabled = models.BooleanField(
         default=True,
         verbose_name="Verificación manual habilitada",
-        help_text="Permitir que pacientes confirmen pagos manualmente como fallback"
+        help_text="Permitir que pacientes confirmen pagos manualmente como fallback",
     )
     notifications_enabled = models.BooleanField(
-        default=True,
-        verbose_name="Notificaciones habilitadas"
+        default=True, verbose_name="Notificaciones habilitadas"
     )
-    
+
     # === COMISIONES ===
     commission_doctor_percent = models.DecimalField(
         max_digits=5,
         decimal_places=2,
-        default=Decimal('3.0'),
+        default=Decimal("3.0"),
         verbose_name="% Comisión Doctor",
-        help_text="Porcentaje que paga el doctor por transacción"
+        help_text="Porcentaje que paga el doctor por transacción",
     )
     commission_patient_percent = models.DecimalField(
         max_digits=5,
         decimal_places=2,
-        default=Decimal('2.0'),
+        default=Decimal("2.0"),
         verbose_name="% Comisión Paciente",
-        help_text="Porcentaje que paga el paciente por transacción"
+        help_text="Porcentaje que paga el paciente por transacción",
     )
-    
+
     # === VERIFICACIÓN ===
     is_verified = models.BooleanField(
-        default=False,
-        verbose_name="Configuración verificada"
+        default=False, verbose_name="Configuración verificada"
     )
     verified_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name="Fecha de verificación"
+        null=True, blank=True, verbose_name="Fecha de verificación"
     )
     verification_notes = models.TextField(
-        blank=True,
-        verbose_name="Notas de verificación"
+        blank=True, verbose_name="Notas de verificación"
     )
-    
+
     # === MÉTODOS HABILITADOS ===
     enabled_methods = models.ManyToManyField(
         PaymentGateway,
         blank=True,
-        related_name='doctor_configs',
-        verbose_name="Métodos de pago habilitados"
+        related_name="doctor_configs",
+        verbose_name="Métodos de pago habilitados",
     )
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         db_table = "doctor_payment_config"
         verbose_name = "Configuración de Pago Doctor"
         verbose_name_plural = "Configuraciones de Pago Doctor"
-    
+
     def __str__(self):
         return f"Pago Config - Dr. {self.doctor.user.get_full_name()}"
-    
+
     def get_enabled_methods_list(self):
         """Retorna lista de códigos de métodos habilitados"""
-        return list(self.enabled_methods.values_list('code', flat=True))
-    
+        return list(self.enabled_methods.values_list("code", flat=True))
+
     def has_method(self, code: str) -> bool:
         """Verifica si un método está habilitado"""
         return self.enabled_methods.filter(code=code).exists()
-    
+
     def is_fully_configured(self) -> bool:
         """Verifica si la configuración está completa"""
         if not self.bank_account or not self.bank_phone:
             return False
-        
+
         enabled = self.get_enabled_methods_list()
         if not enabled:
             return False
-        
+
         for method in enabled:
-            if method == 'mercantil' and self.mercantil_enabled:
+            if method == "mercantil" and self.mercantil_enabled:
                 if not self.mercantil_client_id or not self.mercantil_secret_key:
                     return False
-            elif method == 'banesco' and self.banesco_enabled:
+            elif method == "banesco" and self.banesco_enabled:
                 if not self.banesco_client_id or not self.banesco_secret_key:
                     return False
-            elif method == 'binance' and self.binance_enabled:
+            elif method == "binance" and self.binance_enabled:
                 if not self.binance_api_key or not self.binance_api_secret:
                     return False
-        
+
         return True
 
 
@@ -4939,73 +5204,66 @@ class PaymentTransaction(models.Model):
     Transacción de pago unificada para todos los métodos de pago.
     Almacena el ciclo completo de un pago desde su creación hasta confirmación.
     """
-    
+
     STATUS_CHOICES = [
-        ('pending', 'Pendiente'),
-        ('processing', 'Procesando'),
-        ('confirmed', 'Confirmado'),
-        ('failed', 'Fallido'),
-        ('cancelled', 'Cancelado'),
+        ("pending", "Pendiente"),
+        ("processing", "Procesando"),
+        ("confirmed", "Confirmado"),
+        ("failed", "Fallido"),
+        ("cancelled", "Cancelado"),
     ]
-    
+
     VERIFICATION_CHOICES = [
-        ('api', 'Automática (API)'),
-        ('manual', 'Manual (Doctor)'),
-        ('webhook', 'Webhook'),
+        ("api", "Automática (API)"),
+        ("manual", "Manual (Doctor)"),
+        ("webhook", "Webhook"),
     ]
-    
+
     CURRENCY_CHOICES = [
-        ('VES', 'Bolívar - VES'),
-        ('USD', 'Dólar - USD'),
+        ("VES", "Bolívar - VES"),
+        ("USD", "Dólar - USD"),
     ]
-    
+
     # === RELACIONES ===
     doctor = models.ForeignKey(
-        'DoctorOperator',
+        "DoctorOperator",
         on_delete=models.CASCADE,
-        related_name='payment_transactions',
-        verbose_name="Doctor"
+        related_name="payment_transactions",
+        verbose_name="Doctor",
     )
     patient = models.ForeignKey(
-        'Patient',
+        "Patient",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='payment_transactions',
-        verbose_name="Paciente"
+        related_name="payment_transactions",
+        verbose_name="Paciente",
     )
     payment_method = models.ForeignKey(
         PaymentGateway,
         on_delete=models.PROTECT,
-        related_name='transactions',
-        verbose_name="Método de Pago"
+        related_name="transactions",
+        verbose_name="Método de Pago",
     )
     linked_payment = models.ForeignKey(
-        'Payment',
+        "Payment",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='gateway_transactions',
-        verbose_name="Pago vinculado (cita)"
+        related_name="gateway_transactions",
+        verbose_name="Pago vinculado (cita)",
     )
-    
+
     # === DATOS DE TRANSACCIÓN ===
     uuid = models.UUIDField(
         default=uuid.uuid4,
         unique=True,
         verbose_name="UUID único",
-        help_text="Referencia única para tracking"
+        help_text="Referencia única para tracking",
     )
-    amount = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        verbose_name="Monto"
-    )
+    amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Monto")
     currency = models.CharField(
-        max_length=3,
-        choices=CURRENCY_CHOICES,
-        default='VES',
-        verbose_name="Moneda"
+        max_length=3, choices=CURRENCY_CHOICES, default="VES", verbose_name="Moneda"
     )
     amount_ves = models.DecimalField(
         max_digits=12,
@@ -5013,175 +5271,161 @@ class PaymentTransaction(models.Model):
         null=True,
         blank=True,
         verbose_name="Monto en VES",
-        help_text="Monto convertido a VES (si pagó en USD)"
+        help_text="Monto convertido a VES (si pagó en USD)",
     )
     exchange_rate_bcv = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name="Tasa BCV usada"
+        verbose_name="Tasa BCV usada",
     )
     description = models.CharField(
-        max_length=500,
-        blank=True,
-        verbose_name="Descripción del pago"
+        max_length=500, blank=True, verbose_name="Descripción del pago"
     )
-    
+
     # === ESTADO Y VERIFICACIÓN ===
     status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default='pending',
-        verbose_name="Estado"
+        max_length=20, choices=STATUS_CHOICES, default="pending", verbose_name="Estado"
     )
     verification_type = models.CharField(
         max_length=20,
         choices=VERIFICATION_CHOICES,
-        default='manual',
-        verbose_name="Tipo de verificación"
+        default="manual",
+        verbose_name="Tipo de verificación",
     )
-    
+
     # === DATOS DEL PAGADOR (para pagos externos/sin cuenta) ===
     payer_name = models.CharField(
-        max_length=200,
-        blank=True,
-        verbose_name="Nombre del pagador"
+        max_length=200, blank=True, verbose_name="Nombre del pagador"
     )
     payer_phone = models.CharField(
-        max_length=20,
-        blank=True,
-        verbose_name="Teléfono del pagador"
+        max_length=20, blank=True, verbose_name="Teléfono del pagador"
     )
-    payer_email = models.EmailField(
-        blank=True,
-        verbose_name="Email del pagador"
-    )
-    
+    payer_email = models.EmailField(blank=True, verbose_name="Email del pagador")
+
     # === REFERENCIAS ===
     reference_number = models.CharField(
         max_length=100,
         blank=True,
         verbose_name="Número de referencia (del paciente)",
-        help_text="Referencia que el paciente reporta haber realizado"
+        help_text="Referencia que el paciente reporta haber realizado",
     )
     gateway_transaction_id = models.CharField(
         max_length=255,
         blank=True,
         verbose_name="ID de transacción del gateway",
-        help_text="ID retornado por el banco/pasarela"
+        help_text="ID retornado por el banco/pasarela",
     )
     bank_reference = models.CharField(
         max_length=100,
         blank=True,
         verbose_name="Referencia bancaria",
-        help_text="Referencia oficial del banco"
+        help_text="Referencia oficial del banco",
     )
-    
+
     # === COMISIONES ===
     commission_doctor_amount = models.DecimalField(
         max_digits=12,
         decimal_places=2,
-        default=Decimal('0.00'),
-        verbose_name="Monto comisión doctor"
+        default=Decimal("0.00"),
+        verbose_name="Monto comisión doctor",
     )
     commission_patient_amount = models.DecimalField(
         max_digits=12,
         decimal_places=2,
-        default=Decimal('0.00'),
-        verbose_name="Monto comisión paciente"
+        default=Decimal("0.00"),
+        verbose_name="Monto comisión paciente",
     )
     net_amount = models.DecimalField(
         max_digits=12,
         decimal_places=2,
-        default=Decimal('0.00'),
-        verbose_name="Monto neto al doctor"
+        default=Decimal("0.00"),
+        verbose_name="Monto neto al doctor",
     )
-    
+
     # === AUDITORÍA ===
     gateway_response = models.JSONField(
         blank=True,
         null=True,
         verbose_name="Respuesta del Gateway",
-        help_text="Respuesta completa de API del banco/pasarela"
+        help_text="Respuesta completa de API del banco/pasarela",
     )
-    notes = models.TextField(
-        blank=True,
-        verbose_name="Notas internas"
-    )
+    notes = models.TextField(blank=True, verbose_name="Notas internas")
     internal_notes = models.TextField(
-        blank=True,
-        verbose_name="Notas privadas del doctor"
+        blank=True, verbose_name="Notas privadas del doctor"
     )
-    
+
     # === TIMING ===
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     paid_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name="Fecha en que paciente reporta haber pagado"
+        null=True, blank=True, verbose_name="Fecha en que paciente reporta haber pagado"
     )
     confirmed_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name="Fecha de confirmación real"
+        null=True, blank=True, verbose_name="Fecha de confirmación real"
     )
     expires_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name="Fecha de expiración"
+        null=True, blank=True, verbose_name="Fecha de expiración"
     )
-    
+
     class Meta:
         db_table = "payment_transactions"
         verbose_name = "Transacción de Pago"
         verbose_name_plural = "Transacciones de Pago"
-        ordering = ['-created_at']
+        ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=['doctor', 'status']),
-            models.Index(fields=['doctor', '-created_at']),
-            models.Index(fields=['patient', 'status']),
-            models.Index(fields=['uuid']),
-            models.Index(fields=['gateway_transaction_id']),
-            models.Index(fields=['reference_number']),
-            models.Index(fields=['status', 'created_at']),
+            models.Index(fields=["doctor", "status"]),
+            models.Index(fields=["doctor", "-created_at"]),
+            models.Index(fields=["patient", "status"]),
+            models.Index(fields=["uuid"]),
+            models.Index(fields=["gateway_transaction_id"]),
+            models.Index(fields=["reference_number"]),
+            models.Index(fields=["status", "created_at"]),
         ]
-    
+
     def __str__(self):
         return f"Tx {self.uuid} - {self.amount} {self.currency} [{self.get_status_display()}]"
-    
+
     def calculate_commissions(self):
         """Calcula las comisiones basadas en los porcentajes configurados"""
         if not self.doctor:
             return
-        
+
         try:
             config = self.doctor.payment_config
-            self.commission_doctor_amount = (self.amount * config.commission_doctor_percent) / 100
-            self.commission_patient_amount = (self.amount * config.commission_patient_percent) / 100
-            self.net_amount = self.amount - self.commission_doctor_amount - self.commission_patient_amount
+            self.commission_doctor_amount = (
+                self.amount * config.commission_doctor_percent
+            ) / 100
+            self.commission_patient_amount = (
+                self.amount * config.commission_patient_percent
+            ) / 100
+            self.net_amount = (
+                self.amount
+                - self.commission_doctor_amount
+                - self.commission_patient_amount
+            )
         except DoctorPaymentConfig.DoesNotExist:
-            self.commission_doctor_amount = Decimal('0.00')
-            self.commission_patient_amount = Decimal('0.00')
+            self.commission_doctor_amount = Decimal("0.00")
+            self.commission_patient_amount = Decimal("0.00")
             self.net_amount = self.amount
-    
-    def confirm(self, verified_by: str = 'manual'):
+
+    def confirm(self, verified_by: str = "manual"):
         """Confirma la transacción"""
         from django.utils import timezone
-        
-        self.status = 'confirmed'
+
+        self.status = "confirmed"
         self.verification_type = verified_by
         self.confirmed_at = timezone.now()
         self.calculate_commissions()
         self.save()
-        
+
         # TODO: Notificar al doctor por WhatsApp
         return self
-    
-    def cancel(self, reason: str = ''):
+
+    def cancel(self, reason: str = ""):
         """Cancela la transacción"""
-        self.status = 'cancelled'
+        self.status = "cancelled"
         self.notes = reason
         self.save()
         return self
@@ -5192,101 +5436,84 @@ class PaymentWebhook(models.Model):
     Registro de webhooks recibidos para auditoría y debugging.
     Almacena todas las notificaciones de pago de los gateways.
     """
-    
+
     STATUS_CHOICES = [
-        ('received', 'Recibido'),
-        ('processing', 'Procesando'),
-        ('processed', 'Procesado'),
-        ('failed', 'Fallido'),
-        ('duplicate', 'Duplicado'),
+        ("received", "Recibido"),
+        ("processing", "Procesando"),
+        ("processed", "Procesado"),
+        ("failed", "Fallido"),
+        ("duplicate", "Duplicado"),
     ]
-    
+
     # === RELACIONES ===
     doctor = models.ForeignKey(
-        'DoctorOperator',
+        "DoctorOperator",
         on_delete=models.CASCADE,
-        related_name='payment_webhooks',
-        verbose_name="Doctor"
+        related_name="payment_webhooks",
+        verbose_name="Doctor",
     )
     gateway = models.ForeignKey(
         PaymentGateway,
         on_delete=models.PROTECT,
-        related_name='webhooks',
-        verbose_name="Gateway"
+        related_name="webhooks",
+        verbose_name="Gateway",
     )
     transaction = models.ForeignKey(
         PaymentTransaction,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='webhooks',
-        verbose_name="Transacción vinculada"
+        related_name="webhooks",
+        verbose_name="Transacción vinculada",
     )
-    
+
     # === DATOS DEL WEBHOOK ===
     event_type = models.CharField(
         max_length=100,
         verbose_name="Tipo de evento",
-        help_text="Tipo de evento recibido (ej: PAY_CLOSED, PAYMENT_CONFIRMED)"
+        help_text="Tipo de evento recibido (ej: PAY_CLOSED, PAYMENT_CONFIRMED)",
     )
     payload = models.JSONField(
-        verbose_name="Payload recibido",
-        help_text="Cuerpo completo del webhook"
+        verbose_name="Payload recibido", help_text="Cuerpo completo del webhook"
     )
-    headers = models.JSONField(
-        blank=True,
-        null=True,
-        verbose_name="Headers recibidos"
-    )
-    
+    headers = models.JSONField(blank=True, null=True, verbose_name="Headers recibidos")
+
     # === VERIFICACIÓN ===
-    signature_valid = models.BooleanField(
-        default=False,
-        verbose_name="Firma válida"
-    )
-    signature_error = models.TextField(
-        blank=True,
-        verbose_name="Error de firma"
-    )
-    
+    signature_valid = models.BooleanField(default=False, verbose_name="Firma válida")
+    signature_error = models.TextField(blank=True, verbose_name="Error de firma")
+
     # === PROCESAMIENTO ===
     status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default='received',
-        verbose_name="Estado"
+        max_length=20, choices=STATUS_CHOICES, default="received", verbose_name="Estado"
     )
     processing_error = models.TextField(
-        blank=True,
-        verbose_name="Error de procesamiento"
+        blank=True, verbose_name="Error de procesamiento"
     )
     response_sent = models.JSONField(
-        blank=True,
-        null=True,
-        verbose_name="Respuesta enviada"
+        blank=True, null=True, verbose_name="Respuesta enviada"
     )
-    
+
     # === TIMING ===
     created_at = models.DateTimeField(auto_now_add=True)
     processed_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name="Fecha de procesamiento"
+        null=True, blank=True, verbose_name="Fecha de procesamiento"
     )
-    
+
     class Meta:
         db_table = "payment_webhooks"
         verbose_name = "Webhook de Pago"
         verbose_name_plural = "Webhooks de Pago"
-        ordering = ['-created_at']
+        ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=['doctor', '-created_at']),
-            models.Index(fields=['gateway', 'status']),
-            models.Index(fields=['transaction']),
+            models.Index(fields=["doctor", "-created_at"]),
+            models.Index(fields=["gateway", "status"]),
+            models.Index(fields=["transaction"]),
         ]
-    
+
     def __str__(self):
         return f"Webhook {self.gateway.code} - {self.event_type} [{self.get_status_display()}]"
+
+
 # ============================================================================
 # END SECTION 6: PAYMENT SYSTEM MODELS
 # ============================================================================
@@ -5298,108 +5525,89 @@ class PatientInvitation(models.Model):
     Sistema de invitación de pacientes al Portal MEDOPZ.
     El doctor invita al paciente, este se suscribe directamente a MEDOPZ.
     """
+
     STATUS_CHOICES = [
-        ('pending', 'Pendiente'),
-        ('sent', 'Enviada'),
-        ('activated', 'Activada'),
-        ('expired', 'Expirada'),
-        ('cancelled', 'Cancelada'),
+        ("pending", "Pendiente"),
+        ("sent", "Enviada"),
+        ("activated", "Activada"),
+        ("expired", "Expirada"),
+        ("cancelled", "Cancelada"),
     ]
-    
+
     patient = models.ForeignKey(
-        'Patient',
+        "Patient",
         on_delete=models.CASCADE,
-        related_name='portal_invitations',
-        verbose_name="Paciente"
+        related_name="portal_invitations",
+        verbose_name="Paciente",
     )
-    
+
     doctor = models.ForeignKey(
-        'DoctorOperator',
+        "DoctorOperator",
         on_delete=models.CASCADE,
-        related_name='sent_invitations',
-        verbose_name="Doctor que invita"
+        related_name="sent_invitations",
+        verbose_name="Doctor que invita",
     )
-    
+
     token = models.CharField(
-        max_length=64,
-        unique=True,
-        verbose_name="Token de invitación"
+        max_length=64, unique=True, verbose_name="Token de invitación"
     )
-    
+
     status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default='pending',
-        verbose_name="Estado"
+        max_length=20, choices=STATUS_CHOICES, default="pending", verbose_name="Estado"
     )
-    
-    sent_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name="Fecha de envío"
-    )
-    
+
+    sent_at = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de envío")
+
     activated_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name="Fecha de activación"
+        null=True, blank=True, verbose_name="Fecha de activación"
     )
-    
-    expires_at = models.DateTimeField(
-        verbose_name="Fecha de expiración"
-    )
-    
+
+    expires_at = models.DateTimeField(verbose_name="Fecha de expiración")
+
     # Datos del pago (automático tras activación)
     payment_reference = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True,
-        verbose_name="Referencia del pago"
+        max_length=255, blank=True, null=True, verbose_name="Referencia del pago"
     )
-    
+
     payment_amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name="Monto pagado"
+        verbose_name="Monto pagado",
     )
-    
+
     payment_date = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name="Fecha del pago"
+        null=True, blank=True, verbose_name="Fecha del pago"
     )
-    
-    notes = models.TextField(
-        blank=True,
-        verbose_name="Notas"
-    )
-    
+
+    notes = models.TextField(blank=True, verbose_name="Notas")
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         db_table = "patient_invitations"
         verbose_name = "Invitación al Portal"
         verbose_name_plural = "Invitaciones al Portal"
-        ordering = ['-created_at']
-    
+        ordering = ["-created_at"]
+
     def __str__(self):
         return f"Invitación: {self.patient.full_name} - {self.get_status_display()}"
-    
+
     @property
     def is_active(self):
-        return self.status == 'activated' and self.activated_at is not None
-    
+        return self.status == "activated" and self.activated_at is not None
+
     @property
     def is_expired(self):
         return self.expires_at < timezone.now()
-    
+
     def generate_token(self):
         import secrets
+
         return secrets.token_urlsafe(32)
-    
+
     def save(self, *args, **kwargs):
         if not self.token:
             self.token = self.generate_token()
@@ -5415,61 +5623,51 @@ class PatientPaymentMethod(models.Model):
     """
     Métodos de pago registrados por el paciente (Pago Móvil, Crypto futuro)
     """
+
     patient = models.OneToOneField(
-        'Patient', 
-        on_delete=models.CASCADE, 
-        related_name='payment_method'
+        "Patient", on_delete=models.CASCADE, related_name="payment_method"
     )
-    
+
     # === PAGO MÓVIL VENEZUELA ===
     mobile_phone = models.CharField(
-        max_length=20, 
-        blank=True, 
-        verbose_name="Teléfono para Pago Móvil"
+        max_length=20, blank=True, verbose_name="Teléfono para Pago Móvil"
     )
     mobile_national_id = models.CharField(
-        max_length=20, 
-        blank=True, 
-        verbose_name="Cédula para Pago Móvil"
+        max_length=20, blank=True, verbose_name="Cédula para Pago Móvil"
     )
     preferred_bank = models.CharField(
-        max_length=4, 
-        blank=True, 
-        choices=BANK_CHOICES,
-        verbose_name="Banco Preferido"
+        max_length=4, blank=True, choices=BANK_CHOICES, verbose_name="Banco Preferido"
     )
     last_payment_amount = models.DecimalField(
-        max_digits=12, 
-        decimal_places=2, 
-        null=True, 
+        max_digits=12,
+        decimal_places=2,
+        null=True,
         blank=True,
-        verbose_name="Último monto pagado (BS)"
+        verbose_name="Último monto pagado (BS)",
     )
-    
+
     # === CRIPTO (FUTURO - preparado) ===
     crypto_wallet = models.CharField(
-        max_length=100, 
-        blank=True, 
-        verbose_name="Wallet Crypto"
+        max_length=100, blank=True, verbose_name="Wallet Crypto"
     )
     crypto_type = models.CharField(
-        max_length=10, 
-        blank=True, 
+        max_length=10,
+        blank=True,
         choices=[
-            ('BTC', 'Bitcoin'),
-            ('USDT', 'USDT (Tether)'),
-            ('ETH', 'Ethereum'),
+            ("BTC", "Bitcoin"),
+            ("USDT", "USDT (Tether)"),
+            ("ETH", "Ethereum"),
         ],
-        verbose_name="Tipo de Criptomoneda"
+        verbose_name="Tipo de Criptomoneda",
     )
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         verbose_name = "Método de Pago del Paciente"
         verbose_name_plural = "Métodos de Pago de Pacientes"
-    
+
     def __str__(self):
         return f"Métodos de Pago - {self.patient.full_name}"
 
@@ -5482,41 +5680,42 @@ class ServiceCategory(models.Model):
     Categorías genéricas de servicios (Consulta, Procedimiento, etc.).
     Unificación de BillingCategory y ServiceCategory.
     """
+
     # TIPOS PREDEFINIDOS (Enum)
     CATEGORY_TYPES = [
-        ('APPOINTMENT', 'Consulta/Cita'),
-        ('PROCEDURE', 'Procedimiento Médico'),
-        ('DIAGNOSTIC', 'Diagnóstico/Laboratorio'),
-        ('PHARMACY', 'Farmacia/Medicamento'),
-        ('PACKAGE', 'Paquete/Promoción'),
-        ('ADMIN', 'Servicio Administrativo'),
+        ("APPOINTMENT", "Consulta/Cita"),
+        ("PROCEDURE", "Procedimiento Médico"),
+        ("DIAGNOSTIC", "Diagnóstico/Laboratorio"),
+        ("PHARMACY", "Farmacia/Medicamento"),
+        ("PACKAGE", "Paquete/Promoción"),
+        ("ADMIN", "Servicio Administrativo"),
     ]
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True, null=True)
     icon = models.CharField(max_length=50, blank=True, null=True)
     is_active = models.BooleanField(default=True)
-    
+
     # NUEVO CAMPO: Tipo estructurado
     category_type = models.CharField(
-        max_length=20, 
-        choices=CATEGORY_TYPES, 
-        default='ADMIN',
-        verbose_name="Tipo de Categoría"
+        max_length=20,
+        choices=CATEGORY_TYPES,
+        default="ADMIN",
+        verbose_name="Tipo de Categoría",
     )
-    
+
     # Campos de auditoría
-    created_at = models.DateTimeField(default=timezone.now) 
-    updated_at = models.DateTimeField(auto_now=True) 
-    
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
     class Meta:
         verbose_name = "Categoría de Servicio"
         verbose_name_plural = "Categorías de Servicios"
-        ordering = ['name']
-    
+        ordering = ["name"]
+
     def save(self, *args, **kwargs):
         self.name = normalize_title_case(self.name)
         super().save(*args, **kwargs)
-    
+
     def __str__(self):
         return self.name
 
@@ -5527,92 +5726,86 @@ class DoctorService(models.Model):
     Es el "producto" que el doctor ofrece al paciente.
     Unificación de BillingItem y DoctorService.
     """
+
     # Dueño del servicio (Filosofía MEDOPZ: siempre obligatorio)
     doctor = models.ForeignKey(
-        'DoctorOperator',
+        "DoctorOperator",
         on_delete=models.CASCADE,
-        related_name='services',
-        null=False  # Asegurar que sea obligatorio
+        related_name="services",
+        null=False,  # Asegurar que sea obligatorio
     )
-    
+
     # Categoría genérica (unificada)
     category = models.ForeignKey(
-        'ServiceCategory',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
+        "ServiceCategory", on_delete=models.SET_NULL, null=True, blank=True
     )
-    
+
     # Institución donde se ofrece (opcional)
     institution = models.ForeignKey(
-        'InstitutionSettings',
+        "InstitutionSettings",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='doctor_services'
+        related_name="doctor_services",
     )
-    
+
     # === NUEVO: Código único global ===
     code = models.CharField(
-        max_length=20,
-        unique=True,
-        help_text="Código único del servicio (ej: CONS-001)"
+        max_length=20, unique=True, help_text="Código único del servicio (ej: CONS-001)"
     )
-    
+
     # Datos del servicio
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
-    
+
     # === NUEVO: Precio en USD ===
     price_usd = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        default=Decimal('0.00'),
-        help_text="Precio base en dólares (USD)"
+        default=Decimal("0.00"),
+        help_text="Precio base en dólares (USD)",
     )
-    
+
     duration_minutes = models.PositiveIntegerField(default=30)
-    
+
     # Control de visibilidad
     is_active = models.BooleanField(default=True)
     is_visible_global = models.BooleanField(
-        default=True,
-        help_text="Si es True, aparece en el catálogo global"
+        default=True, help_text="Si es True, aparece en el catálogo global"
     )
-    
+
     # Auditoría
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     # Campos para configuración de citas
     requires_appointment = models.BooleanField(default=True)
     booking_lead_time = models.IntegerField(default=24)  # Horas mínimas para agendar
     cancellation_window = models.IntegerField(default=24)  # Horas mínimas para cancelar
-    
+
     # === NUEVOS CAMPOS PARA CONFIGURACIÓN DE CITAS ===
     requires_appointment = models.BooleanField(
-        default=True,
-        verbose_name="Requiere cita previa"
+        default=True, verbose_name="Requiere cita previa"
     )
     booking_lead_time = models.IntegerField(
         default=24,
         verbose_name="Horas mínimas para agendar",
-        help_text="Horas de anticipación requeridas para agendar una cita"
+        help_text="Horas de anticipación requeridas para agendar una cita",
     )
     cancellation_window = models.IntegerField(
         default=24,
         verbose_name="Horas mínimas para cancelar",
-        help_text="Horas de anticipación requeridas para cancelar una cita sin penalización"
+        help_text="Horas de anticipación requeridas para cancelar una cita sin penalización",
     )
-    
+
     class Meta:
         verbose_name = "Servicio del Doctor"
         verbose_name_plural = "Servicios de Doctores"
-        ordering = ['doctor', 'name']
-    
+        ordering = ["doctor", "name"]
+
     def __str__(self):
         return f"{self.name} - {self.doctor.full_name}"
-    
+
     def save(self, *args, **kwargs):
         self.name = normalize_title_case(self.name)
         super().save(*args, **kwargs)
@@ -5623,20 +5816,24 @@ class ServiceSchedule(models.Model):
     Define horarios específicos para un servicio en una institución.
     Permite múltiples configuraciones (ej: Lunes 9-12, Miércoles 14-18).
     """
+
     service = models.ForeignKey(
-        'DoctorService', 
-        on_delete=models.CASCADE, 
-        related_name='schedules'
+        "DoctorService", on_delete=models.CASCADE, related_name="schedules"
     )
     institution = models.ForeignKey(
-        'InstitutionSettings',  # ✅ CORREGIDO: Usar el modelo real
+        "InstitutionSettings",  # ✅ CORREGIDO: Usar el modelo real
         on_delete=models.CASCADE,
-        related_name='service_schedules'
+        related_name="service_schedules",
     )
     day_of_week = models.IntegerField(
         choices=[
-            (0, 'Lunes'), (1, 'Martes'), (2, 'Miércoles'), 
-            (3, 'Jueves'), (4, 'Viernes'), (5, 'Sábado'), (6, 'Domingo')
+            (0, "Lunes"),
+            (1, "Martes"),
+            (2, "Miércoles"),
+            (3, "Jueves"),
+            (4, "Viernes"),
+            (5, "Sábado"),
+            (6, "Domingo"),
         ]
     )
     start_time = models.TimeField()
@@ -5644,9 +5841,11 @@ class ServiceSchedule(models.Model):
     slot_duration = models.IntegerField(default=30)  # Duración de cada cita en minutos
     max_appointments = models.IntegerField(default=5)  # Máximo citas en este horario
     is_active = models.BooleanField(default=True)
+
     class Meta:
         verbose_name = "Horario de Servicio"
         verbose_name_plural = "Horarios de Servicios"
-        unique_together = ('service', 'institution', 'day_of_week', 'start_time')
+        unique_together = ("service", "institution", "day_of_week", "start_time")
+
     def __str__(self):
         return f"{self.service.name} - {self.get_day_of_week_display()} {self.start_time}-{self.end_time}"

@@ -2,6 +2,7 @@
 import { useAuth as useAuthContext } from '@/context/AuthContext';
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+
 export function useAuthToken() {
   const { 
     tokens, 
@@ -11,20 +12,23 @@ export function useAuthToken() {
     user 
   } = useAuthContext();
   const navigate = useNavigate();
-  // Token para Doctor Portal (compatibilidad)
-  const token = tokens.authToken;
-  // Guardar token (para Doctor Login)
-  const saveToken = useCallback((newToken: string) => {
-    contextLogin('doctor', newToken, user || undefined);
-    localStorage.setItem('authToken', newToken);
+
+  const token = tokens.access;
+
+  const saveToken = useCallback((newAccessToken: string, newRefreshToken?: string) => {
+    contextLogin('doctor', { access: newAccessToken, refresh: newRefreshToken || null }, user || undefined);
+    localStorage.setItem('doctor_access_token', newAccessToken);
+    if (newRefreshToken) {
+      localStorage.setItem('doctor_refresh_token', newRefreshToken);
+    }
   }, [contextLogin, user]);
-  // Limpiar token y redirigir
+
   const clearToken = useCallback(() => {
     contextLogout();
-    localStorage.removeItem('authToken');
+    localStorage.removeItem('doctor_access_token');
+    localStorage.removeItem('doctor_refresh_token');
     navigate('/login');
   }, [contextLogout, navigate]);
-  // Sincronizar entre pestañas (ya lo hace el contexto, pero mantenemos compatibilidad)
-  // El contexto ya usa BroadcastChannel
+
   return { token, saveToken, clearToken, isAuthenticated, user };
 }

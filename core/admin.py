@@ -42,9 +42,11 @@ from .models import (
     # --- NUEVOS: Auditoría y Config ---
     Event,
     InstitutionSettings,
+    DoctorInvitation,
 )
 
 logger = logging.getLogger("core")
+
 
 # -------------------------
 # Waiting Room
@@ -62,51 +64,96 @@ class WaitingRoomEntryAdmin(admin.ModelAdmin):
 class MedicalDocumentInlineForPatient(admin.TabularInline):
     model = MedicalDocument
     extra = 0
-    fields = ("file", "description", "category", "source", "template_version", "is_signed", "preview_file")
+    fields = (
+        "file",
+        "description",
+        "category",
+        "source",
+        "template_version",
+        "is_signed",
+        "preview_file",
+    )
     readonly_fields = ("source", "template_version", "is_signed", "preview_file")
 
     @admin.display(description="Archivo")
     def preview_file(self, obj):
         if obj.file and obj.mime_type.startswith("image/"):
-            return format_html('<img src="{}" width="60" height="60" style="object-fit:cover;" />', obj.file.url)
+            return format_html(
+                '<img src="{}" width="60" height="60" style="object-fit:cover;" />',
+                obj.file.url,
+            )
         elif obj.file and obj.mime_type == "application/pdf":
-            return format_html('<a href="{}" target="_blank">Descargar PDF</a>', obj.file.url)
+            return format_html(
+                '<a href="{}" target="_blank">Descargar PDF</a>', obj.file.url
+            )
         elif obj.file:
-            return format_html('<a href="{}" target="_blank">Descargar</a>', obj.file.url)
+            return format_html(
+                '<a href="{}" target="_blank">Descargar</a>', obj.file.url
+            )
         return "-"
 
 
 class MedicalDocumentInlineForAppointment(admin.TabularInline):
     model = MedicalDocument
     extra = 0
-    fields = ("file", "description", "category", "source", "template_version", "is_signed", "preview_file")
+    fields = (
+        "file",
+        "description",
+        "category",
+        "source",
+        "template_version",
+        "is_signed",
+        "preview_file",
+    )
     readonly_fields = ("source", "template_version", "is_signed", "preview_file")
 
     @admin.display(description="Archivo")
     def preview_file(self, obj):
         if obj.file and obj.mime_type.startswith("image/"):
-            return format_html('<img src="{}" width="60" height="60" style="object-fit:cover;" />', obj.file.url)
+            return format_html(
+                '<img src="{}" width="60" height="60" style="object-fit:cover;" />',
+                obj.file.url,
+            )
         elif obj.file and obj.mime_type == "application/pdf":
-            return format_html('<a href="{}" target="_blank">Descargar PDF</a>', obj.file.url)
+            return format_html(
+                '<a href="{}" target="_blank">Descargar PDF</a>', obj.file.url
+            )
         elif obj.file:
-            return format_html('<a href="{}" target="_blank">Descargar</a>', obj.file.url)
+            return format_html(
+                '<a href="{}" target="_blank">Descargar</a>', obj.file.url
+            )
         return "-"
 
 
 class MedicalDocumentInlineForDiagnosis(admin.TabularInline):
     model = MedicalDocument
     extra = 0
-    fields = ("file", "description", "category", "source", "template_version", "is_signed", "preview_file")
+    fields = (
+        "file",
+        "description",
+        "category",
+        "source",
+        "template_version",
+        "is_signed",
+        "preview_file",
+    )
     readonly_fields = ("source", "template_version", "is_signed", "preview_file")
 
     @admin.display(description="Archivo")
     def preview_file(self, obj):
         if obj.file and obj.mime_type.startswith("image/"):
-            return format_html('<img src="{}" width="60" height="60" style="object-fit:cover;" />', obj.file.url)
+            return format_html(
+                '<img src="{}" width="60" height="60" style="object-fit:cover;" />',
+                obj.file.url,
+            )
         elif obj.file and obj.mime_type == "application/pdf":
-            return format_html('<a href="{}" target="_blank">Descargar PDF</a>', obj.file.url)
+            return format_html(
+                '<a href="{}" target="_blank">Descargar PDF</a>', obj.file.url
+            )
         elif obj.file:
-            return format_html('<a href="{}" target="_blank">Descargar</a>', obj.file.url)
+            return format_html(
+                '<a href="{}" target="_blank">Descargar</a>', obj.file.url
+            )
         return "-"
 
 
@@ -116,42 +163,48 @@ class MedicalDocumentInlineForDiagnosis(admin.TabularInline):
 @admin.register(Patient)
 class PatientAdmin(admin.ModelAdmin):
     list_display = (
-        'id',
-        'national_id',
-        'first_name',
-        'last_name',
-        'birthdate',
-        'birth_place',        # 👈 NUEVO
-        'birth_country',      # 👈 NUEVO
-        'gender',
-        'contact_info'
+        "id",
+        "national_id",
+        "first_name",
+        "last_name",
+        "birthdate",
+        "birth_place",  # 👈 NUEVO
+        "birth_country",  # 👈 NUEVO
+        "gender",
+        "contact_info",
     )
-    list_display_links = ('id', 'national_id', 'first_name', 'last_name')
+    list_display_links = ("id", "national_id", "first_name", "last_name")
     search_fields = (
-        'national_id',
-        'first_name',
-        'last_name',
-        'contact_info',
-        'birth_place',        # 👈 NUEVO
-        'birth_country'       # 👈 NUEVO
+        "national_id",
+        "first_name",
+        "last_name",
+        "contact_info",
+        "birth_place",  # 👈 NUEVO
+        "birth_country",  # 👈 NUEVO
     )
-    ordering = ('last_name', 'first_name')
+    ordering = ("last_name", "first_name")
     list_per_page = 25
     inlines = [MedicalDocumentInlineForPatient]
+
 
 # -------------------------
 # Appointment
 # -------------------------
 class BalanceDueFilter(admin.SimpleListFilter):
-    title = _('Saldo pendiente')
-    parameter_name = 'balance_due'
+    title = _("Saldo pendiente")
+    parameter_name = "balance_due"
 
     def lookups(self, request, model_admin):
-        return (('with_balance', _('Con saldo pendiente')), ('no_balance', _('Saldadas')))
+        return (
+            ("with_balance", _("Con saldo pendiente")),
+            ("no_balance", _("Saldadas")),
+        )
 
     def queryset(self, request, queryset):
         qs = queryset.annotate(
-            total_paid_amount=Coalesce(Sum("payments__amount"), Value(0, output_field=DecimalField()))
+            total_paid_amount=Coalesce(
+                Sum("payments__amount"), Value(0, output_field=DecimalField())
+            )
         )
         if self.value() == "with_balance":
             return qs.filter(expected_amount__gt=F("total_paid_amount"))
@@ -162,41 +215,72 @@ class BalanceDueFilter(admin.SimpleListFilter):
 
 @admin.register(Appointment)
 class AppointmentAdmin(admin.ModelAdmin):
-    list_display = ("id","patient","appointment_date","appointment_type","status",
-                    "expected_amount","total_paid_display","balance_due_display","is_fully_paid")
+    list_display = (
+        "id",
+        "patient",
+        "appointment_date",
+        "appointment_type",
+        "status",
+        "expected_amount",
+        "total_paid_display",
+        "balance_due_display",
+        "is_fully_paid",
+    )
     list_display_links = ("id", "patient")
     list_filter = ("status", "appointment_date", "appointment_type", BalanceDueFilter)
-    search_fields = ("patient__first_name","patient__last_name","patient__national_id")
+    search_fields = (
+        "patient__first_name",
+        "patient__last_name",
+        "patient__national_id",
+    )
     ordering = ("-appointment_date",)
     list_per_page = 25
     inlines = [MedicalDocumentInlineForAppointment]
     readonly_fields = ("total_paid_display", "balance_due_display")
 
-    def total_paid_display(self, obj): return f"{obj.total_paid():.2f}"
+    def total_paid_display(self, obj):
+        return f"{obj.total_paid():.2f}"
+
     total_paid_display.short_description = "Total Pagado"
 
-    def balance_due_display(self, obj): return f"{obj.balance_due():.2f}"
+    def balance_due_display(self, obj):
+        return f"{obj.balance_due():.2f}"
+
     balance_due_display.short_description = "Saldo Pendiente"
+
 
 # -------------------------
 # Diagnosis / Treatment / Prescription
 # -------------------------
 @admin.register(Diagnosis)
 class DiagnosisAdmin(admin.ModelAdmin):
-    list_display = ('id', 'appointment', 'icd_code', 'title', 'description')
-    list_display_links = ('id', 'icd_code')
-    search_fields = ('icd_code', 'title', 'description', 'appointment__patient__national_id')
-    ordering = ('icd_code',)
+    list_display = ("id", "appointment", "icd_code", "title", "description")
+    list_display_links = ("id", "icd_code")
+    search_fields = (
+        "icd_code",
+        "title",
+        "description",
+        "appointment__patient__national_id",
+    )
+    ordering = ("icd_code",)
     list_per_page = 25
     inlines = [MedicalDocumentInlineForDiagnosis]
 
 
 @admin.register(Treatment)
 class TreatmentAdmin(admin.ModelAdmin):
-    list_display = ('id', 'diagnosis', 'treatment_type', 'plan', 'start_date', 'end_date', 'status')
-    list_display_links = ('id', 'diagnosis')
-    list_filter = ('treatment_type', 'status')
-    ordering = ('-start_date',)
+    list_display = (
+        "id",
+        "diagnosis",
+        "treatment_type",
+        "plan",
+        "start_date",
+        "end_date",
+        "status",
+    )
+    list_display_links = ("id", "diagnosis")
+    list_filter = ("treatment_type", "status")
+    ordering = ("-start_date",)
     list_per_page = 25
 
 
@@ -207,14 +291,21 @@ class PrescriptionComponentInline(admin.TabularInline):
 
 @admin.register(Prescription)
 class PrescriptionAdmin(admin.ModelAdmin):
-    list_display = ("id", "diagnosis", "get_medication_display", "route", "frequency", "duration")
+    list_display = (
+        "id",
+        "diagnosis",
+        "get_medication_display",
+        "route",
+        "frequency",
+        "duration",
+    )
     list_display_links = ("id", "get_medication_display")
     list_filter = ("route", "frequency")
     search_fields = (
         "medication_text",
         "medication_catalog__name",
         "medication_catalog__concentration",
-        "diagnosis__appointment__patient__national_id"
+        "diagnosis__appointment__patient__national_id",
     )
     ordering = ("id",)
     list_per_page = 25
@@ -224,14 +315,27 @@ class PrescriptionAdmin(admin.ModelAdmin):
     def get_medication_display(self, obj):
         return obj.medication_catalog or obj.medication_text or "—"
 
+
 # -------------------------
 # MedicalTest
 # -------------------------
 @admin.register(MedicalTest)
 class MedicalTestAdmin(admin.ModelAdmin):
-    list_display = ("id", "appointment", "diagnosis", "test_type", "urgency", "status", "description")
+    list_display = (
+        "id",
+        "appointment",
+        "diagnosis",
+        "test_type",
+        "urgency",
+        "status",
+        "description",
+    )
     list_filter = ("test_type", "urgency", "status")
-    search_fields = ("appointment__patient__first_name", "appointment__patient__last_name", "diagnosis__icd_code")
+    search_fields = (
+        "appointment__patient__first_name",
+        "appointment__patient__last_name",
+        "diagnosis__icd_code",
+    )
     ordering = ("id",)
     list_per_page = 25
 
@@ -241,13 +345,21 @@ class MedicalTestAdmin(admin.ModelAdmin):
 # -------------------------
 @admin.register(MedicalReferral)
 class MedicalReferralAdmin(admin.ModelAdmin):
-    list_display = ("id", "appointment", "diagnosis", "get_specialties_display", "urgency", "status", "reason")
+    list_display = (
+        "id",
+        "appointment",
+        "diagnosis",
+        "get_specialties_display",
+        "urgency",
+        "status",
+        "reason",
+    )
     list_filter = ("urgency", "status")
     search_fields = (
         "appointment__patient__first_name",
         "appointment__patient__last_name",
         "diagnosis__icd_code",
-        "reason"
+        "reason",
     )
     autocomplete_fields = ["appointment", "diagnosis", "specialties"]
     ordering = ("id",)
@@ -271,29 +383,46 @@ class ChargeItemInline(admin.TabularInline):
 class PaymentInlineForChargeOrder(admin.TabularInline):
     model = Payment
     extra = 0
-    fields = ("amount","method","status","reference_number","bank_name","received_by","received_at")
+    fields = (
+        "amount",
+        "method",
+        "status",
+        "reference_number",
+        "bank_name",
+        "received_by",
+        "received_at",
+    )
     readonly_fields = ("received_at",)
     show_change_link = True
 
 
 @admin.register(ChargeOrder)
 class ChargeOrderAdmin(admin.ModelAdmin):
-    list_display = ("id","patient","appointment","currency","total","balance_due","status","issued_at")
-    list_filter = ("status","currency","issued_at")
-    search_fields = ("patient__first_name","patient__last_name","appointment__id")
+    list_display = (
+        "id",
+        "patient",
+        "appointment",
+        "currency",
+        "total",
+        "balance_due",
+        "status",
+        "issued_at",
+    )
+    list_filter = ("status", "currency", "issued_at")
+    search_fields = ("patient__first_name", "patient__last_name", "appointment__id")
     ordering = ("-issued_at",)
     list_per_page = 25
     inlines = [ChargeItemInline, PaymentInlineForChargeOrder]
-    readonly_fields = ("total","balance_due","status")
+    readonly_fields = ("total", "balance_due", "status")
 
     def changelist_view(self, request, extra_context=None):
         response = super().changelist_view(request, extra_context=extra_context)
-        
+
         # VERIFICAR QUE RESPONSE NO SEA NONE
         if response is not None:
             try:
                 # Verificar que context_data existe
-                if hasattr(response, 'context_data') and response.context_data:
+                if hasattr(response, "context_data") and response.context_data:
                     qs = response.context_data["cl"].queryset
                     total_amount = qs.aggregate(total=Sum("total"))["total"] or 0
                     balance = qs.aggregate(total=Sum("balance_due"))["total"] or 0
@@ -305,11 +434,12 @@ class ChargeOrderAdmin(admin.ModelAdmin):
                             <span class="financial-badge balance">Saldo pendiente: {}</span>
                         </div>
                         """,
-                        f"{total_amount:.2f}", f"{balance:.2f}",
+                        f"{total_amount:.2f}",
+                        f"{balance:.2f}",
                     )
             except Exception:
                 pass
-        
+
         return response
 
 
@@ -318,9 +448,17 @@ class ChargeOrderAdmin(admin.ModelAdmin):
 # -------------------------
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ("id","charge_order","appointment","amount","method","status","received_at")
-    list_filter = ("status","method")
-    search_fields = ("charge_order__id","appointment__id","reference_number")
+    list_display = (
+        "id",
+        "charge_order",
+        "appointment",
+        "amount",
+        "method",
+        "status",
+        "received_at",
+    )
+    list_filter = ("status", "method")
+    search_fields = ("charge_order__id", "appointment__id", "reference_number")
     ordering = ("-received_at",)
     list_per_page = 25
     readonly_fields = ("received_at",)
@@ -343,15 +481,27 @@ class GeneticPredispositionAdmin(admin.ModelAdmin):
 @admin.register(MedicalDocument)
 class MedicalDocumentAdmin(admin.ModelAdmin):
     list_display = (
-        "id", "patient", "appointment", "diagnosis",
-        "category", "source", "origin_panel",
-        "description", "template_version", "is_signed",
-        "uploaded_at", "uploaded_by", "generated_by"
+        "id",
+        "patient",
+        "appointment",
+        "diagnosis",
+        "category",
+        "source",
+        "origin_panel",
+        "description",
+        "template_version",
+        "is_signed",
+        "uploaded_at",
+        "uploaded_by",
+        "generated_by",
     )
     list_filter = ("category", "source", "template_version", "is_signed", "uploaded_at")
     search_fields = (
-        "description", "patient__first_name", "patient__last_name",
-        "appointment__id", "diagnosis__icd_code"
+        "description",
+        "patient__first_name",
+        "patient__last_name",
+        "appointment__id",
+        "diagnosis__icd_code",
     )
     ordering = ("-uploaded_at",)
     list_per_page = 25
@@ -360,11 +510,18 @@ class MedicalDocumentAdmin(admin.ModelAdmin):
     @admin.display(description="Archivo")
     def preview_file(self, obj):
         if obj.file and obj.mime_type.startswith("image/"):
-            return format_html('<img src="{}" width="60" height="60" style="object-fit:cover;" />', obj.file.url)
+            return format_html(
+                '<img src="{}" width="60" height="60" style="object-fit:cover;" />',
+                obj.file.url,
+            )
         elif obj.file and obj.mime_type == "application/pdf":
-            return format_html('<a href="{}" target="_blank">Descargar PDF</a>', obj.file.url)
+            return format_html(
+                '<a href="{}" target="_blank">Descargar PDF</a>', obj.file.url
+            )
         elif obj.file:
-            return format_html('<a href="{}" target="_blank">Descargar</a>', obj.file.url)
+            return format_html(
+                '<a href="{}" target="_blank">Descargar</a>', obj.file.url
+            )
         return "-"
 
 
@@ -373,7 +530,13 @@ class MedicalDocumentAdmin(admin.ModelAdmin):
 # -------------------------
 @admin.register(DoctorOperator)
 class DoctorOperatorAdmin(admin.ModelAdmin):
-    list_display = ("full_name", "colegiado_id", "get_specialties_display", "email", "phone")
+    list_display = (
+        "full_name",
+        "colegiado_id",
+        "get_specialties_display",
+        "email",
+        "phone",
+    )
     search_fields = ("full_name", "colegiado_id", "email", "phone")
     autocomplete_fields = ["specialties"]
     ordering = ("full_name",)
@@ -382,6 +545,147 @@ class DoctorOperatorAdmin(admin.ModelAdmin):
     @admin.display(description="Especialidades")
     def get_specialties_display(self, obj):
         return ", ".join([s.name for s in obj.specialties.all()])
+
+
+@admin.register(DoctorInvitation)
+class DoctorInvitationAdmin(admin.ModelAdmin):
+    list_display = (
+        "email",
+        "institution",
+        "specialty",
+        "status_badge",
+        "expires_at",
+        "created_at",
+        "sent_email_icon",
+    )
+    list_filter = ("is_used", "institution", "created_at")
+    search_fields = ("email", "institution__name", "specialty__name")
+    readonly_fields = (
+        "token",
+        "created_at",
+        "used_at",
+    )
+    autocomplete_fields = ["specialty", "institution", "invited_by", "used_by"]
+    ordering = ("-created_at",)
+    list_per_page = 25
+
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    "email",
+                    "institution",
+                    "specialty",
+                )
+            },
+        ),
+        (
+            "Token y Expiración",
+            {
+                "fields": (
+                    "token",
+                    "expires_at",
+                ),
+                "description": "El token se genera automáticamente al guardar.",
+            },
+        ),
+        (
+            "Estado",
+            {
+                "fields": (
+                    "is_used",
+                    "used_at",
+                    "used_by",
+                )
+            },
+        ),
+        (
+            "Auditoría",
+            {
+                "fields": (
+                    "invited_by",
+                    "created_at",
+                )
+            },
+        ),
+    )
+
+    @admin.display(description="Estado", ordering="is_used")
+    def status_badge(self, obj):
+        if obj.is_used:
+            return format_html(
+                '<span style="background:#22c55e;color:white;padding:2px 8px;border-radius:12px;font-size:11px;">UTILIZADA</span>'
+            )
+        elif obj.is_expired():
+            return format_html(
+                '<span style="background:#ef4444;color:white;padding:2px 8px;border-radius:12px;font-size:11px;">EXPIRADA</span>'
+            )
+        else:
+            return format_html(
+                '<span style="background:#3b82f6;color:white;padding:2px 8px;border-radius:12px;font-size:11px;">PENDIENTE</span>'
+            )
+
+    @admin.display(description="Email", boolean=True)
+    def sent_email_icon(self, obj):
+        return True
+
+    def save_model(self, request, obj, form, change):
+        is_new = obj.pk is None
+
+        if is_new:
+            obj.token = DoctorInvitation.generate_token()
+            obj.invited_by = request.user
+            from django.utils import timezone
+
+            if not obj.expires_at:
+                obj.expires_at = timezone.now() + timezone.timedelta(days=7)
+
+        super().save_model(request, obj, form, change)
+
+        if is_new and obj.email:
+            self._send_invitation_email(obj)
+
+    def _send_invitation_email(self, invitation):
+        from django.conf import settings
+        from django.core.mail import send_mail
+        from django.utils.html import format_html
+
+        SITE_URL = getattr(settings, "SITE_URL", "https://medopz.com")
+        activation_url = f"{SITE_URL}/doctor/activate?token={invitation.token}"
+
+        specialty_text = ""
+        if invitation.specialty:
+            specialty_text = f"\nEspecialidad sugerida: {invitation.specialty.name}"
+
+        subject = f"Invitacion para unirte a MEDOPZ como Medico"
+        message = f"""
+Dr./Dra. {invitation.email},
+
+Has sido invitado/a para unirte al portal medico de MEDOPZ en la institucion {invitation.institution.name}.{specialty_text}
+
+Para activar tu cuenta, haz clic en el siguiente enlace:
+{activation_url}
+
+Este enlace expira en 7 dias.
+
+Saludos,
+Equipo MEDOPZ
+        """.strip()
+
+        try:
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[invitation.email],
+                fail_silently=False,
+            )
+            logger.info(f"Email de invitacion enviado a {invitation.email}")
+        except Exception as e:
+            logger.error(
+                f"Error enviando email de invitacion a {invitation.email}: {e}"
+            )
 
 
 @admin.register(Specialty)
@@ -413,16 +717,36 @@ class PersonalHistoryAdmin(admin.ModelAdmin):
 class FamilyHistoryAdmin(admin.ModelAdmin):
     list_display = ("id", "patient", "condition", "relative", "created_at")
     list_filter = ("relative",)
-    search_fields = ("patient__first_name", "patient__last_name", "condition", "relative")
+    search_fields = (
+        "patient__first_name",
+        "patient__last_name",
+        "condition",
+        "relative",
+    )
     ordering = ("-created_at",)
     list_per_page = 25
 
 
 @admin.register(Surgery)
 class SurgeryAdmin(admin.ModelAdmin):
-    list_display = ("id", "patient", "name", "scheduled_date", "status", "surgeon", "hospital", "created_at")
+    list_display = (
+        "id",
+        "patient",
+        "name",
+        "scheduled_date",
+        "status",
+        "surgeon",
+        "hospital",
+        "created_at",
+    )
     list_filter = ("status", "surgery_type", "risk_level", "hospital")
-    search_fields = ("patient__first_name", "patient__last_name", "name", "hospital", "surgeon__first_name")
+    search_fields = (
+        "patient__first_name",
+        "patient__last_name",
+        "name",
+        "hospital",
+        "surgeon__first_name",
+    )
     ordering = ("-scheduled_date",)
     list_per_page = 25
 
@@ -456,7 +780,14 @@ class VaccinationScheduleAdmin(admin.ModelAdmin):
 
 @admin.register(PatientVaccination)
 class PatientVaccinationAdmin(admin.ModelAdmin):
-    list_display = ("id", "patient", "vaccine", "dose_number", "date_administered", "center")
+    list_display = (
+        "id",
+        "patient",
+        "vaccine",
+        "dose_number",
+        "date_administered",
+        "center",
+    )
     list_filter = ("vaccine", "dose_number")
     search_fields = (
         "patient__first_name",
@@ -528,12 +859,32 @@ class NeighborhoodAdmin(admin.ModelAdmin):
 # =====================================================
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
-    list_display = ("id", "timestamp", "institution", "entity", "entity_id", "action", "severity", "is_read")
+    list_display = (
+        "id",
+        "timestamp",
+        "institution",
+        "entity",
+        "entity_id",
+        "action",
+        "severity",
+        "is_read",
+    )
     list_filter = ("severity", "entity", "institution", "is_read")
     search_fields = ("entity", "entity_id", "action", "actor_name")
     ordering = ("-timestamp",)
     list_per_page = 50
-    readonly_fields = ("timestamp", "institution", "actor_user", "actor_name", "entity", "entity_id", "action", "metadata", "severity", "notify")
+    readonly_fields = (
+        "timestamp",
+        "institution",
+        "actor_user",
+        "actor_name",
+        "entity",
+        "entity_id",
+        "action",
+        "metadata",
+        "severity",
+        "notify",
+    )
 
 
 # =====================================================
@@ -548,23 +899,48 @@ class InstitutionSettingsAdmin(admin.ModelAdmin):
     list_per_page = 25
     readonly_fields = ("created_at", "updated_at")
     fieldsets = (
-        ("Identidad", {
-            "fields": ("name", "tax_id", "logo", "phone", "address", "neighborhood")
-        }),
-        ("Pasarela de Pagos", {
-            "fields": ("active_gateway", "gateway_api_key", "gateway_secret_key", "gateway_webhook_secret")
-        }),
-        ("Configuración P2C Mercantil", {
-            "classes": ("collapse",),
-            "fields": ("mercantil_client_id", "mercantil_secret_key", "mercantil_test_mode")
-        }),
-        ("Estado", {
-            "fields": ("is_active", "created_at", "updated_at", "created_by", "updated_by")
-        }),
+        (
+            "Identidad",
+            {"fields": ("name", "tax_id", "logo", "phone", "address", "neighborhood")},
+        ),
+        (
+            "Pasarela de Pagos",
+            {
+                "fields": (
+                    "active_gateway",
+                    "gateway_api_key",
+                    "gateway_api_secret",
+                )
+            },
+        ),
+        (
+            "Liquidación de Fondos",
+            {
+                "fields": (
+                    "settlement_bank_name",
+                    "settlement_account_id",
+                )
+            },
+        ),
+        (
+            "Modo Sandbox",
+            {"fields": ("is_gateway_test_mode",)},
+        ),
+        (
+            "Estado",
+            {
+                "fields": (
+                    "is_active",
+                    "created_at",
+                    "updated_at",
+                    "updated_by",
+                )
+            },
+        ),
     )
 
 
 # Personalización del panel de administración
-admin.site.site_header = "MedOps Clinical System"
-admin.site.site_title = "MedOps Admin"
+admin.site.site_header = "MEDOPZ Clinical System"
+admin.site.site_title = "MEDOPZ Admin"
 admin.site.index_title = "Panel de Control"

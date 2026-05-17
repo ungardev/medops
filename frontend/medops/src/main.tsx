@@ -51,6 +51,8 @@ import DoctorProfile from "./pages/PatientPortal/DoctorProfile";
 // NUEVAS IMPORTACIONES: Doctor Dashboard y Manage Services
 import DoctorDashboard from "./pages/Doctor/DoctorDashboard";
 import ManageServicesPage from "./pages/Doctor/ManageServicesPage";
+// Doctor Portal Imports
+import DoctorActivate from "./pages/DoctorPortal/DoctorActivate";
 import Surgery from "./pages/Surgery/Surgery";
 import Hospitalization from "./pages/Hospitalization/Hospitalization";
 import Diagnosis from "./pages/Diagnosis/Diagnosis";
@@ -58,10 +60,6 @@ import { getCurrentPortal, getPortalConfig } from "@/lib/subdomain";
 
 // Axios config
 axios.defaults.baseURL = import.meta.env.VITE_API_URL ?? "/api";
-const token = import.meta.env.VITE_DEV_TOKEN;
-if (token) {
-  axios.defaults.headers.common["Authorization"] = `Token ${token}`;
-}
 
 // Subdomain-aware root redirect component
 const SubdomainRootRedirect: React.FC = () => {
@@ -112,7 +110,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 <Route path="charge-orders/:id/pay" element={<PatientChargeOrderDetail />} />
               </Route>
               
-              {/* === DOCTOR PORTAL - PROTECTED === */}
+              {/* === DOCTOR PORTAL - PUBLIC === */}
+              <Route path="/doctor/activate" element={<DoctorActivate />} />
               <Route element={<ProtectedRoute allowedRoles={['doctor', 'admin']} />}>
                 <Route element={<App />}>
                   {/* Doctor Dashboard */}

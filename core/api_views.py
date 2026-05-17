@@ -6251,6 +6251,218 @@ def doctor_login(request):
 
 
 # ==========================================
+# DOCTOR INVITATION SYSTEM - JWT AUTH
+# ==========================================
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def doctor_invite(request):
+    """
+    POST /api/doctor/invitations/
+    Crea una invitación para un nuevo médico.
+    Solo admins pueden invitar doctores.
+    """
+    email = request.data.get("email")
+    specialty_id = request.data.get("specialty_id")
+    institution_id = request.data.get("institution_id")
+
+    if not email or not institution_id:
+        return Response({"error": "email e institution_id son requeridos"}, status=400)
+
+    from core.models import InstitutionSettings, Specialty, DoctorInvitation
+
+    try:
+        institution = InstitutionSettings.objects.get(id=institution_id)
+    except InstitutionSettings.DoesNotExist:
+        return Response({"error": "Institución no encontrada"}, status=404)
+
+    specialty = None
+    if specialty_id:
+        try:
+            specialty = Specialty.objects.get(id=specialty_id)
+        except Specialty.DoesNotExist:
+            pass
+
+    invitation = DoctorInvitation.objects.create(
+        email=email.lower().strip(),
+        specialty=specialty,
+        invited_by=request.user if request.user.is_authenticated else None,
+        institution=institution,
+        expires_at=timezone.now() + timedelta(days=7),
+    )
+
+    activation_url = f"{settings.SITE_URL}/doctor/activate?token={invitation.token}"
+
+    try:
+        send_mail(
+            subject=f"Invitación para unirte a MEDOPZ como Médico",
+            message=f"""
+Dr./Dra. {email},
+
+Has sido invitado/a para unirte al portal médico de MEDOPZ en la institución {institution.name}.
+
+Para activar tu cuenta, haz clic en el siguiente enlace:
+{activation_url}
+
+Este enlace expira en 7 días.
+
+Saludos,
+Equipo MEDOPZ
+            """.strip(),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],
+            fail_silently=False,
+        )
+    except Exception as e:
+        logger.error(f"Error enviando email de invitación: {e}")
+
+    return Response(
+        {
+            "id": invitation.id,
+            "email": invitation.email,
+            "token": invitation.token,
+            "expires_at": invitation.expires_at,
+            "activation_url": activation_url,
+        },
+        status=201,
+    )
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def doctor_activate(request):
+    """
+    POST /api/doctor/activate/
+    Activa una cuenta de doctor usando token de invitación.
+    Crea el usuario Django y el DoctorOperator asociado.
+    """
+    token = request.data.get("token")
+    full_name = request.data.get("full_name")
+    username = request.data.get("username")
+    password = request.data.get("password")
+    gender = request.data.get("gender", "M")
+    phone = request.data.get("phone")
+    colegiado_id = request.data.get("colegiado_id")
+    license = request.data.get("license")
+
+    if not all([token, full_name, username, password, colegiado_id, license]):
+        return Response({"error": "Todos los campos son requeridos"}, status=400)
+
+    from django.contrib.auth import get_user_model
+    from core.models import DoctorInvitation, DoctorOperator
+
+    User = get_user_model()
+
+    try:
+        invitation = DoctorInvitation.objects.get(token=token)
+    except DoctorInvitation.DoesNotExist:
+        return Response({"error": "Token inválido"}, status=404)
+
+    if not invitation.is_valid():
+        if invitation.is_expired():
+            return Response({"error": "La invitación ha expirado"}, status=400)
+        if invitation.is_used:
+            return Response({"error": "La invitación ya fue utilizada"}, status=400)
+
+    if User.objects.filter(username=username).exists():
+        return Response({"error": "El nombre de usuario ya existe"}, status=400)
+
+    if User.objects.filter(email=invitation.email).exists():
+        return Response({"error": "Ya existe una cuenta con este email"}, status=400)
+
+    with transaction.atomic():
+        user = User.objects.create_user(
+            username=username,
+            email=invitation.email,
+            password=password,
+            first_name=full_name.split()[0] if full_name else "",
+            last_name=" ".join(full_name.split()[1:]) if full_name else "",
+        )
+
+        doctor = DoctorOperator.objects.create(
+            user=user,
+            full_name=full_name,
+            gender=gender,
+            email=invitation.email,
+            phone=phone,
+            colegiado_id=colegiado_id,
+            license=license,
+            is_verified=False,
+        )
+
+        if invitation.institution:
+            doctor.institutions.add(invitation.institution)
+            doctor.active_institution = invitation.institution
+
+        if invitation.specialty:
+            doctor.specialties.add(invitation.specialty)
+
+        invitation.activate(user)
+
+    from rest_framework_simplejwt.tokens import RefreshToken
+
+    refresh = RefreshToken.for_user(user)
+    refresh["role"] = "doctor"
+    refresh["doctor_id"] = doctor.id
+    refresh["institution_id"] = (
+        invitation.institution.id if invitation.institution else None
+    )
+
+    return Response(
+        {
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "full_name": full_name,
+            },
+            "doctor": {
+                "id": doctor.id,
+                "colegiado_id": doctor.colegiado_id,
+                "institution": invitation.institution.name
+                if invitation.institution
+                else None,
+            },
+        },
+        status=201,
+    )
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def doctor_invitation_detail(request, token):
+    """
+    GET /api/doctor/invitations/<token>/
+    Verifica el estado de una invitación (sin autenticación).
+    """
+    from core.models import DoctorInvitation
+
+    try:
+        invitation = DoctorInvitation.objects.select_related(
+            "institution", "specialty"
+        ).get(token=token)
+    except DoctorInvitation.DoesNotExist:
+        return Response({"error": "Invitación no encontrada"}, status=404)
+
+    return Response(
+        {
+            "email": invitation.email,
+            "institution": invitation.institution.name
+            if invitation.institution
+            else None,
+            "specialty": invitation.specialty.name if invitation.specialty else None,
+            "is_valid": invitation.is_valid(),
+            "is_expired": invitation.is_expired(),
+            "is_used": invitation.is_used,
+            "expires_at": invitation.expires_at,
+        }
+    )
+
+
+# ==========================================
 # ENDPOINTS DE PAGOS - PORTAL PACIENTE
 # ==========================================
 @api_view(["GET", "PUT"])
