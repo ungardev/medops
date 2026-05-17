@@ -2602,19 +2602,30 @@ class DoctorOperatorSerializer(serializers.ModelSerializer):
     # === NUEVO: Servicios del doctor ===
     services = DoctorServiceSerializer(many=True, read_only=True)
 
+    # === MPPS VENEZUELA COMPLIANCE FIELDS ===
+    is_active_license = serializers.BooleanField(read_only=True)
+    license_expiry_status = serializers.SerializerMethodField()
+
     class Meta:
         model = DoctorOperator
         fields = [
             "id",
             "full_name",
+            "national_id",
             "gender",
+            "birthdate",
+            "birth_country",
             "is_verified",
+            "is_active_license",
+            "license_expiry_date",
+            "license_expiry_status",
             "colegiado_id",
             "license",
+            "verification_notes",
             "specialties",
             "specialty_ids",
-            "institutions",  # Para leer objetos completos
-            "institution_ids",  # AGREGAR ESTE CAMPO
+            "institutions",
+            "institution_ids",
             "active_institution",
             "email",
             "phone",
@@ -2624,6 +2635,20 @@ class DoctorOperatorSerializer(serializers.ModelSerializer):
             "bio",
             "photo",
         ]
+
+    def get_license_expiry_status(self, obj):
+        """Retorna estado de la licencia: active, expiring_soon, expired, unknown"""
+        if not obj.license_expiry_date:
+            return "unknown"
+        from datetime import date
+
+        today = date.today()
+        delta = (obj.license_expiry_date - today).days
+        if delta < 0:
+            return "expired"
+        elif delta <= 90:
+            return "expiring_soon"
+        return "active"
 
     def to_representation(self, instance):
         """

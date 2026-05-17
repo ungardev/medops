@@ -534,49 +534,77 @@ class MedicalDocumentAdmin(admin.ModelAdmin):
 class DoctorOperatorAdmin(admin.ModelAdmin):
     list_display = (
         "full_name",
+        "national_id",
         "colegiado_id",
-        "get_specialties_display",
+        "license_status_badge",
         "is_verified_badge",
-        "email",
-        "phone",
+        "get_specialties_display",
+        "active_institution",
         "created_at",
     )
     search_fields = (
         "full_name",
+        "national_id",
         "colegiado_id",
         "license",
         "email",
         "phone",
         "user__username",
     )
-    list_filter = ("is_verified", "gender", "created_at")
+    list_filter = ("is_verified", "is_active_license", "gender", "created_at")
     autocomplete_fields = ["specialties", "institutions", "active_institution", "user"]
     ordering = ("full_name",)
     list_per_page = 25
+    list_select_related = ("active_institution", "user")
 
-    actions = ["approve_verification", "reject_verification"]
+    actions = [
+        "approve_verification",
+        "reject_verification",
+        "mark_license_active",
+        "mark_license_expired",
+    ]
 
     fieldsets = (
         (
-            "IDENTIFICACIÓN Y VERIFICACIÓN LEGAL",
+            "IDENTIDAD LEGAL MPPS VENEZUELA",
             {
                 "fields": (
                     "user",
                     "full_name",
-                    "gender",
-                    ("colegiado_id", "license"),
-                    "is_verified",
+                    ("national_id", "birthdate"),
+                    ("birth_country", "gender"),
                 ),
-                "description": "Datos oficiales para verificación ante el MPPS. is_verified=False = no puede operar.",
+                "description": "Datos oficiales de identidad para cumplimiento MPPS.",
             },
         ),
         (
-            "ESPECIALIDADES MÉDICAS",
+            "CREDENCIALES MÉDICAS MPPS",
+            {
+                "fields": (
+                    "colegiado_id",
+                    "license",
+                    ("license_expiry_date", "is_active_license"),
+                ),
+                "description": "Número de colegiado y licencia sanitaria vigente.",
+            },
+        ),
+        (
+            "ESPECIALIDADES Y NOMENCLATURA",
             {
                 "fields": (
                     "specialties",
                     "active_institution",
                 )
+            },
+        ),
+        (
+            "VERIFICACIÓN Y AUDITORÍA",
+            {
+                "fields": (
+                    "is_verified",
+                    "verification_notes",
+                ),
+                "description": "Control de verificación ante el Colegio de Médicos.",
             },
         ),
         (
@@ -630,6 +658,28 @@ class DoctorOperatorAdmin(admin.ModelAdmin):
     def get_specialties_display(self, obj):
         return ", ".join([s.name for s in obj.specialties.all()])
 
+    @admin.display(description="Licencia", ordering="is_active_license")
+    def license_status_badge(self, obj):
+        if not obj.license_expiry_date:
+            return format_html(
+                '<span style="background:#94a3b8;color:white;padding:2px 8px;border-radius:12px;font-size:11px;">❓ SIN FECHA</span>'
+            )
+        from datetime import date
+
+        today = date.today()
+        delta = (obj.license_expiry_date - today).days
+        if delta < 0:
+            return format_html(
+                '<span style="background:#dc2626;color:white;padding:2px 8px;border-radius:12px;font-size:11px;">❌ EXPIRADA</span>'
+            )
+        elif delta <= 90:
+            return format_html(
+                '<span style="background:#f59e0b;color:white;padding:2px 8px;border-radius:12px;font-size:11px;">⚠️ POR EXPIRAR</span>'
+            )
+        return format_html(
+            '<span style="background:#22c55e;color:white;padding:2px 8px;border-radius:12px;font-size:11px;">✅ ACTIVA</span>'
+        )
+
     @admin.display(description="Verificado", ordering="is_verified")
     def is_verified_badge(self, obj):
         if obj.is_verified:
@@ -645,17 +695,31 @@ class DoctorOperatorAdmin(admin.ModelAdmin):
     def approve_verification(self, request, queryset):
         for doctor in queryset.filter(is_verified=False):
             doctor.is_verified = True
-            doctor.save()
+            doctor.save(update_fields=["is_verified"])
             logger.info(f"Doctor {doctor.full_name} verificado por {request.user}")
 
     @admin.action(description="Rechazar/quitar verificación del médico seleccionado")
     def reject_verification(self, request, queryset):
         for doctor in queryset.filter(is_verified=True):
             doctor.is_verified = False
-            doctor.save()
+            doctor.save(update_fields=["is_verified"])
             logger.info(
                 f"Verificación removida de {doctor.full_name} por {request.user}"
             )
+
+    @admin.action(description="Marcar licencia como activa")
+    def mark_license_active(self, request, queryset):
+        for doctor in queryset.filter(is_active_license=False):
+            doctor.is_active_license = True
+            doctor.save(update_fields=["is_active_license"])
+            logger.info(f"Licencia de {doctor.full_name} marcada como activa")
+
+    @admin.action(description="Marcar licencia como expirada")
+    def mark_license_expired(self, request, queryset):
+        for doctor in queryset.filter(is_active_license=True):
+            doctor.is_active_license = False
+            doctor.save(update_fields=["is_active_license"])
+            logger.info(f"Licencia de {doctor.full_name} marcada como expirada")
 
 
 @admin.register(DoctorInvitation)
