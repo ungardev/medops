@@ -37,6 +37,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir playwright==1.45.0 && \
     playwright install chromium
 COPY . /app/
+RUN python manage.py collectstatic --noinput
 EXPOSE 8000
 
 CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn --bind 0.0.0.0:8000 --workers 2 --timeout 120 medops.wsgi:application"]
