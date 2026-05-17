@@ -95,12 +95,12 @@ class IsDoctorOperatorOrReadOnly(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True
-        return hasattr(request.user, "doctor_operator")
+        return hasattr(request.user, "doctor_profile")
 
     def has_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
             return True
-        return hasattr(request.user, "doctor_operator")
+        return hasattr(request.user, "doctor_profile")
 
 
 class SmartInstitutionValidator:

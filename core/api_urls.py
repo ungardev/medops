@@ -66,7 +66,7 @@ from .api_views import (
     reports_api,
     reports_export_api,
     institution_settings_api,
-    doctor_operator_settings_api,
+    doctor_profile_settings_api,
     bcv_rate_api,
     audit_log_api,
     generate_medical_report,
@@ -307,7 +307,7 @@ urlpatterns = [
     ),
     path(
         "config/doctor/",
-        doctor_operator_settings_api,
+        doctor_profile_settings_api,
         name="doctor-operator-settings-api",
     ),
     # ✅ NUEVOS ENDPOINTS DE PERMISOS INSTITUCIONALES ---

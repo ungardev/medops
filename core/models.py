@@ -1933,6 +1933,92 @@ class DoctorOperator(models.Model):
         related_name="doctor_profile",
     )
 
+    # --- IDENTIDAD Y VERIFICACIÓN ELITE MPPS VENEZUELA ---
+    full_name = models.CharField(max_length=255)
+
+    # Cédula de Identidad - Requisito legal MPPS
+    national_id = models.CharField(
+        max_length=12,
+        validators=[MinLengthValidator(5), MaxLengthValidator(12)],
+        help_text="Cédula de Identidad (V-xxxxxxxxx)",
+        default="V-00000000",
+    )
+
+    # Fecha y lugar de nacimiento
+    birthdate = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de nacimiento",
+        help_text="Fecha de nacimiento (dd/mm/aaaa)",
+    )
+    birth_country = models.CharField(
+        max_length=100,
+        default="Venezuela",
+        verbose_name="País de nacimiento",
+        help_text="País emisor del documento de identidad",
+    )
+
+    # Nuevo campo para trato formal automático
+    GENDER_CHOICES = [
+        ("M", "Masculino"),
+        ("F", "Femenino"),
+        ("O", "Otro"),
+    ]
+    gender = models.CharField(
+        max_length=1, choices=GENDER_CHOICES, default="M", verbose_name="Sexo/Género"
+    )
+
+    is_verified = models.BooleanField(
+        default=False,
+        help_text="Designa si el cirujano ha sido validado por el Colegio de Médicos.",
+    )
+
+    # Estado de licencia sanitaria
+    license_expiry_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de vencimiento de licencia",
+        help_text="Fecha de expiry de la licencia sanitaria MPPS",
+    )
+    is_active_license = models.BooleanField(
+        default=True,
+        verbose_name="Licencia activa",
+        help_text="Designa si la licencia sanitaria está vigente",
+    )
+
+    agregado_id = models.CharField(
+        max_length=100,
+        unique=True,
+        null=True,
+        blank=True,
+        verbose_name="Número de colegiado / ID de ejercicio",
+    )
+
+    license = models.CharField(
+        max_length=100,
+        unique=True,
+        null=True,
+        blank=True,
+        verbose_name="Licencia Sanitaria / MPPS",
+    )
+
+    # Notas de verificación para audit trail
+    verification_notes = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name="Notas de verificación",
+        help_text="Comentarios del administrador sobre la verificación MPPS",
+    )
+
+    # --- RELACIONES DE PODER ---
+    # ManyToMany: El doctor opera en múltiples nodos (sedes)
+    institutions = models.ManyToManyField(
+        "InstitutionSettings",
+        related_name="operators",
+        blank=True,
+        help_text="Nodos de operación donde este Practitioner ejerce.",
+    )
+
     # --- IDENTIDAD Y VERIFICACIÓN ELITE ---
     full_name = models.CharField(max_length=255)
 

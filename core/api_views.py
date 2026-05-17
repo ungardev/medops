@@ -2825,7 +2825,7 @@ def public_institution_location_api(request):
 
 @api_view(["GET", "PATCH"])
 @permission_classes([conditional_permission()])
-def doctor_operator_settings_api(request):
+def doctor_profile_settings_api(request):
     """
     Endpoint de configuración del doctor operador.
     """
@@ -5429,16 +5429,16 @@ class DoctorPaymentConfigViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         # Doctors solo ven su propia config
         user = self.request.user
-        if hasattr(user, "doctor_operator"):
-            return DoctorPaymentConfig.objects.filter(doctor=user.doctor_operator)
+        if hasattr(user, "doctor_profile"):
+            return DoctorPaymentConfig.objects.filter(doctor=user.doctor_profile)
         return DoctorPaymentConfig.objects.none()
 
     def get_object(self):
         # Crear config si no existe
         user = self.request.user
-        if hasattr(user, "doctor_operator"):
+        if hasattr(user, "doctor_profile"):
             obj, created = DoctorPaymentConfig.objects.get_or_create(
-                doctor=user.doctor_operator
+                doctor=user.doctor_profile
             )
             return obj
         return None
@@ -5485,8 +5485,8 @@ class PaymentTransactionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if hasattr(user, "doctor_operator"):
-            return PaymentTransaction.objects.filter(doctor=user.doctor_operator)
+        if hasattr(user, "doctor_profile"):
+            return PaymentTransaction.objects.filter(doctor=user.doctor_profile)
         elif hasattr(user, "patient"):
             return PaymentTransaction.objects.filter(patient=user.patient)
         return PaymentTransaction.objects.none()
@@ -5634,7 +5634,7 @@ class PaymentTransactionViewSet(viewsets.ModelViewSet):
     def _verify_manual(self, transaction, request):
         """Verificación manual por el doctor"""
         # Solo el doctor puede aprobar
-        if not hasattr(request.user, "doctor_operator"):
+        if not hasattr(request.user, "doctor_profile"):
             return Response(
                 {"error": "Solo el doctor puede verificar pagos manualmente"},
                 status=status.HTTP_403_FORBIDDEN,
@@ -5679,8 +5679,8 @@ class PaymentWebhookViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if hasattr(user, "doctor_operator"):
-            return PaymentWebhook.objects.filter(doctor=user.doctor_operator)
+        if hasattr(user, "doctor_profile"):
+            return PaymentWebhook.objects.filter(doctor=user.doctor_profile)
         return PaymentWebhook.objects.none()
 
 
@@ -5702,16 +5702,16 @@ def payment_config_api(request):
     """Get/Update configuración de pago del doctor"""
     user = request.user
 
-    if not hasattr(user, "doctor_operator"):
+    if not hasattr(user, "doctor_profile"):
         return Response(
             {"error": "Solo doctores pueden configurar pagos"},
             status=status.HTTP_403_FORBIDDEN,
         )
 
     try:
-        config = DoctorPaymentConfig.objects.get(doctor=user.doctor_operator)
+        config = DoctorPaymentConfig.objects.get(doctor=user.doctor_profile)
     except DoctorPaymentConfig.DoesNotExist:
-        config = DoctorPaymentConfig.objects.create(doctor=user.doctor_operator)
+        config = DoctorPaymentConfig.objects.create(doctor=user.doctor_profile)
 
     if request.method == "GET":
         serializer = DoctorPaymentConfigSerializer(config)
@@ -5769,8 +5769,8 @@ def payment_transactions_api(request):
     """Lista de transacciones del doctor/paciente"""
     user = request.user
 
-    if hasattr(user, "doctor_operator"):
-        queryset = PaymentTransaction.objects.filter(doctor=user.doctor_operator)
+    if hasattr(user, "doctor_profile"):
+        queryset = PaymentTransaction.objects.filter(doctor=user.doctor_profile)
     elif hasattr(user, "patient"):
         queryset = PaymentTransaction.objects.filter(patient=user.patient)
     else:
@@ -5797,13 +5797,13 @@ def payment_stats_api(request):
     """Dashboard de estadísticas de pagos"""
     user = request.user
 
-    if not hasattr(user, "doctor_operator"):
+    if not hasattr(user, "doctor_profile"):
         return Response(
             {"error": "Solo doctores pueden ver estadísticas"},
             status=status.HTTP_403_FORBIDDEN,
         )
 
-    doctor = user.doctor_operator
+    doctor = user.doctor_profile
     now = timezone.now()
     today = now.date()
     week_start = today - timedelta(days=today.weekday())
@@ -7650,7 +7650,7 @@ class DoctorServiceViewSet(viewsets.ModelViewSet):
             queryset = DoctorService.objects.filter(institution_id=institution_id)
         else:
             # Fallback: usar institución activa del doctor
-            doctor = getattr(self.request.user, "doctor_operator", None)
+            doctor = getattr(self.request.user, "doctor_profile", None)
             if doctor:
                 institution = doctor.active_institution or doctor.institutions.first()
                 if institution:
