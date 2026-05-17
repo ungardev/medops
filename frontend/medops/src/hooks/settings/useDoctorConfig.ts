@@ -22,11 +22,10 @@ export function useDoctorConfig() {
         ...data,
         specialties: dedupedSpecialties,
         specialty_ids: dedupedIds,
-        gender: data.gender || 'M', // Fallback seguro
-        // ✅ active_institution ya viene como objeto del backend (no requiere transformación)
+        gender: data.gender || 'M',
       };
     },
-    staleTime: 1000 * 60 * 60, // 1 hora
+    staleTime: 1000 * 60 * 60,
     structuralSharing: true,
   });
   // ✅ PATCH actualización (multipart/form-data)
@@ -34,13 +33,14 @@ export function useDoctorConfig() {
     mutationFn: async (newSettings: Partial<DoctorConfig>) => {
       console.log("PATCH DOCTOR CONFIG >>>", newSettings);
       const formData = new FormData();
-      // Mapeo inteligente de campos
+      // ✅ MPPS VENEZUELA COMPLIANCE FIELDS
       const fields = [
-        'full_name', 'colegiado_id', 'license', 'email', 'phone', 'gender',
+        'full_name', 'national_id', 'birthdate', 'birth_country',
+        'colegiado_id', 'license', 'license_expiry_date',
+        'email', 'phone', 'gender', 'bio',
         'bank_name', 'bank_rif', 'bank_phone', 'bank_account',
-        'whatsapp_enabled', 'whatsapp_business_number', 'whatsapp_business_id', 
+        'whatsapp_enabled', 'whatsapp_business_number', 'whatsapp_business_id',
         'whatsapp_access_token', 'reminder_hours_before',
-        'bio',
       ];
       fields.forEach(field => {
         const val = newSettings[field as keyof DoctorConfig];
@@ -57,7 +57,7 @@ export function useDoctorConfig() {
       // ✅ Specialty IDs (Manejo de arrays en FormData)
       if (Array.isArray(newSettings.specialty_ids)) {
         if (newSettings.specialty_ids.length === 0) {
-          formData.append("specialty_ids", ""); // Limpiar selección
+          formData.append("specialty_ids", "");
         } else {
           newSettings.specialty_ids.forEach((id) => {
             formData.append("specialty_ids", String(id));

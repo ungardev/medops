@@ -42,11 +42,15 @@ export default function ConfigPage() {
   const [initialized, setInitialized] = useState(false);
   const [deletingInstitution, setDeletingInstitution] = useState<any>(null);
   
-  const [doctorForm, setDoctorForm] = useState({
+const [doctorForm, setDoctorForm] = useState({
     full_name: "",
+    national_id: "",
+    birthdate: "",
+    birth_country: "Venezuela",
     gender: "M" as 'M' | 'F' | 'O',
     colegiado_id: "",
     license: "",
+    license_expiry_date: "",
     email: "",
     phone: "",
     bio: "",
@@ -73,7 +77,7 @@ export default function ConfigPage() {
     bank_account: (doc as any)?.bank_account || "",
   };
   
-  useEffect(() => {
+useEffect(() => {
     if (!doc || specialties.length === 0 || initialized) return;
     
     const ids = Array.isArray(doc.specialty_ids) ? doc.specialty_ids.map(Number) : [];
@@ -81,9 +85,13 @@ export default function ConfigPage() {
     
     setDoctorForm({
       full_name: doc.full_name || "",
+      national_id: doc.national_id || "",
+      birthdate: doc.birthdate || "",
+      birth_country: doc.birth_country || "Venezuela",
       gender: doc.gender || "M",
       colegiado_id: doc.colegiado_id || "",
       license: doc.license || "",
+      license_expiry_date: doc.license_expiry_date || "",
       email: doc.email || "",
       phone: doc.phone || "",
       bio: doc.bio || "",
@@ -126,12 +134,16 @@ export default function ConfigPage() {
     await updateDoctor(whatsAppData as any);
   };
   
-  const handleSaveDoctor = async () => {
+const handleSaveDoctor = async () => {
     await updateDoctor({
       full_name: doctorForm.full_name,
+      national_id: doctorForm.national_id,
+      birthdate: doctorForm.birthdate,
+      birth_country: doctorForm.birth_country,
       gender: doctorForm.gender,
       colegiado_id: doctorForm.colegiado_id,
       license: doctorForm.license,
+      license_expiry_date: doctorForm.license_expiry_date,
       email: doctorForm.email || '',
       phone: doctorForm.phone || '',
       bio: doctorForm.bio || '',
@@ -224,6 +236,21 @@ export default function ConfigPage() {
             </div>
             
             <div className="space-y-6">
+              {/* Banner de verificación pendiente */}
+              {!doc?.is_verified && (
+                <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheckIcon className="w-4 h-4 text-amber-400" />
+                    <span className="text-[10px] text-amber-400 font-medium">
+                      Verificación MPPS en proceso. El Admin de MEDOPZ está revisando tus credenciales.
+                    </span>
+                  </div>
+                  {doc?.verification_notes && (
+                    <p className="text-[9px] text-white/40 mt-1 ml-6">{doc.verification_notes}</p>
+                  )}
+                </div>
+              )}
+
               <div className="flex items-center gap-5">
                 <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center rounded-lg">
                   <FingerPrintIcon className="w-8 h-8 text-emerald-400/40" />
@@ -234,13 +261,36 @@ export default function ConfigPage() {
                     {doc?.full_name || "Sin configurar"}
                   </h4>
                   <p className="text-[10px] text-white/30 mt-1">
-                    Licencia: {doc?.license || "N/A"}
+                    Cédula: {doc?.national_id || "N/A"}
                   </p>
-                  {doc?.is_verified && (
-                    <div className="mt-2 inline-flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-md text-[9px] text-emerald-400 font-medium border border-emerald-500/20">
-                      <ShieldCheckIcon className="w-3 h-3" /> Verificado
-                    </div>
-                  )}
+                  {/* License Status Badge */}
+                  <div className="mt-2 flex items-center gap-2">
+                    {doc?.license_expiry_status === 'active' && (
+                      <span className="inline-flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-md text-[9px] text-emerald-400 font-medium border border-emerald-500/20">
+                        🟢 Licencia Activa
+                      </span>
+                    )}
+                    {doc?.license_expiry_status === 'expiring_soon' && (
+                      <span className="inline-flex items-center gap-1 bg-amber-500/10 px-2 py-0.5 rounded-md text-[9px] text-amber-400 font-medium border border-amber-500/20">
+                        🟡 Por Expirar
+                      </span>
+                    )}
+                    {doc?.license_expiry_status === 'expired' && (
+                      <span className="inline-flex items-center gap-1 bg-red-500/10 px-2 py-0.5 rounded-md text-[9px] text-red-400 font-medium border border-red-500/20">
+                        🔴 Licencia Expirada
+                      </span>
+                    )}
+                    {(doc?.license_expiry_status === 'unknown' || !doc?.license_expiry_status) && (
+                      <span className="inline-flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded-md text-[9px] text-white/40 font-medium border border-white/10">
+                        ⚪ Sin Fecha
+                      </span>
+                    )}
+                    {doc?.is_verified && (
+                      <span className="inline-flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-md text-[9px] text-emerald-400 font-medium border border-emerald-500/20">
+                        <ShieldCheckIcon className="w-3 h-3" /> MPPS Verificado
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
               
@@ -363,6 +413,41 @@ export default function ConfigPage() {
             </div>
             <form onSubmit={async (e) => { e.preventDefault(); await handleSaveDoctor(); }} className="p-6 space-y-5">
               
+              {/* Bloque: Identidad Legal MPPS */}
+              <div className="bg-white/5 border border-white/10 p-4 rounded-lg space-y-4">
+                <h4 className="text-[10px] font-semibold text-emerald-400/70 uppercase tracking-wider">Identidad Legal MPPS Venezuela</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2">
+                    <label className={labelStyles}>Cédula de Identidad</label>
+                    <input 
+                      className={inputStyles} 
+                      value={doctorForm.national_id} 
+                      onChange={(e) => setDoctorForm({...doctorForm, national_id: e.target.value})}
+                      placeholder="V-xxxxxxxx"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelStyles}>Fecha de Nacimiento</label>
+                    <input 
+                      type="date" 
+                      className={inputStyles} 
+                      value={doctorForm.birthdate} 
+                      onChange={(e) => setDoctorForm({...doctorForm, birthdate: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelStyles}>País de Nacimiento</label>
+                    <input 
+                      className={inputStyles} 
+                      value={doctorForm.birth_country} 
+                      onChange={(e) => setDoctorForm({...doctorForm, birth_country: e.target.value})}
+                      placeholder="Venezuela"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Bloque: Datos Personales */}
               <div className="grid grid-cols-4 gap-4">
                 <div className="col-span-1">
                   <label className={labelStyles}>Título</label>
@@ -382,14 +467,27 @@ export default function ConfigPage() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className={labelStyles}>Licencia</label>
-                  <input className={inputStyles} value={doctorForm.license} onChange={(e) => setDoctorForm({...doctorForm, license: e.target.value})} />
-                </div>
-                <div>
-                  <label className={labelStyles}>Colegiado ID</label>
-                  <input className={inputStyles} value={doctorForm.colegiado_id} onChange={(e) => setDoctorForm({...doctorForm, colegiado_id: e.target.value})} />
+              {/* Bloque: Credenciales MPPS */}
+              <div className="bg-white/5 border border-white/10 p-4 rounded-lg space-y-4">
+                <h4 className="text-[10px] font-semibold text-emerald-400/70 uppercase tracking-wider">Credenciales Médicas MPPS</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelStyles}>Licencia Sanitaria</label>
+                    <input className={inputStyles} value={doctorForm.license} onChange={(e) => setDoctorForm({...doctorForm, license: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className={labelStyles}>Fecha de Expiración</label>
+                    <input 
+                      type="date" 
+                      className={inputStyles} 
+                      value={doctorForm.license_expiry_date} 
+                      onChange={(e) => setDoctorForm({...doctorForm, license_expiry_date: e.target.value})}
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className={labelStyles}>Número de Colegiado</label>
+                    <input className={inputStyles} value={doctorForm.colegiado_id} onChange={(e) => setDoctorForm({...doctorForm, colegiado_id: e.target.value})} />
+                  </div>
                 </div>
               </div>
               

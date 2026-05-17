@@ -70,26 +70,33 @@ export interface InstitutionSimple {
 export interface DoctorConfig {
   id?: number;
   full_name?: string;
-  gender: 'M' | 'F' | 'O'; // 👈 Nuevo: Discriminador de título formal
+  // === MPPS VENEZUELA COMPLIANCE ===
+  national_id?: string;
+  birthdate?: string;
+  birth_country?: string;
+  license_expiry_date?: string;
+  is_active_license?: boolean;
+  license_expiry_status?: 'active' | 'expiring_soon' | 'expired' | 'unknown';
+  // ================================
+  gender: 'M' | 'F' | 'O';
   // Credenciales
   colegiado_id?: string;
   license?: string;
-  is_verified: boolean; // Estado de validación del colegio
+  is_verified: boolean;
+  verification_notes?: string;
   // Alcance
   specialty_ids?: number[];
   specialties?: Specialty[];
-  institutions?: number[]; // IDs de las sedes donde opera
-  active_institution?: InstitutionSimple; // ✅ AÑADIDO: Institución activa (objeto con id y name)
+  institutions?: number[];
+  active_institution?: InstitutionSimple;
   // Contacto & Firma
   email?: string;
   phone?: string;
   signature?: string | File | null;
-  // 🆕 AGREGADO: specialty (especialidad principal)
   specialty?: string | null;
-  // 🆕 AGREGADO: Campos de perfil público
-  bio?: string;          // Biografía corta del doctor
-  photo_url?: string;    // URL de foto de perfil
-  photo?: string | File | null;  // Foto de perfil (para upload)
+  bio?: string;
+  photo_url?: string;
+  photo?: string | File | null;
   // =====================================================
   // 🔹 WhatsApp Business Integration
   // =====================================================
