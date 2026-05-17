@@ -3716,9 +3716,15 @@ class DoctorPaymentConfigSerializer(serializers.ModelSerializer):
             "banesco_client_id",
             "banesco_enabled",
             "banesco_is_test_mode",
-            # Binance
+            # Binance Crypto
             "binance_merchant_id",
             "binance_enabled",
+            "binance_crypto_wallet_address",
+            "binance_network",
+            # Métodos de pago habilitados
+            "payment_mobile_enabled",
+            "bank_transfer_enabled",
+            "crypto_enabled",
             # Configuración general
             "account_type",
             "manual_verification_enabled",

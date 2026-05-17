@@ -5306,6 +5306,36 @@ class DoctorPaymentConfig(models.Model):
     binance_enabled = models.BooleanField(
         default=False, verbose_name="Binance habilitado"
     )
+    binance_crypto_wallet_address = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name="Binance Crypto Wallet (USDT-TRC20)",
+        help_text="Dirección de wallet Binance para recibir USDT en red TRC20",
+    )
+    binance_network = models.CharField(
+        max_length=20,
+        blank=True,
+        default="TRC20",
+        verbose_name="Binance Network",
+        help_text="Red blockchain para depósitos crypto (TRC20, ERC20, BEP20)",
+    )
+
+    # === MÉTODOS DE PAGO HABILITADOS (FLAGS) ===
+    payment_mobile_enabled = models.BooleanField(
+        default=True,
+        verbose_name="Pago Móvil habilitado",
+        help_text="Habilitar pagos vía Pago Móvil bancario",
+    )
+    bank_transfer_enabled = models.BooleanField(
+        default=False,
+        verbose_name="Transferencia bancaria habilitada",
+        help_text="Habilitar pagos vía transferencia directa",
+    )
+    crypto_enabled = models.BooleanField(
+        default=False,
+        verbose_name="Crypto USDT habilitado",
+        help_text="Habilitar pagos en USDT (Binance)",
+    )
 
     # === CONFIGURACIÓN GENERAL ===
     account_type = models.CharField(

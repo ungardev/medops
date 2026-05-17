@@ -39,6 +39,8 @@ export function useDoctorConfig() {
         'colegiado_id', 'license', 'license_expiry_date',
         'email', 'phone', 'gender', 'bio',
         'bank_name', 'bank_rif', 'bank_phone', 'bank_account',
+        'binance_crypto_wallet_address', 'binance_network',
+        'payment_mobile_enabled', 'bank_transfer_enabled', 'crypto_enabled',
         'whatsapp_enabled', 'whatsapp_business_number', 'whatsapp_business_id',
         'whatsapp_access_token', 'reminder_hours_before',
       ];

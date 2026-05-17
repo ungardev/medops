@@ -105,11 +105,46 @@ export interface DoctorConfig {
   whatsapp_business_id?: string;
   whatsapp_access_token?: string;
   reminder_hours_before?: number;
-  // =====================================================
-  // 🔹 Datos Bancarios (DoctorPaymentConfig)
-  // =====================================================
+// =====================================================
+// 🔹 Datos Bancarios (DoctorPaymentConfig)
+// =====================================================
   bank_name?: string;
   bank_rif?: string;
   bank_phone?: string;
   bank_account?: string;
+}
+
+// =====================================================
+// 🔹 Configuración de Pago del Doctor (PaymentConfig)
+// =====================================================
+export interface DoctorPaymentConfig {
+  id?: number;
+  bank_name?: string;
+  bank_account?: string;
+  bank_rif?: string;
+  bank_phone?: string;
+  bank_account_holder?: string;
+  // Binance Crypto
+  binance_merchant_id?: string;
+  binance_enabled?: boolean;
+  binance_crypto_wallet_address?: string;
+  binance_network?: string;
+  // Payment Methods Flags
+  payment_mobile_enabled?: boolean;
+  bank_transfer_enabled?: boolean;
+  crypto_enabled?: boolean;
+  // Configuración general
+  account_type?: 'natural' | 'juridica';
+  manual_verification_enabled?: boolean;
+  notifications_enabled?: boolean;
+  // Comisiones
+  commission_doctor_percent?: number;
+  commission_patient_percent?: number;
+  // Verificación
+  is_verified?: boolean;
+  verified_at?: string;
+  verification_notes?: string;
+  // Timestamps
+  created_at?: string;
+  updated_at?: string;
 }

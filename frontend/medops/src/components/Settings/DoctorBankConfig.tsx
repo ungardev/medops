@@ -1,47 +1,202 @@
 // src/components/Settings/DoctorBankConfig.tsx
 import React, { useState, useEffect } from "react";
 import { VENEZUELAN_BANKS } from "@/constants/banks";
-import { BuildingOfficeIcon } from "@heroicons/react/24/outline";
+import { 
+  BuildingOfficeIcon,
+  DevicePhoneMobileIcon,
+  ArrowsRightLeftIcon,
+  CurrencyDollarIcon,
+  WifiIcon,
+  ShieldCheckIcon
+} from "@heroicons/react/24/outline";
+
 interface DoctorBankConfigProps {
   bankName: string;
   bankRif: string;
   bankPhone: string;
   bankAccount: string;
-  onUpdate: (data: { bank_name: string; bank_rif: string; bank_phone: string; bank_account: string }) => void;
+  // Nuevos campos MPPS Elite
+  binanceCryptoWalletAddress?: string;
+  binanceNetwork?: string;
+  paymentMobileEnabled?: boolean;
+  bankTransferEnabled?: boolean;
+  cryptoEnabled?: boolean;
+  commissionDoctorPercent?: number;
+  onUpdate: (data: any) => void;
 }
-export default function DoctorBankConfig({ bankName, bankRif, bankPhone, bankAccount, onUpdate }: DoctorBankConfigProps) {
+
+// Utility: Commission simulator (pure math UI)
+const CommissionSimulator = ({ 
+  amount, 
+  commissionPercent = 3.0 
+}: { 
+  amount: number; 
+  commissionPercent?: number; 
+}) => {
+  if (!amount || amount <= 0) return null;
+  
+  const commission = amount * (commissionPercent / 100);
+  const net = amount - commission;
+  
+  return (
+    <div className="bg-black/20 border border-white/10 p-3 rounded-lg mt-3">
+      <p className="text-[9px] text-white/40 font-medium mb-2">SIMULADOR DE COMISIONES</p>
+      <div className="space-y-1 text-[10px]">
+        <div className="flex justify-between">
+          <span className="text-white/50">Monto bruto:</span>
+          <span className="text-white/70 font-mono">${amount.toFixed(2)}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-white/50">Comisión ({commissionPercent}%):</span>
+          <span className="text-amber-400/70 font-mono">-${commission.toFixed(2)}</span>
+        </div>
+        <div className="flex justify-between border-t border-white/10 pt-1 mt-1">
+          <span className="text-emerald-400/70 font-medium">Neto a recibir:</span>
+          <span className="text-emerald-400 font-mono font-bold">${net.toFixed(2)}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Payment Method Status Badge
+const PaymentMethodBadge = ({ 
+  enabled, 
+  label, 
+  icon 
+}: { 
+  enabled?: boolean | string; 
+  label: string; 
+  icon: React.ReactNode;
+}) => {
+  const isActive = Boolean(enabled);
+  return (
+    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${
+      isActive 
+        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
+        : 'bg-white/5 border-white/10 text-white/30'
+    }`}>
+      {icon}
+      <span className="text-[10px] font-medium">{label}</span>
+      <span className={`ml-auto text-[9px] ${isActive ? 'text-emerald-400' : 'text-white/20'}`}>
+        {isActive ? '● Activo' : '○ Inactivo'}
+      </span>
+    </div>
+  );
+};
+
+export default function DoctorBankConfig({ 
+  bankName, 
+  bankRif, 
+  bankPhone, 
+  bankAccount,
+  binanceCryptoWalletAddress = "",
+  binanceNetwork = "TRC20",
+  paymentMobileEnabled = true,
+  bankTransferEnabled = false,
+  cryptoEnabled = false,
+  commissionDoctorPercent = 3.0,
+  onUpdate 
+}: DoctorBankConfigProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [simulatorAmount, setSimulatorAmount] = useState<string>("");
   const [form, setForm] = useState({
     bank_name: bankName || "",
     bank_rif: bankRif || "",
     bank_phone: bankPhone || "",
     bank_account: bankAccount || "",
+    // Crypto
+    binance_crypto_wallet_address: binanceCryptoWalletAddress || "",
+    binance_network: binanceNetwork || "TRC20",
+    // Payment methods
+    payment_mobile_enabled: paymentMobileEnabled ?? true,
+    bank_transfer_enabled: bankTransferEnabled ?? false,
+    crypto_enabled: cryptoEnabled ?? false,
   });
+
   useEffect(() => {
     setForm({
       bank_name: bankName || "",
       bank_rif: bankRif || "",
       bank_phone: bankPhone || "",
       bank_account: bankAccount || "",
+      binance_crypto_wallet_address: binanceCryptoWalletAddress || "",
+      binance_network: binanceNetwork || "TRC20",
+      payment_mobile_enabled: paymentMobileEnabled ?? true,
+      bank_transfer_enabled: bankTransferEnabled ?? false,
+      crypto_enabled: cryptoEnabled ?? false,
     });
-  }, [bankName, bankRif, bankPhone, bankAccount]);
+  }, [bankName, bankRif, bankPhone, bankAccount, binanceCryptoWalletAddress, binanceNetwork, paymentMobileEnabled, bankTransferEnabled, cryptoEnabled]);
+
   const filledFields = [form.bank_name, form.bank_rif, form.bank_phone, form.bank_account].filter(Boolean).length;
   const totalFields = 4;
   const isComplete = filledFields === totalFields;
+  
+  const hasAnyPaymentMethod = form.bank_name || form.bank_account || form.binance_crypto_wallet_address;
+
   const handleSave = async () => {
-    await onUpdate(form);
+    await onUpdate({
+      bank_name: form.bank_name,
+      bank_rif: form.bank_rif,
+      bank_phone: form.bank_phone,
+      bank_account: form.bank_account,
+      binance_crypto_wallet_address: form.binance_crypto_wallet_address,
+      binance_network: form.binance_network,
+      payment_mobile_enabled: form.payment_mobile_enabled,
+      bank_transfer_enabled: form.bank_transfer_enabled,
+      crypto_enabled: form.crypto_enabled,
+    });
     setIsEditing(false);
   };
+
   const labelStyles = `text-[10px] font-medium text-white/50 uppercase tracking-wider mb-1.5 block`;
   const inputStyles = `w-full bg-white/5 border border-white/15 rounded-lg px-4 py-2.5 text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30`;
+
+  // =====================================================
+  // EMPTY STATE - No hay datos configurados
+  // =====================================================
+  if (!isEditing && !hasAnyPaymentMethod) {
+    return (
+      <div className="bg-white/5 border border-white/15 p-5 rounded-lg space-y-4">
+        <div className="flex items-center gap-2">
+          <BuildingOfficeIcon className="w-4 h-4 text-white/30" />
+          <h4 className="text-[11px] font-medium text-white/60">
+            Datos de Pago
+          </h4>
+        </div>
+        
+        <div className="bg-white/5 border border-dashed border-white/10 p-6 rounded-lg text-center">
+          <CurrencyDollarIcon className="w-8 h-8 text-white/20 mx-auto mb-3" />
+          <p className="text-[11px] text-white/40 mb-1">
+            Sin métodos de pago configurados
+          </p>
+          <p className="text-[9px] text-white/25">
+            Configure al menos un método para recibir pagos de pacientes
+          </p>
+        </div>
+
+        <button 
+          onClick={() => setIsEditing(true)}
+          className="w-full py-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-medium hover:bg-emerald-500/15 transition-all rounded-lg"
+        >
+          Configurar Métodos de Pago
+        </button>
+      </div>
+    );
+  }
+
+  // =====================================================
+  // VIEW MODE - Mostrar configuración
+  // =====================================================
   if (!isEditing) {
     return (
       <div className="bg-white/5 border border-white/15 p-5 rounded-lg space-y-4">
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <BuildingOfficeIcon className="w-4 h-4 text-white/30" />
             <h4 className="text-[11px] font-medium text-white/60">
-              Datos Bancarios
+              Métodos de Pago
             </h4>
           </div>
           <div className={`px-2 py-0.5 rounded-md text-[9px] font-medium ${
@@ -52,54 +207,133 @@ export default function DoctorBankConfig({ bankName, bankRif, bankPhone, bankAcc
             {isComplete ? 'Completo' : `${filledFields}/${totalFields}`}
           </div>
         </div>
-        
-        {form.bank_name ? (
-          <div className="grid grid-cols-2 gap-3 text-[10px]">
-            <div>
-              <span className="text-white/30">Banco:</span>
-              <span className="text-white/70 font-medium ml-2">{form.bank_name}</span>
+
+        {/* Payment Methods Grid */}
+        <div className="grid grid-cols-3 gap-2">
+          <PaymentMethodBadge 
+            enabled={form.payment_mobile_enabled && form.bank_phone}
+            label="Pago Móvil"
+            icon={<DevicePhoneMobileIcon className="w-3 h-3" />}
+          />
+          <PaymentMethodBadge 
+            enabled={form.bank_transfer_enabled && form.bank_account}
+            label="Transferencia"
+            icon={<ArrowsRightLeftIcon className="w-3 h-3" />}
+          />
+          <PaymentMethodBadge 
+            enabled={form.crypto_enabled && form.binance_crypto_wallet_address}
+            label="USDT"
+            icon={<CurrencyDollarIcon className="w-3 h-3" />}
+          />
+        </div>
+
+        {/* Pago Móvil Details */}
+        {form.payment_mobile_enabled && form.bank_phone && (
+          <div className="bg-emerald-500/5 border border-emerald-500/10 p-3 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <DevicePhoneMobileIcon className="w-3 h-3 text-emerald-400/60" />
+              <span className="text-[9px] text-emerald-400/60 font-medium">PAGO MÓVIL</span>
+              <span className="ml-auto text-[9px] text-emerald-400">● Configurado</span>
             </div>
-            {form.bank_rif && (
-              <div>
-                <span className="text-white/30">Cédula:</span>
-                <span className="text-white/70 font-medium font-mono ml-2">{form.bank_rif}</span>
-              </div>
-            )}
-            {form.bank_phone && (
-              <div>
-                <span className="text-white/30">Teléfono:</span>
-                <span className="text-white/70 font-medium font-mono ml-2">{form.bank_phone}</span>
-              </div>
-            )}
-            {form.bank_account && (
-              <div>
-                <span className="text-white/30">Cuenta:</span>
-                <span className="text-white/70 font-medium font-mono ml-2">{form.bank_account}</span>
-              </div>
-            )}
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px]">
+              {form.bank_name && (
+                <div>
+                  <span className="text-white/30">Banco:</span>
+                  <span className="text-white/70 font-medium ml-2">{form.bank_name}</span>
+                </div>
+              )}
+              {form.bank_phone && (
+                <div>
+                  <span className="text-white/30">Teléfono:</span>
+                  <span className="text-white/70 font-mono ml-2">{form.bank_phone}</span>
+                </div>
+              )}
+              {form.bank_rif && (
+                <div>
+                  <span className="text-white/30">RIF:</span>
+                  <span className="text-white/70 font-mono ml-2">{form.bank_rif}</span>
+                </div>
+              )}
+              {form.bank_account && (
+                <div>
+                  <span className="text-white/30">Cuenta:</span>
+                  <span className="text-white/70 font-mono ml-2">{form.bank_account}</span>
+                </div>
+              )}
+            </div>
           </div>
-        ) : (
-          <p className="text-[10px] text-white/30">
-            No configurado. Los pacientes no podrán ver tus datos de pago.
-          </p>
         )}
-        
+
+        {/* Transferencia Details */}
+        {form.bank_transfer_enabled && form.bank_account && (
+          <div className="bg-blue-500/5 border border-blue-500/10 p-3 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <ArrowsRightLeftIcon className="w-3 h-3 text-blue-400/60" />
+              <span className="text-[9px] text-blue-400/60 font-medium">TRANSFERENCIA BANCARIA</span>
+              <span className="ml-auto text-[9px] text-blue-400">● Configurado</span>
+            </div>
+            <div className="text-[10px]">
+              <span className="text-white/30">Cuenta:</span>
+              <span className="text-white/70 font-mono ml-2">{form.bank_account}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Crypto USDT Details */}
+        {form.crypto_enabled && form.binance_crypto_wallet_address && (
+          <div className="bg-amber-500/5 border border-amber-500/10 p-3 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <CurrencyDollarIcon className="w-3 h-3 text-amber-400/60" />
+              <span className="text-[9px] text-amber-400/60 font-medium">USDT ({form.binance_network})</span>
+              <span className="ml-auto text-[9px] text-amber-400">● Configurado</span>
+            </div>
+            <div className="text-[10px]">
+              <span className="text-white/30">Wallet:</span>
+              <span className="text-white/70 font-mono ml-2 text-[9px] break-all">
+                {form.binance_crypto_wallet_address}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Commission Simulator */}
+        <div className="border-t border-white/10 pt-3">
+          <label className={labelStyles}>Simulador de Comisiones</label>
+          <input
+            type="number"
+            value={simulatorAmount}
+            onChange={(e) => setSimulatorAmount(e.target.value)}
+            placeholder="Ingrese monto en USD"
+            className={inputStyles}
+          />
+          {simulatorAmount && parseFloat(simulatorAmount) > 0 && (
+            <CommissionSimulator 
+              amount={parseFloat(simulatorAmount)} 
+              commissionPercent={commissionDoctorPercent} 
+            />
+          )}
+        </div>
+
         <button 
           onClick={() => setIsEditing(true)}
           className="w-full py-2.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-medium hover:bg-amber-500/15 transition-all rounded-lg"
         >
-          {form.bank_name ? 'Editar Datos Bancarios' : 'Configurar Datos Bancarios'}
+          Editar Métodos de Pago
         </button>
       </div>
     );
   }
+
+  // =====================================================
+  // EDIT MODE - Formulario de configuración
+  // =====================================================
   return (
     <div className="bg-white/5 border border-white/15 p-5 rounded-lg space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <BuildingOfficeIcon className="w-4 h-4 text-white/30" />
           <h4 className="text-[11px] font-medium text-white/60">
-            Editar Datos Bancarios
+            Configurar Métodos de Pago
           </h4>
         </div>
         <button 
@@ -109,55 +343,159 @@ export default function DoctorBankConfig({ bankName, bankRif, bankPhone, bankAcc
           Cancelar
         </button>
       </div>
-      
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className={labelStyles}>Banco</label>
-          <select
-            className={inputStyles}
-            value={form.bank_name}
-            onChange={(e) => setForm({...form, bank_name: e.target.value})}
-          >
-            <option value="">Seleccionar banco</option>
-            {VENEZUELAN_BANKS.map(bank => (
-              <option key={bank.code} value={bank.name}>{bank.name}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className={labelStyles}>Cédula/RIF</label>
-          <input
-            className={inputStyles}
-            value={form.bank_rif}
-            onChange={(e) => setForm({...form, bank_rif: e.target.value})}
-            placeholder="V-12345678"
-          />
-        </div>
-        <div>
-          <label className={labelStyles}>Teléfono Pago Móvil</label>
-          <input
-            className={inputStyles}
-            value={form.bank_phone}
-            onChange={(e) => setForm({...form, bank_phone: e.target.value})}
-            placeholder="04121234567"
-          />
-        </div>
-        <div>
-          <label className={labelStyles}>Número de Cuenta</label>
-          <input
-            className={inputStyles}
-            value={form.bank_account}
-            onChange={(e) => setForm({...form, bank_account: e.target.value})}
-            placeholder="0105-XXXX-XXXX-XXXX"
-          />
+
+      {/* Payment Methods Toggles */}
+      <div className="bg-white/5 border border-white/10 p-3 rounded-lg space-y-3">
+        <p className="text-[9px] text-white/40 font-medium uppercase tracking-wider">Métodos de Pago</p>
+        <div className="grid grid-cols-3 gap-2">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.payment_mobile_enabled}
+              onChange={(e) => setForm({...form, payment_mobile_enabled: e.target.checked})}
+              className="w-4 h-4 rounded border-white/20 bg-white/5"
+            />
+            <span className="text-[10px] text-white/70">Pago Móvil</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.bank_transfer_enabled}
+              onChange={(e) => setForm({...form, bank_transfer_enabled: e.target.checked})}
+              className="w-4 h-4 rounded border-white/20 bg-white/5"
+            />
+            <span className="text-[10px] text-white/70">Transferencia</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.crypto_enabled}
+              onChange={(e) => setForm({...form, crypto_enabled: e.target.checked})}
+              className="w-4 h-4 rounded border-white/20 bg-white/5"
+            />
+            <span className="text-[10px] text-white/70">USDT</span>
+          </label>
         </div>
       </div>
-      
+
+      {/* Pago Móvil Fields */}
+      {form.payment_mobile_enabled && (
+        <div className="bg-emerald-500/5 border border-emerald-500/10 p-4 rounded-lg space-y-3">
+          <div className="flex items-center gap-2">
+            <DevicePhoneMobileIcon className="w-4 h-4 text-emerald-400/60" />
+            <span className="text-[10px] text-emerald-400/70 font-semibold">PAGO MÓVIL</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2">
+              <label className={labelStyles}>Banco</label>
+              <select
+                className={inputStyles}
+                value={form.bank_name}
+                onChange={(e) => setForm({...form, bank_name: e.target.value})}
+              >
+                <option value="">Seleccionar banco</option>
+                {VENEZUELAN_BANKS.map(bank => (
+                  <option key={bank.code} value={bank.name}>{bank.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelStyles}>Teléfono Pago Móvil</label>
+              <input
+                className={inputStyles}
+                value={form.bank_phone}
+                onChange={(e) => setForm({...form, bank_phone: e.target.value})}
+                placeholder="04121234567"
+              />
+            </div>
+            <div>
+              <label className={labelStyles}>Cédula/RIF</label>
+              <input
+                className={inputStyles}
+                value={form.bank_rif}
+                onChange={(e) => setForm({...form, bank_rif: e.target.value})}
+                placeholder="V-12345678"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Transferencia Fields */}
+      {form.bank_transfer_enabled && (
+        <div className="bg-blue-500/5 border border-blue-500/10 p-4 rounded-lg space-y-3">
+          <div className="flex items-center gap-2">
+            <ArrowsRightLeftIcon className="w-4 h-4 text-blue-400/60" />
+            <span className="text-[10px] text-blue-400/70 font-semibold">TRANSFERENCIA BANCARIA</span>
+          </div>
+          <div>
+            <label className={labelStyles}>Número de Cuenta</label>
+            <input
+              className={inputStyles}
+              value={form.bank_account}
+              onChange={(e) => setForm({...form, bank_account: e.target.value})}
+              placeholder="0105-XXXX-XXXX-XXXX"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Crypto USDT Fields */}
+      {form.crypto_enabled && (
+        <div className="bg-amber-500/5 border border-amber-500/10 p-4 rounded-lg space-y-3">
+          <div className="flex items-center gap-2">
+            <CurrencyDollarIcon className="w-4 h-4 text-amber-400/60" />
+            <span className="text-[10px] text-amber-400/70 font-semibold">USDT (BINANCE)</span>
+          </div>
+          <div>
+            <label className={labelStyles}>Dirección Wallet (USDT-TRC20)</label>
+            <input
+              className={inputStyles}
+              value={form.binance_crypto_wallet_address}
+              onChange={(e) => setForm({...form, binance_crypto_wallet_address: e.target.value})}
+              placeholder="TN3W4H6rK2ce4vX9YnFQHwKENnHqyYB8XZ"
+            />
+          </div>
+          <div>
+            <label className={labelStyles}>Red Blockchain</label>
+            <select
+              className={inputStyles}
+              value={form.binance_network}
+              onChange={(e) => setForm({...form, binance_network: e.target.value})}
+            >
+              <option value="TRC20">TRC20 (Tron) - Recomendado</option>
+              <option value="ERC20">ERC20 (Ethereum)</option>
+              <option value="BEP20">BEP20 (BNB Chain)</option>
+            </select>
+          </div>
+        </div>
+      )}
+
+      {/* Commission Simulator Preview */}
+      {form.bank_name && (
+        <div className="border-t border-white/10 pt-3">
+          <label className={labelStyles}>Simulador de Comisiones</label>
+          <input
+            type="number"
+            value={simulatorAmount}
+            onChange={(e) => setSimulatorAmount(e.target.value)}
+            placeholder="Ingrese monto en USD"
+            className={inputStyles}
+          />
+          {simulatorAmount && parseFloat(simulatorAmount) > 0 && (
+            <CommissionSimulator 
+              amount={parseFloat(simulatorAmount)} 
+              commissionPercent={commissionDoctorPercent} 
+            />
+          )}
+        </div>
+      )}
+
       <button 
         onClick={handleSave}
-        className="w-full py-2.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-medium hover:bg-amber-500/15 transition-all rounded-lg"
+        className="w-full py-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-medium hover:bg-emerald-500/15 transition-all rounded-lg"
       >
-        Guardar Datos Bancarios
+        Guardar Métodos de Pago
       </button>
     </div>
   );

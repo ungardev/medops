@@ -68,16 +68,9 @@ const [doctorForm, setDoctorForm] = useState({
     whatsapp_business_id: '',
     whatsapp_access_token: '',
     reminder_hours_before: 24,
-  });
-  
-  const bankData = {
-    bank_name: (doc as any)?.bank_name || "",
-    bank_rif: (doc as any)?.bank_rif || "",
-    bank_phone: (doc as any)?.bank_phone || "",
-    bank_account: (doc as any)?.bank_account || "",
-  };
-  
-useEffect(() => {
+});
+
+  useEffect(() => {
     if (!doc || specialties.length === 0 || initialized) return;
     
     const ids = Array.isArray(doc.specialty_ids) ? doc.specialty_ids.map(Number) : [];
@@ -319,10 +312,16 @@ const handleSaveDoctor = async () => {
               </div>
               
               <DoctorBankConfig 
-                bankName={bankData.bank_name}
-                bankRif={bankData.bank_rif}
-                bankPhone={bankData.bank_phone}
-                bankAccount={bankData.bank_account}
+                bankName={(doc as any)?.bank_name || ""}
+                bankRif={(doc as any)?.bank_rif || ""}
+                bankPhone={(doc as any)?.bank_phone || ""}
+                bankAccount={(doc as any)?.bank_account || ""}
+                binanceCryptoWalletAddress={(doc as any)?.binance_crypto_wallet_address || ""}
+                binanceNetwork={(doc as any)?.binance_network || "TRC20"}
+                paymentMobileEnabled={(doc as any)?.payment_mobile_enabled ?? true}
+                bankTransferEnabled={(doc as any)?.bank_transfer_enabled ?? false}
+                cryptoEnabled={(doc as any)?.crypto_enabled ?? false}
+                commissionDoctorPercent={(doc as any)?.commission_doctor_percent ?? 3.0}
                 onUpdate={handleSaveBankData}
               />
               
