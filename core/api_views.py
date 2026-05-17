@@ -6260,15 +6260,35 @@ def doctor_login(request):
 def doctor_invite(request):
     """
     POST /api/doctor/invitations/
-    Crea una invitación para un nuevo médico.
+    Crea una invitación para un nuevo médico con credenciales profesionales.
     Solo admins pueden invitar doctores.
+
+    Campos requeridos para cumplimiento legal MPPS Venezuela:
+    - national_id: Cédula de Identidad
+    - full_name: Nombre completo legal
+    - email: Email del médico
+    - institution_id: Institución invitante
+    - colegiado_number: Número de Colegiado MPPS
+    - license_number: Licencia Sanitaria MPPS
     """
     email = request.data.get("email")
+    national_id = request.data.get("national_id")
+    full_name = request.data.get("full_name")
     specialty_id = request.data.get("specialty_id")
     institution_id = request.data.get("institution_id")
+    colegiado_number = request.data.get("colegiado_number")
+    license_number = request.data.get("license_number")
 
-    if not email or not institution_id:
+    if not all([email, institution_id]):
         return Response({"error": "email e institution_id son requeridos"}, status=400)
+
+    if not all([national_id, full_name, colegiado_number, license_number]):
+        return Response(
+            {
+                "error": "national_id, full_name, colegiado_number y license_number son requeridos para verificación MPPS"
+            },
+            status=400,
+        )
 
     from core.models import InstitutionSettings, Specialty, DoctorInvitation
 
@@ -6286,9 +6306,13 @@ def doctor_invite(request):
 
     invitation = DoctorInvitation.objects.create(
         email=email.lower().strip(),
+        national_id=national_id,
+        full_name=full_name,
         specialty=specialty,
         invited_by=request.user if request.user.is_authenticated else None,
         institution=institution,
+        colegiado_number=colegiado_number,
+        license_number=license_number,
         expires_at=timezone.now() + timedelta(days=7),
     )
 
@@ -6336,18 +6360,19 @@ def doctor_activate(request):
     POST /api/doctor/activate/
     Activa una cuenta de doctor usando token de invitación.
     Crea el usuario Django y el DoctorOperator asociado.
+
+    Datos profesionales ya pre-cargados en la invitación (MPPS Venezuela):
+    - national_id, full_name, agregado_number, license_number
     """
     token = request.data.get("token")
-    full_name = request.data.get("full_name")
     username = request.data.get("username")
     password = request.data.get("password")
-    gender = request.data.get("gender", "M")
     phone = request.data.get("phone")
-    colegiado_id = request.data.get("colegiado_id")
-    license = request.data.get("license")
 
-    if not all([token, full_name, username, password, colegiado_id, license]):
-        return Response({"error": "Todos los campos son requeridos"}, status=400)
+    if not all([token, username, password]):
+        return Response(
+            {"error": "token, username y password son requeridos"}, status=400
+        )
 
     from django.contrib.auth import get_user_model
     from core.models import DoctorInvitation, DoctorOperator
@@ -6376,18 +6401,21 @@ def doctor_activate(request):
             username=username,
             email=invitation.email,
             password=password,
-            first_name=full_name.split()[0] if full_name else "",
-            last_name=" ".join(full_name.split()[1:]) if full_name else "",
+            first_name=invitation.full_name.split()[0] if invitation.full_name else "",
+            last_name=" ".join(invitation.full_name.split()[1:])
+            if invitation.full_name
+            else "",
         )
 
         doctor = DoctorOperator.objects.create(
             user=user,
-            full_name=full_name,
-            gender=gender,
+            full_name=invitation.full_name,
+            national_id=invitation.national_id,
+            gender="M",
             email=invitation.email,
             phone=phone,
-            colegiado_id=colegiado_id,
-            license=license,
+            colegiado_id=invitation.colegiado_number,
+            license=invitation.license_number,
             is_verified=False,
         )
 
@@ -6417,10 +6445,11 @@ def doctor_activate(request):
                 "id": user.id,
                 "username": user.username,
                 "email": user.email,
-                "full_name": full_name,
+                "full_name": invitation.full_name,
             },
             "doctor": {
                 "id": doctor.id,
+                "national_id": doctor.national_id,
                 "colegiado_id": doctor.colegiado_id,
                 "institution": invitation.institution.name
                 if invitation.institution

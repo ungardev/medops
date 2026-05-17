@@ -4,6 +4,7 @@ from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Sum, F, DecimalField, Value
 from django.db.models.functions import Coalesce
+from django.utils import timezone
 import logging
 
 # App models
@@ -43,6 +44,7 @@ from .models import (
     Event,
     InstitutionSettings,
     DoctorInvitation,
+    DoctorLicense,
 )
 
 logger = logging.getLogger("core")
@@ -534,32 +536,149 @@ class DoctorOperatorAdmin(admin.ModelAdmin):
         "full_name",
         "colegiado_id",
         "get_specialties_display",
+        "is_verified_badge",
         "email",
         "phone",
+        "created_at",
     )
-    search_fields = ("full_name", "colegiado_id", "email", "phone")
-    autocomplete_fields = ["specialties"]
+    search_fields = (
+        "full_name",
+        "colegiado_id",
+        "license",
+        "email",
+        "phone",
+        "user__username",
+    )
+    list_filter = ("is_verified", "gender", "created_at")
+    autocomplete_fields = ["specialties", "institutions", "active_institution", "user"]
     ordering = ("full_name",)
     list_per_page = 25
+
+    actions = ["approve_verification", "reject_verification"]
+
+    fieldsets = (
+        (
+            "IDENTIFICACIÓN Y VERIFICACIÓN LEGAL",
+            {
+                "fields": (
+                    "user",
+                    "full_name",
+                    "gender",
+                    ("colegiado_id", "license"),
+                    "is_verified",
+                ),
+                "description": "Datos oficiales para verificación ante el MPPS. is_verified=False = no puede operar.",
+            },
+        ),
+        (
+            "ESPECIALIDADES MÉDICAS",
+            {
+                "fields": (
+                    "specialties",
+                    "active_institution",
+                )
+            },
+        ),
+        (
+            "CONTACTO Y COMUNICACIÓN",
+            {
+                "fields": (
+                    ("email", "phone"),
+                    ("whatsapp_business_number", "whatsapp_enabled"),
+                )
+            },
+        ),
+        (
+            "PERFIL PÚBLICO (Portal Paciente)",
+            {
+                "fields": (("bio", "photo"),),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "DOCUMENTACIÓN LEGAL",
+            {
+                "fields": (("signature",),),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "NOTIFICACIONES AUTOMÁTICAS",
+            {
+                "fields": (("reminder_hours_before",),),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "INSTITUCIONES Y ACCESO",
+            {"fields": ("institutions",)},
+        ),
+        (
+            "AUDITORÍA DE SISTEMA",
+            {
+                "fields": (
+                    "created_at",
+                    "updated_at",
+                    "updated_by",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+    )
 
     @admin.display(description="Especialidades")
     def get_specialties_display(self, obj):
         return ", ".join([s.name for s in obj.specialties.all()])
 
+    @admin.display(description="Verificado", ordering="is_verified")
+    def is_verified_badge(self, obj):
+        if obj.is_verified:
+            return format_html(
+                '<span style="background:#22c55e;color:white;padding:2px 8px;border-radius:12px;font-size:11px;">✓ VERIFICADO</span>'
+            )
+        else:
+            return format_html(
+                '<span style="background:#ef4444;color:white;padding:2px 8px;border-radius:12px;font-size:11px;">⏳ PENDIENTE</span>'
+            )
+
+    @admin.action(description="Aprobar verificación del médico seleccionado")
+    def approve_verification(self, request, queryset):
+        for doctor in queryset.filter(is_verified=False):
+            doctor.is_verified = True
+            doctor.save()
+            logger.info(f"Doctor {doctor.full_name} verificado por {request.user}")
+
+    @admin.action(description="Rechazar/quitar verificación del médico seleccionado")
+    def reject_verification(self, request, queryset):
+        for doctor in queryset.filter(is_verified=True):
+            doctor.is_verified = False
+            doctor.save()
+            logger.info(
+                f"Verificación removida de {doctor.full_name} por {request.user}"
+            )
+
 
 @admin.register(DoctorInvitation)
 class DoctorInvitationAdmin(admin.ModelAdmin):
     list_display = (
+        "full_name",
+        "national_id",
+        "colegiado_number",
         "email",
         "institution",
         "specialty",
         "status_badge",
         "expires_at",
         "created_at",
-        "sent_email_icon",
     )
-    list_filter = ("is_used", "institution", "created_at")
-    search_fields = ("email", "institution__name", "specialty__name")
+    list_filter = ("is_used", "institution", "specialty", "created_at")
+    search_fields = (
+        "full_name",
+        "national_id",
+        "colegiado_number",
+        "email",
+        "institution__name",
+    )
     readonly_fields = (
         "token",
         "created_at",
@@ -571,7 +690,19 @@ class DoctorInvitationAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (
-            None,
+            "IDENTIFICACIÓN LEGAL DEL MÉDICO",
+            {
+                "fields": (
+                    "full_name",
+                    "national_id",
+                    "colegiado_number",
+                    "license_number",
+                ),
+                "description": "Datos oficiales para verificación ante el MPPS y Colegio de Médicos.",
+            },
+        ),
+        (
+            "DATOS DE CONTACTO",
             {
                 "fields": (
                     "email",
@@ -587,11 +718,11 @@ class DoctorInvitationAdmin(admin.ModelAdmin):
                     "token",
                     "expires_at",
                 ),
-                "description": "El token se genera automáticamente al guardar.",
+                "description": "El token se genera automáticamente al guardar. La invitación expira en 7 días.",
             },
         ),
         (
-            "Estado",
+            "Estado de Uso",
             {
                 "fields": (
                     "is_used",
@@ -654,38 +785,221 @@ class DoctorInvitationAdmin(admin.ModelAdmin):
         SITE_URL = getattr(settings, "SITE_URL", "https://medopz.com")
         activation_url = f"{SITE_URL}/doctor/activate?token={invitation.token}"
 
+        gender_prefix = (
+            "Dr."
+            if (hasattr(invitation, "gender") and invitation.gender == "M")
+            else "Dra."
+        )
+
         specialty_text = ""
         if invitation.specialty:
-            specialty_text = f"\nEspecialidad sugerida: {invitation.specialty.name}"
+            specialty_text = (
+                f"\n• <strong>Especialidad:</strong> {invitation.specialty.name}"
+            )
 
-        subject = f"Invitacion para unirte a MEDOPZ como Medico"
-        message = f"""
-Dr./Dra. {invitation.email},
+        institution_address = ""
+        if invitation.institution:
+            if invitation.institution.address:
+                institution_address = (
+                    f"\n• <strong>Dirección:</strong> {invitation.institution.address}"
+                )
+            if invitation.institution.tax_id:
+                institution_address += (
+                    f"\n• <strong>RIF:</strong> {invitation.institution.tax_id}"
+                )
 
-Has sido invitado/a para unirte al portal medico de MEDOPZ en la institucion {invitation.institution.name}.{specialty_text}
+        subject = f"[MEDOPZ] Invitación para unirse como Médico Operador - {invitation.full_name}"
 
-Para activar tu cuenta, haz clic en el siguiente enlace:
+        html_message = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background: #1e40af; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }}
+        .content {{ background: #f8fafc; padding: 30px; border: 1px solid #e2e8f0; }}
+        .data-box {{ background: white; padding: 15px; border-radius: 6px; margin: 15px 0; border-left: 4px solid #1e40af; }}
+        .data-row {{ margin: 8px 0; }}
+        .label {{ font-weight: bold; color: #475569; }}
+        .value {{ color: #1e293b; }}
+        .button {{ display: inline-block; background: #1e40af; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; }}
+        .footer {{ text-align: center; padding: 20px; color: #64748b; font-size: 12px; }}
+        .warning {{ background: #fef3c7; padding: 10px; border-radius: 6px; color: #92400e; font-size: 13px; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 MEDOPZ</h1>
+            <p style="margin: 0; font-size: 18px;">Sistema Operativo de Salud Inteligente</p>
+        </div>
+        <div class="content">
+            <p>Estimado <strong>{gender_prefix} {invitation.full_name}</strong>,</p>
+            
+            <p>El <strong>{invitation.institution.name}</strong> le ha extendido una invitación para unirse a <strong>MEDOPZ</strong>, el Sistema Operativo de Salud Inteligente de Venezuela.</p>
+            
+            <div class="data-box">
+                <h3 style="margin-top: 0; color: #1e40af;">📋 DATOS DE SU INVITACIÓN</h3>
+                <div class="data-row">
+                    <span class="label">Institución Convocante:</span>
+                    <span class="value">{invitation.institution.name}</span>
+                </div>
+                {institution_address}
+                <div class="data-row">
+                    <span class="label">Número de Colegiado:</span>
+                    <span class="value">{invitation.colegiado_number}</span>
+                </div>
+                {specialty_text}
+            </div>
+            
+            <p style="text-align: center;">
+                <a href="{activation_url}" class="button">ACTIVAR MI CUENTA</a>
+            </p>
+            
+            <div class="warning">
+                ⚠️ <strong>IMPORTANTE:</strong> Este enlace expira en <strong>7 días</strong>. Si no solicitó esta invitación, ignore este mensaje.
+            </div>
+            
+            <p>Una vez active su cuenta, nuestro equipo de administración verificará sus credenciales médicas antes de habilitar el acceso completo al sistema.</p>
+        </div>
+        <div class="footer">
+            <p>© {invitation.institution.name} — Todos los derechos reservados</p>
+            <p>MEDOPZ | Sistema de Salud Inteligente</p>
+            <p>¿Necesita ayuda? Contacte a soporte: support@medopz.com</p>
+        </div>
+    </div>
+</body>
+</html>
+        """.strip()
+
+        plain_message = f"""
+{gender_prefix} {invitation.full_name},
+
+El {invitation.institution.name} le ha extendido una invitación para unirse a MEDOPZ, el Sistema Operativo de Salud Inteligente.
+
+📋 DATOS DE SU INVITACIÓN:
+──────────────────────────────────────
+• Institución: {invitation.institution.name}
+{institution_address.replace("<strong>", "").replace("</strong>", "")}
+• Número de Colegiado: {invitation.colegiado_number}
+{specialty_text.replace("<strong>", "").replace("</strong>", "")}
+──────────────────────────────────────
+
+Para activar su cuenta, visite el siguiente enlace:
 {activation_url}
 
-Este enlace expira en 7 dias.
+⚠️ IMPORTANTE: Este enlace expira en 7 días.
 
-Saludos,
-Equipo MEDOPZ
+Una vez active su cuenta, nuestro equipo de administración verificará sus credenciales médicas antes de habilitar el acceso completo al sistema.
+
+Si no solicitó esta invitación, ignore este mensaje.
+
+—
+MEDOPZ | Sistema de Salud Inteligente
+support@medopz.com
         """.strip()
 
         try:
             send_mail(
                 subject=subject,
-                message=message,
+                message=plain_message,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[invitation.email],
+                html_message=html_message,
                 fail_silently=False,
             )
-            logger.info(f"Email de invitacion enviado a {invitation.email}")
+            logger.info(f"Email de invitación profesional enviado a {invitation.email}")
         except Exception as e:
             logger.error(
-                f"Error enviando email de invitacion a {invitation.email}: {e}"
+                f"Error enviando email de invitación a {invitation.email}: {e}"
             )
+
+
+@admin.register(DoctorLicense)
+class DoctorLicenseAdmin(admin.ModelAdmin):
+    list_display = (
+        "doctor",
+        "is_verified_badge",
+        "license_expiry_date",
+        "verification_date",
+        "verified_by",
+        "created_at",
+    )
+    list_filter = ("is_verified_by_admin", "verification_date", "created_at")
+    search_fields = ("doctor__full_name", "doctor__colegiado_id", "doctor__email")
+    readonly_fields = (
+        "created_at",
+        "updated_at",
+        "verification_date",
+        "verified_by",
+    )
+    autocomplete_fields = ["doctor", "verified_by"]
+    ordering = ("-created_at",)
+    list_per_page = 25
+
+    fieldsets = (
+        (
+            "MÉDICO Y DOCUMENTACIÓN",
+            {
+                "fields": (
+                    "doctor",
+                    "license_file",
+                    "license_expiry_date",
+                    "colegiado_card_file",
+                    "university_diploma_file",
+                ),
+                "description": "Documentos legales para verificación ante el MPPS.",
+            },
+        ),
+        (
+            "VERIFICACIÓN ADMINISTRATIVA",
+            {
+                "fields": (
+                    "is_verified_by_admin",
+                    "verification_date",
+                    "verified_by",
+                    "verification_notes",
+                ),
+                "description": "Solo los administradores pueden marcar como verificado.",
+            },
+        ),
+        (
+            "DOCUMENTOS ADICIONALES",
+            {
+                "fields": ("additional_docs",),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "AUDITORÍA",
+            {
+                "fields": (
+                    "created_at",
+                    "updated_at",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+
+    @admin.display(description="Verificado", ordering="is_verified_by_admin")
+    def is_verified_badge(self, obj):
+        if obj.is_verified_by_admin:
+            return format_html(
+                '<span style="background:#22c55e;color:white;padding:2px 8px;border-radius:12px;font-size:11px;">✓ VERIFICADO</span>'
+            )
+        else:
+            return format_html(
+                '<span style="background:#ef4444;color:white;padding:2px 8px;border-radius:12px;font-size:11px;">⏳ PENDIENTE</span>'
+            )
+
+    def save_model(self, request, obj, form, change):
+        if obj.is_verified_by_admin and not obj.verification_date:
+            obj.verification_date = timezone.now()
+            obj.verified_by = request.user
+        super().save_model(request, obj, form, change)
 
 
 @admin.register(Specialty)

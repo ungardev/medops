@@ -2071,7 +2071,18 @@ class DoctorOperator(models.Model):
 
 
 class DoctorInvitation(models.Model):
-    email = models.EmailField(help_text="Email del médico invitado")
+    national_id = models.CharField(
+        max_length=12,
+        validators=[MinLengthValidator(5), MaxLengthValidator(12)],
+        help_text="Cédula de Identidad (V-xxxxxxxx)",
+        default="V-00000000",
+    )
+    full_name = models.CharField(
+        max_length=255,
+        help_text="Nombre completo según documento de identidad",
+        default="PENDING",
+    )
+    email = models.EmailField(help_text="Email personal del médico invitado")
     token = models.CharField(
         max_length=64,
         unique=True,
@@ -2085,6 +2096,19 @@ class DoctorInvitation(models.Model):
         blank=True,
         related_name="invitations",
         help_text="Especialidad sugerida (opcional, puede confirmar/elegir en activación)",
+    )
+    # --- VERIFICACIÓN LEGAL VENEZUELA ---
+    colegiado_number = models.CharField(
+        max_length=50,
+        verbose_name="Número de Colegiado MPPS",
+        help_text="Verificación ante el Colegio de Médicos de Venezuela",
+        default="PENDING",
+    )
+    license_number = models.CharField(
+        max_length=50,
+        verbose_name="Licencia Sanitaria MPPS",
+        help_text="Autorización sanitaria vigente del MPPS",
+        default="PENDING",
     )
     invited_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -2115,10 +2139,15 @@ class DoctorInvitation(models.Model):
         verbose_name = "Invitación de Médico"
         verbose_name_plural = "Invitaciones de Médicos"
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["national_id"]),
+            models.Index(fields=["colegiado_number"]),
+            models.Index(fields=["email"]),
+        ]
 
     def __str__(self):
         status = "USED" if self.is_used else "PENDING"
-        return f"[{status}] {self.email} → {self.institution}"
+        return f"[{status}] {self.full_name} ({self.colegiado_number}) → {self.institution}"
 
     @classmethod
     def generate_token(cls):
@@ -2145,7 +2174,93 @@ class DoctorInvitation(models.Model):
             self.token = self.generate_token()
         if not self.expires_at:
             self.expires_at = now() + timedelta(days=7)
+        self.full_name = normalize_title_case(self.full_name)
         super().save(*args, **kwargs)
+
+
+class DoctorLicense(models.Model):
+    """
+    Documentación legal del médico para verificación ante el MPPS.
+    Soporta carga de documentos oficiales (PDF, JPG, PNG).
+    """
+
+    doctor = models.OneToOneField(
+        "DoctorOperator",
+        on_delete=models.CASCADE,
+        related_name="license_info",
+        verbose_name="Médico",
+    )
+    license_file = models.FileField(
+        upload_to="doctor_licenses/%Y/%m/",
+        validators=[FileExtensionValidator(allowed_extensions=["pdf"])],
+        null=True,
+        blank=True,
+        verbose_name="Licencia Sanitaria (PDF)",
+        help_text="Documento oficial emitido por el MPPS",
+    )
+    license_expiry_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de vencimiento de licencia",
+        help_text="Fecha de expiry de la licencia sanitaria",
+    )
+    colegiado_card_file = models.FileField(
+        upload_to="doctor_credentials/%Y/%m/",
+        validators=[
+            FileExtensionValidator(allowed_extensions=["pdf", "jpg", "jpeg", "png"])
+        ],
+        null=True,
+        blank=True,
+        verbose_name="Carné de Colegio de Médicos",
+        help_text="Documento que acredita membresía vigente",
+    )
+    university_diploma_file = models.FileField(
+        upload_to="doctor_education/%Y/%m/",
+        validators=[FileExtensionValidator(allowed_extensions=["pdf"])],
+        null=True,
+        blank=True,
+        verbose_name="Diploma de Grado (PDF)",
+        help_text="Título universitario de médico cirujano",
+    )
+    additional_docs = models.JSONField(
+        null=True,
+        blank=True,
+        verbose_name="Documentos adicionales",
+        help_text="Lista de URLs de documentos adicionales cargados",
+    )
+    is_verified_by_admin = models.BooleanField(
+        default=False,
+        verbose_name="Verificado por Administrador",
+        help_text="Solo los administradores pueden marcar como verificado",
+    )
+    verification_date = models.DateTimeField(
+        null=True, blank=True, verbose_name="Fecha de Verificación"
+    )
+    verified_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="verified_doctor_licenses",
+        verbose_name="Verificado por",
+    )
+    verification_notes = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name="Notas de Verificación",
+        help_text="Comentarios del administrador sobre la verificación",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Licencia y Credenciales del Médico"
+        verbose_name_plural = "Licencias y Credenciales de Médicos"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        status = "[VERIFIED]" if self.is_verified_by_admin else "[PENDING]"
+        return f"{status} {self.doctor.full_name} - Licencia: {self.doctor.license if hasattr(self.doctor, 'license') else 'N/A'}"
 
 
 class BCVRateCache(models.Model):
