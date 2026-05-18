@@ -4,20 +4,55 @@ import PatientSidebar from "./PatientSidebar";
 import PatientHeader from "./PatientHeader";
 import { useState, useEffect } from "react";
 import { Toaster } from "react-hot-toast";
+import { SidebarSkeleton, HeaderSkeleton } from "@/components/ui/Skeleton";
+
 export default function PatientLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const location = useLocation();
+
   useEffect(() => {
     const saved = localStorage.getItem("patientSidebarCollapsed");
     if (saved === "true") setCollapsed(true);
+    const timer = setTimeout(() => setIsLoading(false), 300);
+    return () => clearTimeout(timer);
   }, []);
+
   useEffect(() => {
     localStorage.setItem("patientSidebarCollapsed", collapsed.toString());
   }, [collapsed]);
+
   useEffect(() => {
     setMobileSidebarOpen(false);
   }, [location.pathname]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-black text-white antialiased flex flex-col">
+        <div className="relative flex flex-1 overflow-hidden">
+          <aside className="fixed top-0 left-0 h-screen z-[300] border-r border-white/10 bg-[#0a0a0b] w-64">
+            <SidebarSkeleton />
+          </aside>
+          <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
+            <header className="h-14 border-b border-white/10 bg-black sticky top-0 z-30">
+              <HeaderSkeleton />
+            </header>
+            <main className="flex-1 overflow-y-auto overflow-x-hidden">
+              <div className="max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8">
+                <div className="space-y-4 animate-pulse">
+                  <div className="h-40 bg-white/5 rounded-lg" />
+                  <div className="h-32 bg-white/5 rounded-lg" />
+                </div>
+              </div>
+            </main>
+          </div>
+        </div>
+        <Toaster />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-black text-white antialiased flex flex-col">
       <div

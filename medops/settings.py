@@ -339,3 +339,22 @@ CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutos máximo por tarea
 # =====================================================
 SNOWSTORM_URL = os.environ.get("SNOWSTORM_URL", "http://localhost:8080")
 SNOMED_ENABLED = os.environ.get("SNOMED_ENABLED", "False").lower() == "true"
+
+
+# =====================================================
+# Sentry Error Tracking (Observabilidad CEO/CTO)
+# =====================================================
+SENTRY_DSN = os.environ.get("SENTRY_DSN", "")
+if SENTRY_DSN:
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[DjangoIntegration()],
+        traces_sample_rate=0.1,
+        send_default_pii=False,
+        environment=ENVIRONMENT,
+        release=os.environ.get("GIT_COMMIT_SHA", "unknown"),
+    )
+    print(f"[SENTRY] Monitorización habilitada para entorno: {ENVIRONMENT}")

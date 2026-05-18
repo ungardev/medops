@@ -70,3 +70,4 @@ httpx>=0.25.0
 asgiref>=3.7.0
 pytesseract>=0.3.10
 Pillow>=10.0.0
+sentry-sdk>=2.0.0

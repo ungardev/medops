@@ -5,24 +5,29 @@ import InstitutionalHeader from "./InstitutionalHeader";
 import InstitutionalFooter from "./InstitutionalFooter";
 import { useState, useEffect } from "react";
 import { Toaster } from "react-hot-toast";
+import { SidebarSkeleton, HeaderSkeleton } from "@/components/ui/Skeleton";
+
 export default function InstitutionalLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const location = useLocation();
-  
+
   useEffect(() => {
     const saved = localStorage.getItem("sidebarCollapsed");
     if (saved === "true") setCollapsed(true);
+    const timer = setTimeout(() => setIsLoading(false), 300);
+    return () => clearTimeout(timer);
   }, []);
-  
+
   useEffect(() => {
     localStorage.setItem("sidebarCollapsed", collapsed.toString());
   }, [collapsed]);
-  
+
   useEffect(() => {
     setMobileSidebarOpen(false);
   }, [location.pathname]);
-  
+
   useEffect(() => {
     if (mobileSidebarOpen) {
       document.body.classList.add("overflow-hidden");
@@ -31,16 +36,43 @@ export default function InstitutionalLayout() {
     }
     return () => document.body.classList.remove("overflow-hidden");
   }, [mobileSidebarOpen]);
-  
+
   useEffect(() => {
     const timer = setTimeout(() => {
       window.dispatchEvent(new Event("resize"));
     }, 300);
     return () => clearTimeout(timer);
   }, [collapsed]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-black text-white antialiased flex flex-col">
+        <div className="relative flex flex-1 overflow-hidden">
+          <aside className="fixed top-0 left-0 h-screen z-[300] border-r border-white/10 bg-[#0a0a0b] w-64">
+            <SidebarSkeleton />
+          </aside>
+          <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
+            <header className="h-14 border-b border-white/10 bg-black sticky top-0 z-30">
+              <HeaderSkeleton />
+            </header>
+            <main className="flex-1 overflow-y-auto overflow-x-hidden">
+              <div className="max-w-[1600px] mx-auto p-4 sm:p-5 lg:p-6">
+                <div className="space-y-4 animate-pulse">
+                  <div className="h-32 bg-white/5 rounded-lg" />
+                  <div className="h-24 bg-white/5 rounded-lg" />
+                  <div className="h-48 bg-white/5 rounded-lg" />
+                </div>
+              </div>
+            </main>
+          </div>
+        </div>
+        <Toaster />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-black text-white antialiased flex flex-col">
-      
       <div
         className={`lg:hidden fixed inset-0 bg-black/60 z-40 transition-opacity duration-300 backdrop-blur-md ${
           mobileSidebarOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
@@ -49,12 +81,11 @@ export default function InstitutionalLayout() {
       />
       
       <div className="relative flex flex-1 overflow-hidden">
-        
         <aside
           className={`fixed top-0 left-0 h-screen z-[300] transition-all duration-300 ease-in-out border-white/10 bg-[#0a0a0b] overflow-hidden
             ${mobileSidebarOpen 
               ? "translate-x-0 w-64 border-r" 
-              : "-translate-x-full w-0 lg:w-auto lg:translate-x-0 lg:border-r"
+              : "-translate-x-full w-0 lg:w-auto lg:border-r"
             } 
             ${!mobileSidebarOpen && !collapsed ? "lg:w-64" : ""}
             ${!mobileSidebarOpen && collapsed ? "lg:w-[72px]" : ""}

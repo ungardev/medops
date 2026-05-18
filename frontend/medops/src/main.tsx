@@ -1,38 +1,84 @@
 // src/main.tsx
 import "./index.css";
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import App from "./App";
-// import DashboardPage from "./pages/Dashboard"; // REMOVIDO: Dashboard antiguo
-import Patients from "./pages/Patients/Patients";
-import PatientDetail from "./pages/Patients/PatientDetail";
-import PatientConsultationDetail from "./pages/Patients/PatientConsultationsDetail";
-import Appointments from "./pages/Appointments/Appointments";
-import Payments from "./pages/Payments/Payments";
-import ChargeOrderDetail from "./pages/Payments/ChargeOrderDetail";
-import PendingPayments from "./pages/Payments/PendingPayments";
-import Events from "./pages/Events/Events";
-import WaitingRoom from "./pages/WaitingRoom/WaitingRoom";
-import Consultation from "./pages/Consultation/Consultation";
-import Login from "./pages/Auth/Login";
-import Logout from "./pages/Auth/Logout";
-import { ProtectedRoute } from "./components/Auth/ProtectedRoute";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { queryClient } from "@/lib/reactQuery";
 import { NotifyProvider } from "./context/NotifyContext";
-import { AuthProvider } from "./context/AuthContext"; // ✅ NUEVO: Importar AuthProvider
+import { AuthProvider } from "./context/AuthContext";
 import axios from "axios";
-import ReportsPage from "./pages/Reports/ReportsPage";
-import ConfigPage from "./pages/Settings/ConfigPage";
-import VisualAudit from "./pages/VisualAudit";
-import SearchPage from "./pages/Search/Search";
-// CAMBIO: Importar ServiceCatalogPage en lugar de BillingCatalogPage
-import ServiceCatalogPage from "./pages/Services/ServiceCatalogPage";
-// NUEVO: Importar ServiceDetailPage
-import ServiceDetailPage from "./pages/Services/ServiceDetailPage";
-// PatientPortal Imports
+import * as Sentry from "@sentry/react";
+import { getCurrentPortal, getPortalConfig } from "@/lib/subdomain";
+
+// Axios config
+axios.defaults.baseURL = import.meta.env.VITE_API_URL ?? "/api";
+
+// Sentry initialization
+Sentry.init({
+  dsn: import.meta.env.VITE_SENTRY_DSN || "",
+  integrations: [
+    Sentry.browserTracingIntegration(),
+    Sentry.replayIntegration(),
+  ],
+  tracesSampleRate: 0.1,
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1.0,
+  environment: import.meta.env.MODE,
+});
+
+// Sentry Error Boundary Fallback
+const SentryErrorFallback = () => (
+  <div className="min-h-screen bg-black flex items-center justify-center">
+    <div className="text-center max-w-md mx-auto p-8">
+      <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+        <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.66 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <h2 className="text-xl font-bold text-white mb-2">Algo salió mal</h2>
+      <p className="text-white/60 mb-6">Encontramos un error inesperado. Nuestro equipo ha sido notificado.</p>
+      <button
+        onClick={() => window.location.reload()}
+        className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-lg transition-colors"
+      >
+        Recargar página
+      </button>
+    </div>
+  </div>
+);
+
+// Lazy-loaded pages (Priority 1 - heavy routes)
+const DoctorDashboard = lazy(() => import("./pages/Doctor/DoctorDashboard"));
+const Patients = lazy(() => import("./pages/Patients/Patients"));
+const PatientDetail = lazy(() => import("./pages/Patients/PatientDetail"));
+const Appointments = lazy(() => import("./pages/Appointments/Appointments"));
+const Consultation = lazy(() => import("./pages/Consultation/Consultation"));
+const WaitingRoom = lazy(() => import("./pages/WaitingRoom/WaitingRoom"));
+
+// Lazy-loaded pages (Priority 2 - secondary routes)
+const ManageServicesPage = lazy(() => import("./pages/Doctor/ManageServicesPage"));
+const PatientConsultationDetail = lazy(() => import("./pages/Patients/PatientConsultationsDetail"));
+const Payments = lazy(() => import("./pages/Payments/Payments"));
+const ChargeOrderDetail = lazy(() => import("./pages/Payments/ChargeOrderDetail"));
+const PendingPayments = lazy(() => import("./pages/Payments/PendingPayments"));
+const ServiceCatalogPage = lazy(() => import("./pages/Services/ServiceCatalogPage"));
+const ServiceDetailPage = lazy(() => import("./pages/Services/ServiceDetailPage"));
+const Surgery = lazy(() => import("./pages/Surgery/Surgery"));
+const Hospitalization = lazy(() => import("./pages/Hospitalization/Hospitalization"));
+const ReportsPage = lazy(() => import("./pages/Reports/ReportsPage"));
+const ConfigPage = lazy(() => import("./pages/Settings/ConfigPage"));
+const SearchPage = lazy(() => import("./pages/Search/Search"));
+const Diagnosis = lazy(() => import("./pages/Diagnosis/Diagnosis"));
+
+// Eager-loaded pages (public/lightweight)
+import Login from "./pages/Auth/Login";
+import Logout from "./pages/Auth/Logout";
+import { ProtectedRoute } from "./components/Auth/ProtectedRoute";
+
+// Patient Portal Imports
 import PatientLogin from "./pages/PatientPortal/PatientLogin";
 import PatientLogout from "./pages/PatientPortal/PatientLogout";
 import PatientLayout from "./components/Layout/PatientLayout";
@@ -46,20 +92,10 @@ import PatientActivate from "./pages/PatientPortal/PatientActivate";
 import PatientAppointments from "./pages/PatientPortal/PatientAppointments";
 import PatientPayments from "./pages/PatientPortal/PatientPayments";
 import PatientChargeOrderDetail from "./pages/PatientPortal/PatientChargeOrderDetail";
-// Importación CORREGIDA: Añadir DoctorProfile
 import DoctorProfile from "./pages/PatientPortal/DoctorProfile";
-// NUEVAS IMPORTACIONES: Doctor Dashboard y Manage Services
-import DoctorDashboard from "./pages/Doctor/DoctorDashboard";
-import ManageServicesPage from "./pages/Doctor/ManageServicesPage";
+
 // Doctor Portal Imports
 import DoctorActivate from "./pages/DoctorPortal/DoctorActivate";
-import Surgery from "./pages/Surgery/Surgery";
-import Hospitalization from "./pages/Hospitalization/Hospitalization";
-import Diagnosis from "./pages/Diagnosis/Diagnosis";
-import { getCurrentPortal, getPortalConfig } from "@/lib/subdomain";
-
-// Axios config
-axios.defaults.baseURL = import.meta.env.VITE_API_URL ?? "/api";
 
 // Subdomain-aware root redirect component
 const SubdomainRootRedirect: React.FC = () => {
@@ -68,85 +104,160 @@ const SubdomainRootRedirect: React.FC = () => {
   return <Navigate to={config.loginPath} replace />;
 };
 
+// Page skeleton loader
+const PageSkeleton: React.FC = () => (
+  <div className="animate-pulse space-y-4">
+    <div className="h-32 bg-white/5 rounded-lg" />
+    <div className="h-24 bg-white/5 rounded-lg" />
+    <div className="h-48 bg-white/5 rounded-lg" />
+  </div>
+);
+
+// Lazy route wrapper with Suspense
+const LazyRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <Suspense fallback={<PageSkeleton />}>{children}</Suspense>
+);
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <NotifyProvider>
         <BrowserRouter>
-          {/* ✅ Envolver la app con AuthProvider para manejar estado de autenticación globalmente */}
-          <AuthProvider>
-            <Routes>
-              {/* PUBLIC ROOT: Subdomain-aware redirect - MUST BE FIRST */}
-              <Route path="/" element={<SubdomainRootRedirect />} />
+          <Sentry.ErrorBoundary fallback={<SentryErrorFallback />}>
+            <AuthProvider>
+              <Routes>
+                {/* PUBLIC ROOT: Subdomain-aware redirect */}
+                <Route path="/" element={<SubdomainRootRedirect />} />
 
-              {/* === PUBLIC ROUTES === */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/logout" element={<Logout />} />
-              
-              {/* === PATIENT PORTAL - PUBLIC === */}
-              <Route path="/patient/login" element={<PatientLogin />} />
-              <Route path="/patient/logout" element={<PatientLogout />} />
-              <Route path="/patient/activate" element={<PatientActivate />} />
-              
-              {/* === PATIENT PORTAL - PROTECTED === */}
-              <Route 
-                path="/patient" 
-                element={
-                  <ProtectedRoute allowedRoles={['patient']}>
-                    <PatientLayout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route index element={<PatientDashboard />} />
-                <Route path="record" element={<PatientRecord />} />
-                <Route path="appointments" element={<PatientAppointments />} />
-                <Route path="queue" element={<PatientQueue />} />
-                <Route path="search" element={<PatientSearch />} />
-                <Route path="services" element={<PatientServices />} />
-                <Route path="doctor/:id" element={<DoctorProfile />} />
-                <Route path="settings" element={<PatientSettings />} />
-                <Route path="payments" element={<PatientPayments />} />
-                <Route path="payments/:id" element={<PatientChargeOrderDetail />} />
-                <Route path="charge-orders/:id/pay" element={<PatientChargeOrderDetail />} />
-              </Route>
-              
-              {/* === DOCTOR PORTAL - PUBLIC === */}
-              <Route path="/doctor/activate" element={<DoctorActivate />} />
-              <Route element={<ProtectedRoute allowedRoles={['doctor', 'admin']} />}>
-                <Route element={<App />}>
-                  {/* Doctor Dashboard */}
-                  <Route path="doctor" element={<DoctorDashboard />} />
-                  <Route path="doctor/manage-services" element={<ManageServicesPage />} />
-                  
-                  {/* Other existing routes */}
-                  <Route path="patients" element={<Patients />} />
-                  <Route path="patients/:id" element={<PatientDetail />} />
-                  <Route
-                    path="patients/:patientId/consultations/:appointmentId"
-                    element={<PatientConsultationDetail />}
-                  />
-                  <Route path="waitingroom" element={<WaitingRoom />} />
-                  <Route path="appointments" element={<Appointments />} />
-                  <Route path="payments" element={<Payments />} />
-                  <Route path="payments/pending" element={<PendingPayments />} />
-                  <Route path="payments/:id" element={<ChargeOrderDetail />} />
-                  <Route path="services" element={<ServiceCatalogPage />} />
-                  <Route path="services/:id" element={<ServiceDetailPage />} />
-                  <Route path="events" element={<Events />} />
-                  <Route path="visual-audit" element={<VisualAudit />} />
-                  <Route path="consultation" element={<Consultation />} />
-                  <Route path="reports" element={<ReportsPage />} />
-                  <Route path="reports/:id" element={<ReportsPage />} />
-                  <Route path="documents/:id" element={<ReportsPage />} />
-                  <Route path="settings/config" element={<ConfigPage />} />
-                  <Route path="search" element={<SearchPage />} />
-                  <Route path="diagnosis" element={<Diagnosis />} />
-                  <Route path="surgery" element={<Surgery />} />
-                  <Route path="hospitalization" element={<Hospitalization />} />
+                {/* === PUBLIC ROUTES === */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/logout" element={<Logout />} />
+
+                {/* === PATIENT PORTAL - PUBLIC === */}
+                <Route path="/patient/login" element={<PatientLogin />} />
+                <Route path="/patient/logout" element={<PatientLogout />} />
+                <Route path="/patient/activate" element={<PatientActivate />} />
+
+                {/* === PATIENT PORTAL - PROTECTED === */}
+                <Route
+                  path="/patient"
+                  element={
+                    <ProtectedRoute allowedRoles={["patient"]}>
+                      <PatientLayout />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route index element={<PatientDashboard />} />
+                  <Route path="record" element={<PatientRecord />} />
+                  <Route path="appointments" element={<PatientAppointments />} />
+                  <Route path="queue" element={<PatientQueue />} />
+                  <Route path="search" element={<PatientSearch />} />
+                  <Route path="services" element={<PatientServices />} />
+                  <Route path="doctor/:id" element={<DoctorProfile />} />
+                  <Route path="settings" element={<PatientSettings />} />
+                  <Route path="payments" element={<PatientPayments />} />
+                  <Route path="payments/:id" element={<PatientChargeOrderDetail />} />
+                  <Route path="charge-orders/:id/pay" element={<PatientChargeOrderDetail />} />
                 </Route>
-              </Route>
-            </Routes>
-          </AuthProvider>
+
+                {/* === DOCTOR PORTAL - PUBLIC === */}
+                <Route path="/doctor/activate" element={<DoctorActivate />} />
+
+                {/* === DOCTOR PORTAL - PROTECTED === */}
+                <Route element={<ProtectedRoute allowedRoles={["doctor", "admin"]} />}>
+                  <Route element={<App />}>
+                    {/* Priority 1 routes - Lazy loaded */}
+                    <Route
+                      path="doctor"
+                      element={<LazyRoute><DoctorDashboard /></LazyRoute>}
+                    />
+                    <Route
+                      path="patients"
+                      element={<LazyRoute><Patients /></LazyRoute>}
+                    />
+                    <Route
+                      path="patients/:id"
+                      element={<LazyRoute><PatientDetail /></LazyRoute>}
+                    />
+                    <Route
+                      path="patients/:patientId/consultations/:appointmentId"
+                      element={<LazyRoute><PatientConsultationDetail /></LazyRoute>}
+                    />
+                    <Route
+                      path="waitingroom"
+                      element={<LazyRoute><WaitingRoom /></LazyRoute>}
+                    />
+                    <Route
+                      path="appointments"
+                      element={<LazyRoute><Appointments /></LazyRoute>}
+                    />
+                    <Route
+                      path="consultation"
+                      element={<LazyRoute><Consultation /></LazyRoute>}
+                    />
+
+                    {/* Priority 2 routes - Lazy loaded */}
+                    <Route
+                      path="doctor/manage-services"
+                      element={<LazyRoute><ManageServicesPage /></LazyRoute>}
+                    />
+                    <Route
+                      path="payments"
+                      element={<LazyRoute><Payments /></LazyRoute>}
+                    />
+                    <Route
+                      path="payments/pending"
+                      element={<LazyRoute><PendingPayments /></LazyRoute>}
+                    />
+                    <Route
+                      path="payments/:id"
+                      element={<LazyRoute><ChargeOrderDetail /></LazyRoute>}
+                    />
+                    <Route
+                      path="services"
+                      element={<LazyRoute><ServiceCatalogPage /></LazyRoute>}
+                    />
+                    <Route
+                      path="services/:id"
+                      element={<LazyRoute><ServiceDetailPage /></LazyRoute>}
+                    />
+                    <Route
+                      path="surgery"
+                      element={<LazyRoute><Surgery /></LazyRoute>}
+                    />
+                    <Route
+                      path="hospitalization"
+                      element={<LazyRoute><Hospitalization /></LazyRoute>}
+                    />
+                    <Route
+                      path="reports"
+                      element={<LazyRoute><ReportsPage /></LazyRoute>}
+                    />
+                    <Route
+                      path="reports/:id"
+                      element={<LazyRoute><ReportsPage /></LazyRoute>}
+                    />
+                    <Route
+                      path="documents/:id"
+                      element={<LazyRoute><ReportsPage /></LazyRoute>}
+                    />
+                    <Route
+                      path="settings/config"
+                      element={<LazyRoute><ConfigPage /></LazyRoute>}
+                    />
+                    <Route
+                      path="search"
+                      element={<LazyRoute><SearchPage /></LazyRoute>}
+                    />
+                    <Route
+                      path="diagnosis"
+                      element={<LazyRoute><Diagnosis /></LazyRoute>}
+                    />
+                  </Route>
+                </Route>
+              </Routes>
+            </AuthProvider>
+          </Sentry.ErrorBoundary>
         </BrowserRouter>
       </NotifyProvider>
       <ReactQueryDevtools initialIsOpen={false} />
