@@ -208,7 +208,8 @@ USE_TZ = True
 
 # === Static & Media ===
 STATIC_URL = "/static/"
-STATICFILES_DIRS = [BASE_DIR / "frontend" / "medops" / "dist" / "assets"]
+FRONTEND_ASSETS_DIR = BASE_DIR / "frontend" / "medops" / "dist" / "assets"
+STATICFILES_DIRS = [FRONTEND_ASSETS_DIR] if FRONTEND_ASSETS_DIR.exists() else []
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 MEDIA_URL = "/media/"
