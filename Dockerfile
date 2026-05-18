@@ -46,3 +46,5 @@ EXPOSE 8000
 # collectstatic se ejecuta al inicio del contenedor (runtime), no durante build
 # Railway inyectará el DJANGO_SECRET_KEY real via ENV antes de ejecutar
 CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn --bind 0.0.0.0:8000 --workers 2 --timeout 120 medops.wsgi:application"]
+
+# v2 - force cache invalidation via file content change
