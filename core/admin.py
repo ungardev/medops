@@ -535,7 +535,7 @@ class DoctorOperatorAdmin(admin.ModelAdmin):
     list_display = (
         "full_name",
         "national_id",
-        "colegiado_id",
+        "agregado_id",
         "license_status_badge",
         "is_verified_badge",
         "get_specialties_display",
@@ -545,7 +545,7 @@ class DoctorOperatorAdmin(admin.ModelAdmin):
     search_fields = (
         "full_name",
         "national_id",
-        "colegiado_id",
+        "agregado_id",
         "license",
         "email",
         "phone",
