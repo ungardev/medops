@@ -4,9 +4,8 @@ WORKDIR /app
 
 # ARG para build - se sobrescribe por ENV en Railway
 ARG DJANGO_SECRET_KEY_BUILD=medopz-build-temp-key-2025
-ENV DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY_BUILD}
 
-# Instalar dependencias de sistema necesarias para Django + PostgreSQL + WeasyPrint + Playwright
+# INSTALAR dependencias de sistema necesarias para Django + PostgreSQL + WeasyPrint + Playwright
 RUN apt-get update && apt-get install -y \
     build-essential \
     libpq-dev \
@@ -42,8 +41,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir playwright==1.45.0 && \
     playwright install chromium
 COPY . /app/
-RUN python manage.py collectstatic --noinput
 EXPOSE 8000
 
-# En Railway, el ENV DJANGO_SECRET_KEY se sobrescribirá con el valor real
-CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn --bind 0.0.0.0:8000 --workers 2 --timeout 120 medops.wsgi:application"]
+# collectstatic se ejecuta al inicio del contenedor (runtime), no durante build
+# Railway inyectará el DJANGO_SECRET_KEY real via ENV antes de ejecutar
+CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn --bind 0.0.0.0:8000 --workers 2 --timeout 120 medops.wsgi:application"]
