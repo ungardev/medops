@@ -2,9 +2,10 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
-from django.db.models import Sum, F, DecimalField, Value
+from django.db.models import Sum, F, DecimalField, Value, Count
 from django.db.models.functions import Coalesce
 from django.utils import timezone
+from datetime import date, timedelta
 import logging
 
 # App models
@@ -33,14 +34,12 @@ from .models import (
     Vaccine,
     VaccinationSchedule,
     PatientVaccination,
-    # --- NUEVOS: Direcciones ---
     Country,
     State,
     Municipality,
     City,
     Parish,
     Neighborhood,
-    # --- NUEVOS: Auditoría y Config ---
     Event,
     InstitutionSettings,
     DoctorInvitation,
@@ -48,6 +47,81 @@ from .models import (
 )
 
 logger = logging.getLogger("core")
+
+
+class CEOAdminSite(admin.AdminSite):
+    """CEO/CTO Command Center - Corporate Telemetry Dashboard"""
+
+    def index(self, request, extra_context=None):
+        today = date.today()
+        thirty_days = today + timedelta(days=30)
+
+        doctors_total = DoctorOperator.objects.count()
+        doctors_active = DoctorOperator.objects.filter(is_active_license=True).count()
+        licenses_expiring = DoctorOperator.objects.filter(
+            license_expiry_date__lte=thirty_days, license_expiry_date__gte=today
+        ).count()
+        licenses_expired = DoctorOperator.objects.filter(
+            license_expiry_date__lt=today
+        ).count()
+
+        payments_today_confirmed = (
+            Payment.objects.filter(
+                received_at__date=today, status="confirmed"
+            ).aggregate(total=Sum("amount"))["total"]
+            or 0
+        )
+
+        payments_today_pending = Payment.objects.filter(
+            received_at__date=today, status="pending"
+        ).count()
+
+        patients_total = Patient.objects.count()
+        appointments_today = Appointment.objects.filter(appointment_date=today).count()
+        waiting_now = WaitingRoomEntry.objects.filter(
+            arrival_time__date=today, status="waiting"
+        ).count()
+        institutions_active = InstitutionSettings.objects.filter(is_active=True).count()
+
+        bcv_rate = 1.0
+        try:
+            from .models import BCVRateCache
+
+            latest = BCVRateCache.objects.order_by("-created_at").first()
+            if latest:
+                bcv_rate = float(latest.value)
+        except:
+            pass
+
+        extra_context = extra_context or {}
+        extra_context["ceo_telemetry"] = {
+            "doctors_total": doctors_total,
+            "doctors_active_today": doctors_active,
+            "licenses_expiring_soon": licenses_expiring,
+            "licenses_expired": licenses_expired,
+            "payments_today_confirmed": float(payments_today_confirmed),
+            "payments_today_pending": payments_today_pending,
+            "patients_total": patients_total,
+            "appointments_today": appointments_today,
+            "waiting_now": waiting_now,
+            "institutions_active": institutions_active,
+            "bcv_rate": bcv_rate,
+            "today": today.strftime("%d/%m/%Y"),
+        }
+
+        return super().index(request, extra_context)
+
+    def get_urls(self):
+        urls = super().get_urls()
+        from django.urls import path
+
+        return [path("ceo-dashboard/", super().index, name="index")] + urls
+
+
+ceo_admin_site = CEOAdminSite(name="ceo_admin")
+ceo_admin_site.site_header = "MEDOPZ Command Center"
+ceo_admin_site.site_title = "CEO Dashboard"
+ceo_admin_site.index_title = "Telemetría Corporativa"
 
 
 # -------------------------
@@ -536,8 +610,8 @@ class DoctorOperatorAdmin(admin.ModelAdmin):
         "full_name",
         "national_id",
         "agregado_id",
-        "license_status_badge",
-        "is_verified_badge",
+        "mpps_status_badge",
+        "license_expiry_status",
         "get_specialties_display",
         "active_institution",
         "created_at",
@@ -581,7 +655,7 @@ class DoctorOperatorAdmin(admin.ModelAdmin):
             "CREDENCIALES MÉDICAS MPPS",
             {
                 "fields": (
-                    "colegiado_number",
+                    "agregado_id",
                     "license",
                     ("license_expiry_date", "is_active_license"),
                 ),
@@ -658,8 +732,22 @@ class DoctorOperatorAdmin(admin.ModelAdmin):
     def get_specialties_display(self, obj):
         return ", ".join([s.name for s in obj.specialties.all()])
 
-    @admin.display(description="Licencia", ordering="is_active_license")
-    def license_status_badge(self, obj):
+    @admin.display(description="Estado MPPS", ordering="is_verified")
+    def mpps_status_badge(self, obj):
+        if obj.is_verified:
+            color = "#22c55e"
+            label = "✓ VERIFICADO"
+        else:
+            color = "#ef4444"
+            label = "⏳ PENDIENTE"
+        return format_html(
+            '<span style="background:{};color:white;padding:2px 8px;border-radius:12px;font-size:11px;">{}</span>',
+            color,
+            label,
+        )
+
+    @admin.display(description="Licencia MPPS", ordering="license_expiry_date")
+    def license_expiry_status(self, obj):
         if not obj.license_expiry_date:
             return format_html(
                 '<span style="background:#94a3b8;color:white;padding:2px 8px;border-radius:12px;font-size:11px;">❓ SIN FECHA</span>'
@@ -670,26 +758,21 @@ class DoctorOperatorAdmin(admin.ModelAdmin):
         delta = (obj.license_expiry_date - today).days
         if delta < 0:
             return format_html(
-                '<span style="background:#dc2626;color:white;padding:2px 8px;border-radius:12px;font-size:11px;">❌ EXPIRADA</span>'
+                '<span style="background:#dc2626;color:white;padding:2px 8px;border-radius:12px;font-size:11px;">❌ VENCIDA</span>'
+            )
+        elif delta <= 30:
+            return format_html(
+                '<span style="background:#f59e0b;color:white;padding:2px 8px;border-radius:12px;font-size:11px;">⚠️ {}días</span>',
+                delta,
             )
         elif delta <= 90:
             return format_html(
-                '<span style="background:#f59e0b;color:white;padding:2px 8px;border-radius:12px;font-size:11px;">⚠️ POR EXPIRAR</span>'
+                '<span style="background:#eab308;color:white;padding:2px 8px;border-radius:12px;font-size:11px;">📅 {}días</span>',
+                delta,
             )
         return format_html(
             '<span style="background:#22c55e;color:white;padding:2px 8px;border-radius:12px;font-size:11px;">✅ ACTIVA</span>'
         )
-
-    @admin.display(description="Verificado", ordering="is_verified")
-    def is_verified_badge(self, obj):
-        if obj.is_verified:
-            return format_html(
-                '<span style="background:#22c55e;color:white;padding:2px 8px;border-radius:12px;font-size:11px;">✓ VERIFICADO</span>'
-            )
-        else:
-            return format_html(
-                '<span style="background:#ef4444;color:white;padding:2px 8px;border-radius:12px;font-size:11px;">⏳ PENDIENTE</span>'
-            )
 
     @admin.action(description="Aprobar verificación del médico seleccionado")
     def approve_verification(self, request, queryset):

@@ -1,0 +1,211 @@
+{% extends "admin/base_site.html" %}
+{% load static i18n %}
+
+{% block title %}Command Center - CEO Dashboard{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+  .ceo-dashboard {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    padding: 20px 0;
+  }
+  .ceo-header {
+    background: linear-gradient(135deg, #1e3a5f 0%, #0f2744 100%);
+    color: white;
+    padding: 24px 30px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  }
+  .ceo-header h1 {
+    color: white;
+    margin: 0 0 8px 0;
+    font-size: 28px;
+  }
+  .ceo-header p {
+    margin: 0;
+    opacity: 0.8;
+    font-size: 14px;
+  }
+  .telemetry-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .telemetry-card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border-left: 4px solid #ddd;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .telemetry-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  }
+  .telemetry-card.critical { border-left-color: #dc2626; }
+  .telemetry-card.warning { border-left-color: #f59e0b; }
+  .telemetry-card.success { border-left-color: #22c55e; }
+  .telemetry-card.info { border-left-color: #3b82f6; }
+  .telemetry-card .label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+  .telemetry-card .value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1;
+  }
+  .telemetry-card .sub {
+    font-size: 13px;
+    color: #64748b;
+    margin-top: 6px;
+  }
+  .alerts-section {
+    background: white;
+    border-radius: 10px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .alerts-section h2 {
+    margin: 0 0 16px 0;
+    font-size: 18px;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .alert-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .alert-badge.red { background: #dc2626; color: white; }
+  .alert-badge.yellow { background: #f59e0b; color: white; }
+  .alert-badge.green { background: #22c55e; color: white; }
+  .quick-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+  .quick-action-btn {
+    background: #1e3a5f;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.2s;
+  }
+  .quick-action-btn:hover {
+    background: #2d4a6f;
+    color: white;
+  }
+  .bcv-display {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 16px;
+    display: inline-block;
+  }
+  .bcv-display .label { color: #92400e; font-size: 12px; }
+  .bcv-display .value { color: #b45309; font-size: 20px; font-weight: 700; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ceo-dashboard">
+  <div class="ceo-header">
+    <h1>Command Center</h1>
+    <p>CEO/CTO Dashboard — Telemetría Corporativa en tiempo real | {{ today }}</p>
+  </div>
+
+  <div class="telemetry-grid">
+    <div class="telemetry-card info">
+      <div class="label">Médicos Registrados</div>
+      <div class="value">{{ ceo_telemetry.doctors_total }}</div>
+      <div class="sub">Total en el sistema</div>
+    </div>
+    
+    <div class="telemetry-card success">
+      <div class="label">Médicos Activos</div>
+      <div class="value">{{ ceo_telemetry.doctors_active_today }}</div>
+      <div class="sub">Con licencia vigente</div>
+    </div>
+    
+    <div class="telemetry-card warning">
+      <div class="label">Licencias por Expirar</div>
+      <div class="value">{{ ceo_telemetry.licenses_expiring_soon }}</div>
+      <div class="sub">Próximos 30 días</div>
+    </div>
+    
+    <div class="telemetry-card critical">
+      <div class="label">Licencias Vencidas</div>
+      <div class="value">{{ ceo_telemetry.licenses_expired }}</div>
+      <div class="sub">Requieren atención inmediata</div>
+    </div>
+    
+    <div class="telemetry-card success">
+      <div class="label">Ingresos del Día</div>
+      <div class="value">${{ ceo_telemetry.payments_today_confirmed|floatformat:2 }}</div>
+      <div class="sub">{{ ceo_telemetry.payments_today_pending }} pagos pendientes</div>
+    </div>
+    
+    <div class="telemetry-card info">
+      <div class="label">Citas Hoy</div>
+      <div class="value">{{ ceo_telemetry.appointments_today }}</div>
+      <div class="sub">Programadas para hoy</div>
+    </div>
+    
+    <div class="telemetry-card warning">
+      <div class="label">Sala de Espera</div>
+      <div class="value">{{ ceo_telemetry.waiting_now }}</div>
+      <div class="sub">Pacientes esperando</div>
+    </div>
+    
+    <div class="telemetry-card info">
+      <div class="label">Total Pacientes</div>
+      <div class="value">{{ ceo_telemetry.patients_total }}</div>
+      <div class="sub">En el sistema</div>
+    </div>
+  </div>
+
+  <div class="alerts-section">
+    <h2>
+      Alertas de Licencias MPPS
+      {% if ceo_telemetry.licenses_expired > 0 %}
+        <span class="alert-badge red">{{ ceo_telemetry.licenses_expired }} VENCIDAS</span>
+      {% endif %}
+      {% if ceo_telemetry.licenses_expiring_soon > 0 %}
+        <span class="alert-badge yellow">{{ ceo_telemetry.licenses_expiring_soon }} POR VENCER</span>
+      {% endif %}
+    </h2>
+    
+    <div class="bcv-display">
+      <span class="label">Tasa BCV Referencia: </span>
+      <span class="value">{{ ceo_telemetry.bcv_rate|floatformat:2 }} VES/USD</span>
+    </div>
+
+    <div class="quick-actions">
+      <a href="{% url 'ceo_admin:core_doctoroperator_changelist' %}" class="quick-action-btn">Gestionar Médicos</a>
+      <a href="{% url 'ceo_admin:core_appointment_changelist' %}" class="quick-action-btn">Ver Citas</a>
+      <a href="{% url 'ceo_admin:core_payment_changelist' %}" class="quick-action-btn">Ver Pagos</a>
+      <a href="{% url 'ceo_admin:core_patient_changelist' %}" class="quick-action-btn">Ver Pacientes</a>
+      <a href="{% url 'ceo_admin:core_institutionsettings_changelist' %}" class="quick-action-btn">Instituciones</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

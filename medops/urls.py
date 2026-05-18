@@ -24,6 +24,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("ceo-admin/", include("core.admin_ceo_urls")),
     path("api/", include("core.api_urls")),
     # 🔹 Endpoint global de login basado en DRF Token
     path("api/auth/login/", obtain_auth_token, name="api_token_auth"),
