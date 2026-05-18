@@ -581,7 +581,7 @@ class DoctorOperatorAdmin(admin.ModelAdmin):
             "CREDENCIALES MÉDICAS MPPS",
             {
                 "fields": (
-                    "colegiado_id",
+                    "colegiado_number",
                     "license",
                     ("license_expiry_date", "is_active_license"),
                 ),
@@ -992,7 +992,7 @@ class DoctorLicenseAdmin(admin.ModelAdmin):
         "created_at",
     )
     list_filter = ("is_verified_by_admin", "verification_date", "created_at")
-    search_fields = ("doctor__full_name", "doctor__colegiado_id", "doctor__email")
+    search_fields = ("doctor__full_name", "doctor__colegiado_number", "doctor__email")
     readonly_fields = (
         "created_at",
         "updated_at",

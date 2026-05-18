@@ -2460,7 +2460,7 @@ def generate_chargeorder_pdf(request, pk):
 
         doctor = charge_order.doctor
         doctor_name = doctor.full_name if doctor else "Sin médico asignado"
-        doctor_colegiado = doctor.colegiado_id if doctor else None
+        doctor_colegiado = doctor.agregado_id if doctor else None
         doctor_specialties = (
             list(doctor.specialties.values_list("name", flat=True)) if doctor else []
         )
@@ -6417,7 +6417,7 @@ def doctor_activate(request):
             gender="M",
             email=invitation.email,
             phone=phone,
-            colegiado_id=invitation.colegiado_number,
+            colegiado_number=invitation.colegiado_number,
             license=invitation.license_number,
             is_verified=False,
         )
@@ -6453,7 +6453,7 @@ def doctor_activate(request):
             "doctor": {
                 "id": doctor.id,
                 "national_id": doctor.national_id,
-                "colegiado_id": doctor.colegiado_id,
+                "colegiado_number": doctor.colegiado_number,
                 "institution": invitation.institution.name
                 if invitation.institution
                 else None,
@@ -7443,7 +7443,7 @@ def patient_search_doctors(request):
                     "full_name": doc.full_name,
                     "gender": doc.gender,
                     "is_verified": doc.is_verified,
-                    "colegiado_id": doc.colegiado_id,
+                    "colegiado_number": doc.colegiado_number,
                     "license": doc.license,
                     "specialties": specialties,  # Array de objetos con id y name
                     "institutions": institutions,  # Array de objetos con id y name

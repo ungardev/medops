@@ -227,7 +227,7 @@ class NeighborhoodSerializer(serializers.ModelSerializer):
 class ClinicalAlertSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClinicalAlert
-        fields = ["id", "type", "message", "is_active", "level"]
+        fields = ["id", "type", "message", "created_at", "updated_at"]
 
 
 # 🔹 Serializer para crear/actualizar pacientes (sin campo active)
@@ -849,7 +849,7 @@ class TreatmentSerializer(serializers.ModelSerializer):
             return {
                 "id": obj.doctor.id,
                 "full_name": obj.doctor.full_name,
-                "colegiado_id": obj.doctor.colegiado_id,
+                "agregado_id": obj.doctor.agregado_id,
                 "gender": obj.doctor.gender,
                 "is_verified": obj.doctor.is_verified,
             }
@@ -1063,7 +1063,7 @@ class PaymentSerializer(serializers.ModelSerializer):
             return {
                 "id": obj.doctor.id,
                 "full_name": obj.doctor.full_name,
-                "colegiado_id": obj.doctor.colegiado_id,
+                "agregado_id": obj.doctor.agregado_id,
                 "gender": obj.doctor.gender,
                 "is_verified": obj.doctor.is_verified,
             }
@@ -1720,7 +1720,7 @@ class ChargeOrderSerializer(serializers.ModelSerializer):
             return {
                 "id": obj.doctor.id,
                 "full_name": obj.doctor.full_name,
-                "colegiado_id": obj.doctor.colegiado_id,
+                "agregado_id": obj.doctor.agregado_id,
                 "gender": obj.doctor.gender,
                 "is_verified": obj.doctor.is_verified,
             }
@@ -2249,7 +2249,7 @@ class MedicalDocumentReadSerializer(serializers.ModelSerializer):
             return {
                 "id": obj.doctor.id,
                 "full_name": obj.doctor.full_name,
-                "colegiado_id": obj.doctor.colegiado_id,
+                "agregado_id": obj.doctor.agregado_id,
                 "gender": obj.doctor.gender,
                 "is_verified": obj.doctor.is_verified,
             }
@@ -2619,7 +2619,7 @@ class DoctorOperatorSerializer(serializers.ModelSerializer):
             "is_active_license",
             "license_expiry_date",
             "license_expiry_status",
-            "colegiado_id",
+            "agregado_id",
             "license",
             "verification_notes",
             "specialties",
@@ -2789,7 +2789,7 @@ class MedicalReportSerializer(serializers.ModelSerializer):
             return {
                 "id": obj.doctor.id,
                 "full_name": obj.doctor.full_name,
-                "colegiado_id": obj.doctor.colegiado_id,
+                "agregado_id": obj.doctor.agregado_id,
                 "gender": obj.doctor.gender,
                 "is_verified": obj.doctor.is_verified,
             }
@@ -2999,7 +2999,7 @@ class MedicalReferralSerializer(serializers.ModelSerializer):
             return {
                 "id": obj.doctor.id,
                 "full_name": obj.doctor.full_name,
-                "colegiado_id": obj.doctor.colegiado_id,
+                "agregado_id": obj.doctor.agregado_id,
                 "gender": obj.doctor.gender,
                 "is_verified": obj.doctor.is_verified,
             }
@@ -3033,7 +3033,7 @@ class MedicalReferralSerializer(serializers.ModelSerializer):
             return {
                 "id": obj.referred_to_doctor.id,
                 "full_name": obj.referred_to_doctor.full_name,
-                "colegiado_id": obj.referred_to_doctor.colegiado_id,
+                "agregado_id": obj.referred_to_doctor.agregado_id,
                 "specialty": obj.referred_to_doctor.specialty.name
                 if hasattr(obj.referred_to_doctor, "specialty")
                 and obj.referred_to_doctor.specialty
@@ -3153,7 +3153,7 @@ class AppointmentDetailSerializer(AppointmentSerializer):
             return {
                 "id": obj.doctor.id,
                 "full_name": obj.doctor.full_name,
-                "colegiado_id": obj.doctor.colegiado_id,
+                "agregado_id": obj.doctor.agregado_id,
             }
         return None
 
@@ -4463,7 +4463,6 @@ class HospitalizationCreateSerializer(serializers.ModelSerializer):
             "vital_signs",
             "daily_notes",
             "complications",
-            "discharge_plan",
             "discharge_instructions",
             "discharge_type",
             "discharge_summary",
