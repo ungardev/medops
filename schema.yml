@@ -1,0 +1,3397 @@
+openapi: 3.0.3
+info:
+  title: MEDOPZ API
+  version: 1.0.0
+  description: Documentación de la API de MEDOPZ
+paths:
+  /api/address-chain/:
+    get:
+      operationId: address_chain_retrieve
+      tags:
+      - address-chain
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/api/medical-services/:
+    get:
+      operationId: api_medical_services_retrieve
+      description: |-
+        Endpoint para obtener lista de servicios médicos.
+        Público (no requiere institución activa) para uso del Portal Paciente.
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/appointments/{appointment_id}/charge-order/:
+    get:
+      operationId: appointments_charge_order_retrieve
+      description: |-
+        Obtener charge order ACTIVO asociado a una cita.
+        Excluye órdenes void/waived.
+        GET /api/appointments/<appointment_id>/charge-order/
+      parameters:
+      - in: path
+        name: appointment_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - appointments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/appointments/{appointment_id}/charge-order/add-items/:
+    post:
+      operationId: appointments_charge_order_add_items_create
+      description: |-
+        Agregar items a orden de cobro. Crea la orden automáticamente si no existe una activa.
+        POST /api/appointments/{appointment_id}/charge-order/add-items/
+        Body: { "items": [{ "service_id": 1, "qty": 1 }] }
+      parameters:
+      - in: path
+        name: appointment_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - appointments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/appointments/{appointment_id}/charge-order/create/:
+    post:
+      operationId: appointments_charge_order_create_create
+      description: |-
+        Crear charge order para una cita.
+        NOTA: Este endpoint está deprecado. Usar add_charge_order_items en su lugar.
+        POST /api/appointments/<appointment_id>/charge-order/create/
+      parameters:
+      - in: path
+        name: appointment_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - appointments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/appointments/{appointment_id}/clinical-note/:
+    get:
+      operationId: appointments_clinical_note_retrieve
+      description: |-
+        API para notas clínicas SOAP.
+
+        GET /api/appointments/<appointment_id>/clinical-note/
+            - Retorna 200 con la nota si existe
+            - Retorna 200 con null si no existe
+
+        POST /api/appointments/<appointment_id>/clinical-note/
+            - Crea nueva nota clínica
+
+        PATCH /api/appointments/<appointment_id>/clinical-note/
+            - Actualiza nota existente
+      parameters:
+      - in: path
+        name: appointment_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - appointments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: appointments_clinical_note_create
+      description: |-
+        API para notas clínicas SOAP.
+
+        GET /api/appointments/<appointment_id>/clinical-note/
+            - Retorna 200 con la nota si existe
+            - Retorna 200 con null si no existe
+
+        POST /api/appointments/<appointment_id>/clinical-note/
+            - Crea nueva nota clínica
+
+        PATCH /api/appointments/<appointment_id>/clinical-note/
+            - Actualiza nota existente
+      parameters:
+      - in: path
+        name: appointment_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - appointments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: appointments_clinical_note_partial_update
+      description: |-
+        API para notas clínicas SOAP.
+
+        GET /api/appointments/<appointment_id>/clinical-note/
+            - Retorna 200 con la nota si existe
+            - Retorna 200 con null si no existe
+
+        POST /api/appointments/<appointment_id>/clinical-note/
+            - Crea nueva nota clínica
+
+        PATCH /api/appointments/<appointment_id>/clinical-note/
+            - Actualiza nota existente
+      parameters:
+      - in: path
+        name: appointment_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - appointments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/appointments/{appointment_id}/clinical-note/lock/:
+    post:
+      operationId: appointments_clinical_note_lock_create
+      description: |-
+        Bloquear/Desbloquear nota clínica.
+
+        POST /api/appointments/<appointment_id>/clinical-note/lock/ → Bloquear
+        POST /api/appointments/<appointment_id>/clinical-note/unlock/ → Desbloquear
+      parameters:
+      - in: path
+        name: appointment_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - appointments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/appointments/{appointment_id}/vital-signs/:
+    get:
+      operationId: appointments_vital_signs_retrieve
+      description: Obtener o crear signos vitales para una cita.
+      parameters:
+      - in: path
+        name: appointment_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - appointments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: appointments_vital_signs_create
+      description: Obtener o crear signos vitales para una cita.
+      parameters:
+      - in: path
+        name: appointment_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - appointments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/appointments/{id}/:
+    get:
+      operationId: appointments_retrieve
+      description: |-
+        Obtiene el detalle completo de una cita con datos financieros.
+        Usa AppointmentDetailSerializer para incluir charge_order con payments.
+
+        ✅ ACTUALIZADO: Ahora acepta GET, PUT, PATCH, DELETE
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - appointments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: appointments_update
+      description: |-
+        Obtiene el detalle completo de una cita con datos financieros.
+        Usa AppointmentDetailSerializer para incluir charge_order con payments.
+
+        ✅ ACTUALIZADO: Ahora acepta GET, PUT, PATCH, DELETE
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - appointments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: appointments_partial_update
+      description: |-
+        Obtiene el detalle completo de una cita con datos financieros.
+        Usa AppointmentDetailSerializer para incluir charge_order con payments.
+
+        ✅ ACTUALIZADO: Ahora acepta GET, PUT, PATCH, DELETE
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - appointments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: appointments_destroy
+      description: |-
+        Obtiene el detalle completo de una cita con datos financieros.
+        Usa AppointmentDetailSerializer para incluir charge_order con payments.
+
+        ✅ ACTUALIZADO: Ahora acepta GET, PUT, PATCH, DELETE
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - appointments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/appointments/{id}/confirm/:
+    post:
+      operationId: appointments_confirm_create
+      description: |-
+        Endpoint para confirmar una cita tentativa desde el Portal Doctor.
+        Opera sobre una Appointment existente y actualiza su estado a 'pending'.
+        La ChargeOrder se gestiona automáticamente via recalc_totals() al registrar pagos.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - appointments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/appointments/{id}/notes/:
+    post:
+      operationId: appointments_notes_create
+      description: |-
+        Actualiza las notas de una cita médica.
+        Requiere: appointment_id (pk), notes (string)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - appointments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/appointments/{id}/status/:
+    post:
+      operationId: appointments_status_create
+      description: |-
+        Actualiza el status de un appointment.
+        Acepta POST y PATCH para mayor flexibilidad del frontend.
+
+        Cuando el status es 'completed', automáticamente sincroniza
+        el WaitingRoomEntry relacionado para mantener consistencia.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - appointments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: appointments_status_partial_update
+      description: |-
+        Actualiza el status de un appointment.
+        Acepta POST y PATCH para mayor flexibilidad del frontend.
+
+        Cuando el status es 'completed', automáticamente sincroniza
+        el WaitingRoomEntry relacionado para mantener consistencia.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - appointments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/appointments/pending/:
+    get:
+      operationId: appointments_pending_retrieve
+      description: |-
+        Obtiene TODAS las citas pendientes/programadas de la institución.
+        Incluye resumen financiero completo por cita.
+        Orden: más recientes primero (descendente por fecha).
+      tags:
+      - appointments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/appointments/search/:
+    get:
+      operationId: appointments_search_retrieve
+      description: |-
+        Busca citas por paciente, ID, o campos relacionados.
+        Soporta búsqueda por nombre, cédula, ID de cita, o fecha.
+      tags:
+      - appointments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/appointments/today/:
+    get:
+      operationId: appointments_today_retrieve
+      tags:
+      - appointments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/audit/aggregates/:
+    get:
+      operationId: audit_aggregates_retrieve
+      description: |-
+        Devuelve métricas de auditoría para el dashboard.
+        Total de eventos, agrupados por entidad y acción.
+      tags:
+      - audit
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/audit/appointment/{appointment_id}/:
+    get:
+      operationId: audit_appointment_retrieve
+      parameters:
+      - in: path
+        name: appointment_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - audit
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/audit/log/:
+    get:
+      operationId: audit_log_retrieve
+      tags:
+      - audit
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/audit/patient/{patient_id}/:
+    get:
+      operationId: audit_patient_retrieve
+      parameters:
+      - in: path
+        name: patient_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - audit
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/auth/doctor-login/:
+    post:
+      operationId: auth_doctor_login_create
+      description: |-
+        POST /api/auth/doctor-login/
+        Login exclusivo para doctores - rechaza pacientes.
+      tags:
+      - auth
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/auth/login/:
+    post:
+      operationId: auth_login_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AuthTokenRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AuthTokenRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthTokenRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthToken'
+          description: ''
+  /api/auth/token/refresh/:
+    post:
+      operationId: auth_token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/auth/verify/:
+    get:
+      operationId: auth_verify_retrieve
+      description: |-
+        Verifica si el token de autenticación es válido.
+        Retorna datos básicos del usuario autenticado.
+      tags:
+      - auth
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/bcv-rate/:
+    get:
+      operationId: bcv_rate_retrieve
+      description: Obtener tasa BCV actual
+      tags:
+      - bcv-rate
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/charge-orders/{id}/export/:
+    get:
+      operationId: charge_orders_export_retrieve
+      description: Genera PDF de orden de cobro con código de auditoría QR.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - charge-orders
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: charge_orders_export_create
+      description: Genera PDF de orden de cobro con código de auditoría QR.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - charge-orders
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/charge-orders/create-from-service/:
+    post:
+      operationId: charge_orders_create_from_service_create
+      description: |-
+        POST /api/charge-orders/create-from-service/
+        Crea solo un ChargeOrder sin crear Appointment.
+        El Appointment se crea cuando el doctor confirma el pago.
+      tags:
+      - charge-orders
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/charge-orders/search/:
+    get:
+      operationId: charge_orders_search_retrieve
+      description: |-
+        Busca órdenes de cobro por paciente, ID, o campos relacionados.
+        Soporta búsqueda por nombre, cédula, ID de orden, ID de cita, o monto.
+      tags:
+      - charge-orders
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/chargeorders/{id}/generate-pdf/:
+    get:
+      operationId: chargeorders_generate_pdf_retrieve
+      description: Genera PDF de orden de cobro con código de auditoría QR.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - chargeorders
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: chargeorders_generate_pdf_create
+      description: Genera PDF de orden de cobro con código de auditoría QR.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - chargeorders
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/charges/purchase-service/:
+    post:
+      operationId: charges_purchase_service_create
+      description: |-
+        Endpoint para comprar un servicio directamente desde el Portal Paciente.
+        Crea Appointment + ChargeOrder + ChargeItems en un solo paso usando
+        el flujo estándar del AppointmentSerializer.
+      tags:
+      - charges
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/choices/medical-referral/:
+    get:
+      operationId: choices_medical_referral_retrieve
+      description: |-
+        Devuelve las especialidades médicas disponibles para referencias.
+        Usado para autocompletar en el formulario de referencias.
+      tags:
+      - choices
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/choices/medical-test/:
+    get:
+      operationId: choices_medical_test_retrieve
+      description: |-
+        Devuelve el catálogo de exámenes médicos disponibles.
+        Usado para autocompletar en el formulario de exámenes.
+      tags:
+      - choices
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/choices/prescription/:
+    get:
+      operationId: choices_prescription_retrieve
+      description: |-
+        Devuelve el catálogo de medicamentos disponibles.
+        Usado para autocompletar en el formulario de recetas.
+      tags:
+      - choices
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/choices/specialty/:
+    get:
+      operationId: choices_specialty_retrieve
+      tags:
+      - choices
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/choices/treatment/:
+    get:
+      operationId: choices_treatment_retrieve
+      description: |-
+        Devuelve los tipos de tratamiento disponibles (choices del modelo Treatment).
+        Usado para desplegar opciones en el formulario de creación de tratamientos.
+      tags:
+      - choices
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/config/doctor/:
+    get:
+      operationId: config_doctor_retrieve
+      description: Endpoint de configuración del doctor operador.
+      tags:
+      - config
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: config_doctor_partial_update
+      description: Endpoint de configuración del doctor operador.
+      tags:
+      - config
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/config/institution/:
+    get:
+      operationId: config_institution_retrieve
+      description: |-
+        Endpoint de configuración de institución.
+
+        GET:
+            Si no hay autenticación: Devuelve institución global (legacy singleton)
+            Si hay autenticación: Devuelve todas las instituciones del doctor
+            Si query param 'active_only=true': Devuelve solo la institución activa
+
+        PATCH:
+            Actualiza la institución ACTIVA del doctor (según header X-Institution-ID)
+      tags:
+      - config
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: config_institution_partial_update
+      description: |-
+        Endpoint de configuración de institución.
+
+        GET:
+            Si no hay autenticación: Devuelve institución global (legacy singleton)
+            Si hay autenticación: Devuelve todas las instituciones del doctor
+            Si query param 'active_only=true': Devuelve solo la institución activa
+
+        PATCH:
+            Actualiza la institución ACTIVA del doctor (según header X-Institution-ID)
+      tags:
+      - config
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/config/institution-permissions/:
+    get:
+      operationId: config_institution_permissions_retrieve
+      description: Obtener permisos del médico actual
+      tags:
+      - config
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/config/institution-permissions/emergency-refresh/:
+    post:
+      operationId: config_institution_permissions_emergency_refresh_create
+      description: Refrescar emergency access (24h adicionales)
+      tags:
+      - config
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/config/institutions/:
+    get:
+      operationId: config_institutions_retrieve
+      description: Obtiene todas las instituciones del doctor autenticado.
+      tags:
+      - config
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/config/institutions/{institution_id}/delete/:
+    delete:
+      operationId: config_institutions_delete_destroy
+      description: |-
+        Elimina una institución del doctor autenticado.
+        NO borra la institución de la DB global, solo la relación.
+      parameters:
+      - in: path
+        name: institution_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - config
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/config/institutions/{institution_id}/set-active/:
+    put:
+      operationId: config_institutions_set_active_update
+      description: |-
+        Cambia la institución activa (predeterminada) del doctor autenticado.
+        Guarda en base de datos para persistencia entre sesiones.
+      parameters:
+      - in: path
+        name: institution_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - config
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/config/institutions/add/:
+    post:
+      operationId: config_institutions_add_create
+      description: Agrega una institución existente al doctor autenticado.
+      tags:
+      - config
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/config/institutions/create/:
+    post:
+      operationId: config_institutions_create_create
+      description: Crea una nueva institución para el doctor autenticado.
+      tags:
+      - config
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/consultations/{id}/:
+    get:
+      operationId: consultations_retrieve
+      description: |-
+        Obtiene el detalle completo de una cita con datos financieros.
+        Usa AppointmentDetailSerializer para incluir charge_order con payments.
+
+        ✅ ACTUALIZADO: Ahora acepta GET, PUT, PATCH, DELETE
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - consultations
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: consultations_update
+      description: |-
+        Obtiene el detalle completo de una cita con datos financieros.
+        Usa AppointmentDetailSerializer para incluir charge_order con payments.
+
+        ✅ ACTUALIZADO: Ahora acepta GET, PUT, PATCH, DELETE
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - consultations
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: consultations_partial_update
+      description: |-
+        Obtiene el detalle completo de una cita con datos financieros.
+        Usa AppointmentDetailSerializer para incluir charge_order con payments.
+
+        ✅ ACTUALIZADO: Ahora acepta GET, PUT, PATCH, DELETE
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - consultations
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: consultations_destroy
+      description: |-
+        Obtiene el detalle completo de una cita con datos financieros.
+        Usa AppointmentDetailSerializer para incluir charge_order con payments.
+
+        ✅ ACTUALIZADO: Ahora acepta GET, PUT, PATCH, DELETE
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - consultations
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/consultations/{id}/generate-report/:
+    get:
+      operationId: consultations_generate_report_retrieve
+      description: |-
+        Genera PDF de informe médico completo y lo persiste en MedicalDocument.
+        pk = appointment_id (ID de la consulta)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - consultations
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: consultations_generate_report_create
+      description: |-
+        Genera PDF de informe médico completo y lo persiste en MedicalDocument.
+        pk = appointment_id (ID de la consulta)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - consultations
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/consultations/{id}/generate-used-documents/:
+    get:
+      operationId: consultations_generate_used_documents_retrieve
+      description: |-
+        Genera todos los documentos PDF usados en una cita en lote.
+        Incluye: informes médicos, recetas, tratamientos, referencias, exámenes.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - consultations
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: consultations_generate_used_documents_create
+      description: |-
+        Genera todos los documentos PDF usados en una cita en lote.
+        Incluye: informes médicos, recetas, tratamientos, referencias, exámenes.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - consultations
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/consultations/current/:
+    get:
+      operationId: consultations_current_retrieve
+      tags:
+      - consultations
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/dashboard/active-institution/:
+    get:
+      operationId: dashboard_active_institution_retrieve
+      description: |-
+        Dashboard de institución activa con métricas en tiempo real.
+        Retorna institución activa + estadísticas del día actual.
+      tags:
+      - dashboard
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/dashboard/active-institution-metrics/:
+    get:
+      operationId: dashboard_active_institution_metrics_retrieve
+      description: |-
+        Retorna institución activa + métricas filtradas por institución activa.
+        ✅ OPTIMIZADO: Mejor manejo de errores y fallback seguro para BCV
+      tags:
+      - dashboard
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/dashboard/summary/:
+    get:
+      operationId: dashboard_summary_retrieve
+      tags:
+      - dashboard
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/doctor/activate/:
+    post:
+      operationId: doctor_activate_create
+      description: |-
+        POST /api/doctor/activate/
+        Activa una cuenta de doctor usando token de invitación.
+        Crea el usuario Django y el DoctorOperator asociado.
+
+        Datos profesionales ya pre-cargados en la invitación (MPPS Venezuela):
+        - national_id, full_name, agregado_number, license_number
+      tags:
+      - doctor
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/doctor/appointments/:
+    get:
+      operationId: doctor_appointments_retrieve
+      description: Endpoint para listar citas pendientes de confirmación para el doctor.
+      tags:
+      - doctor
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/doctor/invitations/:
+    post:
+      operationId: doctor_invitations_create
+      description: |-
+        POST /api/doctor/invitations/
+        Crea una invitación para un nuevo médico con credenciales profesionales.
+        Solo admins pueden invitar doctores.
+
+        Campos requeridos para cumplimiento legal MPPS Venezuela:
+        - national_id: Cédula de Identidad
+        - full_name: Nombre completo legal
+        - email: Email del médico
+        - institution_id: Institución invitante
+        - colegiado_number: Número de Colegiado MPPS
+        - license_number: Licencia Sanitaria MPPS
+      tags:
+      - doctor
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/doctor/invitations/{token}/:
+    get:
+      operationId: doctor_invitations_retrieve
+      description: |-
+        GET /api/doctor/invitations/<token>/
+        Verifica el estado de una invitación (sin autenticación).
+      parameters:
+      - in: path
+        name: token
+        schema:
+          type: string
+        required: true
+      tags:
+      - doctor
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/documents/:
+    get:
+      operationId: documents_retrieve
+      description: |-
+        Devuelve los documentos médicos del doctor autenticado.
+        Params: patient_id (optional filter), category (optional filter)
+      tags:
+      - documents
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/events/:
+    get:
+      operationId: events_retrieve
+      description: |-
+        Devuelve el log de eventos/auditoría.
+        Soporta filtros por entidad, ID de entidad, ID de paciente, límite.
+      tags:
+      - events
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/icd/search/:
+    get:
+      operationId: icd_search_retrieve
+      description: |-
+        Busca en el catálogo ICD-11 por código, título, o sinónimos.
+        Ordena por relevancia: coincidencia exacta > startswith > contains en título > código > sinónimos.
+      tags:
+      - icd
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/metrics/:
+    get:
+      operationId: metrics_retrieve
+      tags:
+      - metrics
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/neighborhood-search/:
+    get:
+      operationId: neighborhood_search_retrieve
+      tags:
+      - neighborhood-search
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/notifications/:
+    get:
+      operationId: notifications_retrieve
+      description: |-
+        Devuelve las 3 notificaciones más recientes de los últimos 7 días.
+        Filtra por notify=True (solo eventos que deben mostrarse).
+        Si no hay eventos con notify=True, hace fallback a los últimos 3 eventos.
+      tags:
+      - notifications
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/operational-hub/:
+    get:
+      operationId: operational_hub_retrieve
+      description: |-
+        Endpoint unificado para el Hub Operativo del WaitingRoom.
+        Versión 2.0: Soporte mensual + timeline unificado + disponibilidad.
+
+        Parámetros:
+        - institution_id: ID de la institución (requerido)
+        - year: Año para filtro (opcional, predeterminado: año actual)
+        - month: Mes para filtro (opcional, predeterminado: mes actual)
+
+        Retorna:
+        - timeline: Items unificados (citas + disponibilidad) para el calendario
+        - live_queue: Entradas activas en sala de espera (día actual)
+        - pending_entries: Citas pendientes del día actual
+        - filters: Categorías y servicios para filtros UI
+        - stats: Estadísticas del periodo
+      tags:
+      - operational-hub
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/patient-activate/:
+    post:
+      operationId: patient_activate_create
+      description: |-
+        POST /api/patient-activate/
+        Paciente activa su cuenta con el token de invitación.
+      tags:
+      - patient-activate
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/patient-appointments/:
+    get:
+      operationId: patient_appointments_retrieve
+      description: |-
+        GET /api/patient-appointments/
+        Lista las citas del paciente.
+      tags:
+      - patient-appointments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/patient-auth/register/:
+    post:
+      operationId: patient_auth_register_create
+      description: |-
+        POST /api/patient-auth/register/
+        Registro de nuevo paciente en el portal.
+      tags:
+      - patient-auth
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/patient-charge-orders/:
+    get:
+      operationId: patient_charge_orders_retrieve
+      description: |-
+        GET /api/patient-charge-orders/
+
+        Lista todas las órdenes de cobro del paciente autenticado.
+      tags:
+      - patient-charge-orders
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/patient-charge-orders/{order_id}/:
+    get:
+      operationId: patient_charge_orders_retrieve_2
+      description: |-
+        GET /api/patient-charge-orders/{order_id}/
+
+        Detalle de una orden de cobro específica.
+      parameters:
+      - in: path
+        name: order_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - patient-charge-orders
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/patient-charge-orders/{order_id}/register-payment/:
+    post:
+      operationId: patient_charge_orders_register_payment_create
+      description: |-
+        POST /api/patient-charge-orders/{order_id}/register-payment/
+
+        Registra un pago manual del paciente (Pago Móvil).
+        Determina automáticamente si la verificación es automática o manual.
+      parameters:
+      - in: path
+        name: order_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - patient-charge-orders
+      security:
+      - tokenAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/patient-dashboard/:
+    get:
+      operationId: patient_dashboard_retrieve
+      description: |-
+        GET /api/patient-dashboard/
+        Dashboard del paciente con resumen de su información.
+      tags:
+      - patient-dashboard
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/patient-payment-method/:
+    get:
+      operationId: patient_payment_method_retrieve
+      description: |-
+        GET /api/patient-payment-method/
+        PUT /api/patient-payment-method/
+
+        Obtiene o actualiza los métodos de pago del paciente.
+      tags:
+      - patient-payment-method
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: patient_payment_method_update
+      description: |-
+        GET /api/patient-payment-method/
+        PUT /api/patient-payment-method/
+
+        Obtiene o actualiza los métodos de pago del paciente.
+      tags:
+      - patient-payment-method
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/patient-profile/:
+    get:
+      operationId: patient_profile_retrieve
+      description: |-
+        GET /api/patient-profile/
+        PUT /api/patient-profile/
+        Ver o actualizar perfil del paciente.
+      tags:
+      - patient-profile
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: patient_profile_update
+      description: |-
+        GET /api/patient-profile/
+        PUT /api/patient-profile/
+        Ver o actualizar perfil del paciente.
+      tags:
+      - patient-profile
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/patient-search/doctors/:
+    get:
+      operationId: patient_search_doctors_retrieve
+      description: |-
+        GET /api/patient-search/doctors/
+
+        Busca doctores por nombre o especialidad.
+        Devuelve información estructurada compatible con DoctorProfile (Frontend).
+      tags:
+      - patient-search
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/patient-search/services/:
+    get:
+      operationId: patient_search_services_retrieve
+      description: |-
+        GET /api/patient-search/services/
+
+        Busca servicios activos y visibles por nombre, código o descripción.
+        Devuelve información completa del servicio incluyendo precio (USD), médico y duración.
+      tags:
+      - patient-search
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/patient/auth/login/:
+    post:
+      operationId: patient_auth_login_create
+      description: |-
+        POST /api/patient-auth/login/
+        Login de paciente en el portal.
+      tags:
+      - patient
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/patient/auth/logout/:
+    post:
+      operationId: patient_auth_logout_create
+      description: |-
+        POST /api/patient-auth/logout/
+        Logout del paciente.
+      tags:
+      - patient
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/patient/auth/verify/:
+    get:
+      operationId: patient_auth_verify_retrieve
+      description: |-
+        Verifica si el token de autenticación del paciente es válido.
+        Retorna el Patient ID (no el User ID) para que el frontend
+        pueda cargar los datos correctos del paciente.
+      tags:
+      - patient
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/patient/services/{service_id}/availability/:
+    get:
+      operationId: patient_services_availability_retrieve
+      description: Endpoint para verificar disponibilidad de slots de tiempo para
+        un servicio.
+      parameters:
+      - in: path
+        name: service_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - patient
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/patient/services/catalog/:
+    get:
+      operationId: patient_services_catalog_retrieve
+      description: |-
+        GET /api/patient/services/catalog/
+
+        Catálogo general de servicios disponibles en MEDOPZ.
+        Agrupa por especialidad y muestra precios.
+      tags:
+      - patient
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/patient/services/history/:
+    get:
+      operationId: patient_services_history_retrieve
+      description: |-
+        GET /api/patient/services/history/
+
+        Historial de servicios del paciente.
+      tags:
+      - patient
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/patient/services/recommended/:
+    get:
+      operationId: patient_services_recommended_retrieve
+      description: |-
+        GET /api/patient/services/recommended/
+
+        Servicios recomendados basados en el historial del paciente.
+      tags:
+      - patient
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/patients/{patient_id}/approve-consent/:
+    post:
+      operationId: patients_approve_consent_create
+      description: |-
+        POST /api/patients/{id}/approve-consent/
+        Aprueba el consentimiento parental de un menor.
+      parameters:
+      - in: path
+        name: patient_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - patients
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/patients/{patient_id}/dependents/:
+    get:
+      operationId: patients_dependents_retrieve
+      description: |-
+        GET /api/patients/{id}/dependents/
+        Lista todos los dependientes (menores) de un representante.
+      parameters:
+      - in: path
+        name: patient_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - patients
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/patients/{patient_id}/invitation-status/:
+    get:
+      operationId: patients_invitation_status_retrieve
+      description: |-
+        GET /api/patients/{id}/invitation-status/
+        Verificar estado de invitación de un paciente.
+        Retorna la invitación más reciente no cancelada.
+      parameters:
+      - in: path
+        name: patient_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - patients
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/patients/{patient_id}/invite/:
+    post:
+      operationId: patients_invite_create
+      description: |-
+        POST /api/patients/{id}/invite/
+        Doctor invita a un paciente al portal MEDOPZ.
+      parameters:
+      - in: path
+        name: patient_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - patients
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/patients/{id}/documents/:
+    get:
+      operationId: patients_documents_retrieve
+      description: |-
+        GET /api/patients/{pk}/documents/
+        Retorna todos los documentos del paciente, opcionalmente filtrados por cita.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - patients
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientWrite'
+          description: ''
+    post:
+      operationId: patients_documents_create
+      description: |-
+        GET /api/patients/{pk}/documents/
+        Retorna todos los documentos del paciente, opcionalmente filtrados por cita.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - patients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatientWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatientWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatientWriteRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientWrite'
+          description: ''
+  /api/patients/{id}/documents/{document_id}/:
+    delete:
+      operationId: patients_documents_destroy
+      description: DELETE /api/patients/{pk}/documents/{document_id}/
+      parameters:
+      - in: path
+        name: document_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - patients
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/patients/{id}/profile/:
+    get:
+      operationId: patients_profile_retrieve
+      description: Endpoint completo del perfil clínico del paciente.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - patients
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientWrite'
+          description: ''
+  /api/patients/minor-verification/:
+    get:
+      operationId: patients_minor_verification_retrieve
+      description: |-
+        GET /api/patients/minor-verification/
+        Lista pacientes menores que requieren verificación de consentimiento.
+      tags:
+      - patients
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/patients/register-minor/:
+    post:
+      operationId: patients_register_minor_create
+      description: |-
+        POST /api/patients/register-minor/
+        Registra un paciente menor con su representante.
+      tags:
+      - patients
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/patients/search/:
+    get:
+      operationId: patients_search_retrieve
+      tags:
+      - patients
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/payments/{payment_id}/verify/:
+    post:
+      operationId: payments_verify_create
+      description: |-
+        POST /api/payments/{payment_id}/verify/
+
+        Verifica (confirma o rechaza) un pago pendiente.
+        Solo accesible para doctores.
+      parameters:
+      - in: path
+        name: payment_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - payments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/payments/config/:
+    get:
+      operationId: payments_config_retrieve
+      description: Get/Update configuración de pago del doctor
+      tags:
+      - payments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: payments_config_create
+      description: Get/Update configuración de pago del doctor
+      tags:
+      - payments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/payments/config/public/:
+    get:
+      operationId: payments_config_public_retrieve
+      description: Endpoint público para ver config de pago de un doctor
+      tags:
+      - payments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/payments/create/:
+    post:
+      operationId: payments_create_create
+      description: Crear nueva transacción de pago
+      tags:
+      - payments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/payments/gateways/:
+    get:
+      operationId: payments_gateways_retrieve
+      description: Lista de métodos de pago disponibles
+      tags:
+      - payments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/payments/ocr/:
+    post:
+      operationId: payments_ocr_create
+      description: |-
+        POST /api/payments/ocr/
+
+        Procesa imagen de captura de pago y extrae datos automáticamente
+      tags:
+      - payments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/payments/p2c/mercantil/config-status/:
+    get:
+      operationId: payments_p2c_mercantil_config_status_retrieve
+      description: Retorna estado de configuración P2C para debugging.
+      tags:
+      - payments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/payments/p2c/mercantil/generate-qr/:
+    post:
+      operationId: payments_p2c_mercantil_generate_qr_create
+      description: |-
+        Genera QR de pago P2C Mercantil.
+        Endpoint listo para producción con estructura completa.
+      tags:
+      - payments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/payments/p2c/mercantil/status/{merchant_order_id}/:
+    get:
+      operationId: payments_p2c_mercantil_status_retrieve
+      description: |-
+        Consulta estado de transacción P2C.
+        Endpoint listo para producción con estructura completa.
+      parameters:
+      - in: path
+        name: merchant_order_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - payments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/payments/pending/:
+    get:
+      operationId: payments_pending_retrieve
+      description: |-
+        GET /api/payments/pending/
+
+        Obtiene todos los pagos pendientes de verificación para el doctor.
+        Solo retorna pagos que pertenezcan a la institución del doctor.
+      tags:
+      - payments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/payments/stats/:
+    get:
+      operationId: payments_stats_retrieve
+      description: Dashboard de estadísticas de pagos
+      tags:
+      - payments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/payments/summary/:
+    get:
+      operationId: payments_summary_retrieve
+      tags:
+      - payments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/payments/transactions/:
+    get:
+      operationId: payments_transactions_retrieve
+      description: Lista de transacciones del doctor/paciente
+      tags:
+      - payments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/payments/verify-mobile-payment/:
+    post:
+      operationId: payments_verify_mobile_payment_create
+      description: |-
+        🎯 ELITE VERIFICATION: Mobile Payment Reference Verification
+
+        Verifies mobile payment references from any Venezuelan bank by querying
+        Banco Mercantil API for recent transactions matching criteria.
+
+        Expected Payload:
+        {
+            "charge_order_id": 123,
+            "expected_amount": 150.00,
+            "time_window_hours": 24,
+            "reference_pattern": "AUTO_DETECT"  # Optional: specific reference pattern
+        }
+      tags:
+      - payments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/payments/waived/:
+    get:
+      operationId: payments_waived_retrieve
+      tags:
+      - payments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/payments/webhook/banesco/:
+    post:
+      operationId: payments_webhook_banesco_create
+      description: Webhook para Banesco
+      tags:
+      - payments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/payments/webhook/binance/:
+    post:
+      operationId: payments_webhook_binance_create
+      description: Webhook para Binance Pay
+      tags:
+      - payments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/payments/webhook/mercantil/:
+    post:
+      operationId: payments_webhook_mercantil_create
+      description: |-
+        Procesa webhook de confirmación de pago P2C.
+        Endpoint listo para producción con estructura completa.
+
+        Validación HMAC preparada para activar con credenciales reales.
+      tags:
+      - payments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/pdf/generate/:
+    post:
+      operationId: pdf_generate_create
+      tags:
+      - pdf
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/pdf/verify-weasyprint/:
+    post:
+      operationId: pdf_verify_weasyprint_create
+      description: Endpoint que verifica qué produce WeasyPrint SIN errores de TypeScript
+      tags:
+      - pdf
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/prescriptions/{id}/generate-pdf/:
+    get:
+      operationId: prescriptions_generate_pdf_retrieve
+      description: Genera PDF de receta médica.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - prescriptions
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: prescriptions_generate_pdf_create
+      description: Genera PDF de receta médica.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - prescriptions
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/public/institution/location/:
+    get:
+      operationId: public_institution_location_retrieve
+      description: |-
+        Endpoint público con datos de ubicación para OperationalHub.
+        No requiere autenticación.
+      tags:
+      - public
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/referrals/{id}/generate-pdf/:
+    get:
+      operationId: referrals_generate_pdf_retrieve
+      description: Genera PDF de referencia médica.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - referrals
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: referrals_generate_pdf_create
+      description: Genera PDF de referencia médica.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - referrals
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/reports/:
+    get:
+      operationId: reports_retrieve
+      description: |-
+        Genera reportes financieros y clínicos por período.
+        Nuevo paradigma: Agrupación por DoctorService (vía ChargeItem).
+      tags:
+      - reports
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/reports/export/:
+    get:
+      operationId: reports_export_retrieve
+      description: |-
+        Exporta reportes a formato Excel (XLSX).
+        Usa la función existente generate_excel_report si está disponible en services.py
+      tags:
+      - reports
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/search/:
+    get:
+      operationId: search_retrieve
+      description: |-
+        Búsqueda global cross-entity para MEDOPZ.
+        Integra las búsquedas específicas que ya funcionan y están probadas.
+        Reutiliza la lógica existente para mantener consistencia y evitar duplicación.
+      tags:
+      - search
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/snomed/search/:
+    get:
+      operationId: snomed_search_retrieve
+      description: |-
+        Busca en SNOMED CT vía Snowstorm (FHIR API).
+        Fallback a DB local si Snowstorm no está disponible.
+      tags:
+      - snomed
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/subscriptions/:
+    get:
+      operationId: subscriptions_retrieve
+      description: Lista/Crea suscripciones del paciente
+      tags:
+      - subscriptions
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: subscriptions_create
+      description: Lista/Crea suscripciones del paciente
+      tags:
+      - subscriptions
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/subscriptions/{id}/cancel/:
+    post:
+      operationId: subscriptions_cancel_create
+      description: Cancelar suscripción
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - subscriptions
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/treatments/{id}/generate-pdf/:
+    get:
+      operationId: treatments_generate_pdf_retrieve
+      description: Genera PDF de tratamiento médico.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - treatments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: treatments_generate_pdf_create
+      description: Genera PDF de tratamiento médico.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - treatments
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/vital-signs/{vital_signs_id}/:
+    get:
+      operationId: vital_signs_retrieve
+      description: Obtener, actualizar o eliminar signos vitales por ID.
+      parameters:
+      - in: path
+        name: vital_signs_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - vital-signs
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: vital_signs_partial_update
+      description: Obtener, actualizar o eliminar signos vitales por ID.
+      parameters:
+      - in: path
+        name: vital_signs_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - vital-signs
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: vital_signs_destroy
+      description: Obtener, actualizar o eliminar signos vitales por ID.
+      parameters:
+      - in: path
+        name: vital_signs_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - vital-signs
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/waitingroom/{entry_id}/start-consultation/:
+    post:
+      operationId: waitingroom_start_consultation_create
+      description: |-
+        Iniciar consulta desde WaitingRoomEntry.
+
+        Si es walk-in: crea Appointment + ChargeOrder (solo si no existe)
+        Si ya existe Appointment: usa el existente
+      parameters:
+      - in: path
+        name: entry_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - waitingroom
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/waitingroom/{id}/status/:
+    post:
+      operationId: waitingroom_status_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - waitingroom
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/waitingroom/groups-today/:
+    get:
+      operationId: waitingroom_groups_today_retrieve
+      tags:
+      - waitingroom
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/waitingroom/register/:
+    post:
+      operationId: waitingroom_register_create
+      description: |-
+        Registra la llegada de un paciente (walk-in o cita existente).
+        Crea una Appointment (si no existe) y una WaitingRoomEntry.
+      tags:
+      - waitingroom
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/waitingroom/today/entries/:
+    get:
+      operationId: waitingroom_today_entries_retrieve
+      tags:
+      - waitingroom
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/webhooks/mercantil-p2c/:
+    post:
+      operationId: webhooks_mercantil_p2c_create
+      description: |-
+        Procesa webhook de confirmación de pago P2C.
+        Endpoint listo para producción con estructura completa.
+
+        Validación HMAC preparada para activar con credenciales reales.
+      tags:
+      - webhooks
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/whatsapp/config/:
+    get:
+      operationId: whatsapp_config_retrieve
+      description: Get or update WhatsApp configuration for the doctor
+      tags:
+      - whatsapp
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: whatsapp_config_update
+      description: Get or update WhatsApp configuration for the doctor
+      tags:
+      - whatsapp
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/whatsapp/send/:
+    post:
+      operationId: whatsapp_send_create
+      description: Send a WhatsApp message to a patient
+      tags:
+      - whatsapp
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/whatsapp/webhook/:
+    post:
+      operationId: whatsapp_webhook_create
+      description: Webhook para recibir eventos de WhatsApp
+      tags:
+      - whatsapp
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+components:
+  schemas:
+    AuthToken:
+      type: object
+      properties:
+        token:
+          type: string
+          readOnly: true
+      required:
+      - token
+    AuthTokenRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+          minLength: 1
+          title: Nombre de usuario
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+          title: Contraseña
+      required:
+      - password
+      - username
+    BlankEnum:
+      enum:
+      - ''
+    BloodTypeEnum:
+      enum:
+      - A+
+      - A-
+      - B+
+      - B-
+      - AB+
+      - AB-
+      - O+
+      - O-
+      type: string
+      description: |-
+        * `A+` - A+
+        * `A-` - A-
+        * `B+` - B+
+        * `B-` - B-
+        * `AB+` - AB+
+        * `AB-` - AB-
+        * `O+` - O+
+        * `O-` - O-
+    Country:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+      required:
+      - id
+      - name
+    CountryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+      required:
+      - name
+    GenderEnum:
+      enum:
+      - M
+      - F
+      - Other
+      - Unknown
+      type: string
+      description: |-
+        * `M` - Masculino
+        * `F` - Femenino
+        * `Other` - Otro
+        * `Unknown` - No especificado
+    Municipality:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        state:
+          allOf:
+          - $ref: '#/components/schemas/State'
+          readOnly: true
+      required:
+      - id
+      - name
+      - state
+    MunicipalityRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        state_id:
+          type: integer
+          writeOnly: true
+      required:
+      - name
+      - state_id
+    Neighborhood:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        parish:
+          allOf:
+          - $ref: '#/components/schemas/Parish'
+          readOnly: true
+      required:
+      - id
+      - name
+      - parish
+    NeighborhoodRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        parish_id:
+          type: integer
+          writeOnly: true
+      required:
+      - name
+      - parish_id
+    NullEnum:
+      enum:
+      - null
+    Parish:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        municipality:
+          allOf:
+          - $ref: '#/components/schemas/Municipality'
+          readOnly: true
+      required:
+      - id
+      - municipality
+      - name
+    ParishRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        municipality_id:
+          type: integer
+          writeOnly: true
+      required:
+      - municipality_id
+      - name
+    PatientWrite:
+      type: object
+      description: |-
+        OPTIMIZADO: Para creación y edición.
+        Maneja la relación Many-to-Many y la jerarquía geográfica por ID.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        first_name:
+          type: string
+          maxLength: 100
+        middle_name:
+          type: string
+          nullable: true
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        second_last_name:
+          type: string
+          nullable: true
+          maxLength: 100
+        national_id:
+          type: string
+          nullable: true
+          title: Documento de Identidad
+          maxLength: 12
+          minLength: 5
+        birthdate:
+          type: string
+          format: date
+          nullable: true
+        birth_place:
+          type: string
+          nullable: true
+          maxLength: 255
+        birth_country:
+          type: integer
+          nullable: true
+          title: País de nacimiento
+        gender:
+          $ref: '#/components/schemas/GenderEnum'
+        phone_number:
+          type: string
+          nullable: true
+          maxLength: 20
+        email:
+          type: string
+          format: email
+          nullable: true
+          maxLength: 255
+        contact_info:
+          type: string
+          nullable: true
+          description: Contactos de emergencia, etc.
+        address:
+          type: string
+          nullable: true
+          title: Dirección detallada
+          maxLength: 255
+        neighborhood:
+          allOf:
+          - $ref: '#/components/schemas/Neighborhood'
+          readOnly: true
+        neighborhood_id:
+          type: integer
+          nullable: true
+        weight:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          nullable: true
+          description: Peso base en kg
+        height:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          nullable: true
+          description: Altura base en cm
+        blood_type:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/BloodTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        genetic_predispositions:
+          type: array
+          items:
+            type: integer
+        active:
+          type: boolean
+        tattoo:
+          nullable: true
+          title: Tiene tatuajes
+          oneOf:
+          - $ref: '#/components/schemas/TattooEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        profession:
+          type: string
+          nullable: true
+          title: Profesión/Ocupación
+          maxLength: 150
+        skin_type:
+          nullable: true
+          title: Tipo de piel (Fitzpatrick)
+          oneOf:
+          - $ref: '#/components/schemas/SkinTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        is_minor:
+          type: boolean
+          title: ¿Es menor de edad?
+          description: Determina si el paciente es menor de 18 años
+        representative:
+          type: integer
+          nullable: true
+          title: Representante (padre/madre/tutor)
+        representative_id:
+          type: integer
+          nullable: true
+          description: ID del representante (padre/madre/tutor)
+        relationship_type:
+          nullable: true
+          title: Tipo de relación con el representante
+          oneOf:
+          - $ref: '#/components/schemas/RelationshipTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        parental_consent:
+          type: boolean
+          title: Consentimiento parental firmado
+          description: Confirmación de consentimiento para tratamiento de menor
+        consent_date:
+          type: string
+          format: date-time
+          nullable: true
+          title: Fecha de consentimiento parental
+        representative_doc:
+          type: string
+          nullable: true
+          title: Cédula del representante
+          maxLength: 12
+        representative_phone:
+          type: string
+          nullable: true
+          title: Teléfono del representante
+          maxLength: 20
+        representative_email:
+          type: string
+          format: email
+          nullable: true
+          title: Email del representante
+          maxLength: 255
+      required:
+      - first_name
+      - id
+      - last_name
+      - neighborhood
+    PatientWriteRequest:
+      type: object
+      description: |-
+        OPTIMIZADO: Para creación y edición.
+        Maneja la relación Many-to-Many y la jerarquía geográfica por ID.
+      properties:
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        middle_name:
+          type: string
+          nullable: true
+          maxLength: 100
+        last_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        second_last_name:
+          type: string
+          nullable: true
+          maxLength: 100
+        national_id:
+          type: string
+          nullable: true
+          title: Documento de Identidad
+          maxLength: 12
+          minLength: 5
+        birthdate:
+          type: string
+          format: date
+          nullable: true
+        birth_place:
+          type: string
+          nullable: true
+          maxLength: 255
+        birth_country:
+          type: integer
+          nullable: true
+          title: País de nacimiento
+        gender:
+          $ref: '#/components/schemas/GenderEnum'
+        phone_number:
+          type: string
+          nullable: true
+          maxLength: 20
+        email:
+          type: string
+          format: email
+          nullable: true
+          maxLength: 255
+        contact_info:
+          type: string
+          nullable: true
+          description: Contactos de emergencia, etc.
+        address:
+          type: string
+          nullable: true
+          title: Dirección detallada
+          maxLength: 255
+        neighborhood_id:
+          type: integer
+          nullable: true
+        weight:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          nullable: true
+          description: Peso base en kg
+        height:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          nullable: true
+          description: Altura base en cm
+        blood_type:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/BloodTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        genetic_predispositions:
+          type: array
+          items:
+            type: integer
+        active:
+          type: boolean
+        tattoo:
+          nullable: true
+          title: Tiene tatuajes
+          oneOf:
+          - $ref: '#/components/schemas/TattooEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        profession:
+          type: string
+          nullable: true
+          title: Profesión/Ocupación
+          maxLength: 150
+        skin_type:
+          nullable: true
+          title: Tipo de piel (Fitzpatrick)
+          oneOf:
+          - $ref: '#/components/schemas/SkinTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        is_minor:
+          type: boolean
+          title: ¿Es menor de edad?
+          description: Determina si el paciente es menor de 18 años
+        representative:
+          type: integer
+          nullable: true
+          title: Representante (padre/madre/tutor)
+        representative_id:
+          type: integer
+          nullable: true
+          description: ID del representante (padre/madre/tutor)
+        relationship_type:
+          nullable: true
+          title: Tipo de relación con el representante
+          oneOf:
+          - $ref: '#/components/schemas/RelationshipTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        parental_consent:
+          type: boolean
+          title: Consentimiento parental firmado
+          description: Confirmación de consentimiento para tratamiento de menor
+        consent_date:
+          type: string
+          format: date-time
+          nullable: true
+          title: Fecha de consentimiento parental
+        representative_doc:
+          type: string
+          nullable: true
+          title: Cédula del representante
+          maxLength: 12
+        representative_phone:
+          type: string
+          nullable: true
+          title: Teléfono del representante
+          maxLength: 20
+        representative_email:
+          type: string
+          format: email
+          nullable: true
+          title: Email del representante
+          maxLength: 255
+      required:
+      - first_name
+      - last_name
+    RelationshipTypeEnum:
+      enum:
+      - father
+      - mother
+      - legal_guardian
+      - grandfather
+      - grandmother
+      - sibling
+      - other
+      type: string
+      description: |-
+        * `father` - Padre
+        * `mother` - Madre
+        * `legal_guardian` - Tutor Legal
+        * `grandfather` - Abuelo
+        * `grandmother` - Abuela
+        * `sibling` - Hermano/Hermana
+        * `other` - Otro
+    SkinTypeEnum:
+      enum:
+      - I
+      - II
+      - III
+      - IV
+      - V
+      - VI
+      type: string
+      description: |-
+        * `I` - Tipo I - Muy clara, siempre se quema
+        * `II` - Tipo II - Clara, usualmente se quema
+        * `III` - Tipo III - Intermedia, a veces se quema
+        * `IV` - Tipo IV - Mate, rara vez se quema
+        * `V` - Tipo V - Morena, muy rara vez se quema
+        * `VI` - Tipo VI - Negra, nunca se quema
+    State:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        country:
+          allOf:
+          - $ref: '#/components/schemas/Country'
+          readOnly: true
+      required:
+      - country
+      - id
+      - name
+    StateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        country_id:
+          type: integer
+          writeOnly: true
+      required:
+      - country_id
+      - name
+    TattooEnum:
+      enum:
+      - true
+      - false
+      type: boolean
+      description: |-
+        * `True` - Sí
+        * `False` - No
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+      required:
+      - access
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - refresh
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    tokenAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: Token-based authentication with required prefix "Token"

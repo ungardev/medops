@@ -765,10 +765,12 @@ urlpatterns = [
         name="create-charge-order-from-service",
     ),
 ]
-# --- Documentación OpenAPI ---
-urlpatterns += [
-    path("schema/", SpectacularAPIView.as_view(), name="schema"),
-]
+# --- Documentación OpenAPI (solo en desarrollo) ---
+# El endpoint /api/schema/ causa errores de introspección en Railway durante build
+if settings.DEBUG:
+    urlpatterns += [
+        path("schema/", SpectacularAPIView.as_view(), name="schema"),
+    ]
 urlpatterns += router.urls
 urlpatterns += patients_router.urls
 if settings.DEBUG:
