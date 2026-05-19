@@ -57,6 +57,11 @@ class CEOAdminSite(admin.AdminSite):
     site_title = "CEO Dashboard"
     index_title = "Telemetría Corporativa"
 
+    def each_context(self, request):
+        context = super().each_context(request)
+        context["theme"] = "dark"
+        return context
+
     def index(self, request, extra_context=None):
         today = date.today()
         thirty_days = today + timedelta(days=30)
@@ -1427,3 +1432,14 @@ class InstitutionSettingsAdmin(admin.ModelAdmin):
 admin.site.site_header = "MEDOPZ Clinical Operations"
 admin.site.site_title = "MEDOPZ Admin"
 admin.site.index_title = "Panel de Control"
+
+
+def _force_dark_each_context(self, request):
+    context = admin.AdminSite.each_context(self, request)
+    context["theme"] = "dark"
+    return context
+
+
+admin.site.each_context = _force_dark_each_context.__get__(
+    admin.site, admin.site.__class__
+)
