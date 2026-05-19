@@ -98,8 +98,8 @@ class CEOAdminSite(admin.AdminSite):
         except:
             pass
 
-        extra_context = extra_context or {}
-        extra_context["ceo_telemetry"] = {
+        context = self.each_context(request)
+        context["ceo_telemetry"] = {
             "doctors_total": doctors_total,
             "doctors_active_today": doctors_active,
             "licenses_expiring_soon": licenses_expiring,
@@ -114,7 +114,7 @@ class CEOAdminSite(admin.AdminSite):
             "today": today.strftime("%d/%m/%Y"),
         }
 
-        return render(request, "admin/ceo_dashboard/index.html", context=extra_context)
+        return render(request, "admin/ceo_admin/index.html", context=context)
 
     def login(self, request, extra_context=None):
         extra_context = extra_context or {}
