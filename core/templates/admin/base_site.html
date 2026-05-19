@@ -6,63 +6,20 @@
     <a href="{% url 'admin:index' %}" 
        style="text-decoration:none; color:inherit; display:flex; align-items:center; gap:8px;">
       <img src="{% static 'core/img/medops-logo.png' %}" 
-           alt="MedOps Logo" 
+           alt="MEDOPZ" 
            style="max-height:32px; background:none; border:none;">
       <span style="font-size:18px; font-weight:600; color:#ffffff;">
-        {{ site_header|default:"MEDOPZ Admin" }}
+        {{ site_header|default:"MEDOPZ Clinical Operations" }}
       </span>
     </a>
-    <!-- Toggle personalizado -->
-    <div id="theme-toggle" title="Cambiar tema">🌙</div>
   </div>
 {% endblock %}
 
 {% block nav-global %}
-  <!-- Enlaces globales opcionales -->
 {% endblock %}
 
 {% block footer %}
-  <div id="medops-footer" style="text-align:center; padding:12px; font-size:12px; color:#6D6D6D; border-top:1px solid #e0e0e0; margin-top:20px;">
-    © {{ now|date:"Y" }} {{ site_header|default:"MEDOPZ" }} — Todos los derechos reservados
+  <div id="medops-footer" style="text-align:center; padding:12px; font-size:12px; color:#6D6D6D; border-top:1px solid #333; margin-top:20px;">
+    &copy; {{ now|date:"Y" }} {{ site_header|default:"MEDOPZ" }}
   </div>
-
-  <!-- Inyección de CSS corporativo al final del body -->
-  <link rel="stylesheet" type="text/css" href="{% static 'core/css/branding.css' %}">
-
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      // Neutralizar completamente el atributo data-theme de Django
-      document.documentElement.removeAttribute("data-theme");
-      document.documentElement.setAttribute("data-theme", "");
-
-      // Eliminar cualquier <style> inyectado por Django con data-theme
-      document.querySelectorAll("style").forEach(s => {
-        if (s.innerText.includes("data-theme")) s.remove();
-      });
-
-      const toggle = document.getElementById("theme-toggle");
-      if (!toggle) return;
-
-      // Aplicar preferencia guardada
-      if (localStorage.getItem("theme") === "dark") {
-        document.body.classList.add("dark-mode");
-        toggle.textContent = "☀️";
-      } else {
-        document.body.classList.remove("dark-mode");
-        toggle.textContent = "🌙";
-      }
-
-      // Listener de nuestro toggle
-      toggle.addEventListener("click", function () {
-        document.body.classList.toggle("dark-mode");
-        if (document.body.classList.contains("dark-mode")) {
-          localStorage.setItem("theme", "dark");
-          toggle.textContent = "☀️";
-        } else {
-          localStorage.setItem("theme", "light");
-          toggle.textContent = "🌙";
-        }
-      });
-    });
-  </script>
 {% endblock %}
