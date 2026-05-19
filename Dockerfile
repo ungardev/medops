@@ -2,6 +2,9 @@ FROM python:3.11-slim
 ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
+# --- PASO CRÍTICO: Copiamos el archivo al inicio para anular fallos de contexto ---
+COPY ./requirements.txt /app/requirements.txt
+
 # ARG para build - se sobrescribe por ENV en Railway
 ARG DJANGO_SECRET_KEY_BUILD=medopz-build-temp-key-2025
 
@@ -35,16 +38,18 @@ RUN apt-get update && apt-get install -y \
     tesseract-ocr \
     tesseract-ocr-spa \
     && rm -rf /var/lib/apt/lists/*
-COPY requirements.txt /app/
-RUN pip install --no-cache-dir -r requirements.txt
+
+# Instalamos las librerías de Python utilizando el archivo ya asegurado arriba
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
 # Instalar Playwright y descargar navegadores
 RUN pip install --no-cache-dir playwright==1.45.0 && \
     playwright install chromium
+
 COPY . /app/
 EXPOSE 8000
 
 # collectstatic se ejecuta al inicio del contenedor (runtime), no durante build
-# Railway inyectará el DJANGO_SECRET_KEY real via ENV antes de ejecutar
 CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn --bind 0.0.0.0:8000 --workers 2 --timeout 120 medops.wsgi:application"]
 
-# v2 - force cache invalidation via file content change
+# v3 - Ordenación óptima de capas para pulverizar error de caché
