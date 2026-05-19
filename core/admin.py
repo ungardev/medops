@@ -52,6 +52,10 @@ logger = logging.getLogger("core")
 class CEOAdminSite(admin.AdminSite):
     """CEO/CTO Command Center - Corporate Telemetry Dashboard"""
 
+    site_header = "MEDOPZ Command Center"
+    site_title = "CEO Dashboard"
+    index_title = "Telemetría Corporativa"
+
     def index(self, request, extra_context=None):
         today = date.today()
         thirty_days = today + timedelta(days=30)
@@ -111,6 +115,18 @@ class CEOAdminSite(admin.AdminSite):
 
         return super().index(request, extra_context)
 
+    def login(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context["site_header"] = self.site_header
+        extra_context["site_title"] = self.site_title
+        return super().login(request, extra_context=extra_context)
+
+    def each_context(self, request):
+        context = super().each_context(request)
+        context["site_header"] = self.site_header
+        context["site_title"] = self.site_title
+        return context
+
     def get_urls(self):
         urls = super().get_urls()
         from django.urls import path
@@ -119,9 +135,6 @@ class CEOAdminSite(admin.AdminSite):
 
 
 ceo_admin_site = CEOAdminSite(name="ceo_admin")
-ceo_admin_site.site_header = "MEDOPZ Command Center"
-ceo_admin_site.site_title = "CEO Dashboard"
-ceo_admin_site.index_title = "Telemetría Corporativa"
 
 
 # -------------------------
