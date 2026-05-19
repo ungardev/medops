@@ -137,6 +137,14 @@ class CEOAdminSite(admin.AdminSite):
 
 ceo_admin_site = CEOAdminSite(name="ceo_admin")
 
+ceo_admin_site.register(DoctorOperator)
+ceo_admin_site.register(Patient)
+ceo_admin_site.register(Appointment)
+ceo_admin_site.register(Payment)
+ceo_admin_site.register(InstitutionSettings)
+ceo_admin_site.register(ChargeOrder)
+ceo_admin_site.register(WaitingRoomEntry)
+
 
 # -------------------------
 # Waiting Room
