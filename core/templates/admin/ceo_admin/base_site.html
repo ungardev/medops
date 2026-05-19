@@ -1,0 +1,26 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block branding %}
+  <div id="site-name" style="display:flex; align-items:center; gap:8px; width:100%; justify-content:space-between;">
+    <a href="{% url 'ceo_admin:index' %}" 
+       style="text-decoration:none; color:inherit; display:flex; align-items:center; gap:8px;">
+      <img src="{% static 'core/img/medops-logo.png' %}" 
+           alt="MEDOPZ Logo" 
+           style="max-height:32px; background:none; border:none;">
+      <span style="font-size:18px; font-weight:600; color:#ffffff;">
+        {{ site_header|default:"MEDOPZ Command Center" }}
+      </span>
+    </a>
+  </div>
+{% endblock %}
+
+{% block nav-global %}
+  <!-- CEO Admin Global Nav -->
+{% endblock %}
+
+{% block footer %}
+  <div id="medops-footer" style="text-align:center; padding:12px; font-size:12px; color:#6D6D6D; border-top:1px solid #e0e0e0; margin-top:20px;">
+    © {{ now|date:"Y" }} {{ site_header|default:"MEDOPZ" }} — Command Center
+  </div>
+{% endblock %}

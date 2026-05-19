@@ -9,7 +9,7 @@
            alt="MedOps Logo" 
            style="max-height:32px; background:none; border:none;">
       <span style="font-size:18px; font-weight:600; color:#ffffff;">
-        MedOps Clinical System
+        {{ site_header|default:"MEDOPZ Admin" }}
       </span>
     </a>
     <!-- Toggle personalizado -->
@@ -23,7 +23,7 @@
 
 {% block footer %}
   <div id="medops-footer" style="text-align:center; padding:12px; font-size:12px; color:#6D6D6D; border-top:1px solid #e0e0e0; margin-top:20px;">
-    © {{ now|date:"Y" }} MedOps Clinical System — Todos los derechos reservados
+    © {{ now|date:"Y" }} {{ site_header|default:"MEDOPZ" }} — Todos los derechos reservados
   </div>
 
   <!-- Inyección de CSS corporativo al final del body -->
