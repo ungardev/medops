@@ -8,6 +8,53 @@
     --medops-gris-neutro: #6D6D6D;
 }
 
+/* === FUERZA BRUTA: Dark Mode para todos los paneles === */
+html, body {
+    background-color: #121212 !important;
+    color: #E0E0E0 !important;
+}
+
+body.dark-mode, [data-theme="dark"] {
+    --primary: #1E88E5;
+    --primary-fg: #FFFFFF;
+    --link-fg: #90CAF9;
+    --link-hover-color: #BBDEFB;
+    --body-bg: #121212;
+    --body-fg: #E0E0E0;
+    --header-bg: #1E1E1E;
+    --header-color: #FFFFFF;
+    --breadcrumbs-bg: #1E1E1E;
+    --breadcrumbs-fg: #E0E0E0;
+    --border-color: #333;
+    --module-bg: #1E1E1E;
+    --module-fg: #E0E0E0;
+    --module-header-bg: #263238;
+    --module-header-fg: #90CAF9;
+    --input-bg: #121212;
+    --input-fg: #E0E0E0;
+    --input-border-color: #333;
+    --selected-bg: #263238;
+    --selected-fg: #FFFFFF;
+}
+
+#header {
+    background-color: #1E1E1E !important;
+    color: #FFFFFF !important;
+}
+
+#site-name {
+    background-color: #1E1E1E !important;
+}
+
+#site-name span, #site-name a, #branding span {
+    color: #FFFFFF !important;
+}
+
+#content, #content-main {
+    background-color: #121212 !important;
+    color: #E0E0E0 !important;
+}
+
 /* Transiciones suaves */
 body, #header, #nav-sidebar, #changelist table, #medops-footer, #content {
     transition: background-color 0.4s ease, color 0.4s ease;
