@@ -1,5 +1,6 @@
 # Django core
 from django.contrib import admin
+from django.shortcuts import render
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Sum, F, DecimalField, Value, Count
@@ -113,7 +114,7 @@ class CEOAdminSite(admin.AdminSite):
             "today": today.strftime("%d/%m/%Y"),
         }
 
-        return super().index(request, extra_context)
+        return render(request, "admin/ceo_dashboard/index.html", context=extra_context)
 
     def login(self, request, extra_context=None):
         extra_context = extra_context or {}
