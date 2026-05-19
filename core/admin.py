@@ -1424,6 +1424,6 @@ class InstitutionSettingsAdmin(admin.ModelAdmin):
 
 
 # Personalización del panel de administración
-admin.site.site_header = "MEDOPZ Clinical System"
+admin.site.site_header = "MEDOPZ Clinical Operations"
 admin.site.site_title = "MEDOPZ Admin"
 admin.site.index_title = "Panel de Control"
