@@ -11,6 +11,45 @@
   <script src="{% static 'admin/js/nav_sidebar.js' %}" defer></script>
 {% endif %}
 {% block extrastyle %}{% endblock %}
+<style>
+  :root, html[data-theme="dark"] {
+    --primary: #1e293b !important;
+    --secondary: #334155 !important;
+    --body-bg: #0f172a !important;
+    --body-fg: #f1f5f9 !important;
+    --header-bg: #020617 !important;
+    --header-color: #ffffff !important;
+    --breadcrumbs-bg: #1e293b !important;
+    --link-fg: #94a3b8 !important;
+    --border-color: #334155 !important;
+    --darkened-bg: #1e293b !important;
+  }
+  html[data-theme="dark"] body {
+    background-color: #0f172a !important;
+    color: #f1f5f9 !important;
+  }
+  html[data-theme="dark"] #header,
+  html[data-theme="dark"] #branding,
+  html[data-theme="dark"] #site-name {
+    background-color: #020617 !important;
+  }
+  html[data-theme="dark"] #branding h1 a,
+  html[data-theme="dark"] #branding span,
+  html[data-theme="dark"] #site-name span {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    display: inline-block !important;
+    visibility: visible !important;
+  }
+  html[data-theme="dark"] #nav-sidebar {
+    background-color: #1e293b !important;
+  }
+  html[data-theme="dark"] #content,
+  html[data-theme="dark"] #content-main {
+    background-color: #0f172a !important;
+  }
+</style>
+<link rel="stylesheet" type="text/css" href="{% static 'core/css/branding.css' %}">
 {% if LANGUAGE_BIDI %}<link rel="stylesheet" href="{% block stylesheet_rtl %}{% static "admin/css/rtl.css" %}{% endblock %}">{% endif %}
 {% block extrahead %}{% endblock %}
 {% block responsive %}
