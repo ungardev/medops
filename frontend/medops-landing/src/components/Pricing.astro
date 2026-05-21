@@ -3,33 +3,34 @@ const plans = [
   {
     name: 'Professional',
     price: '$25',
-    period: '/mes',
-    description: 'Por médico activo. Récord clínico, recetas INHRR, CIE-11.',
+    period: '/ médico / mes',
+    description: 'Infraestructura óptima para consultas independientes y médicos especialistas autónomos.',
     features: [
-      'Récord clínico digital',
-      'Recetas INHRR digitales',
-      '1 sede',
-      'CIE-11 / ICD-11',
+      'Récord clínico digital completo',
+      'Buscador inteligente e indexado CIE-11',
+      'Módulo de recetas digitales INHRR',
+      'Órdenes de cobro y control operativo de 1 sede',
       'Sala de espera live',
       'Portal paciente básico',
     ],
     cta: 'Comenzar',
     href: 'https://app.medopz.com/',
+    featured: false,
   },
   {
     name: 'Institutional',
     price: '$40',
-    period: '/mes',
-    description: 'Por médico activo. Multi-sede, gestión de quirófanos y camas, permisos granulares.',
+    period: '/ médico / mes',
+    description: 'Diseñado para clínicas, centros de diagnóstico y policlínicas con múltiples dependencias.',
     features: [
-      'Todo Professional',
-      'Multi-sede completa',
-      'Gestión de quirófanos',
-      'Gestión de camas',
-      'Permisos granulares por roles',
-      'API financiera',
+      'Todo lo incluido en Professional',
+      'Arquitectura e interconexión Multi-Sede',
+      'Gestión de quirófanos y asignación de camas',
+      'Matriz de seguridad con permisos granulares por roles',
+      'Acceso a la API de Telemetría Financiera',
+      'Soporte priorario 24/7',
     ],
-    cta: 'Contactar',
+    cta: 'Contactar Soluciones',
     href: 'mailto:info@medopz.com?subject=Plan Institutional',
     featured: true,
   },
@@ -37,101 +38,88 @@ const plans = [
     name: 'Enterprise',
     price: 'Custom',
     period: '',
-    description: 'The MEDOPZ Transactional Engine. Presupuesto custom según escala.',
+    description: 'The MEDOPZ Transactional Engine. Infraestructura masiva y exclusiva para redes hospitalarias y banca corporativa.',
     features: [
-      'Todo Institutional',
-      'Mercantil P2C',
-      'Banesco API',
-      'Conciliación BCV automática',
-      'API Payments completa',
-      'SLA prioritario',
+      'Instancia aislada y base de datos dedicada de alta disponibilidad',
+      'Pasarela de recaudación integrada (Mercantil P2C / Banesco)',
+      'Conciliación automatizada masiva en tiempo real',
+      'SLA prioritario 24/7/365',
     ],
-    cta: 'Consultar',
+    cta: 'Consultar Comité',
     href: 'mailto:info@medopz.com?subject=The MEDOPZ Transactional Engine',
+    featured: false,
   },
 ];
 ---
 
-<section id="pricing" class="py-20 sm:py-24 lg:py-32 px-4 sm:px-6 relative">
-  <!-- Background -->
-  <div class="absolute inset-0 bg-black-surface"></div>
-  
-  <!-- Grid Pattern -->
-  <div class="absolute inset-0 opacity-[0.015]" style="background-image: linear-gradient(#10b981 1px, transparent 1px), linear-gradient(90deg, #10b981 1px, transparent 1px); background-size: 60px 60px;"></div>
-  
-  <div class="max-w-[1100px] mx-auto relative">
+<section id="pricing" class="py-24 lg:py-32 px-6 bg-[#050608] border-t border-[#1a1e23] relative">
+  <div class="max-w-[1200px] mx-auto">
     <!-- Section Header -->
-    <div class="text-center mb-12 sm:mb-16">
-      <span class="text-[11px] font-medium text-accent-emerald uppercase tracking-[0.2em]">Precios</span>
-      <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mt-4 tracking-tight">
+    <div class="text-center max-w-[800px] mx-auto mb-16">
+      <span class="text-xs font-bold text-[#10b981] uppercase tracking-[0.2em]">Precios</span>
+      <h2 class="text-4xl md:text-5xl font-bold text-white mt-4 tracking-tight">
         Modelos de Licenciamiento
-        <span class="block text-slate-400 font-normal mt-3">Inversión inteligente adaptada a la escala de su institución</span>
       </h2>
+      <p class="text-lg text-slate-300 mt-4">Inversión inteligente adaptada a la escala de su institución</p>
+      <p class="text-sm text-slate-500 mt-2">Estructura SaaS por suscripción mensual calculada por médico activo.</p>
     </div>
-    
+
     <!-- Pricing Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {plans.map((plan, index) => (
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+      {plans.map((plan) => (
         <div 
-          class={`relative p-8 rounded-2xl transition-all duration-500 ${
+          class={`relative flex flex-col justify-between p-8 rounded-2xl transition-all duration-300 ${
             plan.featured 
-              ? 'bg-black-card border-2 border-accent-emerald/30' 
-              : 'bg-black-surface border border-black-border'
+              ? 'bg-[#0c0e12] border-2 border-[#10b981] shadow-[0_0_40px_rgba(16,185,129,0.08)] transform md:-translate-y-2' 
+              : 'bg-[#0c0e12] border border-[#1a1e23] hover:border-slate-700'
           }`}
-          style={`animation-delay: ${index * 100}ms`}
         >
           {plan.featured && (
-            <div class="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-accent-emerald text-[11px] font-semibold text-black rounded-full uppercase tracking-wider">
-              Recomendado
+            <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#10b981] text-black text-[10px] font-bold tracking-widest uppercase px-4 py-1.5 rounded-full">
+              Más Seleccionado
             </div>
           )}
           
-          <!-- Plan Name -->
-          <div class="mb-6">
-            <span class="text-[12px] font-medium text-slate-400 uppercase tracking-wider">{plan.name}</span>
+          <div>
+            <!-- Plan Name -->
+            <span class="text-xs font-bold tracking-widest text-slate-400 uppercase">{plan.name}</span>
+            
+            <!-- Price -->
+            <div class="flex items-baseline gap-1 mt-4">
+              <span class="text-5xl font-bold text-white">{plan.price}</span>
+              {plan.period && <span class="text-slate-500 text-sm">{plan.period}</span>}
+            </div>
+            
+            <!-- Description -->
+            <p class="text-sm text-slate-400 mt-4 leading-relaxed">{plan.description}</p>
+            
+            <div class="h-px bg-[#1a1e23] my-6"></div>
+            
+            <!-- Features -->
+            <ul class="space-y-4">
+              {plan.features.map((feature) => (
+                <li class="flex items-start gap-3 text-sm text-white">
+                  <span class="text-[#10b981] font-bold mt-0.5">✓</span>
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
           </div>
-          
-          <!-- Price -->
-          <div class="flex items-baseline gap-2 mb-4">
-            <span class={`text-5xl font-bold tracking-tight ${plan.featured ? 'text-accent-emerald' : 'text-white'}`}>{plan.price}</span>
-            {plan.period && <span class="text-[14px] text-slate-500">{plan.period}</span>}
-          </div>
-          
-          <!-- Description -->
-          <p class="text-[14px] text-slate-400 mb-8 leading-relaxed">{plan.description}</p>
-          
-          <!-- Features -->
-          <ul class="space-y-3 mb-10">
-            {plan.features.map((feature) => (
-              <li class="flex items-center gap-3">
-                <div class={`w-5 h-5 rounded flex items-center justify-center shrink-0 ${plan.featured ? 'bg-accent-emerald/10 border border-accent-emerald/30' : 'bg-black-border'}`}>
-                  <svg class={`w-3 h-3 ${plan.featured ? 'text-accent-emerald' : 'text-slate-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <span class="text-[14px] text-slate-300">{feature}</span>
-              </li>
-            ))}
-          </ul>
           
           <!-- CTA -->
           <a 
             href={plan.href}
-            class={`w-full inline-flex items-center justify-center gap-2 px-5 py-4 text-[14px] font-medium rounded-xl transition-all ${
+            class={`mt-8 block w-full text-center py-3 px-4 rounded-xl font-medium transition-all duration-300 text-sm ${
               plan.featured
-                ? 'bg-accent-emerald/10 hover:bg-accent-emerald/20 border border-accent-emerald/40 text-accent-emerald hover:border-accent-emerald/60'
-                : 'bg-black-card hover:bg-black-border border border-black-border text-slate-300 hover:text-white'
+                ? 'bg-[#10b981] text-black font-bold hover:bg-[#0d9488]'
+                : 'border border-[#1a1e23] text-white hover:bg-[#1a1e23]'
             }`}
           >
             {plan.cta}
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
           </a>
         </div>
       ))}
     </div>
-    
-    <!-- Pricing Note -->
-    <p class="text-center text-[13px] text-slate-500 mt-8">Precios por médico activo. Todas las transacciones incluyen liquidación en Bs. y $.</p>
   </div>
 </section>
 

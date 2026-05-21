@@ -1,10 +1,4 @@
 ---
-const stats = [
-  { value: '+140,000', label: 'Códigos Médicos Indexados (ICD-11 / SNOMED CT)' },
-  { value: 'ICD-11', label: 'Estándar WHO Official' },
-  { value: 'Bs. y $', label: 'Liquidación y Conciliación Directa' },
-];
-
 const features = [
   { label: 'CIE-11 WHO' },
   { label: 'SNOMED CT' },
@@ -15,112 +9,118 @@ const features = [
 ];
 ---
 
-<section class="relative min-h-screen flex flex-col justify-center overflow-hidden pt-24">
-  <!-- Grid Lines Background - 1px accent emerald -->
-  <div class="absolute inset-0 opacity-[0.03]">
-    <div class="absolute inset-0" style="background-image: linear-gradient(#10b981 1px, transparent 1px), linear-gradient(90deg, #10b981 1px, transparent 1px); background-size: 60px 60px;"></div>
-  </div>
-  
-  <!-- Gradient Overlay -->
-  <div class="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black"></div>
-  
-  <div class="relative z-10 max-w-[1200px] mx-auto px-6 text-center">
-    <!-- Label -->
-    <div class="inline-flex items-center gap-2 px-4 py-2 border border-black-border rounded-full mb-8">
-      <span class="w-2 h-2 rounded-full bg-accent-emerald animate-pulse"></span>
-      <span class="text-[12px] font-medium text-slate-300 uppercase tracking-wider">Platforma HealthTech de Venezuela</span>
+<section class="relative min-h-screen bg-[#050608] flex flex-col items-center justify-center overflow-hidden pt-36 pb-24 px-6">
+  <div class="absolute inset-0 bg-[linear-gradient(to_right,#1a1e23_1px,transparent_1px),linear-gradient(to_bottom,#1a1e23_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-[0.08]"></div>
+
+  <div class="relative z-10 max-w-[1100px] mx-auto text-center">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#1a1e23] bg-[#0c0e12] mb-8 animate-fade-in">
+      <span class="flex h-2 w-2 relative">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-2 w-2 bg-[#10b981]"></span>
+      </span>
+      <span class="text-xs font-semibold tracking-wider text-slate-200 uppercase">Infraestructura Transaccional de Grado Bancario</span>
     </div>
-    
-    <!-- Logo -->
-    <div class="mb-8">
-      <img src="/medopz_fuente_blanco.svg" alt="MEDOPZ" class="w-full max-w-[280px] mx-auto" />
-    </div>
-    
-    <!-- Main Headline -->
-    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold text-white tracking-tight leading-tight mb-6">
-      El Command Center Clínico,
-      <span class="block text-accent-emerald">Diagnóstico y Transaccional Inteligente</span>
+
+    <h1 class="text-5xl md:text-7xl font-bold text-white tracking-tight leading-[1.05] max-w-[950px] mx-auto">
+      El Command Center Clínico,<br />
+      <span class="bg-gradient-to-r from-[#10b981] to-[#059669] bg-clip-text text-transparent">Diagnóstico y Transaccional Inteligente</span>
     </h1>
     
-    <!-- Subtitle -->
-    <p class="text-lg sm:text-xl text-slate-300 max-w-[700px] mx-auto mb-12">
-      Workstation elite para médicos especialistas, pacientes e instituciones de Venezuela
+    <p class="mt-8 text-lg md:text-xl text-slate-200 max-w-[750px] mx-auto font-normal leading-relaxed">
+      Workstation de nivel corporativo para médicos especialistas e instituciones en Venezuela. 
+      Liquidación automatizada, control normativo MPPS y motores de búsqueda clínica indexada.
     </p>
     
-    <!-- CTA Buttons -->
-    <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-      <a 
-        href="https://app.medopz.com/" 
-        target="_blank"
-        class="group w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 border border-accent-emerald/30 hover:border-accent-emerald/60 bg-accent-emerald/5 hover:bg-accent-emerald/10 text-accent-emerald text-[14px] font-medium rounded-xl transition-all hover:shadow-[0_0_30px_rgba(16,185,129,0.2)]"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/>
-        </svg>
-        Portal Doctor
-        <span class="text-white/50 group-hover:text-accent-emerald/70 ml-2">→</span>
+    <div class="mt-12 flex flex-col sm:flex-row items-center justify-center gap-5">
+      <a href="https://app.medopz.com/" target="_blank" class="w-full sm:w-auto px-8 py-4 bg-[#10b981] text-black font-bold rounded-xl hover:bg-[#0d9488] transition-all duration-300 shadow-[0_0_30px_rgba(16,185,129,0.2)] text-center text-base">
+        Portal Doctor →
       </a>
-      <a 
-        href="https://patient.medopz.com/" 
-        target="_blank"
-        class="group w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 border border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10 text-white/90 hover:text-white text-[14px] font-medium rounded-xl transition-all"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
-        </svg>
+      <a href="https://patient.medopz.com/" target="_blank" class="w-full sm:w-auto px-8 py-4 border border-[#1a1e23] bg-[#0c0e12] text-white font-semibold rounded-xl hover:bg-[#1a1e23] hover:border-[#10b981]/50 transition-all duration-300 text-center text-base">
         Portal Paciente
-        <span class="text-white/50 group-hover:text-white/70 ml-2">→</span>
       </a>
     </div>
-    
-    <!-- Feature Pills -->
-    <div class="flex flex-wrap items-center justify-center gap-3 mb-16">
-      {features.map((feature) => (
-        <span class="px-4 py-2 bg-black-surface border border-black-border rounded-lg text-[12px] font-medium text-slate-300">
-          {feature.label}
-        </span>
-      ))}
+  </div>
+
+  <!-- Telemetry Dashboard -->
+  <div class="relative mt-20 w-full max-w-[1000px] mx-auto bg-[#0c0e12] border border-[#1a1e23] rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.9)] overflow-hidden group hover:border-[#10b981]/30 transition-all duration-500">
+    <div class="flex items-center justify-between px-5 py-3 border-b border-[#1a1e23] bg-[#07080a]">
+      <div class="flex items-center gap-2">
+        <div class="w-3 h-3 rounded-full bg-[#1a1e23]"></div>
+        <div class="w-3 h-3 rounded-full bg-[#1a1e23]"></div>
+        <div class="w-3 h-3 rounded-full bg-[#1a1e23]"></div>
+      </div>
+      <div class="text-xs text-slate-500 font-mono tracking-widest">MEDOPZ_CORE_TELEMETRY // LIVE</div>
+      <div class="w-12"></div>
     </div>
     
-    <!-- Screenshot Placeholder -->
-    <div class="mb-12 max-w-[900px] mx-auto bg-black-surface border border-black-border rounded-xl shadow-2xl overflow-hidden">
-      <div class="aspect-video flex items-center justify-center bg-gradient-to-br from-black-surface to-black-card">
-        <div class="text-center">
-          <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-accent-emerald/10 border border-accent-emerald/20 flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-accent-emerald/60">
-              <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
-            </svg>
+    <div class="p-6 md:p-8 grid grid-cols-1 md:grid-cols-3 gap-6 bg-[#050608]/50">
+      <div class="bg-[#0c0e12] border border-[#1a1e23] rounded-xl p-5 font-mono">
+        <div class="flex justify-between text-xs text-slate-400">
+          <span>MONITOR_LIQUIDACIÓN</span>
+          <span class="text-[#10b981] font-bold">Bs. / $</span>
+        </div>
+        <div class="text-2xl font-bold text-white mt-3 font-sans">99.8%</div>
+        <p class="text-[11px] text-slate-400 mt-1">Conciliación automatizada BCV Rate</p>
+        <div class="mt-4 h-16 w-full flex items-end">
+          <svg class="w-full h-full stroke-[#10b981] stroke-2 fill-none" viewBox="0 0 100 20">
+            <path d="M0,18 Q15,5 30,12 T60,3 T90,15 L100,2" stroke-linecap="round"></path>
+          </svg>
+        </div>
+      </div>
+
+      <div class="bg-[#0c0e12] border border-[#1a1e23] rounded-xl p-5 font-mono">
+        <div class="flex justify-between text-xs text-slate-400">
+          <span>CORE_INDEX_ENGINE</span>
+          <span class="text-[#06b6d4]">ACTIVE</span>
+        </div>
+        <div class="text-2xl font-bold text-white mt-3 font-sans">+140K</div>
+        <p class="text-[11px] text-slate-400 mt-1">Registros CIE-11 & SNOMED CT</p>
+        <div class="mt-4 space-y-1.5 text-[10px]">
+          <div class="flex justify-between text-slate-400 bg-[#050608] px-2 py-1 border border-[#1a1e23] rounded">
+            <span>> Query: "Infección Resp"</span>
+            <span class="text-slate-500">0.4ms</span>
           </div>
-          <p class="text-slate-500 text-sm">Captura de pantalla del Command Center</p>
+          <div class="flex justify-between text-[#10b981] bg-[#10b981]/5 px-2 py-1 border border-[#10b981]/20 rounded">
+            <span>✓ Match: J06.9 (CIE-11)</span>
+            <span>99% Acc</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-[#0c0e12] border border-[#1a1e23] rounded-xl p-5 font-mono">
+        <div class="flex justify-between text-xs text-slate-400">
+          <span>COMPLIANCE_GATE</span>
+          <span class="text-[#10b981]">SECURE</span>
+        </div>
+        <div class="text-2xl font-bold text-white mt-3 font-sans">MPPS</div>
+        <p class="text-[11px] text-slate-400 mt-1">Validación de Sellado Criptográfico</p>
+        <div class="mt-5 flex items-center gap-3 bg-[#050608] p-2 border border-[#1a1e23] rounded">
+          <div class="h-2 w-2 rounded-full bg-[#10b981] animate-pulse"></div>
+          <span class="text-[10px] text-slate-300">Firma Digital Verificada ID: 2026-X9</span>
         </div>
       </div>
     </div>
-    
-    <!-- Stats Row -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-[900px] mx-auto">
-      {stats.map((stat, index) => (
-        <div class="relative p-6 rounded-xl bg-black-card border border-black-border">
-          <div class="text-3xl sm:text-4xl font-bold text-white mb-2">{stat.value}</div>
-          <div class="text-[13px] text-slate-400 font-medium">{stat.label}</div>
-          {index < stats.length - 1 && (
-            <div class="hidden sm:block absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-4 border-r border-t border-black-border rotate-45"></div>
-          )}
-        </div>
-      ))}
-    </div>
   </div>
-  
-  <!-- Bottom Fade -->
-  <div class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black to-transparent"></div>
 </section>
 
 <style>
-  @keyframes pulse-slow {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+  @keyframes fade-in {
+    0% { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 1; transform: translateY(0); }
   }
   
-  .animate-pulse-slow {
-    animation: pulse-slow 2s ease-in-out infinite;
+  .animate-fade-in {
+    animation: fade-in 0.8s ease-out forwards;
+  }
+  
+  @keyframes ping {
+    75%, 100% {
+      transform: scale(2);
+      opacity: 0;
+    }
+  }
+  
+  .animate-ping {
+    animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
   }
 </style>
