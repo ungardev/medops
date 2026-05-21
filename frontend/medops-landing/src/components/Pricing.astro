@@ -56,12 +56,12 @@ const plans = [
   <div class="absolute inset-0 bg-black-surface"></div>
   
   <!-- Grid Pattern -->
-  <div class="absolute inset-0 opacity-[0.015]" style="background-image: linear-gradient(#38a1ff 1px, transparent 1px), linear-gradient(90deg, #38a1ff 1px, transparent 1px); background-size: 60px 60px;"></div>
+  <div class="absolute inset-0 opacity-[0.015]" style="background-image: linear-gradient(#10b981 1px, transparent 1px), linear-gradient(90deg, #10b981 1px, transparent 1px); background-size: 60px 60px;"></div>
   
   <div class="max-w-[1100px] mx-auto relative">
     <!-- Section Header -->
     <div class="text-center mb-12 sm:mb-16">
-      <span class="text-[11px] font-medium text-accent-blue uppercase tracking-[0.2em]">Precios</span>
+      <span class="text-[11px] font-medium text-accent-emerald uppercase tracking-[0.2em]">Precios</span>
       <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mt-4 tracking-tight">
         Suite de Operaciones
         <span class="block text-text-secondary font-normal mt-2">para instituciones</span>
@@ -92,7 +92,7 @@ const plans = [
           
           <!-- Price -->
           <div class="flex items-baseline gap-1 mb-2">
-            <span class={`text-4xl font-bold tracking-tight ${plan.featured ? 'text-accent-blue' : 'text-white'}`}>{plan.price}</span>
+            <span class={`text-4xl font-bold tracking-tight ${plan.featured ? 'text-accent-emerald' : 'text-white'}`}>{plan.price}</span>
             <span class="text-[13px] text-text-muted">{plan.period}</span>
           </div>
           
@@ -104,7 +104,7 @@ const plans = [
             {plan.features.map((feature) => (
               <li class="flex items-center gap-2.5">
                 <div class={`w-4 h-4 rounded flex items-center justify-center shrink-0 ${plan.featured ? 'bg-accent-blue/10 border border-accent-blue/20' : 'bg-black-border'}`}>
-                  <svg class={`w-2.5 h-2.5 ${plan.featured ? 'text-accent-blue' : 'text-text-muted'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                  <svg class={`w-2.5 h-2.5 ${plan.featured ? 'text-accent-emerald' : 'text-text-muted'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
@@ -118,7 +118,7 @@ const plans = [
             href={plan.href}
             class={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 text-[12px] font-medium rounded-xl transition-all ${
               plan.featured
-                ? 'bg-accent-blue/10 hover:bg-accent-blue/20 border border-accent-blue/30 text-accent-blue hover:border-accent-blue/50'
+                ? 'bg-accent-blue/10 hover:bg-accent-blue/20 border border-accent-blue/30 text-accent-emerald hover:border-accent-blue/50'
                 : 'bg-black-card hover:bg-black-surface border border-black-border text-text-secondary hover:text-white'
             }`}
           >

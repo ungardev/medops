@@ -15,7 +15,7 @@ export default {
           border: '#1a1e23',
         },
         accent: {
-          blue: '#38a1ff',
+          emerald: '#10b981',
           cyan: '#06b6d4',
         },
         text: {
