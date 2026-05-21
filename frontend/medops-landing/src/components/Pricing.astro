@@ -56,7 +56,7 @@ const plans = [
   <div class="max-w-[1200px] mx-auto">
     <!-- Section Header -->
     <div class="text-center max-w-[800px] mx-auto mb-16">
-      <span class="text-xs font-bold text-[#10b981] uppercase tracking-[0.2em]">Precios</span>
+      <span class="text-xs font-bold text-emerald-400 uppercase tracking-[0.2em]">Precios</span>
       <h2 class="text-4xl md:text-5xl font-bold text-white mt-4 tracking-tight">
         Modelos de Licenciamiento
       </h2>
@@ -70,12 +70,12 @@ const plans = [
         <div 
           class={`relative flex flex-col justify-between p-8 rounded-2xl transition-all duration-300 ${
             plan.featured 
-              ? 'bg-[#0c0e12] border-2 border-[#10b981] shadow-[0_0_40px_rgba(16,185,129,0.08)] transform md:-translate-y-2' 
+              ? 'bg-[#0c0e12] border-2 border-emerald-500 shadow-[0_0_40px_rgba(16,185,129,0.08)] transform md:-translate-y-2' 
               : 'bg-[#0c0e12] border border-[#1a1e23] hover:border-slate-700'
           }`}
         >
           {plan.featured && (
-            <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#10b981] text-black text-[10px] font-bold tracking-widest uppercase px-4 py-1.5 rounded-full">
+            <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-emerald-500 text-black text-[10px] font-bold tracking-widest uppercase px-4 py-1.5 rounded-full">
               Más Seleccionado
             </div>
           )}
@@ -86,7 +86,7 @@ const plans = [
             
             <!-- Price -->
             <div class="flex items-baseline gap-1 mt-4">
-              <span class="text-5xl font-bold text-white">{plan.price}</span>
+              <span class={`text-5xl font-bold ${plan.featured ? 'text-emerald-400' : 'text-white'}`}>{plan.price}</span>
               {plan.period && <span class="text-slate-500 text-sm">{plan.period}</span>}
             </div>
             
@@ -99,7 +99,7 @@ const plans = [
             <ul class="space-y-4">
               {plan.features.map((feature) => (
                 <li class="flex items-start gap-3 text-sm text-white">
-                  <span class="text-[#10b981] font-bold mt-0.5">✓</span>
+                  <span class="text-emerald-400 font-bold mt-0.5">✓</span>
                   <span>{feature}</span>
                 </li>
               ))}
@@ -111,8 +111,8 @@ const plans = [
             href={plan.href}
             class={`mt-8 block w-full text-center py-3 px-4 rounded-xl font-medium transition-all duration-300 text-sm ${
               plan.featured
-                ? 'bg-[#10b981] text-black font-bold hover:bg-[#0d9488]'
-                : 'border border-[#1a1e23] text-white hover:bg-[#1a1e23]'
+                ? 'bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 hover:text-emerald-300'
+                : 'border border-[#1a1e23] text-white hover:bg-white/5'
             }`}
           >
             {plan.cta}

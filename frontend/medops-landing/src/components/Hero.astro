@@ -33,13 +33,13 @@ const features = [
       ))}
     </div>
     
-    <!-- CTA Buttons - Apple Health Style -->
+    <!-- CTA Buttons - Production App Style -->
     <div class="mt-12 flex flex-col sm:flex-row items-center justify-center gap-5">
-      <!-- Portal Doctor - Gradient Green Clinical -->
+      <!-- Portal Doctor - Matching Production -->
       <a 
         href="https://app.medopz.com/" 
         target="_blank"
-        class="group w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-[#064e3b] to-[#047857] text-white font-semibold rounded-xl border border-[#10b981]/30 hover:border-[#10b981]/60 hover:shadow-[0_0_25px_rgba(16,185,129,0.25)] transition-all duration-300 text-[15px]"
+        class="group w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 font-medium rounded-xl transition-all duration-300 text-[15px]"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/>
@@ -50,11 +50,11 @@ const features = [
         <span class="ml-1 opacity-70 group-hover:opacity-100">→</span>
       </a>
       
-      <!-- Portal Paciente - Dark Glass Reflective -->
+      <!-- Portal Paciente - Dark Glass -->
       <a 
         href="https://patient.medopz.com/" 
         target="_blank"
-        class="group w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 bg-[#0c0e12]/60 border border-slate-800 text-slate-200 font-medium rounded-xl hover:text-white hover:border-slate-700 hover:bg-[#111318]/80 transition-all duration-300 text-[15px]"
+        class="group w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/15 text-white/80 hover:text-white font-medium rounded-xl transition-all duration-300 text-[15px]"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
@@ -70,16 +70,3 @@ const features = [
     </div>
   </div>
 </section>
-
-<style>
-  @keyframes ping {
-    75%, 100% {
-      transform: scale(2);
-      opacity: 0;
-    }
-  }
-  
-  .animate-ping {
-    animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
-  }
-</style>

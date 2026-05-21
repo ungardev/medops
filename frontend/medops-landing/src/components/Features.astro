@@ -45,7 +45,7 @@ const pillars = [
   <div class="max-w-[1200px] mx-auto relative">
     <!-- Section Header -->
     <div class="text-center mb-16">
-      <span class="text-xs font-bold text-[#10b981] uppercase tracking-[0.2em]">Stack Tecnológico</span>
+      <span class="text-xs font-bold text-emerald-400 uppercase tracking-[0.2em]">Stack Tecnológico</span>
       <h2 class="text-4xl md:text-5xl font-bold text-white mt-4 tracking-tight">
         Infraestructura Tecnológica
       </h2>
@@ -57,13 +57,13 @@ const pillars = [
     <!-- Bento Grid - 3 Pillars -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {pillars.map((pillar) => (
-        <div class="group relative p-8 bg-[#0c0e12] border border-[#1a1e23] rounded-2xl transition-all duration-500 hover:border-[#10b981]/30">
+        <div class="group relative p-8 bg-[#0c0e12] border border-[#1a1e23] rounded-2xl transition-all duration-500 hover:border-emerald-500/30">
           <!-- Accent Line Top -->
-          <div class="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-[#10b981]/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div class="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
           
           <!-- Icon -->
-          <div class="w-14 h-14 rounded-xl bg-[#0a0a0b] border border-[#1a1e23] flex items-center justify-center mb-6 transition-all duration-300 group-hover:border-[#10b981]/30 group-hover:shadow-[0_0_20px_rgba(16,185,129,0.1)]">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-slate-200 group-hover:text-[#10b981] transition-colors">
+          <div class="w-14 h-14 rounded-xl bg-[#0a0a0b] border border-[#1a1e23] flex items-center justify-center mb-6 transition-all duration-300 group-hover:border-emerald-500/30 group-hover:shadow-[0_0_20px_rgba(16,185,129,0.1)]">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-slate-200 group-hover:text-emerald-400 transition-colors">
               {pillar.icon === 'fintech' && <><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/><path d="M6 15h4"/></>}
               {pillar.icon === 'legal' && <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></>}
               {pillar.icon === 'clinical' && <><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><circle cx="20" cy="10" r="2"/></>}
@@ -71,7 +71,7 @@ const pillars = [
           </div>
           
           <!-- Label -->
-          <span class="text-[10px] font-bold text-[#10b981] uppercase tracking-wider mb-2 block">{pillar.label}</span>
+          <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-2 block">{pillar.label}</span>
           
           <!-- Title -->
           <h3 class="text-xl font-semibold text-white mb-3">{pillar.title}</h3>
