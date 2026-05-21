@@ -8,34 +8,116 @@ const navLinks = [
 ---
 
 <nav id="navbar" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-[1100px] bg-[#0c0e12]/80 backdrop-blur-md border border-[#1a1e23] rounded-2xl shadow-xl transition-all duration-300">
-  <!-- Mobile: Logo centered top, links horizontal below -->
-  <div class="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0 py-4 px-6">
+  <div class="flex items-center justify-between px-4 py-3">
     
-    <!-- Logo - Prominent on top for mobile, left for desktop -->
-    <a href="/" class="flex items-center order-1 md:order-1">
-      <img src="/medopz_logo_blanco_solo.svg" alt="MEDOPZ" class="h-9 w-auto opacity-90" />
-    </a>
+    <!-- Desktop: Left side items + Logo centered + Right side items -->
+    <!-- Mobile: Logo centered + Hamburger -->
     
-    <!-- Nav Links - Horizontal row centered for desktop, centered below logo for mobile -->
-    <div class="flex flex-row items-center justify-center gap-1 order-3 md:order-2">
-      {navLinks.map((link) => (
-        <a 
-          href={link.href} 
-          target={link.external ? '_blank' : undefined}
-          rel={link.external ? 'noopener noreferrer' : undefined}
-          class="text-[14px] font-medium text-white/80 hover:text-emerald-400 px-4 py-2 rounded-lg hover:bg-white/5 transition-all duration-200 whitespace-nowrap"
-        >
-          {link.label}
-        </a>
-      ))}
+    <!-- Left Items (Desktop only) -->
+    <div class="hidden md:flex items-center gap-1">
+      <a href="https://app.medopz.com/" target="_blank" rel="noopener noreferrer" class="text-[14px] font-medium text-white/80 hover:text-emerald-400 px-3 py-2 rounded-lg hover:bg-white/5 transition-all">
+        Doctor
+      </a>
+      <a href="https://patient.medopz.com/" target="_blank" rel="noopener noreferrer" class="text-[14px] font-medium text-white/80 hover:text-emerald-400 px-3 py-2 rounded-lg hover:bg-white/5 transition-all">
+        Paciente
+      </a>
     </div>
     
-    <!-- Empty space for symmetry on desktop -->
-    <div class="hidden md:block w-[72px] order-2"></div>
+    <!-- Logo - Centered -->
+    <a href="/" class="flex items-center px-2 py-1">
+      <img src="/medopz_logo_blanco_solo.svg" alt="MEDOPZ" class="h-8 w-auto" />
+    </a>
+    
+    <!-- Right Items (Desktop only) -->
+    <div class="hidden md:flex items-center gap-1">
+      <a href="#pricing" class="text-[14px] font-medium text-white/80 hover:text-emerald-400 px-3 py-2 rounded-lg hover:bg-white/5 transition-all">
+        Precios
+      </a>
+      <a href="#features" class="text-[14px] font-medium text-white/80 hover:text-emerald-400 px-3 py-2 rounded-lg hover:bg-white/5 transition-all">
+        Infraestructura
+      </a>
+    </div>
+    
+    <!-- Mobile: Logo + Hamburger -->
+    <div class="flex md:hidden items-center justify-between w-full gap-4">
+      <div class="w-8"></div> <!-- Spacer for symmetry -->
+      
+      <a href="/" class="flex items-center">
+        <img src="/medopz_logo_blanco_solo.svg" alt="MEDOPZ" class="h-8 w-auto" />
+      </a>
+      
+      <button 
+        id="menuToggle" 
+        class="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+        aria-label="Toggle menu"
+      >
+        <svg id="menuIcon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="4" x2="20" y1="8" y2="8"></line>
+          <line x1="4" x2="20" y1="16" y2="16"></line>
+        </svg>
+        <svg id="closeIcon" class="hidden" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 6 6 18"></path>
+          <path d="m6 6 12 12"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+  
+  <!-- Mobile Menu Dropdown -->
+  <div id="mobileMenu" class="hidden md:hidden border-t border-[#1a1e23] px-4 pb-4">
+    <div class="flex flex-col gap-1 pt-3">
+      <a href="https://app.medopz.com/" target="_blank" rel="noopener noreferrer" class="text-[15px] font-medium text-white/80 hover:text-emerald-400 hover:bg-white/5 px-4 py-3 rounded-xl transition-all">
+        Doctor
+      </a>
+      <a href="https://patient.medopz.com/" target="_blank" rel="noopener noreferrer" class="text-[15px] font-medium text-white/80 hover:text-emerald-400 hover:bg-white/5 px-4 py-3 rounded-xl transition-all">
+        Paciente
+      </a>
+      <a href="#pricing" class="text-[15px] font-medium text-white/80 hover:text-emerald-400 hover:bg-white/5 px-4 py-3 rounded-xl transition-all">
+        Precios
+      </a>
+      <a href="#features" class="text-[15px] font-medium text-white/80 hover:text-emerald-400 hover:bg-white/5 px-4 py-3 rounded-xl transition-all">
+        Infraestructura
+      </a>
+    </div>
   </div>
 </nav>
 
 <script>
+  const menuToggle = document.getElementById('menuToggle');
+  const mobileMenu = document.getElementById('mobileMenu');
+  const menuIcon = document.getElementById('menuIcon');
+  const closeIcon = document.getElementById('closeIcon');
+  
+  let isOpen = false;
+  
+  menuToggle?.addEventListener('click', () => {
+    isOpen = !isOpen;
+    
+    if (isOpen) {
+      mobileMenu?.classList.remove('hidden');
+      mobileMenu?.classList.add('flex');
+      menuIcon?.classList.add('hidden');
+      closeIcon?.classList.remove('hidden');
+    } else {
+      mobileMenu?.classList.add('hidden');
+      mobileMenu?.classList.remove('flex');
+      menuIcon?.classList.remove('hidden');
+      closeIcon?.classList.add('hidden');
+    }
+  });
+  
+  // Close menu when clicking a link
+  mobileMenu?.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => {
+      isOpen = false;
+      mobileMenu?.classList.add('hidden');
+      mobileMenu?.classList.remove('flex');
+      menuIcon?.classList.remove('hidden');
+      closeIcon?.classList.add('hidden');
+    });
+  });
+  
+  // Hide on scroll
   const nav = document.getElementById('navbar');
   let lastScroll = 0;
   
@@ -44,6 +126,14 @@ const navLinks = [
     
     if (currentScroll > lastScroll && currentScroll > 100) {
       nav.style.transform = 'translate(-50%, -200%)';
+      // Close mobile menu on scroll
+      if (isOpen) {
+        isOpen = false;
+        mobileMenu?.classList.add('hidden');
+        mobileMenu?.classList.remove('flex');
+        menuIcon?.classList.remove('hidden');
+        closeIcon?.classList.add('hidden');
+      }
     } else {
       nav.style.transform = 'translate(-50%, 0)';
     }
