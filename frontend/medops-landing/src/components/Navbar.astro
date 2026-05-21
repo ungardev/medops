@@ -38,13 +38,13 @@ const navLinks = [
   </div>
 
   <!-- Mobile: Logo centrado + hamburger derecha -->
-  <div class="relative flex md:hidden items-center w-full h-12 px-6">
-    <a href="/" class="absolute left-1/2 -translate-x-1/2 flex items-center">
+  <div class="relative md:hidden w-full h-12 px-6">
+    <a href="/" class="absolute left-1/2 -translate-x-1/2 flex items-center h-full">
       <img src="/medopz_logo_blanco_solo.svg" alt="MEDOPZ" class="h-8 w-auto" />
     </a>
     <button 
       id="menuToggle" 
-      class="ml-auto p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all z-10"
+      class="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all z-10"
       aria-label="Toggle menu"
     >
       <svg id="menuIcon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
