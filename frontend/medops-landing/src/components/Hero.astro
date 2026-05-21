@@ -10,56 +10,63 @@ const features = [
 ---
 
 <section class="relative min-h-screen bg-[#050608] flex flex-col items-center justify-center overflow-hidden pt-32 pb-20 px-6">
-  <!-- Grid Lines Background -->
-  <div class="absolute inset-0 bg-[linear-gradient(to_right,#1a1e23_1px,transparent_1px),linear-gradient(to_bottom,#1a1e23_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-[0.06]"></div>
+  <!-- Subtle Grid Lines Background -->
+  <div class="absolute inset-0 bg-[linear-gradient(to_right,#1a1e23_1px,transparent_1px),linear-gradient(to_bottom,#1a1e23_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-[0.05]"></div>
 
   <div class="relative z-10 max-w-[1100px] mx-auto text-center">
     <!-- Logo Brand -->
-    <div class="mb-10">
-      <img src="/medopz_fuente_blanco.svg" alt="MEDOPZ" class="w-full max-w-[280px] mx-auto" />
+    <div class="mb-12">
+      <img src="/medopz_fuente_blanco.svg" alt="MEDOPZ" class="w-full max-w-[260px] mx-auto" />
     </div>
 
-    <h1 class="text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight leading-[1.05] max-w-[950px] mx-auto">
-      El Command Center Clínico<br />
-      <span class="bg-gradient-to-r from-[#10b981] to-[#059669] bg-clip-text text-transparent">y Diagnóstico Inteligente</span>
+    <!-- Main Statement H1 -->
+    <h1 class="text-4xl md:text-5xl lg:text-6xl font-semibold text-white tracking-tight leading-[1.1] max-w-[900px] mx-auto">
+      Workstation elite para médicos especialistas, pacientes e instituciones en Venezuela.
     </h1>
     
-    <p class="mt-8 text-lg md:text-xl text-slate-300 max-w-[750px] mx-auto font-normal leading-relaxed">
-      Workstation de nivel corporativo para médicos especialistas e instituciones en Venezuela. 
-      Liquidación automatizada, control normativo MPPS y motores de búsqueda clínica indexada.
-    </p>
-    
-    <!-- CTA Buttons with Icons -->
-    <div class="mt-12 flex flex-col sm:flex-row items-center justify-center gap-5">
+    <!-- CTA Buttons - Palantir/Apple Health Style -->
+    <div class="mt-14 flex flex-col sm:flex-row items-center justify-center gap-5">
+      <!-- Portal Doctor - Glass + Glow -->
       <a 
         href="https://app.medopz.com/" 
         target="_blank"
-        class="group w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 bg-[#10b981] text-black font-bold rounded-xl hover:bg-[#0d9488] transition-all duration-300 shadow-[0_0_30px_rgba(16,185,129,0.25)] text-base"
+        class="group w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 bg-[#0c0e12]/80 backdrop-blur-md border border-emerald-500/40 text-white font-medium rounded-xl hover:border-emerald-400/60 hover:shadow-[0_0_25px_rgba(16,185,129,0.2)] hover:bg-[#0c0e12] transition-all duration-300 text-[15px]"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-400/80 group-hover:text-emerald-400 transition-colors">
           <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/>
           <path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/>
           <circle cx="20" cy="10" r="2"/>
         </svg>
         Portal Doctor
-        <span class="ml-1">→</span>
+        <span class="ml-1 opacity-50 group-hover:opacity-80">→</span>
       </a>
+      
+      <!-- Portal Paciente - Minimal -->
       <a 
         href="https://patient.medopz.com/" 
         target="_blank"
-        class="group w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 border border-[#1a1e23] bg-[#0c0e12] text-white font-semibold rounded-xl hover:bg-[#1a1e23] hover:border-[#10b981]/50 transition-all duration-300 text-base"
+        class="group w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 bg-transparent border border-slate-800 text-slate-300 font-medium rounded-xl hover:border-slate-700 hover:text-white transition-all duration-300 text-[15px]"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 group-hover:text-white transition-colors">
           <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
         </svg>
         Portal Paciente
-        <span class="ml-1 opacity-60 group-hover:opacity-100">→</span>
+        <span class="ml-1 opacity-40 group-hover:opacity-70">→</span>
       </a>
     </div>
     
-    <!-- Screenshot Placeholder -->
-    <div class="relative mt-16 w-full max-w-[950px] mx-auto bg-[#0c0e12] border border-slate-800/80 rounded-2xl h-[450px] flex items-center justify-center shadow-2xl">
-      <span class="text-slate-600 text-sm font-mono">[ Espacio para Captura de Interfaz de Producción ]</span>
+    <!-- Feature Pills -->
+    <div class="mt-12 flex flex-wrap items-center justify-center gap-3">
+      {features.map((feature) => (
+        <span class="px-4 py-2 bg-[#0c0e12]/50 border border-slate-800/60 rounded-lg text-[12px] font-medium text-slate-400">
+          {feature.label}
+        </span>
+      ))}
+    </div>
+    
+    <!-- Premium Interface Frame - Apple Style -->
+    <div class="mt-16 w-full max-w-[950px] mx-auto bg-[#0c0e12]/60 backdrop-blur-md border border-slate-800/80 rounded-2xl h-[420px] flex items-center justify-center shadow-2xl">
+      <span class="text-slate-600 text-sm font-mono tracking-wide">[ Interfaz de Producción MEDOPZ ]</span>
     </div>
   </div>
 </section>
