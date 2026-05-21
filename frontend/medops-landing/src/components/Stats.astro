@@ -1,22 +1,22 @@
 ---
 const stats = [
-  { value: '63+', label: 'Módulos Clínicos' },
-  { value: 'ICD-11', label: 'Estándar WHO' },
-  { value: 'Multi-Portal', label: 'Ecosistema Transaccional' },
+  { value: '+140,000', label: 'Códigos Médicos Indexados' },
+  { value: 'ICD-11', label: 'Estándar WHO Official' },
+  { value: 'Bs. y $', label: 'Liquidación y Conciliación Directa' },
   { value: '<100ms', label: 'Tiempo de Respuesta' },
 ];
 ---
 
-<section class="py-10 sm:py-14 border-y border-black-border bg-black">
+<section class="py-12 sm:py-16 border-y border-black-border bg-black">
   <div class="max-w-[1200px] mx-auto px-4 sm:px-6">
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
       {stats.map((stat) => (
-        <div class="group relative p-5 sm:p-6 rounded-xl bg-black-surface border border-black-border transition-all duration-300 hover:border-black-border/80">
+        <div class="group relative p-6 rounded-xl bg-black-surface border border-black-border transition-all duration-300 hover:border-black-border/80">
           <!-- Value -->
-          <div class="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-1">{stat.value}</div>
+          <div class="text-3xl sm:text-4xl font-bold text-white tracking-tight mb-2">{stat.value}</div>
           
           <!-- Label -->
-          <div class="text-[11px] font-medium text-text-muted uppercase tracking-wider">{stat.label}</div>
+          <div class="text-[13px] text-slate-400 font-medium">{stat.label}</div>
         </div>
       ))}
     </div>

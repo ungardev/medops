@@ -44,54 +44,54 @@ const portals = [
     <div class="text-center mb-12 sm:mb-16">
       <span class="text-[11px] font-medium text-accent-emerald uppercase tracking-[0.2em]">Portales</span>
       <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mt-4 tracking-tight">
-        Ecosistema Doctor + Paciente
-        <span class="block text-text-secondary font-normal mt-2">simbiosi transaccional</span>
+        Ecosistema Interconectado
+        <span class="block text-slate-400 font-normal mt-3">en Tiempo Real</span>
       </h2>
     </div>
     
     <!-- Bento Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {portals.map((portal, index) => (
         <div 
-          class="group relative p-6 lg:p-8 rounded-2xl bg-black-card border border-black-border transition-all duration-500 hover:border-accent-emerald/20"
+          class="group relative p-8 lg:p-10 rounded-2xl bg-black-card border border-black-border transition-all duration-500 hover:border-accent-emerald/30"
           style={`animation-delay: ${index * 100}ms`}
         >
           <!-- Accent Line -->
-          <div class="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-accent-emerald/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div class="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-accent-emerald/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
           
           <!-- Content -->
           <div class="flex flex-col h-full">
             <!-- Header -->
-            <div class="flex items-center justify-between mb-6">
-              <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-xl bg-black-surface border border-black-border flex items-center justify-center transition-all duration-300 group-hover:border-accent-emerald/30 group-hover:shadow-[0_0_15px_rgba(16,185,129,0.1)]">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-text-secondary group-hover:text-accent-emerald transition-colors">
+            <div class="flex items-center justify-between mb-8">
+              <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-xl bg-black-surface border border-black-border flex items-center justify-center transition-all duration-300 group-hover:border-accent-emerald/40 group-hover:shadow-[0_0_20px_rgba(16,185,129,0.15)]">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-slate-300 group-hover:text-accent-emerald transition-colors">
                     {portal.icon === 'user-check' && <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></>}
                     {portal.icon === 'heart' && <><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></>}
                   </svg>
                 </div>
                 <div>
-                  <span class="text-[10px] font-semibold text-accent-emerald uppercase tracking-wider">{portal.label}</span>
-                  <div class="flex items-center gap-2 mt-0.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-green-500/80"></span>
-                    <span class="text-[10px] text-text-muted">{portal.status}</span>
+                  <span class="text-[11px] font-semibold text-accent-emerald uppercase tracking-wider">{portal.label}</span>
+                  <div class="flex items-center gap-2 mt-1">
+                    <span class="w-2 h-2 rounded-full bg-green-500/80"></span>
+                    <span class="text-[12px] text-slate-400">{portal.status}</span>
                   </div>
                 </div>
               </div>
             </div>
             
             <!-- Title & Description -->
-            <div class="mb-6">
-              <h3 class="text-xl font-semibold text-white mb-2">{portal.title}</h3>
-              <p class="text-[13px] text-text-muted leading-relaxed">{portal.description}</p>
+            <div class="mb-8">
+              <h3 class="text-2xl font-semibold text-white mb-3">{portal.title}</h3>
+              <p class="text-[15px] text-slate-400 leading-relaxed">{portal.description}</p>
             </div>
             
             <!-- Features Grid -->
-            <div class="grid grid-cols-2 gap-2 mb-6 flex-grow">
+            <div class="grid grid-cols-2 gap-3 mb-8 flex-grow">
               {portal.features.map((feature) => (
-                <div class="flex items-center gap-2">
-                  <div class="w-1 h-1 rounded-full bg-accent-emerald/60 shrink-0"></div>
-                  <span class="text-[11px] text-text-secondary">{feature}</span>
+                <div class="flex items-center gap-3">
+                  <div class="w-1.5 h-1.5 rounded-full bg-accent-emerald/70 shrink-0"></div>
+                  <span class="text-[14px] text-slate-200 font-medium">{feature}</span>
                 </div>
               ))}
             </div>
@@ -100,10 +100,10 @@ const portals = [
             <a 
               href={portal.href}
               target="_blank"
-              class="group/btn inline-flex items-center gap-2 px-4 py-2.5 bg-black-surface border border-black-border hover:border-accent-emerald/30 text-[12px] font-medium text-text-secondary hover:text-accent-emerald rounded-lg transition-all w-fit"
+              class="group/btn inline-flex items-center gap-3 px-6 py-3.5 bg-black-surface border border-black-border hover:border-accent-emerald/40 text-[14px] font-medium text-slate-200 hover:text-accent-emerald rounded-xl transition-all w-fit hover:shadow-[0_0_20px_rgba(16,185,129,0.1)]"
             >
               Acceder al Portal
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="group-hover/btn:translate-x-0.5 transition-transform"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="group-hover/btn:translate-x-0.5 transition-transform"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
             </a>
           </div>
         </div>

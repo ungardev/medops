@@ -4,49 +4,50 @@ const plans = [
     name: 'Professional',
     price: '$25',
     period: '/mes',
-    description: 'Control clínico individual',
+    description: 'Por médico activo. Récord clínico, recetas INHRR, CIE-11.',
     features: [
-      'Consulta CIE-11',
-      'Recetas digitales',
-      'Historial clínico',
-      'Sala de espera',
-      'Dashboard básico',
+      'Récord clínico digital',
+      'Recetas INHRR digitales',
+      '1 sede',
+      'CIE-11 / ICD-11',
+      'Sala de espera live',
+      'Portal paciente básico',
     ],
     cta: 'Comenzar',
     href: 'https://app.medopz.com/',
   },
   {
     name: 'Institutional',
-    price: '$120',
+    price: '$40',
     period: '/mes',
-    description: 'Multi-sede, quirófanos, permisos granulares',
+    description: 'Por médico activo. Multi-sede, gestión de quirófanos y camas, permisos granulares.',
     features: [
       'Todo Professional',
       'Multi-sede completa',
       'Gestión de quirófanos',
-      'Permisos granulares',
-      'API Finance',
-      'Soporte 24/7',
+      'Gestión de camas',
+      'Permisos granulares por roles',
+      'API financiera',
     ],
     cta: 'Contactar',
-    href: 'mailto:info.medopz@gmail.com?subject=Plan Institutional',
+    href: 'mailto:info@medopz.com?subject=Plan Institutional',
     featured: true,
   },
   {
-    name: 'Transactional Engine',
-    price: '$250',
-    period: '/mes',
-    description: 'Pasarelas automatizadas, conciliación BCV',
+    name: 'Enterprise',
+    price: 'Custom',
+    period: '',
+    description: 'The MEDOPZ Transactional Engine. Presupuesto custom según escala.',
     features: [
       'Todo Institutional',
       'Mercantil P2C',
       'Banesco API',
-      'Conciliación BCV',
-      'API Payments',
+      'Conciliación BCV automática',
+      'API Payments completa',
       'SLA prioritario',
     ],
     cta: 'Consultar',
-    href: 'mailto:info.medopz@gmail.com?subject=Transactional Engine',
+    href: 'mailto:info@medopz.com?subject=The MEDOPZ Transactional Engine',
   },
 ];
 ---
@@ -63,52 +64,52 @@ const plans = [
     <div class="text-center mb-12 sm:mb-16">
       <span class="text-[11px] font-medium text-accent-emerald uppercase tracking-[0.2em]">Precios</span>
       <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mt-4 tracking-tight">
-        Suite de Operaciones
-        <span class="block text-text-secondary font-normal mt-2">para instituciones</span>
+        Modelos de Licenciamiento
+        <span class="block text-slate-400 font-normal mt-3">Inversión inteligente adaptada a la escala de su institución</span>
       </h2>
     </div>
     
     <!-- Pricing Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
       {plans.map((plan, index) => (
         <div 
-          class={`relative p-6 rounded-2xl transition-all duration-500 ${
+          class={`relative p-8 rounded-2xl transition-all duration-500 ${
             plan.featured 
-              ? 'bg-black-surface border-2 border-accent-blue/30' 
-              : 'bg-black-card border border-black-border'
+              ? 'bg-black-card border-2 border-accent-emerald/30' 
+              : 'bg-black-surface border border-black-border'
           }`}
           style={`animation-delay: ${index * 100}ms`}
         >
           {plan.featured && (
-            <div class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-accent-blue text-[10px] font-semibold text-black rounded-full uppercase tracking-wider">
+            <div class="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-accent-emerald text-[11px] font-semibold text-black rounded-full uppercase tracking-wider">
               Recomendado
             </div>
           )}
           
           <!-- Plan Name -->
-          <div class="mb-5">
-            <span class="text-[11px] font-medium text-text-muted uppercase tracking-wider">{plan.name}</span>
+          <div class="mb-6">
+            <span class="text-[12px] font-medium text-slate-400 uppercase tracking-wider">{plan.name}</span>
           </div>
           
           <!-- Price -->
-          <div class="flex items-baseline gap-1 mb-2">
-            <span class={`text-4xl font-bold tracking-tight ${plan.featured ? 'text-accent-emerald' : 'text-white'}`}>{plan.price}</span>
-            <span class="text-[13px] text-text-muted">{plan.period}</span>
+          <div class="flex items-baseline gap-2 mb-4">
+            <span class={`text-5xl font-bold tracking-tight ${plan.featured ? 'text-accent-emerald' : 'text-white'}`}>{plan.price}</span>
+            {plan.period && <span class="text-[14px] text-slate-500">{plan.period}</span>}
           </div>
           
           <!-- Description -->
-          <p class="text-[12px] text-text-muted mb-6 leading-relaxed">{plan.description}</p>
+          <p class="text-[14px] text-slate-400 mb-8 leading-relaxed">{plan.description}</p>
           
           <!-- Features -->
-          <ul class="space-y-2.5 mb-8">
+          <ul class="space-y-3 mb-10">
             {plan.features.map((feature) => (
-              <li class="flex items-center gap-2.5">
-                <div class={`w-4 h-4 rounded flex items-center justify-center shrink-0 ${plan.featured ? 'bg-accent-blue/10 border border-accent-blue/20' : 'bg-black-border'}`}>
-                  <svg class={`w-2.5 h-2.5 ${plan.featured ? 'text-accent-emerald' : 'text-text-muted'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+              <li class="flex items-center gap-3">
+                <div class={`w-5 h-5 rounded flex items-center justify-center shrink-0 ${plan.featured ? 'bg-accent-emerald/10 border border-accent-emerald/30' : 'bg-black-border'}`}>
+                  <svg class={`w-3 h-3 ${plan.featured ? 'text-accent-emerald' : 'text-slate-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <span class="text-[12px] text-text-secondary">{feature}</span>
+                <span class="text-[14px] text-slate-300">{feature}</span>
               </li>
             ))}
           </ul>
@@ -116,18 +117,21 @@ const plans = [
           <!-- CTA -->
           <a 
             href={plan.href}
-            class={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 text-[12px] font-medium rounded-xl transition-all ${
+            class={`w-full inline-flex items-center justify-center gap-2 px-5 py-4 text-[14px] font-medium rounded-xl transition-all ${
               plan.featured
-                ? 'bg-accent-blue/10 hover:bg-accent-blue/20 border border-accent-blue/30 text-accent-emerald hover:border-accent-blue/50'
-                : 'bg-black-card hover:bg-black-surface border border-black-border text-text-secondary hover:text-white'
+                ? 'bg-accent-emerald/10 hover:bg-accent-emerald/20 border border-accent-emerald/40 text-accent-emerald hover:border-accent-emerald/60'
+                : 'bg-black-card hover:bg-black-border border border-black-border text-slate-300 hover:text-white'
             }`}
           >
             {plan.cta}
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
           </a>
         </div>
       ))}
     </div>
+    
+    <!-- Pricing Note -->
+    <p class="text-center text-[13px] text-slate-500 mt-8">Precios por médico activo. Todas las transacciones incluyen liquidación en Bs. y $.</p>
   </div>
 </section>
 
