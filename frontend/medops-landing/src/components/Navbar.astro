@@ -1,28 +1,37 @@
 ---
 const navLinks = [
-  { href: 'https://app.medopz.com/', label: 'Doctor' },
-  { href: 'https://patient.medopz.com/', label: 'Paciente' },
+  { href: 'https://app.medopz.com/', label: 'Doctor', external: true },
+  { href: 'https://patient.medopz.com/', label: 'Paciente', external: true },
   { href: '#pricing', label: 'Precios' },
+  { href: '#features', label: 'Infraestructura' },
 ];
 ---
 
-<nav id="navbar" class="fixed top-3 left-1/2 -translate-x-1/2 z-50 bg-black-surface/80 backdrop-blur-xl border border-black-border rounded-full transition-all duration-300" style="width: auto; min-width: 260px; max-width: 95vw;">
-  <div class="flex items-center justify-center gap-1 px-3 py-2">
-    <a href="/" class="text-[12px] font-semibold text-text-secondary hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all">Home</a>
+<nav id="navbar" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-[1100px] bg-[#0c0e12]/80 backdrop-blur-md border border-[#1a1e23] rounded-2xl shadow-xl transition-all duration-300">
+  <!-- Mobile: Logo centered top, links horizontal below -->
+  <div class="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0 py-4 px-6">
     
-    <div class="w-px h-5 bg-black-border mx-1"></div>
-    
-    <a href="https://app.medopz.com/" target="_blank" class="text-[12px] font-semibold text-text-secondary hover:text-accent-emerald px-3 py-1.5 rounded-lg hover:bg-accent-emerald/5 transition-all">Doctor</a>
-    
-    <a href="/" class="flex items-center mx-1">
-      <img src="/medopz_logo_blanco_solo.svg" alt="MEDOPZ" class="h-8 w-8" />
+    <!-- Logo - Prominent on top for mobile, left for desktop -->
+    <a href="/" class="flex items-center order-1 md:order-1">
+      <img src="/medopz_logo_blanco_solo.svg" alt="MEDOPZ" class="h-9 w-auto opacity-90" />
     </a>
     
-    <a href="https://patient.medopz.com/" target="_blank" class="text-[12px] font-semibold text-text-secondary hover:text-accent-emerald px-3 py-1.5 rounded-lg hover:bg-accent-emerald/5 transition-all">Paciente</a>
+    <!-- Nav Links - Horizontal row centered for desktop, centered below logo for mobile -->
+    <div class="flex flex-row items-center justify-center gap-1 order-3 md:order-2">
+      {navLinks.map((link) => (
+        <a 
+          href={link.href} 
+          target={link.external ? '_blank' : undefined}
+          rel={link.external ? 'noopener noreferrer' : undefined}
+          class="text-[14px] font-medium text-white/80 hover:text-emerald-400 px-4 py-2 rounded-lg hover:bg-white/5 transition-all duration-200 whitespace-nowrap"
+        >
+          {link.label}
+        </a>
+      ))}
+    </div>
     
-    <div class="w-px h-5 bg-black-border mx-1"></div>
-    
-    <a href="#pricing" class="text-[12px] font-semibold text-text-secondary hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all">Precios</a>
+    <!-- Empty space for symmetry on desktop -->
+    <div class="hidden md:block w-[72px] order-2"></div>
   </div>
 </nav>
 
