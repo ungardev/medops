@@ -8,13 +8,11 @@ const navLinks = [
 ---
 
 <nav id="navbar" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-[1100px] bg-[#0c0e12]/80 backdrop-blur-md border border-[#1a1e23] rounded-2xl shadow-xl transition-all duration-300">
-  <div class="flex items-center justify-between px-4 py-3">
-    
-    <!-- Desktop: Left side items + Logo centered + Right side items -->
-    <!-- Mobile: Logo centered + Hamburger -->
-    
-    <!-- Left Items (Desktop only) - Justo al lado del logo -->
-    <div class="hidden md:flex items-center gap-0">
+  
+  <!-- Desktop: Logo centrado, items alrededor -->
+  <div class="hidden md:flex items-center justify-center relative px-4 py-3">
+    <!-- Left items centrados alrededor del logo -->
+    <div class="flex items-center gap-4 pr-8">
       <a href="https://app.medopz.com/" target="_blank" rel="noopener noreferrer" class="text-[13px] font-medium text-white/80 hover:text-emerald-400 px-2 py-2 rounded-lg hover:bg-white/5 transition-all">
         Doctor
       </a>
@@ -23,64 +21,61 @@ const navLinks = [
       </a>
     </div>
     
-    <!-- Logo - Centro absoluto -->
-    <a href="/" class="flex items-center px-3 py-1">
+    <!-- Logo centro absoluto -->
+    <a href="/" class="absolute left-1/2 -translate-x-1/2 flex items-center px-3 py-1">
       <img src="/medopz_logo_blanco_solo.svg" alt="MEDOPZ" class="h-8 w-auto" />
     </a>
     
-    <!-- Right Items (Desktop only) - Justo al lado del logo -->
-    <div class="hidden md:flex items-center gap-0">
+    <!-- Right items centrados alrededor del logo -->
+    <div class="flex items-center gap-4 pl-8">
       <a href="#pricing" class="text-[13px] font-medium text-white/80 hover:text-emerald-400 px-2 py-2 rounded-lg hover:bg-white/5 transition-all">
         Precios
       </a>
       <a href="#features" class="text-[13px] font-medium text-white/80 hover:text-emerald-400 px-2 py-2 rounded-lg hover:bg-white/5 transition-all">
-        Infractructura
-      </a>
-    </div>
-    
-    <!-- Mobile: Logo centrado + Hamburger a la derecha -->
-    <div class="relative flex md:hidden w-full h-8">
-      <!-- Logo centrado absolute -->
-      <a href="/" class="absolute left-1/2 -translate-x-1/2 flex items-center">
-        <img src="/medopz_logo_blanco_solo.svg" alt="MEDOPZ" class="h-8 w-auto" />
-      </a>
-      
-      <!-- Hamburger a la derecha con z-index -->
-      <button 
-        id="menuToggle" 
-        class="ml-auto p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all z-10"
-        aria-label="Toggle menu"
-      >
-        <svg id="menuIcon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="4" x2="20" y1="8" y2="8"></line>
-          <line x1="4" x2="20" y1="16" y2="16"></line>
-        </svg>
-        <svg id="closeIcon" class="hidden" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M18 6 6 18"></path>
-          <path d="m6 6 12 12"></path>
-        </svg>
-      </button>
-    </div>
-  </div>
-  
-  <!-- Mobile Menu Dropdown -->
-  <div id="mobileMenu" class="hidden md:hidden border-t border-[#1a1e23] px-4 pb-4">
-    <div class="flex flex-col gap-1 pt-3">
-      <a href="https://app.medopz.com/" target="_blank" rel="noopener noreferrer" class="text-[15px] font-medium text-white/80 hover:text-emerald-400 hover:bg-white/5 px-4 py-3 rounded-xl transition-all">
-        Doctor
-      </a>
-      <a href="https://patient.medopz.com/" target="_blank" rel="noopener noreferrer" class="text-[15px] font-medium text-white/80 hover:text-emerald-400 hover:bg-white/5 px-4 py-3 rounded-xl transition-all">
-        Paciente
-      </a>
-      <a href="#pricing" class="text-[15px] font-medium text-white/80 hover:text-emerald-400 hover:bg-white/5 px-4 py-3 rounded-xl transition-all">
-        Precios
-      </a>
-      <a href="#features" class="text-[15px] font-medium text-white/80 hover:text-emerald-400 hover:bg-white/5 px-4 py-3 rounded-xl transition-all">
         Infraestructura
       </a>
     </div>
   </div>
+
+  <!-- Mobile: Un solo logo centrado + hamburger derecha -->
+  <div class="relative flex md:hidden items-center justify-center w-full h-12 px-4">
+    <a href="/" class="absolute left-1/2 -translate-x-1/2 flex items-center">
+      <img src="/medopz_logo_blanco_solo.svg" alt="MEDOPZ" class="h-8 w-auto" />
+    </a>
+    <button 
+      id="menuToggle" 
+      class="ml-auto p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all z-10"
+      aria-label="Toggle menu"
+    >
+      <svg id="menuIcon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="4" x2="20" y1="8" y2="8"></line>
+        <line x1="4" x2="20" y1="16" y2="16"></line>
+      </svg>
+      <svg id="closeIcon" class="hidden" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 6 6 18"></path>
+        <path d="m6 6 12 12"></path>
+      </svg>
+    </button>
+  </div>
 </nav>
+
+<!-- Mobile Menu Dropdown -->
+<div id="mobileMenu" class="hidden md:hidden fixed top-24 left-1/2 -translate-x-1/2 z-40 w-[92%] bg-[#0c0e12]/95 backdrop-blur-md border border-[#1a1e23] rounded-2xl px-4 pb-4">
+  <div class="flex flex-col gap-1 pt-3">
+    <a href="https://app.medopz.com/" target="_blank" rel="noopener noreferrer" class="text-[15px] font-medium text-white/80 hover:text-emerald-400 hover:bg-white/5 px-4 py-3 rounded-xl transition-all">
+      Doctor
+    </a>
+    <a href="https://patient.medopz.com/" target="_blank" rel="noopener noreferrer" class="text-[15px] font-medium text-white/80 hover:text-emerald-400 hover:bg-white/5 px-4 py-3 rounded-xl transition-all">
+      Paciente
+    </a>
+    <a href="#pricing" class="text-[15px] font-medium text-white/80 hover:text-emerald-400 hover:bg-white/5 px-4 py-3 rounded-xl transition-all">
+      Precios
+    </a>
+    <a href="#features" class="text-[15px] font-medium text-white/80 hover:text-emerald-400 hover:bg-white/5 px-4 py-3 rounded-xl transition-all">
+      Infraestructura
+    </a>
+  </div>
+</div>
 
 <script>
   const menuToggle = document.getElementById('menuToggle');
@@ -95,29 +90,24 @@ const navLinks = [
     
     if (isOpen) {
       mobileMenu?.classList.remove('hidden');
-      mobileMenu?.classList.add('flex');
       menuIcon?.classList.add('hidden');
       closeIcon?.classList.remove('hidden');
     } else {
       mobileMenu?.classList.add('hidden');
-      mobileMenu?.classList.remove('flex');
       menuIcon?.classList.remove('hidden');
       closeIcon?.classList.add('hidden');
     }
   });
   
-  // Close menu when clicking a link
   mobileMenu?.querySelectorAll('a').forEach(link => {
     link.addEventListener('click', () => {
       isOpen = false;
       mobileMenu?.classList.add('hidden');
-      mobileMenu?.classList.remove('flex');
       menuIcon?.classList.remove('hidden');
       closeIcon?.classList.add('hidden');
     });
   });
   
-  // Hide on scroll
   const nav = document.getElementById('navbar');
   let lastScroll = 0;
   
@@ -126,11 +116,9 @@ const navLinks = [
     
     if (currentScroll > lastScroll && currentScroll > 100) {
       nav.style.transform = 'translate(-50%, -200%)';
-      // Close mobile menu on scroll
       if (isOpen) {
         isOpen = false;
         mobileMenu?.classList.add('hidden');
-        mobileMenu?.classList.remove('flex');
         menuIcon?.classList.remove('hidden');
         closeIcon?.classList.add('hidden');
       }
