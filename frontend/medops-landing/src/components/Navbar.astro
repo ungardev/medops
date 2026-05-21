@@ -13,42 +13,42 @@ const navLinks = [
     <!-- Desktop: Left side items + Logo centered + Right side items -->
     <!-- Mobile: Logo centered + Hamburger -->
     
-    <!-- Left Items (Desktop only) -->
-    <div class="hidden md:flex items-center gap-1">
-      <a href="https://app.medopz.com/" target="_blank" rel="noopener noreferrer" class="text-[14px] font-medium text-white/80 hover:text-emerald-400 px-3 py-2 rounded-lg hover:bg-white/5 transition-all">
+    <!-- Left Items (Desktop only) - Justo al lado del logo -->
+    <div class="hidden md:flex items-center gap-0">
+      <a href="https://app.medopz.com/" target="_blank" rel="noopener noreferrer" class="text-[13px] font-medium text-white/80 hover:text-emerald-400 px-2 py-2 rounded-lg hover:bg-white/5 transition-all">
         Doctor
       </a>
-      <a href="https://patient.medopz.com/" target="_blank" rel="noopener noreferrer" class="text-[14px] font-medium text-white/80 hover:text-emerald-400 px-3 py-2 rounded-lg hover:bg-white/5 transition-all">
+      <a href="https://patient.medopz.com/" target="_blank" rel="noopener noreferrer" class="text-[13px] font-medium text-white/80 hover:text-emerald-400 px-2 py-2 rounded-lg hover:bg-white/5 transition-all">
         Paciente
       </a>
     </div>
     
-    <!-- Logo - Centered -->
-    <a href="/" class="flex items-center px-2 py-1">
+    <!-- Logo - Centro absoluto -->
+    <a href="/" class="flex items-center px-3 py-1">
       <img src="/medopz_logo_blanco_solo.svg" alt="MEDOPZ" class="h-8 w-auto" />
     </a>
     
-    <!-- Right Items (Desktop only) -->
-    <div class="hidden md:flex items-center gap-1">
-      <a href="#pricing" class="text-[14px] font-medium text-white/80 hover:text-emerald-400 px-3 py-2 rounded-lg hover:bg-white/5 transition-all">
+    <!-- Right Items (Desktop only) - Justo al lado del logo -->
+    <div class="hidden md:flex items-center gap-0">
+      <a href="#pricing" class="text-[13px] font-medium text-white/80 hover:text-emerald-400 px-2 py-2 rounded-lg hover:bg-white/5 transition-all">
         Precios
       </a>
-      <a href="#features" class="text-[14px] font-medium text-white/80 hover:text-emerald-400 px-3 py-2 rounded-lg hover:bg-white/5 transition-all">
-        Infraestructura
+      <a href="#features" class="text-[13px] font-medium text-white/80 hover:text-emerald-400 px-2 py-2 rounded-lg hover:bg-white/5 transition-all">
+        Infractructura
       </a>
     </div>
     
-    <!-- Mobile: Logo + Hamburger -->
-    <div class="flex md:hidden items-center justify-between w-full gap-4">
-      <div class="w-8"></div> <!-- Spacer for symmetry -->
-      
-      <a href="/" class="flex items-center">
+    <!-- Mobile: Logo centrado + Hamburger a la derecha -->
+    <div class="relative flex md:hidden w-full h-8">
+      <!-- Logo centrado absolute -->
+      <a href="/" class="absolute left-1/2 -translate-x-1/2 flex items-center">
         <img src="/medopz_logo_blanco_solo.svg" alt="MEDOPZ" class="h-8 w-auto" />
       </a>
       
+      <!-- Hamburger a la derecha con z-index -->
       <button 
         id="menuToggle" 
-        class="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+        class="ml-auto p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all z-10"
         aria-label="Toggle menu"
       >
         <svg id="menuIcon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
