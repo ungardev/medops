@@ -1,72 +1,70 @@
 ---
 const plans = [
   {
-    name: 'DOCTOR',
+    name: 'Professional',
     price: '$25',
     period: '/mes',
-    description: 'Para el médico independiente.',
+    description: 'Control clínico individual',
     features: [
       'Consulta CIE-11',
       'Recetas digitales',
       'Historial clínico',
       'Sala de espera',
-      'Dashboard',
+      'Dashboard básico',
     ],
     cta: 'Comenzar',
-    ctaUrl: '/checkout/?plan=doctor',
-    ctaStyle: 'secondary',
+    href: 'https://app.medopz.com/',
   },
   {
-    name: 'ESPECIALISTA',
-    price: '$40',
-    period: '/mes',
-    description: 'Portal Paciente incluido.',
-    features: [
-      'Todo Doctor',
-      'Portal Paciente',
-      'Cirugías',
-      'Hospitalización',
-      'Soporte prioritario',
-    ],
-    cta: 'Comenzar',
-    ctaUrl: '/checkout/?plan=doctor-plus',
-    ctaStyle: 'primary',
-    popular: true,
-  },
-  {
-    name: 'CLÍNICA',
+    name: 'Institutional',
     price: '$120',
     period: '/mes',
-    description: 'Múltiples sedes.',
+    description: 'Multi-sede, quirófanos, permisos granulares',
     features: [
-      'Todo Especialista',
-      'Multi-sede',
-      'Gestión de camas',
-      'Dashboard',
-      'Facturación',
+      'Todo Professional',
+      'Multi-sede completa',
+      'Gestión de quirófanos',
+      'Permisos granulares',
+      'API Finance',
       'Soporte 24/7',
     ],
     cta: 'Contactar',
-    ctaUrl: '/checkout/?plan=institution',
-    ctaStyle: 'secondary',
+    href: 'mailto:info.medopz@gmail.com?subject=Plan Institutional',
+    featured: true,
+  },
+  {
+    name: 'Transactional Engine',
+    price: '$250',
+    period: '/mes',
+    description: 'Pasarelas automatizadas, conciliación BCV',
+    features: [
+      'Todo Institutional',
+      'Mercantil P2C',
+      'Banesco API',
+      'Conciliación BCV',
+      'API Payments',
+      'SLA prioritario',
+    ],
+    cta: 'Consultar',
+    href: 'mailto:info.medopz@gmail.com?subject=Transactional Engine',
   },
 ];
 ---
 
-<section id="pricing" class="py-12 sm:py-16 lg:py-32 px-4 sm:px-6 relative">
-  <!-- Background Effects -->
-  <div class="absolute inset-0 overflow-hidden pointer-events-none">
-    <div class="absolute top-1/3 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[100px]"></div>
-    <div class="absolute top-1/3 right-1/4 translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-cyan-500/5 rounded-full blur-[80px]"></div>
-  </div>
+<section id="pricing" class="py-20 sm:py-24 lg:py-32 px-4 sm:px-6 relative">
+  <!-- Background -->
+  <div class="absolute inset-0 bg-black-surface"></div>
   
-  <div class="max-w-[1200px] mx-auto relative">
+  <!-- Grid Pattern -->
+  <div class="absolute inset-0 opacity-[0.015]" style="background-image: linear-gradient(#38a1ff 1px, transparent 1px), linear-gradient(90deg, #38a1ff 1px, transparent 1px); background-size: 60px 60px;"></div>
+  
+  <div class="max-w-[1100px] mx-auto relative">
     <!-- Section Header -->
-    <div class="text-center mb-8 sm:mb-12">
-      <span class="text-[12px] font-medium text-emerald-400/80 uppercase tracking-[0.2em]">Planes</span>
-      <h2 class="text-4xl sm:text-5xl font-bold text-white mt-4 tracking-tight">
-        Precios a la Medida
-        <span class="block text-white/50 font-normal mt-2">de tu alcance</span>
+    <div class="text-center mb-12 sm:mb-16">
+      <span class="text-[11px] font-medium text-accent-blue uppercase tracking-[0.2em]">Precios</span>
+      <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mt-4 tracking-tight">
+        Suite de Operaciones
+        <span class="block text-text-secondary font-normal mt-2">para instituciones</span>
       </h2>
     </div>
     
@@ -74,75 +72,59 @@ const plans = [
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       {plans.map((plan, index) => (
         <div 
-          class={`group relative rounded-2xl p-6 pt-10 transition-all duration-500 ${
-            plan.popular ? 'col-span-1' : ''
+          class={`relative p-6 rounded-2xl transition-all duration-500 ${
+            plan.featured 
+              ? 'bg-black-surface border-2 border-accent-blue/30' 
+              : 'bg-black-card border border-black-border'
           }`}
           style={`animation-delay: ${index * 100}ms`}
         >
-          <!-- Glassmorphism Background -->
-          <div class={`absolute inset-0 bg-gradient-to-b from-white/[0.08] to-white/[0.02] backdrop-blur-xl rounded-2xl border transition-all duration-500 ${
-            plan.popular 
-              ? 'border-emerald-500/30 group-hover:border-emerald-500/50' 
-              : 'border-white/[0.08] group-hover:border-white/[0.2]'
-          }`}></div>
-          
-          <!-- Inner Shadow -->
-          <div class="absolute inset-0 rounded-2xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] transition-all duration-500 group-hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)]"></div>
-          
-          <!-- Glow Effects -->
-          <div class="absolute inset-0 rounded-2xl opacity-0 transition-all duration-700 group-hover:opacity-100" style={`background: radial-gradient(circle at 50% 0%, ${plan.popular ? 'rgba(16, 185, 129, 0.2)' : 'rgba(6, 182, 212, 0.15)'} 0%, transparent 60%);`}></div>
-          <div class={`absolute -bottom-20 -right-20 w-40 h-40 rounded-full blur-[40px] opacity-0 transition-all duration-700 group-hover:opacity-100 ${
-            plan.popular ? 'bg-emerald-500/15' : 'bg-cyan-500/10'
-          }`}></div>
-          
-          <!-- Popular Badge -->
-          {plan.popular && (
-            <div class="absolute -top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1.5 bg-gradient-to-r from-emerald-500/20 to-emerald-500/10 border border-emerald-500/40 rounded-full shadow-[0_0_20px_rgba(16,185,129,0.3)] z-50">
-              <span class="text-[10px] font-semibold text-emerald-400 uppercase tracking-wider">Más Popular</span>
+          {plan.featured && (
+            <div class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-accent-blue text-[10px] font-semibold text-black rounded-full uppercase tracking-wider">
+              Recomendado
             </div>
           )}
           
-          <!-- Content -->
-          <div class="relative z-10">
-            <!-- Header -->
-            <div class="mb-6">
-              <span class="text-[12px] font-medium text-white/60 uppercase tracking-wider">{plan.name}</span>
-              <div class="flex items-baseline gap-1 mt-2">
-                <span class={`text-4xl font-bold tracking-tight ${
-                  plan.popular ? 'text-emerald-400' : 'text-white'
-                }`}>{plan.price}</span>
-                <span class="text-[13px] text-white/50">{plan.period}</span>
-              </div>
-              <p class="text-[13px] text-white/50 mt-2 leading-relaxed">{plan.description}</p>
-            </div>
-            
-            <!-- Features -->
-            <ul class="space-y-3 mb-8">
-              {plan.features.map((feature) => (
-                <li class="flex items-center gap-3">
-                  <div class="w-5 h-5 rounded-md bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
-                    <svg class="w-3 h-3 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <span class="text-[13px] text-white/70">{feature}</span>
-                </li>
-              ))}
-            </ul>
-            
-            <!-- CTA Button -->
-            <a 
-              href={plan.ctaUrl}
-              class={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 text-[12px] font-medium rounded-xl transition-all ${
-                plan.ctaStyle === 'primary'
-                  ? 'bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 hover:shadow-[0_0_20px_rgba(16,185,129,0.2)]'
-                  : 'bg-white/[0.08] hover:bg-white/[0.12] border border-white/[0.1] text-white/80 hover:border-white/[0.2]'
-              }`}
-            >
-              {plan.cta}
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-            </a>
+          <!-- Plan Name -->
+          <div class="mb-5">
+            <span class="text-[11px] font-medium text-text-muted uppercase tracking-wider">{plan.name}</span>
           </div>
+          
+          <!-- Price -->
+          <div class="flex items-baseline gap-1 mb-2">
+            <span class={`text-4xl font-bold tracking-tight ${plan.featured ? 'text-accent-blue' : 'text-white'}`}>{plan.price}</span>
+            <span class="text-[13px] text-text-muted">{plan.period}</span>
+          </div>
+          
+          <!-- Description -->
+          <p class="text-[12px] text-text-muted mb-6 leading-relaxed">{plan.description}</p>
+          
+          <!-- Features -->
+          <ul class="space-y-2.5 mb-8">
+            {plan.features.map((feature) => (
+              <li class="flex items-center gap-2.5">
+                <div class={`w-4 h-4 rounded flex items-center justify-center shrink-0 ${plan.featured ? 'bg-accent-blue/10 border border-accent-blue/20' : 'bg-black-border'}`}>
+                  <svg class={`w-2.5 h-2.5 ${plan.featured ? 'text-accent-blue' : 'text-text-muted'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <span class="text-[12px] text-text-secondary">{feature}</span>
+              </li>
+            ))}
+          </ul>
+          
+          <!-- CTA -->
+          <a 
+            href={plan.href}
+            class={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 text-[12px] font-medium rounded-xl transition-all ${
+              plan.featured
+                ? 'bg-accent-blue/10 hover:bg-accent-blue/20 border border-accent-blue/30 text-accent-blue hover:border-accent-blue/50'
+                : 'bg-black-card hover:bg-black-surface border border-black-border text-text-secondary hover:text-white'
+            }`}
+          >
+            {plan.cta}
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </a>
         </div>
       ))}
     </div>
@@ -150,13 +132,13 @@ const plans = [
 </section>
 
 <style>
-  #pricing > div > .grid > div {
+  #pricing .grid > div {
     opacity: 0;
     transform: translateY(20px);
-    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    transition: opacity 0.5s ease-out, transform 0.5s ease-out;
   }
   
-  #pricing > div > .grid > div.visible {
+  #pricing .grid > div.visible {
     opacity: 1;
     transform: translateY(0);
   }
@@ -164,7 +146,7 @@ const plans = [
 
 <script>
   const section = document.getElementById('pricing');
-  const cards = section?.querySelectorAll('#pricing > div > .grid > div');
+  const cards = section?.querySelectorAll('.grid > div');
   
   if (cards?.length && section) {
     const observer = new IntersectionObserver((entries) => {
@@ -178,7 +160,7 @@ const plans = [
           observer.disconnect();
         }
       });
-    }, { threshold: 0.2 });
+    }, { threshold: 0.15 });
     
     observer.observe(section);
   }

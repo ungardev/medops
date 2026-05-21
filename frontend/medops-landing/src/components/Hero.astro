@@ -1,193 +1,113 @@
 ---
+const stats = [
+  { value: '63+', label: 'Módulos Clínicos' },
+  { value: 'ICD-11', label: 'Estándar WHO' },
+  { value: 'Bimonetario', label: 'Ecosistema Transaccional' },
+];
+
 const features = [
-  { id: 'cie11', label: 'CIE-11 WHO', img: '/screenshots/cie11.svg' },
-  { id: 'cirugia', label: 'Cirugía', img: '/screenshots/cirugia.svg' },
-  { id: 'hospi', label: 'Hospitalización', img: '/screenshots/hospi.svg' },
-  { id: 'sala', label: 'Sala Live', img: '/screenshots/sala.svg' },
-  { id: 'pagos', label: 'Pagos P2C', img: '/screenshots/pagos.svg' },
-  { id: 'sede', label: 'Multi-sede', img: '/screenshots/sede.svg' },
+  { label: 'CIE-11 WHO' },
+  { label: 'SNOMED CT' },
+  { label: 'Cirugía' },
+  { label: 'Hospitalización' },
+  { label: 'Pagos P2C' },
+  { label: 'Multi-sede' },
 ];
 ---
 
-<section class="relative min-h-[70vh] sm:min-h-screen flex flex-col justify-start overflow-hidden pt-24 sm:pt-28">
-  <!-- Background Effects - Dual glow with animation -->
-  <div class="absolute inset-0 bg-gradient-to-b from-white/[0.02] via-transparent to-transparent"></div>
-  <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-emerald-500/5 rounded-full blur-[120px] animate-pulse-slow"></div>
-  <div class="absolute bottom-1/4 right-1/4 w-[400px] h-[300px] bg-cyan-500/3 rounded-full blur-[100px] animate-pulse-slow" style="animation-delay: 1s;"></div>
+<section class="relative min-h-screen flex flex-col justify-center overflow-hidden pt-24">
+  <!-- Grid Lines Background - 1px accent blue -->
+  <div class="absolute inset-0 opacity-[0.03]">
+    <div class="absolute inset-0" style="background-image: linear-gradient(#38a1ff 1px, transparent 1px), linear-gradient(90deg, #38a1ff 1px, transparent 1px); background-size: 60px 60px;"></div>
+  </div>
+  
+  <!-- Gradient Overlay -->
+  <div class="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black"></div>
   
   <div class="relative z-10 max-w-[1000px] mx-auto px-6 text-center">
-    <!-- MEDOPZ Logo - con subtle glow animation -->
-    <div class="relative inline-block mb-4">
-      <img src="/medopz_fuente_blanco.svg" alt="MEDOPZ" class="w-full max-w-[280px] mx-auto transition-all duration-300" />
-      <div class="absolute inset-0 w-full max-w-[280px] mx-auto h-full bg-emerald-500/10 rounded-full blur-[30px] opacity-0 transition-opacity duration-700 hover:opacity-100 -z-10 left-1/2 -translate-x-1/2"></div>
+    <!-- Label -->
+    <div class="inline-flex items-center gap-2 px-4 py-2 border border-black-border rounded-full mb-8">
+      <span class="w-2 h-2 rounded-full bg-accent-blue animate-pulse"></span>
+      <span class="text-[11px] font-medium text-text-secondary uppercase tracking-wider">Platforma HealthTech de Venezuela</span>
     </div>
     
-    <!-- Subtitle - tipografía refinada -->
-    <h1 class="text-base sm:text-lg font-light text-white tracking-wide mb-4">
-      Workstation elite para médicos especialistas, pacientes e instituciones de Venezuela
+    <!-- Logo -->
+    <div class="mb-6">
+      <img src="/medopz_fuente_blanco.svg" alt="MEDOPZ" class="w-full max-w-[260px] mx-auto" />
+    </div>
+    
+    <!-- Main Headline -->
+    <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight leading-tight mb-4">
+      El Command Center
+      <span class="block text-accent-blue">Clínico y Transaccional</span>
+      de la Próxima Generación
     </h1>
     
-    <!-- Carousel Container con glow -->
-    <div class="relative mt-8 mb-4">
-      <!-- Left Arrow -->
-      <button id="prevBtn" class="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-white/[0.05] hover:bg-white/[0.12] border border-white/[0.1] hover:border-emerald-500/30 rounded-full text-white/60 hover:text-emerald-400 transition-all duration-300 hover:shadow-[0_0_20px_rgba(16,185,129,0.2)] group" aria-label="Anterior">
-        <svg class="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:-translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+    <!-- Subtitle -->
+    <p class="text-base sm:text-lg text-text-secondary max-w-[600px] mx-auto mb-10">
+      Workstation elite para médicos especialistas, pacientes e instituciones de Venezuela
+    </p>
+    
+    <!-- CTA Buttons -->
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+      <a 
+        href="https://app.medopz.com/" 
+        target="_blank"
+        class="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 border border-accent-blue/30 hover:border-accent-blue/60 bg-accent-blue/5 hover:bg-accent-blue/10 text-accent-blue text-[13px] font-medium rounded-xl transition-all hover:shadow-[0_0_20px_rgba(56,161,255,0.15)]"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/>
         </svg>
-      </button>
-      
-      <!-- Screenshot Area - con inner glow y transición -->
-      <div id="screenshotArea" class="w-full aspect-video bg-gradient-to-br from-white/[0.06] to-white/[0.02] backdrop-blur-xl border border-white/[0.08] rounded-2xl overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05),inset_0_0_80px_rgba(16,185,129,0.03)]">
-        <div id="screenshotContent" class="w-full h-full flex items-center justify-center transition-all duration-500">
-          <div class="text-center">
-            <div class="w-16 h-16 mx-auto mb-4 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-emerald-400/50">
-                <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><circle cx="20" cy="10" r="2"/>
-              </svg>
-            </div>
-            <p class="text-white/40 text-sm font-medium">Screenshot: <span id="screenshotLabel">CIE-11 WHO</span></p>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Right Arrow -->
-      <button id="nextBtn" class="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-white/[0.05] hover:bg-white/[0.12] border border-white/[0.1] hover:border-emerald-500/30 rounded-full text-white/60 hover:text-emerald-400 transition-all duration-300 hover:shadow-[0_0_20px_rgba(16,185,129,0.2)] group" aria-label="Siguiente">
-        <svg class="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+        Portal Doctor
+        <span class="text-white/40 group-hover:text-accent-blue/60 ml-1">→</span>
+      </a>
+      <a 
+        href="https://patient.medopz.com/" 
+        target="_blank"
+        class="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 border border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-[13px] font-medium rounded-xl transition-all"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
         </svg>
-      </button>
+        Portal Paciente
+        <span class="text-white/40 group-hover:text-white/60 ml-1">→</span>
+      </a>
     </div>
     
-    <!-- Feature Pills - estilo bento -->
-    <div class="flex flex-wrap items-center justify-center gap-2 mb-8">
-      {features.map((feature, index) => (
-        <button 
-          data-index={index}
-          class="feature-tab px-3 sm:px-5 py-2 sm:py-2.5 bg-white/[0.08] border border-white/[0.1] rounded-xl text-[11px] sm:text-[12px] font-normal text-white/70 whitespace-nowrap hover:bg-white/[0.12] hover:border-white/[0.2] hover:text-white transition-all"
-        >
+    <!-- Feature Pills -->
+    <div class="flex flex-wrap items-center justify-center gap-2 mb-12">
+      {features.map((feature) => (
+        <span class="px-3 py-1.5 bg-black-surface border border-black-border rounded-lg text-[11px] font-medium text-text-secondary">
           {feature.label}
-        </button>
+        </span>
       ))}
     </div>
     
-    <!-- Dot indicators -->
-    <div class="flex items-center justify-center gap-1.5 mt-4">
-      {features.map((_, index) => (
-        <button 
-          data-dot={index}
-          class="dot-indicator w-2 h-2 rounded-full bg-white/20 hover:bg-white/40 transition-all duration-300"
-          aria-label={`Ir a ${features[index].label}`}
-        />
+    <!-- Stats Row -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-[700px] mx-auto">
+      {stats.map((stat, index) => (
+        <div class="relative p-4 rounded-xl bg-black-card border border-black-border">
+          <div class="text-2xl sm:text-3xl font-bold text-white mb-1">{stat.value}</div>
+          <div class="text-[11px] font-medium text-text-muted uppercase tracking-wider">{stat.label}</div>
+          {index < stats.length - 1 && (
+            <div class="hidden sm:block absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-4 border-r border-t border-black-border rotate-45"></div>
+          )}
+        </div>
       ))}
     </div>
   </div>
+  
+  <!-- Bottom Fade -->
+  <div class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black to-transparent"></div>
 </section>
-
-<script>
-  const features = [
-    { id: 'cie11', label: 'CIE-11 WHO', img: '/screenshots/cie11.svg' },
-    { id: 'cirugia', label: 'Cirugía', img: '/screenshots/cirugia.svg' },
-    { id: 'hospi', label: 'Hospitalización', img: '/screenshots/hospi.svg' },
-    { id: 'sala', label: 'Sala Live', img: '/screenshots/sala.svg' },
-    { id: 'pagos', label: 'Pagos P2C', img: '/screenshots/pagos.svg' },
-    { id: 'sede', label: 'Multi-sede', img: '/screenshots/sede.svg' },
-  ];
-  
-  let currentIndex = 0;
-  const screenshotContent = document.getElementById('screenshotContent');
-  const screenshotLabel = document.getElementById('screenshotLabel');
-  const prevBtn = document.getElementById('prevBtn');
-  const nextBtn = document.getElementById('nextBtn');
-  const tabs = document.querySelectorAll('.feature-tab');
-  const dots = document.querySelectorAll('.dot-indicator');
-  
-  function updateScreenshot(index) {
-    currentIndex = index;
-    
-    // Animate out
-    if (screenshotContent) {
-      screenshotContent.style.opacity = '0';
-      screenshotContent.style.transform = 'translateY(10px)';
-    }
-    
-    setTimeout(() => {
-      if (screenshotLabel) {
-        screenshotLabel.textContent = features[index].label;
-      }
-      
-      // Animate in
-      if (screenshotContent) {
-        screenshotContent.style.opacity = '1';
-        screenshotContent.style.transform = 'translateY(0)';
-      }
-    }, 200);
-    
-    tabs.forEach((tab, i) => {
-      if (i === index) {
-        tab.classList.remove('bg-white/[0.08]', 'border-white/[0.1]', 'text-white/70');
-        tab.classList.add('bg-emerald-500/20', 'border-emerald-500/30', 'text-emerald-400');
-      } else {
-        tab.classList.remove('bg-emerald-500/20', 'border-emerald-500/30', 'text-emerald-400');
-        tab.classList.add('bg-white/[0.08]', 'border-white/[0.1]', 'text-white/70');
-      }
-    });
-    
-    dots.forEach((dot, i) => {
-      if (i === index) {
-        dot.classList.remove('bg-white/20');
-        dot.classList.add('bg-emerald-400', 'w-3');
-      } else {
-        dot.classList.remove('bg-emerald-400', 'w-3');
-        dot.classList.add('bg-white/20');
-      }
-    });
-  }
-  
-  tabs.forEach((tab, index) => {
-    tab.addEventListener('click', () => updateScreenshot(index));
-  });
-  
-  dots.forEach((dot, index) => {
-    dot.addEventListener('click', () => updateScreenshot(index));
-  });
-  
-  prevBtn.addEventListener('click', () => {
-    const newIndex = currentIndex === 0 ? features.length - 1 : currentIndex - 1;
-    updateScreenshot(newIndex);
-  });
-  
-  nextBtn.addEventListener('click', () => {
-    const newIndex = currentIndex === features.length - 1 ? 0 : currentIndex + 1;
-    updateScreenshot(newIndex);
-  });
-  
-  // Keyboard navigation
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowLeft') {
-      const newIndex = currentIndex === 0 ? features.length - 1 : currentIndex - 1;
-      updateScreenshot(newIndex);
-    } else if (e.key === 'ArrowRight') {
-      const newIndex = currentIndex === features.length - 1 ? 0 : currentIndex + 1;
-      updateScreenshot(newIndex);
-    }
-  });
-  
-  // Auto-advance carousel every 5 seconds
-  setInterval(() => {
-    const newIndex = currentIndex === features.length - 1 ? 0 : currentIndex + 1;
-    updateScreenshot(newIndex);
-  }, 5000);
-  
-  updateScreenshot(0);
-</script>
 
 <style>
   @keyframes pulse-slow {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.8; transform: scale(1.05); }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
   }
   
   .animate-pulse-slow {
-    animation: pulse-slow 4s ease-in-out infinite;
+    animation: pulse-slow 2s ease-in-out infinite;
   }
 </style>

@@ -1,101 +1,94 @@
 ---
-const features = [
+const pillars = [
   {
-    icon: 'stethoscope',
-    title: 'ICD-11 + SNOMED',
-    description: 'Diagnósticos internacionales con estándares WHO. Expediente estructurado.',
-    size: 'large',
+    icon: 'fintech',
+    label: 'FINTECH ENGINE',
+    title: 'Pago Móvil + Bimonetario',
+    description: 'Infraestructura financiera integrada para Venezuela',
+    features: [
+      { label: 'Mercantil P2C', desc: 'Pagos instantáneos' },
+      { label: 'Banesco API', desc: 'Integración bancaria' },
+      { label: 'BCV Rate', desc: 'Tasa oficial en tiempo real' },
+      { label: 'USDT Crypto', desc: 'Activos digitales' },
+    ],
   },
   {
-    icon: 'scissors',
-    title: 'Cirugía',
-    description: 'Pre-intra-postoperatorio. Clasificación ASA, riesgos quirúrgicos.',
-    size: 'large',
+    icon: 'legal',
+    label: 'LEGAL & COMPLIANCE',
+    title: 'MPPS + Colegiado ID',
+    description: 'Verificación institucional y sellado digital',
+    features: [
+      { label: 'MPPS Verification', desc: 'Licencia sanitaria' },
+      { label: 'Colegiado ID', desc: 'Documento profesional' },
+      { label: 'Sellado Digital', desc: 'Certificación criptográfica' },
+      { label: 'INHRR Catalog', desc: 'Registro nacional' },
+    ],
   },
   {
-    icon: 'bed',
-    title: 'Hospitalización',
-    description: 'Gestión de cama. Admisión, evolución y alta clínica.',
-    size: 'small',
-  },
-  {
-    icon: 'brain',
-    title: 'Paciente Portal',
-    description: 'Tu paciente accede a su expediente, citas y resultados.',
-    size: 'small',
-  },
-  {
-    icon: 'clock',
-    title: 'Sala de Espera Live',
-    description: 'Cola en tiempo real.',
-    size: 'small',
-  },
-  {
-    icon: 'credit-card',
-    title: 'Pagos P2C',
-    description: 'Pago móvil, Zelle, cripto. Conciliación BCV.',
-    size: 'small',
+    icon: 'clinical',
+    label: 'CLINICAL INTELLIGENCE',
+    title: 'ICD-11 + SNOMED CT',
+    description: 'Estándares internacionales de diagnóstico',
+    features: [
+      { label: 'ICD-11 WHO', desc: 'Clasificación oficial' },
+      { label: 'SNOMED CT', desc: 'Terminología clínica' },
+      { label: 'CIE-11 Search', desc: 'Búsqueda inteligente' },
+      { label: 'Coding Engine', desc: 'Sugerencia automática' },
+    ],
   },
 ];
 ---
 
-<section id="features" class="py-12 sm:py-16 lg:py-32 px-4 sm:px-6 relative overflow-hidden">
-  <!-- Background Effects -->
-  <div class="absolute inset-0 overflow-hidden pointer-events-none">
-    <div class="absolute top-1/2 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-500/5 rounded-full blur-[120px]"></div>
-    <div class="absolute top-1/2 right-1/4 translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-cyan-500/5 rounded-full blur-[100px]"></div>
-  </div>
+<section id="features" class="py-20 sm:py-24 lg:py-32 px-4 sm:px-6 relative overflow-hidden">
+  <!-- Background -->
+  <div class="absolute inset-0 bg-black"></div>
+  
+  <!-- Grid Pattern -->
+  <div class="absolute inset-0 opacity-[0.02]" style="background-image: linear-gradient(#38a1ff 1px, transparent 1px), linear-gradient(90deg, #38a1ff 1px, transparent 1px); background-size: 80px 80px;"></div>
   
   <div class="max-w-[1200px] mx-auto relative">
     <!-- Section Header -->
-    <div class="text-center mb-8 sm:mb-12">
-      <span class="text-[12px] font-medium text-emerald-400/80 uppercase tracking-[0.2em]">Features</span>
-      <h2 class="text-4xl sm:text-5xl font-bold text-white mt-4 tracking-tight">
-        Potencia Operativa de Salud
-        <span class="block text-white/50 font-normal mt-2">abarca todos los frentes</span>
+    <div class="text-center mb-12 sm:mb-16">
+      <span class="text-[11px] font-medium text-accent-blue uppercase tracking-[0.2em]">Arquitectura</span>
+      <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mt-4 tracking-tight">
+        Tres Pilares Corporativos
+        <span class="block text-text-secondary font-normal mt-2">de la próxima generación</span>
       </h2>
     </div>
     
-    <!-- Bento Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-[140px]">
-      {features.map((feature, index) => (
-        <div 
-          class={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-500 ease-out ${
-            feature.size === 'large' 
-              ? 'col-span-1 md:col-span-2 row-span-2' 
-              : 'col-span-1 row-span-1'
-          }`}
-          style={`animation-delay: ${index * 100}ms`}
-        >
-          <!-- Glassmorphism Background -->
-          <div class="absolute inset-0 bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-xl rounded-2xl border border-white/[0.08] transition-all duration-500 group-hover:border-white/[0.2] group-hover:from-white/[0.12]"></div>
+    <!-- Bento Grid - 3 Pillars -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      {pillars.map((pillar, index) => (
+        <div class="group relative p-6 lg:p-8 rounded-2xl bg-black-surface border border-black-border transition-all duration-500 hover:border-accent-blue/20">
+          <!-- Accent Line Top -->
+          <div class="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-accent-blue/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
           
-          <!-- Inner Shadow -->
-          <div class="absolute inset-0 rounded-2xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] transition-all duration-500 group-hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)]"></div>
+          <!-- Icon -->
+          <div class="w-12 h-12 rounded-xl bg-black-card border border-black-border flex items-center justify-center mb-6 transition-all duration-300 group-hover:border-accent-blue/30 group-hover:shadow-[0_0_15px_rgba(56,161,255,0.1)]">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-text-secondary group-hover:text-accent-blue transition-colors">
+              {pillar.icon === 'fintech' && <><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/><path d="M6 15h4"/></>}
+              {pillar.icon === 'legal' && <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></>}
+              {pillar.icon === 'clinical' && <><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><circle cx="20" cy="10" r="2"/></>}
+            </svg>
+          </div>
           
-          <!-- Glow Effects -->
-          <div class="absolute inset-0 rounded-2xl opacity-0 transition-all duration-700 group-hover:opacity-100" style="background: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.15) 0%, transparent 60%);"></div>
-          <div class="absolute -bottom-20 -right-20 w-40 h-40 bg-emerald-500/10 rounded-full blur-[40px] opacity-0 transition-all duration-700 group-hover:opacity-100"></div>
+          <!-- Label -->
+          <span class="text-[10px] font-semibold text-accent-blue uppercase tracking-wider mb-2 block">{pillar.label}</span>
           
-          <!-- Content -->
-          <div class="relative z-10 h-full flex flex-col">
-            <!-- Icon with Glow -->
-            <div class="w-12 h-12 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center mb-auto mt-2 transition-all duration-300 group-hover:bg-white/[0.1] group-hover:border-emerald-500/30 group-hover:shadow-[0_0_20px_rgba(16,185,129,0.2)]">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-white/60 group-hover:text-emerald-400 transition-all duration-300 group-hover:drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]">
-                {feature.icon === 'stethoscope' && <><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><circle cx="20" cy="10" r="2"/></>}
-                {feature.icon === 'scissors' && <><circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12"/><path d="M20 4 8.12 15.88"/><circle cx="6" cy="18" r="3"/><path d="M14.8 14.8 20 20"/></>}
-                {feature.icon === 'bed' && <><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></>}
-                {feature.icon === 'brain' && <><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .526 4.975L3 18V6a2 2 0 0 1 2-2h1a4 4 0 0 1 4-4z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.526 4.975L21 18V6a2 2 0 0 0-2-2h-1a4 4 0 0 0-4-4z"/><path d="M12 5v13"/></>}
-                {feature.icon === 'clock' && <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>}
-                {feature.icon === 'credit-card' && <><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></>}
-              </svg>
-            </div>
-            
-            <!-- Text -->
-            <div class="mt-auto">
-              <h3 class="text-lg font-semibold text-white mb-1 group-hover:text-white transition-colors">{feature.title}</h3>
-              <p class="text-sm text-white/50 leading-relaxed group-hover:text-white/70 transition-colors">{feature.description}</p>
-            </div>
+          <!-- Title -->
+          <h3 class="text-xl font-semibold text-white mb-2">{pillar.title}</h3>
+          
+          <!-- Description -->
+          <p class="text-[13px] text-text-muted mb-6 leading-relaxed">{pillar.description}</p>
+          
+          <!-- Features Grid -->
+          <div class="grid grid-cols-2 gap-3">
+            {pillar.features.map((feature) => (
+              <div class="p-3 rounded-lg bg-black-card border border-black-border">
+                <div class="text-[12px] font-medium text-white mb-0.5">{feature.label}</div>
+                <div class="text-[10px] text-text-muted">{feature.desc}</div>
+              </div>
+            ))}
           </div>
         </div>
       ))}
@@ -104,13 +97,13 @@ const features = [
 </section>
 
 <style>
-  #features > div > .grid > div {
+  #features .group {
     opacity: 0;
     transform: translateY(20px);
-    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    transition: opacity 0.5s ease-out, transform 0.5s ease-out;
   }
   
-  #features > div > .grid > div.visible {
+  #features .group.visible {
     opacity: 1;
     transform: translateY(0);
   }
@@ -118,7 +111,7 @@ const features = [
 
 <script>
   const section = document.getElementById('features');
-  const cards = section?.querySelectorAll('#features > div > .grid > div');
+  const cards = section?.querySelectorAll('.group');
   
   if (cards?.length && section) {
     const observer = new IntersectionObserver((entries) => {
@@ -132,7 +125,7 @@ const features = [
           observer.disconnect();
         }
       });
-    }, { threshold: 0.2 });
+    }, { threshold: 0.15 });
     
     observer.observe(section);
   }

@@ -8,23 +8,27 @@ export default {
         mono: ['ui-monospace', 'SFMono-Regular', 'monospace'],
       },
       colors: {
-        medopz: {
-          bg: '#050608',
+        black: {
+          DEFAULT: '#050608',
           surface: '#0c0e12',
-          sidebar: '#0a0a0b',
-          modal: '#1a1a1b',
+          card: '#0a0a0b',
           border: '#1a1e23',
-          text: '#e1e8ed',
+        },
+        accent: {
+          blue: '#38a1ff',
+          cyan: '#06b6d4',
+        },
+        text: {
+          primary: '#ffffff',
+          secondary: '#94a3b8',
           muted: '#4a5568',
-          brand: '#38a1ff',
-          success: '#0f9960',
-          error: '#db3737',
         },
       },
       animation: {
-        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'fade-in': 'fadeIn 0.6s ease-out forwards',
         'slide-up': 'slideUp 0.6s ease-out forwards',
+        'grid-flow': 'gridFlow 20s linear infinite',
       },
       keyframes: {
         fadeIn: {
@@ -34,6 +38,10 @@ export default {
         slideUp: {
           '0%': { opacity: '0', transform: 'translateY(20px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        gridFlow: {
+          '0%': { transform: 'translateY(0)' },
+          '100%': { transform: 'translateY(-50%)' },
         },
       },
     },

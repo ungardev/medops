@@ -1,23 +1,28 @@
 ---
 const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: 'http://localhost:8080/login', label: 'Doctor' },
-  { href: 'http://localhost:8080/patient/login', label: 'Paciente' },
+  { href: 'https://app.medopz.com/', label: 'Doctor' },
+  { href: 'https://patient.medopz.com/', label: 'Paciente' },
   { href: '#pricing', label: 'Precios' },
 ];
 ---
 
-<nav id="navbar" class="fixed top-2 left-1/2 -translate-x-1/2 z-50 bg-white/5 backdrop-blur-xl saturate-180 border border-white/10 rounded-full transition-all duration-300 overflow-hidden" style="width: auto; min-width: 260px; max-width: 95vw;">
-  <div class="flex items-center justify-center gap-1.5 sm:gap-1 px-2 sm:px-2 py-1.5 sm:py-1">
-    <a href="/" class="text-[13px] sm:text-[13px] font-semibold text-white hover:text-emerald-400 px-2 sm:px-2.5 py-1 rounded-lg hover:bg-white/5 transition-all">Home</a>
-    <a href="http://localhost:8080/login" class="text-[13px] sm:text-[13px] font-semibold text-white hover:text-emerald-400 px-2 sm:px-2.5 py-1 rounded-lg hover:bg-white/5 transition-all">Doctor</a>
+<nav id="navbar" class="fixed top-3 left-1/2 -translate-x-1/2 z-50 bg-black-surface/80 backdrop-blur-xl border border-black-border rounded-full transition-all duration-300" style="width: auto; min-width: 260px; max-width: 95vw;">
+  <div class="flex items-center justify-center gap-1 px-3 py-2">
+    <a href="/" class="text-[12px] font-semibold text-text-secondary hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all">Home</a>
     
-    <a href="/" class="flex items-center mx-1 sm:mx-1">
-      <div class="h-10 w-10 sm:h-10 sm:w-10 bg-contain bg-center bg-no-repeat" style="background-image: url('/medopz_logo_blanco_solo.svg');"></div>
+    <div class="w-px h-5 bg-black-border mx-1"></div>
+    
+    <a href="https://app.medopz.com/" target="_blank" class="text-[12px] font-semibold text-text-secondary hover:text-accent-blue px-3 py-1.5 rounded-lg hover:bg-accent-blue/5 transition-all">Doctor</a>
+    
+    <a href="/" class="flex items-center mx-1">
+      <img src="/medopz_logo_blanco_solo.svg" alt="MEDOPZ" class="h-8 w-8" />
     </a>
     
-    <a href="http://localhost:8080/patient/login" class="text-[13px] sm:text-[13px] font-semibold text-white hover:text-emerald-400 px-2 sm:px-2.5 py-1 rounded-lg hover:bg-white/5 transition-all">Paciente</a>
-    <a href="#pricing" class="text-[13px] sm:text-[13px] font-semibold text-white hover:text-emerald-400 px-2 sm:px-2.5 py-1 rounded-lg hover:bg-white/5 transition-all">Planes</a>
+    <a href="https://patient.medopz.com/" target="_blank" class="text-[12px] font-semibold text-text-secondary hover:text-accent-blue px-3 py-1.5 rounded-lg hover:bg-accent-blue/5 transition-all">Paciente</a>
+    
+    <div class="w-px h-5 bg-black-border mx-1"></div>
+    
+    <a href="#pricing" class="text-[12px] font-semibold text-text-secondary hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all">Precios</a>
   </div>
 </nav>
 
