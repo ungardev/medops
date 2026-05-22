@@ -62,17 +62,17 @@ export default function Login() {
           />
           
           <div className="mb-8">
-            <h2 className="text-2xl font-semibold text-white/90 mb-1">
+            <h2 className="text-2xl font-semibold text-white mb-1">
               Control de Acceso
             </h2>
-            <p className="text-sm text-white/40">
+            <p className="text-sm text-slate-300">
               Introduce tus credenciales operativas.
             </p>
           </div>
           
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="relative group">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/20 group-focus-within:text-emerald-400/60 transition-colors">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/40 group-focus-within:text-emerald-400 transition-colors">
                 <User size={18} />
               </div>
               <input
@@ -82,12 +82,12 @@ export default function Login() {
                 onChange={(e) => setUsername(e.target.value)}
                 autoComplete="username"
                 required
-                className="w-full pl-10 pr-4 py-3 bg-[#0c0e12]/60 border border-slate-800/60 rounded-lg text-sm text-white/80 placeholder:text-white/20 focus:outline-none focus:border-[#10b981]/60 focus:ring-1 focus:ring-[#10b981]/30 focus:shadow-[0_0_15px_rgba(16,185,129,0.15)] transition-all duration-300"
+                className="w-full pl-10 pr-4 py-3 bg-[#0c0e12]/60 border border-slate-800/60 rounded-lg text-sm text-white placeholder:text-white/50 focus:outline-none focus:border-[#10b981]/60 focus:ring-1 focus:ring-[#10b981]/30 focus:shadow-[0_0_15px_rgba(16,185,129,0.15)] transition-all duration-300"
               />
             </div>
             
             <div className="relative group">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/20 group-focus-within:text-emerald-400/60 transition-colors">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/40 group-focus-within:text-emerald-400 transition-colors">
                 <Lock size={18} />
               </div>
               <input
@@ -97,7 +97,7 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
                 required
-                className="w-full pl-10 pr-4 py-3 bg-[#0c0e12]/60 border border-slate-800/60 rounded-lg text-sm text-white/80 placeholder:text-white/20 focus:outline-none focus:border-[#10b981]/60 focus:ring-1 focus:ring-[#10b981]/30 focus:shadow-[0_0_15px_rgba(16,185,129,0.15)] transition-all duration-300"
+                className="w-full pl-10 pr-4 py-3 bg-[#0c0e12]/60 border border-slate-800/60 rounded-lg text-sm text-white placeholder:text-white/50 focus:outline-none focus:border-[#10b981]/60 focus:ring-1 focus:ring-[#10b981]/30 focus:shadow-[0_0_15px_rgba(16,185,129,0.15)] transition-all duration-300"
               />
             </div>
             
@@ -110,7 +110,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-8 relative overflow-hidden bg-gradient-to-br from-[#065f46] via-[#10b981] to-[#34d399] text-white py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:shadow-[0_0_25px_rgba(16,185,129,0.3)] hover:brightness-110 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full mt-8 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 py-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
@@ -128,7 +128,7 @@ export default function Login() {
           
           <div className="mt-8 flex items-center justify-center gap-2">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400/50"></div>
-            <span className="text-[10px] text-white/30">Sistema seguro</span>
+            <span className="text-[10px] text-slate-500">Sistema seguro</span>
           </div>
         </div>
       </div>
