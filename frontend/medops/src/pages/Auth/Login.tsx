@@ -133,10 +133,7 @@ export default function Login() {
             </button>
           </form>
           
-          <div className="mt-8 flex items-center justify-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400/50"></div>
-            <span className="text-[10px] text-slate-500">Sistema seguro</span>
-          </div>
+          
         </div>
       </div>
       
