@@ -48,13 +48,17 @@ export default function Login() {
     }
   };
   return (
-    <div className="flex flex-col lg:flex-row min-h-screen bg-black">
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 min-h-screen">
-        <div className="w-full max-w-md animate-in fade-in duration-500">
+    <div className="relative min-h-screen bg-[#050608] flex flex-col lg:flex-row">
+      {/* Micro-Grid Engineering Pattern */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1a1e23_1px,transparent_1px),linear-gradient(to_bottom,#1a1e23_1px,transparent_1px)] bg-[size:3rem_3rem] opacity-[0.03] pointer-events-none"></div>
+
+      {/* Left Panel - Form Card */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-10 min-h-screen relative z-10">
+        <div className="w-full max-w-[420px] bg-[#0c0e12]/40 backdrop-blur-xl border border-slate-800/60 rounded-2xl shadow-2xl p-8 md:p-10 animate-in fade-in duration-500">
           <img
             src="/medopz_logo_blanco_solo.svg"
             alt="MedOpz Logo"
-            className="h-12 w-12 mb-8 opacity-60"
+            className="h-10 w-10 mb-8 opacity-70"
           />
           
           <div className="mb-8">
@@ -65,9 +69,10 @@ export default function Login() {
               Introduce tus credenciales operativas.
             </p>
           </div>
+          
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="relative group">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/20 group-focus-within:text-white/50 transition-colors">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/20 group-focus-within:text-emerald-400/60 transition-colors">
                 <User size={18} />
               </div>
               <input
@@ -77,11 +82,12 @@ export default function Login() {
                 onChange={(e) => setUsername(e.target.value)}
                 autoComplete="username"
                 required
-                className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/15 rounded-lg text-sm text-white/80 placeholder:text-white/20 focus:outline-none focus:border-emerald-500/50 transition-all"
+                className="w-full pl-10 pr-4 py-3 bg-[#0c0e12]/60 border border-slate-800/60 rounded-lg text-sm text-white/80 placeholder:text-white/20 focus:outline-none focus:border-[#10b981]/60 focus:ring-1 focus:ring-[#10b981]/30 focus:shadow-[0_0_15px_rgba(16,185,129,0.15)] transition-all duration-300"
               />
             </div>
+            
             <div className="relative group">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/20 group-focus-within:text-white/50 transition-colors">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/20 group-focus-within:text-emerald-400/60 transition-colors">
                 <Lock size={18} />
               </div>
               <input
@@ -91,18 +97,20 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
                 required
-                className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/15 rounded-lg text-sm text-white/80 placeholder:text-white/20 focus:outline-none focus:border-emerald-500/50 transition-all"
+                className="w-full pl-10 pr-4 py-3 bg-[#0c0e12]/60 border border-slate-800/60 rounded-lg text-sm text-white/80 placeholder:text-white/20 focus:outline-none focus:border-[#10b981]/60 focus:ring-1 focus:ring-[#10b981]/30 focus:shadow-[0_0_15px_rgba(16,185,129,0.15)] transition-all duration-300"
               />
             </div>
+            
             {error && (
               <div className="mt-6 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
                 <p className="text-red-400 text-xs text-center font-medium">{error}</p>
               </div>
             )}
+            
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-8 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 py-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full mt-8 relative overflow-hidden bg-gradient-to-br from-[#065f46] via-[#10b981] to-[#34d399] text-white py-3 rounded-lg text-sm font-medium transition-all duration-300 hover:shadow-[0_0_25px_rgba(16,185,129,0.3)] hover:brightness-110 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
@@ -110,10 +118,14 @@ export default function Login() {
                   Autenticando...
                 </>
               ) : (
-                "Iniciar Sesión"
+                <>
+                  <Lock size={16} />
+                  Iniciar Sesión
+                </>
               )}
             </button>
           </form>
+          
           <div className="mt-8 flex items-center justify-center gap-2">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400/50"></div>
             <span className="text-[10px] text-white/30">Sistema seguro</span>
@@ -121,11 +133,13 @@ export default function Login() {
         </div>
       </div>
       
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-white/5 to-black items-center justify-center relative min-h-screen">
+      {/* Right Panel - Engineering Presence */}
+      <div className="hidden lg:flex lg:w-1/2 items-center justify-center relative min-h-screen">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1a1e23_1px,transparent_1px),linear-gradient(to_bottom,#1a1e23_1px,transparent_1px)] bg-[size:3rem_3rem] opacity-[0.03] pointer-events-none"></div>
         <img
           src="/medopz_logo_blanco_solo.svg"
           alt="MedOpz Logo"
-          className="h-40 w-40 opacity-20"
+          className="h-48 w-48 opacity-[0.35] relative z-10"
         />
       </div>
     </div>
