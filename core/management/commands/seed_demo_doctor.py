@@ -2,13 +2,15 @@
 """
 Management Command: seed_demo_doctor
 
-Crea doctores de demo/testing para MEDOPZ.
+Crea doctores de demo/testing para MEDOPZ con perfil completo.
 
 Uso:
-  python manage.py seed_demo_doctor                          # Crea doctor verificado directamente
-  python manage.py seed_demo_doctor --with-token            # Simula flujo real con invitación
-  python manage.py seed_demo_doctor --username dr_test2     # Username personalizado
-  python manage.py seed_demo_doctor --name "Dr. Juan Perez"  # Nombre personalizado
+  python manage.py seed_demo_doctor                            # Doctor directo verificado
+  python manage.py seed_demo_doctor --with-token              # Simula flujo real con invitación
+  python manage.py seed_demo_doctor --username dr_test2       # Username personalizado
+  python manage.py seed_demo_doctor --name "Juan Perez"       # Nombre (sin prefijo Dr.)
+  python manage.py seed_demo_doctor --name "Maria Lopez" --female  # Médico femenina
+  python manage.py seed_demo_doctor --cleanup                 # Elimina usuarios demo antes de crear
 
 El flag --with-token crea un DoctorInvitation y打印 el token
 para demostrar el flujo real de invitación cerrado.
@@ -35,8 +37,21 @@ class Command(BaseCommand):
         parser.add_argument(
             "--name",
             type=str,
-            default="Dr. Demo User",
-            help="Nombre completo del doctor",
+            default="Juan Perez",
+            help="Nombre completo del médico (sin prefijo Dr./Dra.)",
+        )
+        parser.add_argument(
+            "--gender",
+            type=str,
+            choices=["M", "F"],
+            default="M",
+            help="Género del médico: M=Masculino (Dr.), F=Femenino (Dra.)",
+        )
+        parser.add_argument(
+            "-f",
+            "--female",
+            action="store_true",
+            help="Género femenino (equivale a --gender F)",
         )
         parser.add_argument(
             "--with-token",
@@ -61,14 +76,28 @@ class Command(BaseCommand):
             default=True,
             help="Marcar doctor como verificado (default: True)",
         )
+        parser.add_argument(
+            "--cleanup",
+            action="store_true",
+            help="Eliminar usuarios demo existentes antes de crear",
+        )
 
     def handle(self, *args, **options):
+        # Procesar gender
+        gender = "F" if options["female"] else options["gender"]
+
         username = options["username"]
         full_name = options["name"]
         with_token = options["with_token"]
         email = options["email"] or f"{username}@medopz.demo"
         specialty_code = options["specialty"]
         is_verified = options["verified"]
+        cleanup = options["cleanup"]
+
+        # Cleanup si solicitado
+        if cleanup:
+            self._cleanup_demo_users(username)
+            return
 
         # Verificar que existe al menos una institución
         institution = InstitutionSettings.objects.first()
@@ -107,6 +136,7 @@ class Command(BaseCommand):
             self._create_invitation_flow(
                 username=username,
                 full_name=full_name,
+                gender=gender,
                 email=email,
                 specialty=specialty,
                 institution=institution,
@@ -115,16 +145,69 @@ class Command(BaseCommand):
             self._create_direct_doctor(
                 username=username,
                 full_name=full_name,
+                gender=gender,
                 email=email,
                 specialty=specialty,
                 institution=institution,
                 is_verified=is_verified,
             )
 
+    def _cleanup_demo_users(self, username):
+        """Elimina usuarios demo existentes"""
+        self.stdout.write("")
+        self.stdout.write(self.style.WARNING("═" * 60))
+        self.stdout.write(self.style.WARNING("  MEDOPZ CLEANUP MODE"))
+        self.stdout.write(self.style.WARNING("═" * 60))
+        self.stdout.write("")
+
+        deleted_users = []
+        deleted_doctors = []
+
+        # Buscar DoctorOperator con este username
+        try:
+            doctor = DoctorOperator.objects.get(user__username=username)
+            user = doctor.user
+            doctor_name = doctor.full_name
+            deleted_doctors.append(doctor_name)
+            doctor.delete()
+            user.delete()
+            self.stdout.write(
+                self.style.SUCCESS(f"✓ DoctorOperator eliminado: {doctor_name}")
+            )
+            self.stdout.write(self.style.SUCCESS(f"✓ User eliminado: {username}"))
+        except DoctorOperator.DoesNotExist:
+            self.stdout.write(
+                self.style.WARNING(
+                    f"⚠️  No existe DoctorOperator con username: {username}"
+                )
+            )
+
+        # Buscar DoctorInvitation por email
+        demo_emails = [f"{username}@medopz.demo", f"dr_demo@medopz.demo"]
+        for email in demo_emails:
+            try:
+                invitation = DoctorInvitation.objects.get(email=email, is_used=False)
+                inv_name = invitation.full_name
+                invitation.delete()
+                self.stdout.write(
+                    self.style.SUCCESS(f"✓ Invitación eliminada: {inv_name}")
+                )
+            except DoctorInvitation.DoesNotExist:
+                pass
+
+        self.stdout.write("")
+        self.stdout.write(self.style.SUCCESS("═" * 60))
+        self.stdout.write(self.style.SUCCESS("  LIMPIEZA COMPLETADA"))
+        self.stdout.write(self.style.SUCCESS("═" * 60))
+        self.stdout.write("")
+
     def _create_direct_doctor(
-        self, username, full_name, email, specialty, institution, is_verified
+        self, username, full_name, gender, email, specialty, institution, is_verified
     ):
         """Crea doctor directamente (bypass invitación)"""
+        prefix = "Dra." if gender == "F" else "Dr."
+        full_name_formatted = f"{prefix} {full_name}"
+
         self.stdout.write("")
         self.stdout.write(self.style.SUCCESS("═" * 60))
         self.stdout.write(self.style.SUCCESS("  MEDOPZ DEMO DOCTOR SEEDER"))
@@ -135,38 +218,10 @@ class Command(BaseCommand):
         if User.objects.filter(username=username).exists():
             self.stdout.write(
                 self.style.WARNING(
-                    f'⚠️  Usuario "{username}" ya existe. Buscando DoctorOperator...'
+                    f'⚠️  Usuario "{username}" ya existe. Ejecuta con --cleanup primero.'
                 )
             )
-            try:
-                doctor = DoctorOperator.objects.get(user__username=username)
-                self.stdout.write(
-                    self.style.SUCCESS(f"✓ Doctor encontrado: {doctor.full_name}")
-                )
-                self.stdout.write(
-                    self.style.SUCCESS(f"  National ID: {doctor.national_id}")
-                )
-                self.stdout.write(
-                    self.style.SUCCESS(f"  License MPPS: {doctor.license}")
-                )
-                self.stdout.write(
-                    self.style.SUCCESS(f"  is_verified: {doctor.is_verified}")
-                )
-                self.stdout.write("")
-                self.stdout.write(
-                    self.style.SUCCESS(
-                        f"  → Credenciales: username={username} / password=Medopz2024!"
-                    )
-                )
-                return
-            except DoctorOperator.DoesNotExist:
-                self.stdout.write(
-                    self.style.ERROR(
-                        f"✗ Usuario existe pero no tiene DoctorOperator. "
-                        f"Usa otro username o elimina el usuario primero."
-                    )
-                )
-                return
+            return
 
         # Generar cédula ficticia única
         import random
@@ -174,21 +229,20 @@ class Command(BaseCommand):
         national_id = f"V-{random.randint(10000000, 29999999)}"
 
         # Crear usuario Django
+        name_parts = full_name.split()
         user = User.objects.create_user(
             username=username,
             email=email,
             password="Medopz2024!",
-            first_name=full_name.split()[1]
-            if len(full_name.split()) > 1
-            else full_name,
-            last_name=full_name.split()[-1] if len(full_name.split()) > 1 else "",
+            first_name=name_parts[0] if len(name_parts) > 0 else full_name,
+            last_name=name_parts[-1] if len(name_parts) > 1 else "",
         )
         self.stdout.write(self.style.SUCCESS(f"✓ Usuario Django creado"))
 
         # Crear DoctorOperator
         doctor = DoctorOperator.objects.create(
             user=user,
-            full_name=full_name,
+            full_name=full_name_formatted,
             national_id=national_id,
             email=email,
             license=f"MPPS-{random.randint(100000, 999999)}",
@@ -196,7 +250,7 @@ class Command(BaseCommand):
             is_verified=is_verified,
             is_active_license=True,
             license_expiry_date=timezone.now().date() + timedelta(days=365),
-            gender="M",
+            gender=gender,
         )
         self.stdout.write(self.style.SUCCESS(f"✓ DoctorOperator creado"))
 
@@ -215,9 +269,14 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("  DOCTOR DEMO CREADO EXITOSAMENTE"))
         self.stdout.write(self.style.SUCCESS("═" * 60))
         self.stdout.write("")
-        self.stdout.write(self.style.SUCCESS(f"  Nombre:    {doctor.full_name}"))
+        self.stdout.write(self.style.SUCCESS(f"  Nombre:    {full_name_formatted}"))
         self.stdout.write(self.style.SUCCESS(f"  Username:  {username}"))
         self.stdout.write(self.style.SUCCESS(f"  Password:  Medopz2024! (temporal)"))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"  Género:    {'Femenino' if gender == 'F' else 'Masculino'}"
+            )
+        )
         self.stdout.write(self.style.SUCCESS(f"  Nacional:  {national_id}"))
         self.stdout.write(self.style.SUCCESS(f"  License:   {doctor.license}"))
         self.stdout.write(self.style.SUCCESS(f"  verified:  {doctor.is_verified}"))
@@ -226,9 +285,12 @@ class Command(BaseCommand):
         self.stdout.write("")
 
     def _create_invitation_flow(
-        self, username, full_name, email, specialty, institution
+        self, username, full_name, gender, email, specialty, institution
     ):
         """Crea invitación (flujo real cerrado)"""
+        prefix = "Dra." if gender == "F" else "Dr."
+        full_name_formatted = f"{prefix} {full_name}"
+
         self.stdout.write("")
         self.stdout.write(self.style.SUCCESS("═" * 60))
         self.stdout.write(self.style.SUCCESS("  MEDOPZ INVITATION FLOW SIMULATOR"))
@@ -245,7 +307,7 @@ class Command(BaseCommand):
         # Crear DoctorInvitation
         invitation = DoctorInvitation.objects.create(
             national_id=national_id,
-            full_name=full_name,
+            full_name=full_name_formatted,
             email=email,
             specialty=specialty,
             license_number=license_num,
@@ -260,8 +322,13 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("  INVITATION CREATED - TOKEN GENERATED"))
         self.stdout.write(self.style.SUCCESS("═" * 60))
         self.stdout.write("")
-        self.stdout.write(self.style.SUCCESS(f"  Nombre:      {invitation.full_name}"))
-        self.stdout.write(self.style.SUCCESS(f"  Email:       {invitation.email}"))
+        self.stdout.write(self.style.SUCCESS(f"  Nombre:      {full_name_formatted}"))
+        self.stdout.write(self.style.SUCCESS(f"  Email:       {email}"))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"  Género:      {'Femenino' if gender == 'F' else 'Masculino'}"
+            )
+        )
         self.stdout.write(
             self.style.SUCCESS(f"  Nacional:    {invitation.national_id}")
         )
