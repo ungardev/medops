@@ -33,10 +33,17 @@ export default function PatientLogin() {
       {/* Left Panel - Form Card */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-10 min-h-screen relative z-10">
         <div className="w-full max-w-[420px] bg-[#0c0e12]/40 backdrop-blur-xl border border-slate-800/60 rounded-2xl shadow-2xl p-8 md:p-10 animate-in fade-in duration-500">
+          {/* Desktop logo - top left */}
           <img
             src="/medopz_logo_blanco_solo.svg"
             alt="MedOpz Logo"
-            className="h-10 w-10 mb-8 opacity-70"
+            className="hidden lg:block h-10 w-10 mb-8 opacity-70"
+          />
+          {/* Mobile logo - centered */}
+          <img
+            src="/medopz_logo_blanco_solo.svg"
+            alt="MedOpz Logo"
+            className="lg:hidden h-10 w-10 mx-auto mb-6 opacity-70"
           />
           
           <div className="mb-8">
@@ -104,13 +111,7 @@ export default function PatientLogin() {
             )}
           </button>
           
-          <div className="mt-6 text-center space-y-2">
-            <Link
-              to="/patient/register"
-              className="block text-sm text-emerald-400/70 hover:text-emerald-400 transition-colors"
-            >
-              ¿No tienes cuenta? Regístrate
-            </Link>
+          <div className="mt-6 text-center">
             <Link
               to="/patient/forgot-password"
               className="block text-sm text-slate-400 hover:text-slate-300 transition-colors"
