@@ -5,15 +5,16 @@ Management Command: seed_demo_doctor
 Crea doctores de demo/testing para MEDOPZ con perfil completo.
 
 Uso:
-  python manage.py seed_demo_doctor                            # Doctor directo verificado
-  python manage.py seed_demo_doctor --with-token              # Simula flujo real con invitación
-  python manage.py seed_demo_doctor --username dr_test2       # Username personalizado
-  python manage.py seed_demo_doctor --name "Juan Perez"       # Nombre (sin prefijo Dr.)
-  python manage.py seed_demo_doctor --name "Maria Lopez" --female  # Médico femenina
-  python manage.py seed_demo_doctor --cleanup                 # Elimina usuarios demo antes de crear
+  python manage.py seed_demo_doctor --name "Juan Perez"       # Auto-detecta sexo
+  python manage.py seed_demo_doctor --name "Maria Lopez"    # Auto → Dra.
+  python manage.py seed_demo_doctor --name "Juan Perez" -m   # Forzar Dr.
+  python manage.py seed_demo_doctor --name "Ana Ruiz" -f     # Forzar Dra.
+  python manage.py seed_demo_doctor --name "Carlos Vega" --sex M
+  python manage.py seed_demo_doctor --with-token             # Simula flujo real con invitación
+  python manage.py seed_demo_doctor --cleanup                # Elimina usuarios demo
 
-El flag --with-token crea un DoctorInvitation y打印 el token
-para demostrar el flujo real de invitación cerrado.
+El motor de detección automática analiza el nombre para asignar
+el sexo clínico y tratamiento correcto (Dr./Dra.).
 """
 
 from django.core.management.base import BaseCommand
@@ -24,34 +25,142 @@ from core.models import DoctorOperator, DoctorInvitation, InstitutionSettings, S
 from core.models import SPECIALTY_CHOICES
 
 
+# Nombres femeninos comunes para fallback automático
+FEMALE_NAMES = {
+    "maria",
+    "ana",
+    "carmen",
+    "isabel",
+    "rosa",
+    "beatriz",
+    "sofia",
+    "lucia",
+    "paula",
+    "teresa",
+    "clara",
+    "julia",
+    "victoria",
+    "andrea",
+    "margarita",
+    "elena",
+    "fernanda",
+    "gabriela",
+    "camila",
+    "valentina",
+    "daniela",
+    "carolina",
+    "angela",
+    "patricia",
+    "silvia",
+    "mercedes",
+    "gloria",
+    "adriana",
+    "alejandra",
+    "constanza",
+    "pilar",
+    "laura",
+    "susana",
+    "natalia",
+    "monica",
+    "veronica",
+    "catalina",
+    "martina",
+    "emma",
+    "agustina",
+    "florencia",
+    "renata",
+    "francisca",
+    "almendra",
+}
+
+
+def detect_sex_from_name(full_name: str) -> str:
+    """
+    Detecta el sexo clínico basado en el primer nombre.
+
+    Returns:
+        'F' si el nombre termina en 'a' Y no está en la excepción de nombres ambiguos
+        'M' como default
+
+    Ejemplos:
+        'Maria Lopez' → 'F' (termina en 'a')
+        'Jose Perez' → 'M' (no termina en 'a')
+        'Andrea Gomez' → 'F' (nombre femenino conocido)
+        'Mario Bros' → 'M' (nombre ambiguo, termina en 'o')
+    """
+    first_name = full_name.split()[0].lower().strip()
+
+    # Si el nombre está en la lista de nombres femenina conocidos
+    if first_name in FEMALE_NAMES:
+        return "F"
+
+    # Si termina en 'a' y no es un nombre ambiguo, asumir femenino
+    if first_name.endswith("a") and first_name not in {
+        "arma",
+        "eco",
+        "mapa",
+        "nada",
+        "papa",
+        "zapa",
+    }:
+        return "F"
+
+    # Default: masculino
+    return "M"
+
+
+def get_prefix_and_username(full_name: str, sex: str, username_base: str) -> tuple:
+    """
+    Calcula el prefijo Dr./Dra. y el username adaptativo.
+
+    Returns:
+        (prefix, username) donde prefix es 'Dr.' o 'Dra.' y
+        username es adaptativo (dr_xxx o dra_xxx)
+    """
+    if sex == "F":
+        prefix = "Dra."
+        username = f"dra_{username_base.replace('dr_', '')}"
+    else:
+        prefix = "Dr."
+        username = f"dr_{username_base.replace('dra_', '')}"
+
+    return prefix, username
+
+
 class Command(BaseCommand):
     help = "Crea doctores de demo/testing para MEDOPZ con perfil completo"
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--username",
-            type=str,
-            default="dr_demo",
-            help="Username del doctor (default: dr_demo)",
-        )
-        parser.add_argument(
             "--name",
             type=str,
             default="Juan Perez",
-            help="Nombre completo del médico (sin prefijo Dr./Dra.)",
+            help="Nombre completo del médico (el script auto-detecta el sexo)",
         )
         parser.add_argument(
-            "--gender",
+            "--sex",
             type=str,
             choices=["M", "F"],
-            default="M",
-            help="Género del médico: M=Masculino (Dr.), F=Femenino (Dra.)",
+            default=None,
+            help="Sexo clínico: M=Masculino, F=Femenino (auto-detectado si no se especifica)",
+        )
+        parser.add_argument(
+            "-m",
+            "--male",
+            action="store_true",
+            help="Forzar sexo Masculino (Dr.)",
         )
         parser.add_argument(
             "-f",
             "--female",
             action="store_true",
-            help="Género femenino (equivale a --gender F)",
+            help="Forzar sexo Femenino (Dra.)",
+        )
+        parser.add_argument(
+            "--username",
+            type=str,
+            default=None,
+            help="Username personalizado (auto-generado si no se especifica)",
         )
         parser.add_argument(
             "--with-token",
@@ -62,7 +171,7 @@ class Command(BaseCommand):
             "--email",
             type=str,
             default=None,
-            help="Email del doctor (default: username@medopz.demo)",
+            help="Email del médico (default: username@medopz.demo)",
         )
         parser.add_argument(
             "--specialty",
@@ -83,13 +192,37 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        # Procesar gender
-        gender = "F" if options["female"] else options["gender"]
-
-        username = options["username"]
         full_name = options["name"]
-        with_token = options["with_token"]
+
+        # Determinar sexo clínico
+        if options["female"]:
+            sex = "F"
+        elif options["male"]:
+            sex = "M"
+        elif options["sex"]:
+            sex = options["sex"]
+        else:
+            # Auto-detección basada en nombre
+            sex = detect_sex_from_name(full_name)
+            self.stdout.write(
+                self.style.INFO(
+                    f"  Auto-detectado: {full_name.split()[0]} → Sexo Clínico: {'Femenino' if sex == 'F' else 'Masculino'}"
+                )
+            )
+
+        # Determinar prefijo Dr./Dra.
+        prefix = "Dra." if sex == "F" else "Dr."
+        full_name_formatted = f"{prefix} {full_name}"
+
+        # Username adaptativo
+        name_slug = (
+            full_name.lower().replace(" ", "_").replace(".", "").replace("'", "")
+        )
+        default_username = f"dr_{name_slug}" if sex == "M" else f"dra_{name_slug}"
+        username = options["username"] or default_username
+
         email = options["email"] or f"{username}@medopz.demo"
+        with_token = options["with_token"]
         specialty_code = options["specialty"]
         is_verified = options["verified"]
         cleanup = options["cleanup"]
@@ -116,17 +249,8 @@ class Command(BaseCommand):
         except Specialty.DoesNotExist:
             self.stdout.write(
                 self.style.WARNING(
-                    f'⚠️  Especialidad "{specialty_code}" no existe. Verificando SPECIALTY_CHOICES...'
+                    f'⚠️  Especialidad "{specialty_code}" no existe. Usando "general_surgery" como default.'
                 )
-            )
-            available = [code for code, _ in SPECIALTY_CHOICES]
-            self.stdout.write(
-                self.style.WARNING(
-                    f"  Códigos disponibles: {', '.join(available[:5])}..."
-                )
-            )
-            self.stdout.write(
-                self.style.WARNING(f'  Usando "general_surgery" como default.')
             )
             specialty, _ = Specialty.objects.get_or_create(
                 code="general_surgery", defaults={"name": "Cirugía General"}
@@ -136,7 +260,8 @@ class Command(BaseCommand):
             self._create_invitation_flow(
                 username=username,
                 full_name=full_name,
-                gender=gender,
+                full_name_formatted=full_name_formatted,
+                sex=sex,
                 email=email,
                 specialty=specialty,
                 institution=institution,
@@ -145,7 +270,8 @@ class Command(BaseCommand):
             self._create_direct_doctor(
                 username=username,
                 full_name=full_name,
-                gender=gender,
+                full_name_formatted=full_name_formatted,
+                sex=sex,
                 email=email,
                 specialty=specialty,
                 institution=institution,
@@ -160,15 +286,10 @@ class Command(BaseCommand):
         self.stdout.write(self.style.WARNING("═" * 60))
         self.stdout.write("")
 
-        deleted_users = []
-        deleted_doctors = []
-
-        # Buscar DoctorOperator con este username
         try:
             doctor = DoctorOperator.objects.get(user__username=username)
             user = doctor.user
             doctor_name = doctor.full_name
-            deleted_doctors.append(doctor_name)
             doctor.delete()
             user.delete()
             self.stdout.write(
@@ -182,8 +303,11 @@ class Command(BaseCommand):
                 )
             )
 
-        # Buscar DoctorInvitation por email
-        demo_emails = [f"{username}@medopz.demo", f"dr_demo@medopz.demo"]
+        demo_emails = [
+            f"{username}@medopz.demo",
+            f"dr_demo@medopz.demo",
+            f"dra_demo@medopz.demo",
+        ]
         for email in demo_emails:
             try:
                 invitation = DoctorInvitation.objects.get(email=email, is_used=False)
@@ -202,15 +326,22 @@ class Command(BaseCommand):
         self.stdout.write("")
 
     def _create_direct_doctor(
-        self, username, full_name, gender, email, specialty, institution, is_verified
+        self,
+        username,
+        full_name,
+        full_name_formatted,
+        sex,
+        email,
+        specialty,
+        institution,
+        is_verified,
     ):
         """Crea doctor directamente (bypass invitación)"""
-        prefix = "Dra." if gender == "F" else "Dr."
-        full_name_formatted = f"{prefix} {full_name}"
-
         self.stdout.write("")
         self.stdout.write(self.style.SUCCESS("═" * 60))
-        self.stdout.write(self.style.SUCCESS("  MEDOPZ DEMO DOCTOR SEEDER"))
+        self.stdout.write(
+            self.style.SUCCESS("  MEDOPZ WORKSTATION - DEMO DOCTOR CREATED")
+        )
         self.stdout.write(self.style.SUCCESS("═" * 60))
         self.stdout.write("")
 
@@ -242,7 +373,7 @@ class Command(BaseCommand):
             first_name=name_parts[0] if len(name_parts) > 0 else full_name,
             last_name=name_parts[-1] if len(name_parts) > 1 else "",
         )
-        self.stdout.write(self.style.SUCCESS(f"✓ Usuario Django creado"))
+        self.stdout.write(self.style.SUCCESS(f"✓ User Django creado"))
 
         # Crear DoctorOperator
         doctor = DoctorOperator.objects.create(
@@ -255,7 +386,7 @@ class Command(BaseCommand):
             is_verified=is_verified,
             is_active_license=True,
             license_expiry_date=timezone.now().date() + timedelta(days=365),
-            gender=gender,
+            gender=sex,
         )
         self.stdout.write(self.style.SUCCESS(f"✓ DoctorOperator creado"))
 
@@ -270,48 +401,58 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"✓ Institución: {institution.name}"))
 
         self.stdout.write("")
-        self.stdout.write(self.style.SUCCESS("═" * 60))
-        self.stdout.write(self.style.SUCCESS("  DOCTOR DEMO CREADO EXITOSAMENTE"))
-        self.stdout.write(self.style.SUCCESS("═" * 60))
-        self.stdout.write("")
-        self.stdout.write(self.style.SUCCESS(f"  Nombre:    {full_name_formatted}"))
-        self.stdout.write(self.style.SUCCESS(f"  Username:  {username}"))
         self.stdout.write(
-            self.style.WARNING("  ⚠️  Password: establecer en admin o usar reset")
+            self.style.SUCCESS("  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         )
+        self.stdout.write(self.style.SUCCESS("  PERFIL PROFESIONAL"))
+        self.stdout.write(
+            self.style.SUCCESS("  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        )
+        self.stdout.write("")
+        self.stdout.write(self.style.SUCCESS(f"  Profesional:  {full_name_formatted}"))
         self.stdout.write(
             self.style.SUCCESS(
-                f"  Género:    {'Femenino' if gender == 'F' else 'Masculino'}"
+                f"  Sexo Clínico: {'Femenino' if sex == 'F' else 'Masculino'}"
             )
         )
-        self.stdout.write(self.style.SUCCESS(f"  Nacional:  {national_id}"))
-        self.stdout.write(self.style.SUCCESS(f"  License:   {doctor.license}"))
-        self.stdout.write(self.style.SUCCESS(f"  verified:  {doctor.is_verified}"))
+        self.stdout.write(self.style.SUCCESS(f"  Username:     {username}"))
+        self.stdout.write(
+            self.style.WARNING(
+                "  Password:     [ Autogenerado Seguro / Establecer en Admin ]"
+            )
+        )
+        self.stdout.write(self.style.SUCCESS(f"  Nacional:      {national_id}"))
+        self.stdout.write(self.style.SUCCESS(f"  License:      {doctor.license}"))
+        self.stdout.write(
+            self.style.SUCCESS(f"  Verificado:    {'Sí' if is_verified else 'No'}")
+        )
         self.stdout.write("")
         self.stdout.write(self.style.WARNING("  ⚠️  CAMBIAR PASSWORD EN PRODUCCIÓN"))
         self.stdout.write("")
 
     def _create_invitation_flow(
-        self, username, full_name, gender, email, specialty, institution
+        self,
+        username,
+        full_name,
+        full_name_formatted,
+        sex,
+        email,
+        specialty,
+        institution,
     ):
         """Crea invitación (flujo real cerrado)"""
-        prefix = "Dra." if gender == "F" else "Dr."
-        full_name_formatted = f"{prefix} {full_name}"
-
         self.stdout.write("")
         self.stdout.write(self.style.SUCCESS("═" * 60))
-        self.stdout.write(self.style.SUCCESS("  MEDOPZ INVITATION FLOW SIMULATOR"))
+        self.stdout.write(self.style.SUCCESS("  MEDOPZ WORKSTATION - INVITATION FLOW"))
         self.stdout.write(self.style.SUCCESS("═" * 60))
         self.stdout.write("")
 
-        # Generar credentials ficticias
         import random
 
         national_id = f"V-{random.randint(10000000, 29999999)}"
         license_num = f"MPPS-{random.randint(100000, 999999)}"
         colegiao_num = f"CMV-{random.randint(10000, 99999)}"
 
-        # Crear DoctorInvitation
         invitation = DoctorInvitation.objects.create(
             national_id=national_id,
             full_name=full_name_formatted,
@@ -325,29 +466,35 @@ class Command(BaseCommand):
             is_used=False,
         )
 
-        self.stdout.write(self.style.SUCCESS("═" * 60))
+        self.stdout.write(
+            self.style.SUCCESS("  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        )
         self.stdout.write(self.style.SUCCESS("  INVITATION CREATED - TOKEN GENERATED"))
-        self.stdout.write(self.style.SUCCESS("═" * 60))
+        self.stdout.write(
+            self.style.SUCCESS("  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        )
         self.stdout.write("")
-        self.stdout.write(self.style.SUCCESS(f"  Nombre:      {full_name_formatted}"))
-        self.stdout.write(self.style.SUCCESS(f"  Email:       {email}"))
+        self.stdout.write(self.style.SUCCESS(f"  Profesional:   {full_name_formatted}"))
         self.stdout.write(
             self.style.SUCCESS(
-                f"  Género:      {'Femenino' if gender == 'F' else 'Masculino'}"
+                f"  Sexo Clínico:  {'Femenino' if sex == 'F' else 'Masculino'}"
             )
         )
+        self.stdout.write(self.style.SUCCESS(f"  Email:        {email}"))
         self.stdout.write(
-            self.style.SUCCESS(f"  Nacional:    {invitation.national_id}")
+            self.style.SUCCESS(f"  Nacional:      {invitation.national_id}")
         )
         self.stdout.write(
-            self.style.SUCCESS(f"  Colegiado:   {invitation.colegiado_number}")
+            self.style.SUCCESS(f"  Colegiado:     {invitation.colegiado_number}")
         )
         self.stdout.write(
-            self.style.SUCCESS(f"  License:     {invitation.license_number}")
+            self.style.SUCCESS(f"  License:       {invitation.license_number}")
         )
-        self.stdout.write(self.style.SUCCESS(f"  Especialidad: {specialty.name}"))
-        self.stdout.write(self.style.SUCCESS(f"  Institución:  {institution.name}"))
-        self.stdout.write(self.style.SUCCESS(f"  Expira:      {invitation.expires_at}"))
+        self.stdout.write(self.style.SUCCESS(f"  Especialidad:  {specialty.name}"))
+        self.stdout.write(self.style.SUCCESS(f"  Institución:   {institution.name}"))
+        self.stdout.write(
+            self.style.SUCCESS(f"  Expira:       {invitation.expires_at}")
+        )
         self.stdout.write("")
         self.stdout.write(
             self.style.WARNING("  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
@@ -363,7 +510,7 @@ class Command(BaseCommand):
             self.style.WARNING("  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         )
         self.stdout.write("")
-        self.stdout.write(self.style.SUCCESS("  Para activar, llama:"))
+        self.stdout.write(self.style.SUCCESS("  Para activar, llamar:"))
         self.stdout.write(
             self.style.SUCCESS(
                 f"  POST /api/doctor/activate/ "
