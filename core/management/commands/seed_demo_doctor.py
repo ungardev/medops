@@ -228,12 +228,17 @@ class Command(BaseCommand):
 
         national_id = f"V-{random.randint(10000000, 29999999)}"
 
+        # Generar password temporal seguro (no se imprime)
+        import secrets
+
+        temp_password = secrets.token_urlsafe(16)
+
         # Crear usuario Django
         name_parts = full_name.split()
         user = User.objects.create_user(
             username=username,
             email=email,
-            password="Medopz2024!",
+            password=temp_password,
             first_name=name_parts[0] if len(name_parts) > 0 else full_name,
             last_name=name_parts[-1] if len(name_parts) > 1 else "",
         )
@@ -271,7 +276,9 @@ class Command(BaseCommand):
         self.stdout.write("")
         self.stdout.write(self.style.SUCCESS(f"  Nombre:    {full_name_formatted}"))
         self.stdout.write(self.style.SUCCESS(f"  Username:  {username}"))
-        self.stdout.write(self.style.SUCCESS(f"  Password:  Medopz2024! (temporal)"))
+        self.stdout.write(
+            self.style.WARNING("  ⚠️  Password: establecer en admin o usar reset")
+        )
         self.stdout.write(
             self.style.SUCCESS(
                 f"  Género:    {'Femenino' if gender == 'F' else 'Masculino'}"

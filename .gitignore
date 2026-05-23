@@ -98,3 +98,5 @@ restore_fast.py
 restore_large.py
 restore_priority.py
 restore_remaining.py
+.env*
+.env.production
