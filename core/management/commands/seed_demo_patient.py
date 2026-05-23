@@ -18,6 +18,7 @@ el sexo clínico y tratamiento correcto (Sr./Sra.).
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from django.utils import timezone
+from datetime import datetime, timedelta
 from datetime import timedelta
 from core.models import Patient, PatientUser, PatientInvitation, InstitutionSettings
 
@@ -195,8 +196,8 @@ class Command(BaseCommand):
         else:
             sex = detect_sex_from_name(full_name)
             self.stdout.write(
-                self.style.INFO(
-                    f"  Auto-detectado: {full_name.split()[0]} -> Sexo Clínico: {'Femenino' if sex == 'F' else 'Masculino'}"
+                self.style.SUCCESS(
+                    f"  [Auto] {full_name.split()[0]} -> Sexo Clinico: {'Femenino' if sex == 'F' else 'Masculino'}"
                 )
             )
 
