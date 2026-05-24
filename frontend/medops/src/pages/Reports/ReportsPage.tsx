@@ -24,7 +24,7 @@ export default function ReportsPage() {
       
       <PageHeader
         breadcrumbs={[
-          { label: "MEDOPZ", path: "/" },
+          { label: "MEDOPZ", path: "/doctor" },
           { label: "Reportes", active: true }
         ]}
         stats={[

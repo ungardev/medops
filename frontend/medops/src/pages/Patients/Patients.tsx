@@ -47,7 +47,7 @@ export default function Patients() {
   const pageHeader = (
     <PageHeader 
       breadcrumbs={[
-        { label: "MEDOPZ", path: "/" },
+        { label: "MEDOPZ", path: "/doctor" },
         { label: "Pacientes", active: true }
       ]}
       stats={[

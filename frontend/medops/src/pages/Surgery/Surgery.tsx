@@ -141,7 +141,7 @@ export default function Surgery() {
     <div className="space-y-6">
       <PageHeader 
         breadcrumbs={[
-          { label: "MEDOPZ", path: "/" },
+          { label: "MEDOPZ", path: "/doctor" },
           { label: "Cirugía", active: true }
         ]}
         stats={[

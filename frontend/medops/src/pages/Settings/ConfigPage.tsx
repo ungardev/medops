@@ -205,7 +205,7 @@ const handleSaveDoctor = async () => {
       
       <PageHeader
         breadcrumbs={[
-          { label: "MEDOPZ", path: "/" },
+          { label: "MEDOPZ", path: "/doctor" },
           { label: "Configuración", active: true }
         ]}
       />

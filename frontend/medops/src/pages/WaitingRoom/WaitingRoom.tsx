@@ -232,7 +232,7 @@ export default function WaitingRoom() {
       
       <PageHeader 
         breadcrumbs={[
-          { label: "MEDOPZ", path: "/" },
+          { label: "MEDOPZ", path: "/doctor" },
           { label: "Sala de Espera", active: true }
         ]}
         stats={[

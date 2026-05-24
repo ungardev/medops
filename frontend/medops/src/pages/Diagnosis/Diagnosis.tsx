@@ -5,7 +5,7 @@ export default function Diagnosis() {
     <div className="space-y-6">
       <PageHeader 
         breadcrumbs={[
-          { label: "MEDOPZ", path: "/" },
+          { label: "MEDOPZ", path: "/doctor" },
           { label: "Diagnóstico", active: true }
         ]}
       />

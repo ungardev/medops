@@ -177,7 +177,7 @@ export default function ServiceCatalogPage() {
     <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
       <PageHeader
         breadcrumbs={[
-          { label: "MEDOPZ", path: "/" },
+          { label: "MEDOPZ", path: "/doctor" },
           { label: "Servicios", active: true }
         ]}
         stats={[

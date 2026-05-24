@@ -103,7 +103,7 @@ export default function PatientConsultationsDetail() {
       
       <PageHeader 
         breadcrumbs={[
-          { label: "MEDOPZ", path: "/" },
+          { label: "MEDOPZ", path: "/doctor" },
           { label: "Pacientes", path: "/patients" },
           { label: patientFullName.length > 20 ? patientFullName.substring(0, 20) + '...' : patientFullName, path: `/patients/${patientId}` },
           { label: "Detalle de Consulta", active: true }

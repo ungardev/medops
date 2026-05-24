@@ -52,7 +52,7 @@ export default function Payments() {
       
       <PageHeader
         breadcrumbs={[
-          { label: "MEDOPZ", path: "/" },
+          { label: "MEDOPZ", path: "/doctor" },
           { label: "Pagos", active: true }
         ]}
         stats={[

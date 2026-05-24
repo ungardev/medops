@@ -123,7 +123,7 @@ export default function ManageServicesPage() {
     <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
       <PageHeader
         breadcrumbs={[
-          { label: "MEDOPZ", path: "/" },
+          { label: "MEDOPZ", path: "/doctor" },
           { label: "Portal Doctor", path: "/doctor" },
           { label: "Centro de Control", active: true }
         ]}

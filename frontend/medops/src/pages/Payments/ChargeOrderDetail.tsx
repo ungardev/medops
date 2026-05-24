@@ -132,7 +132,7 @@ export default function ChargeOrderDetail() {
       
       <PageHeader
         breadcrumbs={[
-          { label: "MEDOPZ", path: "/" },
+          { label: "MEDOPZ", path: "/doctor" },
           { label: "Pagos", path: "/payments" },
           { 
             label: order!.institution?.name || "Institución",

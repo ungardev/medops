@@ -140,7 +140,7 @@ export default function Consultation() {
       
       <PageHeader 
         breadcrumbs={[
-          { label: "MEDOPZ", path: "/" },
+          { label: "MEDOPZ", path: "/doctor" },
           { label: "Consulta", active: true }
         ]}
         stats={[
