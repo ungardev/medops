@@ -1,0 +1,48 @@
+name: Scrape BCV Rate Daily
+
+on:
+  schedule:
+    # 5:00 AM UTC daily = 1:00 AM Venezuela time
+    # Cron syntax: minute hour day month weekday
+    - cron: "0 5 * * *"
+  # Allow manual trigger from GitHub Actions tab
+  workflow_dispatch:
+
+jobs:
+  scrape-bcv:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Trigger BCV Scrape API
+        run: |
+          echo "Calling BCV Scrape endpoint at $(date -u)"
+          response=$(curl -s -w "\nHTTP_CODE:%{http_code}" \
+            -X POST "https://api.medopz.com/api/admin/scrape-bcv/" \
+            -H "X-API-KEY: ${{ secrets.ADMIN_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            --fail-with-body)
+          
+          http_code=$(echo "$response" | grep "HTTP_CODE" | cut -d: -f2)
+          body=$(echo "$response" | sed '/HTTP_CODE/d')
+          
+          echo "HTTP Status: $http_code"
+          echo "Response: $body"
+          
+          if [ "$http_code" != "200" ]; then
+            echo "::error::BCV Scrape failed with HTTP $http_code"
+            echo "Response body: $body"
+            exit 1
+          fi
+          
+          echo "::notice::BCV Scrape completed successfully"
+        shell: bash
+
+      - name: Verify Cache Updated
+        run: |
+          echo "Checking BCV cache status..."
+          status=$(curl -s -X GET "https://api.medopz.com/api/admin/scrape-bcv/" \
+            -H "X-API-KEY: ${{ secrets.ADMIN_API_KEY }}" \
+            | python -c "import sys,json; d=json.load(sys.stdin); print(f'Rate: {d.get(\"cache_value\")}, Date: {d.get(\"cache_date\")}, Is Today: {d.get(\"is_today\")}')")
+          echo "$status"
+        shell: bash

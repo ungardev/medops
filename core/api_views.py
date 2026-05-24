@@ -34,7 +34,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 import qrcode
 import base64
 from io import BytesIO
-from .services import generate_audit_code, get_bcv_rate
+from .services import generate_audit_code, get_bcv_rate, get_bcv_rate_logic
 import traceback
 import secrets
 import string
@@ -50,6 +50,7 @@ import requests
 
 
 logger = logging.getLogger(__name__)
+audit = logging.getLogger("audit")
 
 
 def conditional_permission():
@@ -7546,10 +7547,6 @@ def payment_ocr_api(request):
 
     Procesa imagen de captura de pago y extrae datos automáticamente
     """
-    import logging
-
-    logger = logging.getLogger(__name__)
-
     try:
         # Obtener imagen del request
         image = request.FILES.get("image")
@@ -8906,3 +8903,93 @@ def snomed_search_api(request):
     except Exception as e:
         logger.error(f"Error en snomed_search_api: {str(e)}")
         return Response({"error": str(e)}, status=500)
+
+
+# ============================================================================
+# ADMIN INTERNAL ENDPOINTS - BCV SCRAPING
+# ============================================================================
+
+
+@api_view(["GET", "POST"])
+@permission_classes([AllowAny])
+def scrape_bcv_admin_api(request):
+    """
+    Admin endpoint para forzar el scraping de la tasa BCV.
+
+    GET: Retorna el estado actual del cache BCV y última actualización
+    POST: Ejecuta el scraping y actualiza el cache BCV
+
+    Headers requeridos:
+        X-API-KEY: Clave de administración (ADMIN_API_KEY del entorno)
+
+    Respuestas:
+        200: Scraping exitoso o cache disponible
+        401: API key inválida o faltante
+        500: Error durante el scraping
+    """
+    import hmac
+    from decimal import Decimal
+    from django.utils.timezone import localdate
+
+    provided_key = request.META.get("HTTP_X_API_KEY", "")
+    expected_key = getattr(settings, "ADMIN_API_KEY", None)
+
+    if not expected_key:
+        logger.error("ADMIN_API_KEY no está configurada en settings")
+        return Response(
+            {"error": "Endpoint no configurado correctamente"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    if not provided_key or not hmac.compare_digest(provided_key, expected_key):
+        return Response(
+            {"error": "API key inválida o faltante"},
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
+
+    try:
+        from .models import BCVRateCache
+        from .services import get_bcv_rate_logic
+
+        today = localdate()
+
+        if request.method == "GET":
+            latest = BCVRateCache.objects.order_by("-date").first()
+            return Response(
+                {
+                    "status": "ok",
+                    "cache_date": latest.date.isoformat() if latest else None,
+                    "cache_value": float(latest.value) if latest else None,
+                    "is_today": latest.date == today if latest else False,
+                }
+            )
+
+        audit.info("ADMIN: Iniciando scraping BCV via API")
+
+        rate_data = get_bcv_rate_logic()
+        rate = Decimal(str(rate_data["value"]))
+
+        BCVRateCache.objects.update_or_create(
+            date=today,
+            defaults={"value": rate},
+        )
+
+        audit.info(f"ADMIN: BCV scraping completado - Tasa: {rate} Bs/USD")
+
+        return Response(
+            {
+                "status": "success",
+                "rate": float(rate),
+                "date": today.isoformat(),
+                "source": rate_data.get("source", "UNKNOWN"),
+                "is_fallback": rate_data.get("is_fallback", False),
+            }
+        )
+
+    except Exception as e:
+        audit.error(f"ADMIN: Error en scraping BCV → {e}")
+        logger.error(f"Error en scrape_bcv_admin_api: {str(e)}")
+        return Response(
+            {"error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )

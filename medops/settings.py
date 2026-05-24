@@ -30,6 +30,9 @@ if SECRET_KEY == "inseguro-en-dev":
 
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 
+# === Admin API Keys ===
+ADMIN_API_KEY = os.environ.get("ADMIN_API_KEY", "")
+
 # Ajuste para Docker y local
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0").split(
     ","

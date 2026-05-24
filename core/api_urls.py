@@ -82,6 +82,7 @@ from .api_views import (
     treatment_choices_api,
     prescription_choices_api,
     medicaltest_choices_api,
+    scrape_bcv_admin_api,
     medicalreferral_choices_api,
     specialty_choices_api,
     current_consultation_api,
@@ -533,6 +534,8 @@ urlpatterns = [
     path("operational-hub/", OperationalHubView.as_view(), name="operational-hub"),
     # --- Tasa BCV ---
     path("bcv-rate/", bcv_rate_api, name="bcv-rate-api"),
+    # --- Admin BCV Scrape Endpoint ---
+    path("admin/scrape-bcv/", scrape_bcv_admin_api, name="scrape-bcv-admin-api"),
     # --- Choices ---
     path("choices/treatment/", treatment_choices_api, name="treatment-choices-api"),
     path(
