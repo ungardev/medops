@@ -56,11 +56,16 @@ export default function Login() {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-10 min-h-screen relative z-10">
         <div className="w-full max-w-[420px] bg-[#0c0e12]/40 backdrop-blur-xl border border-slate-800/60 rounded-2xl shadow-2xl p-8 md:p-10 animate-in fade-in duration-500">
           {/* Logo - Centered, Large, Clickeable */}
-          <Link to="https://www.medopz.com" className="block mb-8">
+          <Link to="https://www.medopz.com" className="block mb-6">
             <img
               src="/medopz_logo_blanco_solo.svg"
               alt="MedOpz Logo"
               className="h-16 w-16 mx-auto opacity-80 hover:opacity-100 transition-opacity duration-300"
+            />
+            <img
+              src="/medopz_fuente_blanco.svg"
+              alt="MEDOPZ"
+              className="h-5 w-auto mx-auto mt-2 opacity-60"
             />
           </Link>
           
@@ -136,11 +141,21 @@ export default function Login() {
       {/* Right Panel - Engineering Presence */}
       <div className="hidden lg:flex lg:w-1/2 items-center justify-center relative min-h-screen">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#1a1e23_1px,transparent_1px),linear-gradient(to_bottom,#1a1e23_1px,transparent_1px)] bg-[size:3rem_3rem] opacity-[0.03] pointer-events-none"></div>
-        <img
-          src="/medopz_logo_blanco_solo.svg"
-          alt="MedOpz Logo"
-          className="h-48 w-48 opacity-[0.35] relative z-10"
-        />
+        <div className="flex flex-col items-center gap-4 relative z-10">
+          <img
+            src="/medopz_logo_blanco_solo.svg"
+            alt="MedOpz Logo"
+            className="h-32 w-32 opacity-[0.35]"
+          />
+          <img
+            src="/medopz_fuente_blanco.svg"
+            alt="MEDOPZ"
+            className="h-8 w-auto opacity-[0.5]"
+          />
+          <p className="text-slate-400/50 text-sm mt-2 tracking-wide">
+            Healthcare Technology Platform
+          </p>
+        </div>
       </div>
     </div>
   );
