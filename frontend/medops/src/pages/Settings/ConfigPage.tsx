@@ -201,7 +201,7 @@ const handleSaveDoctor = async () => {
   const inputStyles = `w-full bg-white/5 border border-white/15 rounded-lg px-4 py-2.5 text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30`;
   
   return (
-    <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
+    <div className="space-y-6">
       
       <PageHeader
         breadcrumbs={[

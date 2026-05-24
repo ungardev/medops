@@ -229,7 +229,7 @@ export default function PatientDetail() {
   const bloodTypeDisplay = editableBloodType || "—";
   const ageDisplay = patientAge ? `${patientAge} años` : "—";
   return (
-    <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
+    <div className="space-y-6">
       <PageHeader 
         breadcrumbs={[
           { label: "MEDOPZ", path: "/doctor" },

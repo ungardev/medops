@@ -136,7 +136,7 @@ export default function Consultation() {
   const billingPending = Number(appointment.balance_due || 0);
   const documentsCount = appointment.documents_count || 0;
   return (
-    <div className="min-h-screen bg-black text-white p-4 space-y-4">
+    <div className="space-y-6">
       
       <PageHeader 
         breadcrumbs={[
@@ -174,7 +174,7 @@ export default function Consultation() {
         </div>
       )}
       
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 px-4">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <main className="lg:col-span-9 space-y-4">
           <div className="bg-white/5 border border-white/15 p-1 relative min-h-[500px] flex flex-col rounded-lg">
             <div className="flex-1 bg-black/10 p-5 rounded-lg">
