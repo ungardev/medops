@@ -18,7 +18,11 @@ import {
   BuildingOfficeIcon,
   PencilSquareIcon,
   KeyIcon,
-  TrashIcon
+  TrashIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+  XCircleIcon,
+  QuestionMarkCircleIcon
 } from "@heroicons/react/24/outline";
 import ConfirmGenericModal from "@/components/Common/ConfirmGenericModal";
 export default function ConfigPage() {
@@ -260,23 +264,23 @@ const handleSaveDoctor = async () => {
                   <div className="mt-2 flex items-center gap-2">
                     {doc?.license_expiry_status === 'active' && (
                       <span className="inline-flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-md text-[9px] text-emerald-400 font-medium border border-emerald-500/20">
-                        🟢 Licencia Activa
-                      </span>
+                          <CheckCircleIcon className="w-3 h-3" /> Licencia Activa
+                        </span>
                     )}
                     {doc?.license_expiry_status === 'expiring_soon' && (
                       <span className="inline-flex items-center gap-1 bg-amber-500/10 px-2 py-0.5 rounded-md text-[9px] text-amber-400 font-medium border border-amber-500/20">
-                        🟡 Por Expirar
-                      </span>
+                          <ExclamationTriangleIcon className="w-3 h-3" /> Por Expirar
+                        </span>
                     )}
                     {doc?.license_expiry_status === 'expired' && (
                       <span className="inline-flex items-center gap-1 bg-red-500/10 px-2 py-0.5 rounded-md text-[9px] text-red-400 font-medium border border-red-500/20">
-                        🔴 Licencia Expirada
-                      </span>
+                          <XCircleIcon className="w-3 h-3" /> Licencia Expirada
+                        </span>
                     )}
                     {(doc?.license_expiry_status === 'unknown' || !doc?.license_expiry_status) && (
                       <span className="inline-flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded-md text-[9px] text-white/40 font-medium border border-white/10">
-                        ⚪ Sin Fecha
-                      </span>
+                          <QuestionMarkCircleIcon className="w-3 h-3" /> Sin Fecha
+                        </span>
                     )}
                     {doc?.is_verified && (
                       <span className="inline-flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-md text-[9px] text-emerald-400 font-medium border border-emerald-500/20">
