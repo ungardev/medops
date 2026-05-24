@@ -2480,9 +2480,6 @@ def get_institution_settings(request=None, active_only=False):
                 id=doctor.active_institution.id
             )
 
-        # Obtener todas las instituciones del doctor
-        institutions = doctor.institutions.all()
-
         if active_only:
             institution_id = None
             if request:
