@@ -30,7 +30,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   const [now, setNow] = useState(moment());
   const location = useLocation();
   const isPatientRoute = location.pathname.startsWith("/patient");
-  const homePath = isPatientRoute ? "/patient" : "/";
+  const homePath = isPatientRoute ? "/patient" : "/doctor";
   
   useEffect(() => {
     const timer = setInterval(() => setNow(moment()), 1000);
