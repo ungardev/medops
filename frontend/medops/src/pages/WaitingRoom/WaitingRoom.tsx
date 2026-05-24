@@ -1,5 +1,5 @@
 // src/pages/WaitingRoom/WaitingRoom.tsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import RegisterWalkinModal from "@/components/WaitingRoom/RegisterWalkinModal";
 import ConfirmCloseDayModal from "@/components/WaitingRoom/ConfirmCloseDayModal";
@@ -111,7 +111,7 @@ export default function WaitingRoom() {
   const registerArrival = useRegisterArrival();
   const startConsultation = useStartConsultation();
   
-  const filteredLiveQueue = liveQueue.filter(entry => {
+  const filteredLiveQueue = useMemo(() => liveQueue.filter(entry => {
     const matchesInstitution = !selectedInstitutionId || entry.institution === selectedInstitutionId;
     const serviceId = entry.serviceId;
     const service = services.find(s => s.id === serviceId);
@@ -120,9 +120,9 @@ export default function WaitingRoom() {
     const matchesCategory = !selectedCategory || categoryId === selectedCategory;
     const matchesService = !selectedService || serviceId === selectedService;
     return matchesInstitution && matchesCategory && matchesService && hasServiceOrNoFilter;
-  });
+  }), [liveQueue, selectedInstitutionId, selectedCategory, selectedService, services]);
   
-  const filteredPendingEntries = pendingEntries.filter(appt => {
+  const filteredPendingEntries = useMemo(() => pendingEntries.filter(appt => {
     const apptInstitutionId = typeof appt.institution === 'object' ? appt.institution?.id : appt.institution;
     const matchesInstitution = !selectedInstitutionId || apptInstitutionId === selectedInstitutionId;
     const serviceId = appt.doctor_service || appt.doctor_service?.id; 
@@ -132,22 +132,12 @@ export default function WaitingRoom() {
     const matchesCategory = !selectedCategory || categoryId === selectedCategory;
     const matchesService = !selectedService || serviceId === selectedService;
     return matchesInstitution && matchesService && matchesCategory && hasServiceOrNoFilter;
-  });
+  }), [pendingEntries, selectedInstitutionId, selectedCategory, selectedService, services]);
   
-  const filteredServices = selectedCategory
-    ? services.filter(s => s.category_id === selectedCategory)
-    : services;
-    
-  const [showOverlay, setShowOverlay] = useState(true);
-  
-  useEffect(() => {
-    if (!isLoading && !isFetching) {
-      const timeout = setTimeout(() => setShowOverlay(false), 400);
-      return () => clearTimeout(timeout);
-    } else {
-      setShowOverlay(true);
-    }
-  }, [isLoading, isFetching]);
+const filteredServices = useMemo(() => 
+    selectedCategory ? services.filter(s => s.category_id === selectedCategory) : services
+  , [selectedCategory, services]);
+  const [showOverlay, setShowOverlay] = useState(false);
   
   const handleStatusChange = (entry: WaitingRoomEntry, newStatus: WaitingRoomStatus) => {
     if (entry.appointment) {
@@ -268,7 +258,7 @@ export default function WaitingRoom() {
             <span className="text-[10px] text-white/50">Cargando datos...</span>
           </div>
         </div>
-      )}
+)}
       
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-8 flex flex-col bg-white/5 border border-white/15 rounded-lg overflow-hidden">

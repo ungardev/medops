@@ -16,10 +16,10 @@ export const useOperationalHub = (institutionId: number | null) => {
       if (!institutionId) {
         return { live_queue: [], pending_entries: [], filters: { categories: [], services: [] } };
       }
-      // Ajustar la URL según tu configuración de API
       return apiFetch(`operational-hub/?institution_id=${institutionId}`);
     },
-    staleTime: 10000, // 10 segundos
+    staleTime: 30000,
+    refetchInterval: 30000,
     enabled: !!institutionId,
   });
 };
