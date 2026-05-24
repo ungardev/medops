@@ -249,7 +249,15 @@ def get_bcv_rate_logic():
         with sync_playwright() as p:
             browser = p.chromium.launch(
                 headless=True,
-                args=["--disable-blink-features=AutomationControlled", "--no-sandbox"],
+                args=[
+                    "--disable-blink-features=AutomationControlled",
+                    "--no-sandbox",
+                    "--disable-dev-shm-usage",
+                    "--disable-setuid-sandbox",
+                    "--disable-gpu",
+                    "--disable-software-rasterizer",
+                    "--no-first-run",
+                ],
             )
             context = browser.new_context(
                 user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -263,7 +271,7 @@ def get_bcv_rate_logic():
             html = page.content()
             browser.close()
     except Exception as e:
-        print(f"DEBUG: Error en Playwright: {str(e)}")
+        logger.error(f"Playwright scraping failed: {str(e)}")
 
     # 3. Extraer y procesar el dato
     if html:

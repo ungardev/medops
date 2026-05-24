@@ -40,7 +40,7 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-RUN pip install --no-cache-dir playwright==1.45.0 && \
+RUN pip install --no-cache-dir playwright==1.55.0 && \
     playwright install chromium
 
 COPY . /app/
