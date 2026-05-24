@@ -1,7 +1,7 @@
 // src/pages/Auth/Login.tsx
 import { useState } from "react";
 import { useAuthToken } from "@/hooks/useAuthToken";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { queryClient } from "@/lib/reactQuery";
 import axios from "axios";
 import { api } from "@/lib/apiClient";
