@@ -226,7 +226,7 @@ const handleSaveDoctor = async () => {
               <button 
                 onClick={() => setShowDoctorModal(true)}
                 className="p-2 text-white/30 hover:text-emerald-400 transition-colors rounded-lg hover:bg-white/5"
-                title="Editar perfil"
+                title="Actualizar Firma y Foto"
               >
                 <PencilSquareIcon className="w-5 h-5" />
               </button>
@@ -413,110 +413,12 @@ const handleSaveDoctor = async () => {
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-[#1a1a1b] border border-white/15 w-full max-w-lg rounded-lg shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/15 bg-white/5">
-              <h3 className="text-[12px] font-semibold text-white">Editar Perfil del Doctor</h3>
+              <h3 className="text-[12px] font-semibold text-white">Actualizar Firma y Elementos Gráficos</h3>
               <button onClick={() => setShowDoctorModal(false)} className="text-white/40 hover:text-white p-1.5 hover:bg-white/10 rounded-lg transition-colors">X</button>
             </div>
             <form onSubmit={async (e) => { e.preventDefault(); await handleSaveDoctor(); }} className="p-6 space-y-5">
               
-              {/* Bloque: Identidad Legal MPPS */}
-              <div className="bg-white/5 border border-white/10 p-4 rounded-lg space-y-4">
-                <h4 className="text-[10px] font-semibold text-emerald-400/70 uppercase tracking-wider">Identidad Legal MPPS Venezuela</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2">
-                    <label className={labelStyles}>Cédula de Identidad</label>
-                    <input 
-                      className={inputStyles} 
-                      value={doctorForm.national_id} 
-                      onChange={(e) => setDoctorForm({...doctorForm, national_id: e.target.value})}
-                      placeholder="V-xxxxxxxx"
-                    />
-                  </div>
-                  <div>
-                    <label className={labelStyles}>Fecha de Nacimiento</label>
-                    <input 
-                      type="date" 
-                      className={inputStyles} 
-                      value={doctorForm.birthdate} 
-                      onChange={(e) => setDoctorForm({...doctorForm, birthdate: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelStyles}>País de Nacimiento</label>
-                    <input 
-                      className={inputStyles} 
-                      value={doctorForm.birth_country} 
-                      onChange={(e) => setDoctorForm({...doctorForm, birth_country: e.target.value})}
-                      placeholder="Venezuela"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Bloque: Datos Personales */}
-              <div className="grid grid-cols-4 gap-4">
-                <div className="col-span-1">
-                  <label className={labelStyles}>Título</label>
-                  <select 
-                    className={inputStyles} 
-                    value={doctorForm.gender} 
-                    onChange={(e) => setDoctorForm({...doctorForm, gender: e.target.value as any})}
-                  >
-                    <option value="M">Dr.</option>
-                    <option value="F">Dra.</option>
-                    <option value="O">Mod.</option>
-                  </select>
-                </div>
-                <div className="col-span-3">
-                  <label className={labelStyles}>Nombre Completo</label>
-                  <input className={inputStyles} value={doctorForm.full_name} onChange={(e) => setDoctorForm({...doctorForm, full_name: e.target.value})} />
-                </div>
-              </div>
-              
-              {/* Bloque: Credenciales MPPS */}
-              <div className="bg-white/5 border border-white/10 p-4 rounded-lg space-y-4">
-                <h4 className="text-[10px] font-semibold text-emerald-400/70 uppercase tracking-wider">Credenciales Médicas MPPS</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className={labelStyles}>Licencia Sanitaria</label>
-                    <input className={inputStyles} value={doctorForm.license} onChange={(e) => setDoctorForm({...doctorForm, license: e.target.value})} />
-                  </div>
-                  <div>
-                    <label className={labelStyles}>Fecha de Expiración</label>
-                    <input 
-                      type="date" 
-                      className={inputStyles} 
-                      value={doctorForm.license_expiry_date} 
-                      onChange={(e) => setDoctorForm({...doctorForm, license_expiry_date: e.target.value})}
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <label className={labelStyles}>Número de Colegiado</label>
-                    <input className={inputStyles} value={doctorForm.colegiado_id} onChange={(e) => setDoctorForm({...doctorForm, colegiado_id: e.target.value})} />
-                  </div>
-                </div>
-              </div>
-              
-              <div className="z-20 relative">
-                <label className={labelStyles}>Especialidades Clínicas</label>
-                <SpecialtyComboboxElegante
-                  value={doctorForm.specialties}
-                  onChange={(next) => setDoctorForm({ ...doctorForm, specialties: next })}
-                  options={specialties}
-                />
-              </div>
-              
               <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <label className={labelStyles}>Biografía Pública</label>
-                  <textarea 
-                    className={inputStyles} 
-                    value={doctorForm.bio || ""} 
-                    onChange={(e) => setDoctorForm({...doctorForm, bio: e.target.value})}
-                    placeholder="Biografía corta para tu perfil público..."
-                    rows={3}
-                  />
-                </div>
-                
                 <div>
                   <label className={labelStyles}>Foto de Perfil</label>
                   <div className="flex items-center gap-4">
