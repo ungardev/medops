@@ -60,12 +60,12 @@ export default function Login() {
             <img
               src="/medopz_logo_blanco_solo.svg"
               alt="MedOpz Logo"
-              className="h-16 w-16 mx-auto opacity-80 hover:opacity-100 transition-opacity duration-300"
+              className="h-16 w-16 mx-auto opacity-100"
             />
             <img
               src="/medopz_fuente_blanco.svg"
               alt="MEDOPZ"
-              className="h-5 w-auto mx-auto mt-2 opacity-60"
+              className="h-5 w-auto mx-auto mt-2 opacity-95"
             />
           </Link>
           
@@ -145,15 +145,15 @@ export default function Login() {
           <img
             src="/medopz_logo_blanco_solo.svg"
             alt="MedOpz Logo"
-            className="h-32 w-32 opacity-[0.35]"
+            className="h-32 w-32 opacity-20"
           />
           <img
             src="/medopz_fuente_blanco.svg"
             alt="MEDOPZ"
-            className="h-8 w-auto opacity-[0.5]"
+            className="h-8 w-auto opacity-30"
           />
-          <p className="text-slate-400/50 text-sm mt-2 tracking-wide">
-            Healthcare Technology Platform
+          <p className="text-slate-400/80 text-base mt-2 tracking-wide font-light">
+            Plataforma Healthtech de Venezuela
           </p>
         </div>
       </div>
