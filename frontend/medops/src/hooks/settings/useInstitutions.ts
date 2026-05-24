@@ -43,7 +43,7 @@ export function useInstitutions() {
     staleTime: 1000 * 60 * 5, // 5 minutos
   });
   
-  // Query para obtener institución activa del backend - optimizado
+  // Query para obtener institución activa del backend - HABILITADO
   const activeQuery = useQuery<InstitutionSettings | null>({
     queryKey: ["config", "institution", "active"],
     queryFn: async () => {
@@ -51,7 +51,7 @@ export function useInstitutions() {
       return res.data || null;
     },
     staleTime: 1000 * 60 * 5, // 5 minutos
-    enabled: false, // Deshabilitado, se activará según sea necesario
+    enabled: true, // Habilitado para consulta reactiva al iniciar sesión
   });
   
   // Función para cambiar institución activa - MOVIDA ANTES para evitar hoisting issues
