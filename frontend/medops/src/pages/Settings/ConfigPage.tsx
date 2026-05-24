@@ -40,13 +40,10 @@ export default function ConfigPage() {
   const { data: doc, updateDoctor, isLoading: docLoading } = useDoctorConfig();
   const { data: specialties = [] } = useSpecialtyChoices();
   
-  const [isInstModalOpen, setIsInstModalOpen] = useState(false);
-  const [editingInstitution, setEditingInstitution] = useState<any>(null);
-  const [showDoctorModal, setShowDoctorModal] = useState(false);
+const [showDoctorModal, setShowDoctorModal] = useState(false);
   const [initialized, setInitialized] = useState(false);
-  const [deletingInstitution, setDeletingInstitution] = useState<any>(null);
   
-const [doctorForm, setDoctorForm] = useState({
+  const [doctorForm, setDoctorForm] = useState({
     full_name: "",
     national_id: "",
     birthdate: "",
@@ -180,22 +177,8 @@ const handleSaveDoctor = async () => {
   const handleRemovePhoto = () => {
     setDoctorForm({ ...doctorForm, photo: null });
     setPhotoPreview(null);
-  };
-  
-  const handleCreateInstitution = () => {
-    setEditingInstitution(null);
-    setIsInstModalOpen(true);
-  };
-  
-  const handleEditInstitution = (institution: any) => {
-    setEditingInstitution(institution);
-    setIsInstModalOpen(true);
-  };
-  
-  const handleDeleteInstitution = (institution: any) => {
-    setDeletingInstitution(institution);
-  };
-  
+};
+   
   const handleSelectInstitution = async (id: number | undefined) => {
     if (id === undefined) return;
     await setActiveInstitution(id);
@@ -344,63 +327,42 @@ const handleSaveDoctor = async () => {
         </section>
         
         <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-[12px] font-medium text-white/70">Instituciones</h3>
-            <button
-              onClick={handleCreateInstitution}
-              className="text-[11px] font-medium text-emerald-400 hover:text-emerald-300 transition-colors"
-            >
-              + Nueva
-            </button>
-          </div>
+          <h3 className="text-[12px] font-medium text-white/70">Institución Activa</h3>
           
           <div className="space-y-3">
             {multiInstLoading ? (
-              <div className="h-64 bg-white/5 animate-pulse rounded-lg border border-white/15" />
+              <div className="h-24 bg-white/5 animate-pulse rounded-lg border border-white/15" />
             ) : institutions.length === 0 ? (
               <div className="p-8 bg-white/5 border border-white/15 rounded-lg text-center">
                 <p className="text-white/30 text-[11px]">
-                  No hay instituciones configuradas. Haz clic en "+" para crear una.
+                  No hay instituciones configuradas. Contacta al administrador de MEDOPZ.
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
                 {activeInstitution && (
-                  <div className="relative group">
+                  <div className="relative">
                     <div className="absolute -left-1 top-0 bottom-0 w-1 bg-emerald-400 rounded-full" />
-                    <div className="bg-white/5 border-2 border-emerald-500/20 rounded-lg p-4 shadow-sm">
+                    <div className="bg-white/5 border-2 border-emerald-500/20 rounded-lg p-4">
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-medium text-white/90">{activeInstitution.name || "Sin nombre"}</p>
                           <p className="text-[9px] text-white/30 mt-1">RIF: {activeInstitution.tax_id || "N/A"}</p>
                         </div>
-                        <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => handleEditInstitution(activeInstitution)} className="p-1.5 text-white/30 hover:text-emerald-400 rounded-lg hover:bg-white/5" title="Editar">
-                            <PencilSquareIcon className="w-4 h-4" />
-                          </button>
-                          <button onClick={() => handleDeleteInstitution(activeInstitution)} className="p-1.5 text-white/30 hover:text-red-400 rounded-lg hover:bg-red-500/10" title="Eliminar">
-                            <TrashIcon className="w-4 h-4" />
-                          </button>
-                        </div>
+                        <span className="text-[9px] font-medium text-emerald-400/70 px-2 py-1 bg-emerald-500/10 rounded-md border border-emerald-500/20">Activa</span>
                       </div>
                     </div>
                   </div>
                 )}
                 
                 {institutions.filter(inst => inst.id !== activeInstitution?.id).map((inst) => (
-                  <div key={inst.id} className="bg-white/5 border border-white/15 rounded-lg p-4 group hover:border-white/25 transition-colors">
-                    <div className="flex items-center justify-between">
+                  <div key={inst.id} className="bg-white/5 border border-white/15 rounded-lg p-4 flex items-center justify-between">
+                    <div>
                       <span className="font-medium text-white/70">{inst.name || "Institución"}</span>
-                      <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => handleSelectInstitution(inst.id)} className="text-[10px] text-emerald-400 hover:text-emerald-300 mr-2">Activar</button>
-                        <button onClick={() => handleEditInstitution(inst)} className="p-1.5 text-white/30 hover:text-emerald-400 rounded-lg hover:bg-white/5" title="Editar">
-                          <PencilSquareIcon className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => handleDeleteInstitution(inst)} className="p-1.5 text-white/30 hover:text-red-400 rounded-lg hover:bg-red-500/10" title="Eliminar">
-                          <TrashIcon className="w-4 h-4" />
-                        </button>
-                      </div>
                     </div>
+                    <button onClick={() => handleSelectInstitution(inst.id)} className="text-[10px] font-medium text-emerald-400 hover:text-emerald-300 transition-colors">
+                      Activar
+                    </button>
                   </div>
                 ))}
               </div>
@@ -478,28 +440,6 @@ const handleSaveDoctor = async () => {
           </div>
         </div>
       )}
-      
-      <ConfirmGenericModal
-        open={!!deletingInstitution}
-        title={`Eliminar "${deletingInstitution?.name || ''}"`}
-        message="¿Estás seguro de que deseas eliminar esta institución? Esta acción no se puede deshacer."
-        confirmLabel="Eliminar"
-        cancelLabel="Cancelar"
-        isDestructive={true}
-        onConfirm={async () => {
-          if (deletingInstitution?.id) {
-            await deleteInstitution(deletingInstitution.id);
-            setDeletingInstitution(null);
-          }
-        }}
-        onCancel={() => setDeletingInstitution(null)}
-      />
-      
-      <EditInstitutionModal 
-        open={isInstModalOpen} 
-        onClose={() => setIsInstModalOpen(false)}
-        institution={editingInstitution}
-      />
     </div>
   );
 }

@@ -3,9 +3,7 @@ import React from "react";
 import { 
   BuildingOfficeIcon, 
   MapPinIcon, 
-  CheckBadgeIcon,
-  PencilIcon,
-  TrashIcon
+  CheckBadgeIcon
 } from "@heroicons/react/24/outline";
 interface InstitutionCardProps {
   name: string;
@@ -14,9 +12,7 @@ interface InstitutionCardProps {
   address: string;
   neighborhoodName?: string; 
   isActive: boolean;
-  onEdit: () => void;
   onSelect?: () => void;
-  onDelete?: () => void;
 }
 export const InstitutionCard = ({ 
   name, 
@@ -25,35 +21,12 @@ export const InstitutionCard = ({
   address, 
   neighborhoodName = "N/A",
   isActive, 
-  onEdit,
-  onSelect,
-  onDelete
+  onSelect
 }: InstitutionCardProps) => {
   const hasLogo = institution?.logo && typeof institution.logo === 'string';
   
   return (
-    <div className="group relative bg-white/5 border border-white/15 p-6 hover:border-white/25 transition-all duration-300 shadow-sm rounded-lg">
-      
-      <div className="absolute top-3 right-3 flex items-center gap-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-        {onEdit && (
-          <button 
-            onClick={onEdit}
-            className="p-2 text-white/30 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all"
-            title="Editar institución"
-          >
-            <PencilIcon className="w-4 h-4" />
-          </button>
-        )}
-        {onDelete && (
-          <button 
-            onClick={onDelete}
-            className="p-2 text-white/30 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
-            title="Eliminar institución"
-          >
-            <TrashIcon className="w-4 h-4" />
-          </button>
-        )}
-      </div>
+    <div className="relative bg-white/5 border border-white/15 p-6 transition-all duration-300 shadow-sm rounded-lg">
       
       {isActive && (
         <div className="absolute top-0 left-0 w-1 h-full bg-emerald-400 rounded-l-lg" />
