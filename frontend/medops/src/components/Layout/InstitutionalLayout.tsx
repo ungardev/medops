@@ -85,7 +85,7 @@ export default function InstitutionalLayout() {
           className={`fixed top-0 left-0 h-screen z-[300] transition-all duration-300 ease-in-out border-white/10 bg-[#0a0a0b] overflow-hidden
             ${mobileSidebarOpen 
               ? "translate-x-0 w-64 border-r" 
-              : "-translate-x-full w-0 lg:w-auto lg:border-r"
+              : "-translate-x-full w-0 lg:translate-x-0 lg:border-r"
             } 
             ${!mobileSidebarOpen && !collapsed ? "lg:w-64" : ""}
             ${!mobileSidebarOpen && collapsed ? "lg:w-[72px]" : ""}

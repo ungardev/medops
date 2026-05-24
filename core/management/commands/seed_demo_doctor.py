@@ -210,9 +210,8 @@ class Command(BaseCommand):
                 )
             )
 
-        # Determinar prefijo Dr./Dra.
+        # Prefijo para display (NO se almacena en full_name, formal_title lo añade automáticamente)
         prefix = "Dra." if sex == "F" else "Dr."
-        full_name_formatted = f"{prefix} {full_name}"
 
         # Username adaptativo
         name_slug = (
@@ -260,7 +259,7 @@ class Command(BaseCommand):
             self._create_invitation_flow(
                 username=username,
                 full_name=full_name,
-                full_name_formatted=full_name_formatted,
+                prefix=prefix,
                 sex=sex,
                 email=email,
                 specialty=specialty,
@@ -270,7 +269,7 @@ class Command(BaseCommand):
             self._create_direct_doctor(
                 username=username,
                 full_name=full_name,
-                full_name_formatted=full_name_formatted,
+                prefix=prefix,
                 sex=sex,
                 email=email,
                 specialty=specialty,
@@ -329,7 +328,7 @@ class Command(BaseCommand):
         self,
         username,
         full_name,
-        full_name_formatted,
+        prefix,
         sex,
         email,
         specialty,
@@ -378,7 +377,7 @@ class Command(BaseCommand):
         # Crear DoctorOperator
         doctor = DoctorOperator.objects.create(
             user=user,
-            full_name=full_name_formatted,
+            full_name=full_name,
             national_id=national_id,
             email=email,
             license=f"MPPS-{random.randint(100000, 999999)}",
@@ -409,7 +408,7 @@ class Command(BaseCommand):
             self.style.SUCCESS("  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         )
         self.stdout.write("")
-        self.stdout.write(self.style.SUCCESS(f"  Profesional:  {full_name_formatted}"))
+        self.stdout.write(self.style.SUCCESS(f"  Profesional:  {prefix} {full_name}"))
         self.stdout.write(
             self.style.SUCCESS(
                 f"  Sexo Clínico: {'Femenino' if sex == 'F' else 'Masculino'}"
@@ -434,7 +433,7 @@ class Command(BaseCommand):
         self,
         username,
         full_name,
-        full_name_formatted,
+        prefix,
         sex,
         email,
         specialty,
@@ -455,7 +454,7 @@ class Command(BaseCommand):
 
         invitation = DoctorInvitation.objects.create(
             national_id=national_id,
-            full_name=full_name_formatted,
+            full_name=full_name,
             email=email,
             specialty=specialty,
             license_number=license_num,
@@ -474,7 +473,7 @@ class Command(BaseCommand):
             self.style.SUCCESS("  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         )
         self.stdout.write("")
-        self.stdout.write(self.style.SUCCESS(f"  Profesional:   {full_name_formatted}"))
+        self.stdout.write(self.style.SUCCESS(f"  Profesional:   {prefix} {full_name}"))
         self.stdout.write(
             self.style.SUCCESS(
                 f"  Sexo Clínico:  {'Femenino' if sex == 'F' else 'Masculino'}"

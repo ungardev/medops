@@ -36,7 +36,7 @@ export default function Login() {
       saveToken(data.access, data.refresh);
       axios.defaults.headers.common["Authorization"] = `Bearer ${data.access}`;
       api.defaults.headers.common["Authorization"] = `Bearer ${data.access}`;
-      queryClient.invalidateQueries({ queryKey: ["notifications", data.token] });
+      queryClient.invalidateQueries({ queryKey: ["notifications", data.access] });
       
       setTimeout(() => {
         navigate("/doctor");
