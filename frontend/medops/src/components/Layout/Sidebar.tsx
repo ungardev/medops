@@ -118,16 +118,6 @@ export default function Sidebar({
         </button>
       )}
 
-      {/* Menu Label */}
-      {!effectiveCollapsed && (
-        <div className="flex items-center gap-2 px-3 mt-2 mb-1">
-          <div className="h-[1px] w-4 bg-white/15"></div>
-          <div className="text-[9px] font-medium text-white/40 uppercase tracking-wider">
-            Menú
-          </div>
-        </div>
-      )}
-
       {/* Nav Items */}
       <nav className="flex-1 overflow-y-auto px-1">
         <ul className={`flex flex-col ${effectiveCollapsed ? "pt-2" : ""} space-y-0.5`}>
