@@ -32,10 +32,10 @@ export default function Login() {
         throw new Error(msg);
       }
       const data = await res.json();
-      if (!data.token) throw new Error("Respuesta inválida del servidor");
-      saveToken(data.token);
-      axios.defaults.headers.common["Authorization"] = `Token ${data.token}`;
-      api.defaults.headers.common["Authorization"] = `Token ${data.token}`;
+      if (!data.access) throw new Error("Respuesta inválida del servidor");
+      saveToken(data.access, data.refresh);
+      axios.defaults.headers.common["Authorization"] = `Bearer ${data.access}`;
+      api.defaults.headers.common["Authorization"] = `Bearer ${data.access}`;
       queryClient.invalidateQueries({ queryKey: ["notifications", data.token] });
       
       setTimeout(() => {

@@ -6236,14 +6236,17 @@ def doctor_login(request):
             {"error": "Esta cuenta no tiene acceso al portal de doctores"}, status=403
         )
 
-    # Generar token
-    from rest_framework.authtoken.models import Token
+    # Generar SimpleJWT tokens (como en doctor_invite)
+    from rest_framework_simplejwt.tokens import RefreshToken
 
-    token, _ = Token.objects.get_or_create(user=user)
+    refresh = RefreshToken.for_user(user)
+    refresh["role"] = "doctor"
+    refresh["doctor_id"] = user.doctor_profile.id
 
     return Response(
         {
-            "token": token.key,
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
             "user": {
                 "id": user.id,
                 "username": user.username,

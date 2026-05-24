@@ -205,7 +205,7 @@ class Command(BaseCommand):
             # Auto-detección basada en nombre
             sex = detect_sex_from_name(full_name)
             self.stdout.write(
-                self.style.INFO(
+                self.style.SUCCESS(
                     f"  Auto-detectado: {full_name.split()[0]} → Sexo Clínico: {'Femenino' if sex == 'F' else 'Masculino'}"
                 )
             )
