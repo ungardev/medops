@@ -2777,7 +2777,7 @@ def create_institution_for_doctor(
 
         doctor.institutions.add(institution)
 
-        if doctor.institutions.count() == 1:
+        if doctor.institutions.count() == 1 or not doctor.active_institution:
             doctor.active_institution = institution
             doctor.save()
 
@@ -2820,7 +2820,7 @@ def add_institution_to_doctor(
 
         doctor.institutions.add(institution)
 
-        if doctor.institutions.count() == 1:
+        if doctor.institutions.count() == 1 or not doctor.active_institution:
             doctor.active_institution = institution
             doctor.save()
 
