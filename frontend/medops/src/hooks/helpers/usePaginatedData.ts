@@ -34,7 +34,7 @@ function usePaginatedData<T>({
     
     while (hasNext && page <= maxPages) {
       try {
-        const response = await api.get<PaginatedResponse<T>>(
+        const response = await api.get<PaginatedResponse<T> | T[]>(
           endpoint,
           { 
             params: { page: page.toString() },
@@ -42,13 +42,21 @@ function usePaginatedData<T>({
           }
         );
         
-        allData = [...allData, ...response.data.results];
+        const data = response.data;
         
-        if (page === 1) {
-          setTotalCount(response.data.count);
+        if (Array.isArray(data)) {
+          allData = data;
+          hasNext = false;
+        } else {
+          allData = [...allData, ...data.results];
+          
+          if (page === 1) {
+            setTotalCount(data.count);
+          }
+          
+          hasNext = data.next !== null;
         }
         
-        hasNext = response.data.next !== null;
         page++;
         pageCount++;
         
