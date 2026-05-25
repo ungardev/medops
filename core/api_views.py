@@ -1059,6 +1059,7 @@ class CountryViewSet(viewsets.ModelViewSet):
 class StateViewSet(viewsets.ModelViewSet):
     queryset = State.objects.all()
     serializer_class = StateSerializer
+    pagination_class = None
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -1071,6 +1072,7 @@ class StateViewSet(viewsets.ModelViewSet):
 class MunicipalityViewSet(viewsets.ModelViewSet):
     queryset = Municipality.objects.all()
     serializer_class = MunicipalitySerializer
+    pagination_class = None
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -1088,6 +1090,7 @@ class CityViewSet(viewsets.ModelViewSet):
 class ParishViewSet(viewsets.ModelViewSet):
     queryset = Parish.objects.all()
     serializer_class = ParishSerializer
+    pagination_class = None
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -1100,6 +1103,7 @@ class ParishViewSet(viewsets.ModelViewSet):
 class NeighborhoodViewSet(viewsets.ModelViewSet):
     queryset = Neighborhood.objects.all()
     serializer_class = NeighborhoodSerializer
+    pagination_class = None
 
     def get_queryset(self):
         qs = super().get_queryset()
