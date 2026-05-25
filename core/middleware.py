@@ -139,6 +139,12 @@ class InstitutionPermissionMiddleware(MiddlewareMixin):
         except InstitutionSettings.DoesNotExist:
             request.current_institution = None
             request.institution_permission = None
+        except Exception as e:
+            logger.warning(
+                f"Database error in InstitutionPermissionMiddleware: {str(e)}"
+            )
+            request.current_institution = None
+            request.institution_permission = None
 
         return None
 
