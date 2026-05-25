@@ -34,29 +34,19 @@ export function useLocationData() {
   const useMunicipalities = (stateId?: any) => {
     const cleanId = sanitize(stateId);
     return usePaginatedData<Municipality>({
-      endpoint: "municipalities/",
+      endpoint: `municipalities/${cleanId ? `?state_id=${cleanId}` : ''}`,
       enabled: !!cleanId,
-      queryParams: cleanId ? { state_id: Number(cleanId) } : {},
-      // ✅ FILTRAR POR STATE_ID
-      filterFn: (municipality, params) => {
-        return (municipality as any).state?.id === params.state_id;
-      },
-      maxPages: 100,
-      timeout: 25000
+      maxPages: 1,
+      timeout: 15000
     });
   };
   const useParishes = (municipalityId?: any) => {
     const cleanId = sanitize(municipalityId);
     return usePaginatedData<Parish>({
-      endpoint: "parishes/",
+      endpoint: `parishes/${cleanId ? `?municipality_id=${cleanId}` : ''}`,
       enabled: !!cleanId,
-      queryParams: cleanId ? { municipality_id: Number(cleanId) } : {},
-      // ✅ FILTRAR POR MUNICIPALITY_ID
-      filterFn: (parish, params) => {
-        return (parish as any).municipality?.id === params.municipality_id;
-      },
-      maxPages: 100,
-      timeout: 25000
+      maxPages: 1,
+      timeout: 15000
     });
   };
   const useNeighborhoods = (parishId?: any) => {
