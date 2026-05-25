@@ -414,7 +414,9 @@ class AppointmentViewSet(viewsets.ModelViewSet):
 
         # Filtro para Doctores (institucionales)
         if not user.is_superuser and hasattr(user, "doctor_profile"):
-            qs = qs.filter(institution=user.doctor_profile.institution)
+            doctor = user.doctor_profile
+            if doctor.active_institution:
+                qs = qs.filter(institution=doctor.active_institution)
 
         # Filtro para Pacientes (solo sus propias citas)
         elif hasattr(user, "patient_profile"):
