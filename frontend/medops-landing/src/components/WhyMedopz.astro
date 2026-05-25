@@ -1,0 +1,90 @@
+---
+const differentiators = [
+  {
+    icon: 'geography',
+    title: 'Venezuela Completa',
+    description: 'Cobertura geográfica en los 23 estados, 335 municipios y 330+ parroquias. No solo una ciudad — todo el país.',
+    umia: 'Solo principales ciudades',
+  },
+  {
+    icon: 'finance',
+    title: 'Finanzas Integradas',
+    description: 'BCV Rate en tiempo real, pagos por Bancaribe API y Binance Crypto. El ciclo financiero completo dentro de la plataforma.',
+    umia: 'No menciona finanzas',
+  },
+  {
+    icon: 'cycle',
+    title: 'Ciclo Completo del Paciente',
+    description: 'Desde sala de espera hasta cirugía, hospitalización y pago — 12 módulos interconectados en un solo flujo.',
+    umia: 'Solo documentación',
+  },
+  {
+    icon: 'clinical',
+    title: 'Estándares Clínicos Internacionales',
+    description: 'ICD-11 WHO y SNOMED CT integrados. Diagnósticos precisos y trazabilidad médica internacional.',
+    umia: 'CIE-10 genérico',
+  },
+  {
+    icon: 'institution',
+    title: 'Infraestructura Institucional',
+    description: 'Apoyo de UCAB, Bancaribe y Banesco. Diseñado para hospitales y clínicas, no solo consultorios individuales.',
+    umia: 'Solo consultorios',
+  },
+  {
+    icon: 'compliance',
+    title: 'Compliance Venezolano',
+    description: 'Verificación MPPS, Colegiado ID y sellado digital. Cumplimiento con las regulaciones sanitarias venezolanas.',
+    umia: 'HIPAA (internacional)',
+  },
+];
+---
+
+<section id="why" class="py-24 lg:py-32 px-6 bg-[#050608] relative border-t border-[#1a1e23]">
+  <div class="absolute inset-0 bg-[linear-gradient(to_right,#1a1e23_1px,transparent_1px),linear-gradient(to_bottom,#1a1e23_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-[0.04]"></div>
+
+  <div class="max-w-[1200px] mx-auto relative">
+    <div class="text-center mb-16">
+      <span class="text-xs font-bold text-emerald-400 uppercase tracking-[0.2em]">Diferenciadores</span>
+      <h2 class="text-4xl md:text-5xl font-bold text-white mt-4 tracking-tight">
+        ¿Por qué MEDOPZ?
+      </h2>
+      <p class="text-lg text-slate-300 mt-4 max-w-[700px] mx-auto leading-relaxed">
+        Somos la única plataforma que integra el ciclo clínico, financiero y geográfico de Venezuela
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {differentiators.map((diff) => (
+        <div class="group relative p-6 bg-[#0c0e12] border border-[#1a1e23] rounded-2xl transition-all duration-500 hover:border-emerald-500/30">
+          <div class="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+          <div class="w-12 h-12 rounded-xl bg-[#0a0a0b] border border-[#1a1e23] flex items-center justify-center mb-5">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-400">
+              {diff.icon === 'geography' && <><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></>}
+              {diff.icon === 'finance' && <><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></>}
+              {diff.icon === 'cycle' && <><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M12 6v6l4 2"/></>}
+              {diff.icon === 'clinical' && <><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><circle cx="20" cy="10" r="2"/></>}
+              {diff.icon === 'institution' && <><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></>}
+              {diff.icon === 'compliance' && <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></>}
+            </svg>
+          </div>
+
+          <h3 class="text-lg font-semibold text-white mb-2">{diff.title}</h3>
+          <p class="text-sm text-slate-400 leading-relaxed mb-4">{diff.description}</p>
+
+          <div class="pt-4 border-t border-[#1a1e23]">
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] text-slate-500 uppercase tracking-wider">vs competencia</span>
+              <span class="text-xs text-red-400/70">{diff.umia}</span>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <div class="mt-12 p-6 bg-[#0c0e12] border border-emerald-500/20 rounded-2xl text-center">
+      <p class="text-white font-medium mb-2">¿Listo para operar a nivel institucional?</p>
+      <p class="text-sm text-slate-400">A diferencia de otros, MEDOPZ está diseñado para hospitales y clínicas, no solo consultorios individuales.</p>
+    </div>
+  </div>
+</section>
