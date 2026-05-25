@@ -1060,6 +1060,13 @@ class StateViewSet(viewsets.ModelViewSet):
     queryset = State.objects.all()
     serializer_class = StateSerializer
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        country_id = self.request.query_params.get("country_id")
+        if country_id:
+            qs = qs.filter(country_id=country_id)
+        return qs
+
 
 class MunicipalityViewSet(viewsets.ModelViewSet):
     queryset = Municipality.objects.all()
@@ -1093,6 +1100,13 @@ class ParishViewSet(viewsets.ModelViewSet):
 class NeighborhoodViewSet(viewsets.ModelViewSet):
     queryset = Neighborhood.objects.all()
     serializer_class = NeighborhoodSerializer
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        parish_id = self.request.query_params.get("parish_id")
+        if parish_id:
+            qs = qs.filter(parish_id=parish_id)
+        return qs
 
 
 # ==========================================

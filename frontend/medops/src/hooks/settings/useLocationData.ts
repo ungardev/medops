@@ -20,15 +20,10 @@ export function useLocationData() {
   const useStates = (countryId?: any) => {
     const cleanId = sanitize(countryId);
     return usePaginatedData<State>({
-      endpoint: "states/",
+      endpoint: `states/${cleanId ? `?country_id=${cleanId}` : ''}`,
       enabled: !!cleanId,
-      queryParams: cleanId ? { country_id: Number(cleanId) } : {},
-      // ✅ FILTRAR POR COUNTRY_ID
-      filterFn: (state, params) => {
-        return (state as any).country?.id === params.country_id;
-      },
-      maxPages: 50,
-      timeout: 20000
+      maxPages: 1,
+      timeout: 15000
     });
   };
   const useMunicipalities = (stateId?: any) => {
@@ -52,15 +47,10 @@ export function useLocationData() {
   const useNeighborhoods = (parishId?: any) => {
     const cleanId = sanitize(parishId);
     return usePaginatedData<Neighborhood>({
-      endpoint: "neighborhoods/",
+      endpoint: `neighborhoods/${cleanId ? `?parish_id=${cleanId}` : ''}`,
       enabled: !!cleanId,
-      queryParams: cleanId ? { parish_id: Number(cleanId) } : {},
-      // ✅ FILTRAR POR PARISH_ID
-      filterFn: (neighborhood, params) => {
-        return (neighborhood as any).parish?.id === params.parish_id;
-      },
-      maxPages: 200,
-      timeout: 30000
+      maxPages: 1,
+      timeout: 15000
     });
   };
   const createNeighborhood = async (name: string, parishId: number) => {
