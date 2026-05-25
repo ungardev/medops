@@ -1,30 +1,32 @@
 ---
 const features = [
-  { label: 'CIE-11 WHO' },
-  { label: 'SNOMED CT' },
-  { label: 'Cirugía' },
-  { label: 'Hospitalización' },
-  { label: 'Pagos P2C' },
-  { label: 'Multi-sede' },
+  { label: '23 Estados' },
+  { label: '335 Municipios' },
+  { label: '330+ Parroquias' },
+  { label: 'Venezuela' },
 ];
 ---
 
 <section class="relative min-h-screen bg-[#050608] flex flex-col items-center justify-center overflow-hidden pt-32 pb-20 px-6">
-  <!-- Data Grid Engineering Background -->
   <div class="absolute inset-0 bg-[linear-gradient(to_right,#1a1e23_1px,transparent_1px),linear-gradient(to_bottom,#1a1e23_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-[0.04]"></div>
 
   <div class="relative z-10 max-w-[1100px] mx-auto text-center">
-    <!-- Logo Brand - Scaled Up -->
     <div class="mb-10">
       <img src="/medopz_fuente_blanco.svg" alt="MEDOPZ" class="w-full max-w-[340px] mx-auto" />
     </div>
 
-    <!-- H1 - Volumetric Text Gradient (Linear / Palantir) -->
     <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-white max-w-[850px] mx-auto leading-[1.2] mt-6">
-      Workstation elite de salud para médicos, pacientes e instituciones
+      Plataforma Healthtech de Venezuela
     </h1>
-    
-    <!-- Feature Pills -->
+
+    <p class="text-xl md:text-2xl text-emerald-400 mt-4 font-medium tracking-wide">
+      Sanar es Innovar
+    </p>
+
+    <p class="text-lg text-slate-400 mt-6 max-w-[700px] mx-auto leading-relaxed">
+      Digitaliza el ciclo completo del paciente: desde la sala de espera hasta el pago, pasando por consultas, historias clínicas y reportes.
+    </p>
+
     <div class="mt-10 flex flex-wrap items-center justify-center gap-3">
       {features.map((feature) => (
         <span class="px-4 py-2 bg-[#0c0e12]/50 border border-slate-800/60 rounded-lg text-[12px] font-medium text-slate-400">
@@ -32,12 +34,10 @@ const features = [
         </span>
       ))}
     </div>
-    
-    <!-- CTA Buttons - Production App Style -->
+
     <div class="mt-12 flex flex-col sm:flex-row items-center justify-center gap-5">
-      <!-- Portal Doctor - Matching Production -->
-      <a 
-        href="https://app.medopz.com/" 
+      <a
+        href="https://app.medopz.com/"
         target="_blank"
         class="group w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 font-medium rounded-xl transition-all duration-300 text-[15px]"
       >
@@ -49,10 +49,9 @@ const features = [
         Portal Doctor
         <span class="ml-1 opacity-70 group-hover:opacity-100">→</span>
       </a>
-      
-      <!-- Portal Paciente - Dark Glass -->
-      <a 
-        href="https://patient.medopz.com/" 
+
+      <a
+        href="https://patient.medopz.com/"
         target="_blank"
         class="group w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/15 text-white/80 hover:text-white font-medium rounded-xl transition-all duration-300 text-[15px]"
       >
@@ -63,10 +62,12 @@ const features = [
         <span class="ml-1 opacity-40 group-hover:opacity-70">→</span>
       </a>
     </div>
-    
-    <!-- Production Interface Frame - Apple Style Hardware -->
+
     <div class="relative mt-20 w-full max-w-[1000px] mx-auto bg-[#0a0b0d]/50 backdrop-blur-xl border border-slate-800/60 rounded-2xl h-[500px] flex items-center justify-center shadow-[0_0_50px_rgba(0,0,0,0.8)]">
-      <span class="text-slate-600 text-sm font-mono tracking-wide">[ Interfaz de Producción MEDOPZ ]</span>
+      <div class="text-center">
+        <span class="text-slate-500 text-sm font-mono tracking-wide block mb-4">[ Interfaz de Producción MEDOPZ ]</span>
+        <span class="text-slate-600 text-xs">Screenshots de la plataforma próximamente</span>
+      </div>
     </div>
   </div>
 </section>

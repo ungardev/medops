@@ -4,14 +4,16 @@ const portals = [
     icon: 'user-check',
     label: 'DOCTOR PORTAL',
     title: 'Centro de Operaciones Clínicas',
-    description: 'Workstation integral para el médico especialista',
+    description: 'Workstation integral para el médico especialista. Gestiona pacientes, citas, consultas y pagos desde un solo lugar.',
     features: [
-      'CIE-11 WHO Diagnósticos',
+      'Sala de Espera en Tiempo Real',
+      'Expediente Clínico Digital',
+      'CIE-11 + SNOMED CT Diagnósticos',
       'Gestión de Cirugías',
-      'Historial Clínico Digital',
-      'Sala de Espera Live',
-      'Recetas Digitales',
+      'Hospitalización y Camas',
       'Dashboard Financiero',
+      'Órdenes de Cobro',
+      'Reportes y Métricas',
     ],
     status: 'Disponible',
     href: 'https://app.medopz.com/',
@@ -20,14 +22,14 @@ const portals = [
     icon: 'heart',
     label: 'PATIENT PORTAL',
     title: 'Expediente en Tu Mano',
-    description: 'Acceso 24/7 al historial médico y resultados',
+    description: 'Acceso 24/7 al historial médico, citas y resultados desde cualquier dispositivo.',
     features: [
-      'Expediente Digital',
-      'Citas en Línea',
-      'Sala de Espera',
+      'Expediente Digital Personal',
+      'Citas Programadas',
+      'Historial de Consultas',
+      'Resultados de Laboratorio',
       'Historial de Pagos',
-      'Resultados de Lab',
-      'Perfil Personal',
+      'Portal Instituciones Próximamente',
     ],
     status: 'Incluido',
     href: 'https://patient.medopz.com/',
@@ -37,27 +39,22 @@ const portals = [
 
 <section id="portals" class="py-24 lg:py-32 px-6 bg-[#050608] relative">
   <div class="max-w-[1200px] mx-auto relative">
-    <!-- Section Header -->
     <div class="text-center mb-16">
-      <span class="text-xs font-bold text-emerald-400 uppercase tracking-[0.2em]">Portales</span>
+      <span class="text-xs font-bold text-emerald-400 uppercase tracking-[0.2em]">Ecosistema</span>
       <h2 class="text-4xl md:text-5xl font-bold text-white mt-4 tracking-tight">
-        Ecosistema Interconectado
+        Dos Portales, Un Solo Objetivo
       </h2>
-      <p class="text-lg text-slate-300 mt-4">en Tiempo Real</p>
+      <p class="text-lg text-slate-300 mt-4">La conexión directa entre médico y paciente</p>
     </div>
-    
-    <!-- Bento Grid -->
+
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {portals.map((portal) => (
-        <div 
+        <div
           class="group relative p-8 lg:p-10 bg-[#0c0e12] border border-[#1a1e23] rounded-2xl transition-all duration-500 hover:border-emerald-500/30 hover:shadow-[0_0_30px_rgba(16,185,129,0.05)]"
         >
-          <!-- Accent Line -->
           <div class="absolute top-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          
-          <!-- Content -->
+
           <div class="flex flex-col h-full">
-            <!-- Header -->
             <div class="flex items-center justify-between mb-8">
               <div class="flex items-center gap-4">
                 <div class="w-14 h-14 rounded-xl bg-[#0a0a0b] border border-[#1a1e23] flex items-center justify-center transition-all duration-300 group-hover:border-emerald-500/40 group-hover:shadow-[0_0_20px_rgba(16,185,129,0.1)]">
@@ -75,14 +72,12 @@ const portals = [
                 </div>
               </div>
             </div>
-            
-            <!-- Title & Description -->
+
             <div class="mb-8">
               <h3 class="text-2xl font-semibold text-white mb-3">{portal.title}</h3>
               <p class="text-base text-slate-400 leading-relaxed">{portal.description}</p>
             </div>
-            
-            <!-- Features Grid -->
+
             <div class="grid grid-cols-2 gap-3 mb-8 flex-grow">
               {portal.features.map((feature) => (
                 <div class="flex items-center gap-3">
@@ -91,9 +86,12 @@ const portals = [
                 </div>
               ))}
             </div>
-            
-            <!-- CTA -->
-            <a 
+
+            <div class="bg-[#050608] border border-slate-800/60 rounded-xl h-[180px] flex items-center justify-center mb-6">
+              <span class="text-slate-600 text-sm font-mono">[Screenshot: {portal.title}]</span>
+            </div>
+
+            <a
               href={portal.href}
               target="_blank"
               class="group/btn inline-flex items-center gap-3 px-6 py-3.5 bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 hover:text-emerald-300 rounded-xl transition-all w-fit hover:border-emerald-500/40 text-sm font-medium"
@@ -107,38 +105,3 @@ const portals = [
     </div>
   </div>
 </section>
-
-<style>
-  #portals .grid > div {
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.5s ease-out, transform 0.5s ease-out;
-  }
-  
-  #portals .grid > div.visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
-</style>
-
-<script>
-  const section = document.getElementById('portals');
-  const cards = section?.querySelectorAll('.grid > div');
-  
-  if (cards?.length && section) {
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          cards.forEach((card, i) => {
-            setTimeout(() => {
-              card.classList.add('visible');
-            }, i * 100);
-          });
-          observer.disconnect();
-        }
-      });
-    }, { threshold: 0.15 });
-    
-    observer.observe(section);
-  }
-</script>
