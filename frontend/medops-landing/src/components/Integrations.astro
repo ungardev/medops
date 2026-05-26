@@ -10,11 +10,12 @@ const integrations = [
   },
   {
     icon: 'bancaribe',
-    label: 'BANCARIBE API',
-    title: 'Pagos Instantáneos',
-    description: 'Integración bancaria para transferencias y pagos QR en tiempo real',
-    value: 'Pagos QR',
-    subvalue: 'Transferencias inmediatas',
+    label: 'Bancaribe Core API Integration',
+    title: 'Rieles de Liquidación e Interconexión Bancaria',
+    description: 'Interconexión directa con el nodo core de la banca mediante APIs institucionales de alta disponibilidad. Automatice flujos transaccionales complejos que van más allá del punto de venta: procesamiento de cobros inmediatos (C2P), dispersión masiva automatizada de honorarios médicos, cuentas puente institucionales y conciliación en tiempo real mediante Webhooks seguros de grado bancario.',
+    value: 'Protocolo C2P / P2C',
+    subvalue: 'Webhooks de Conciliación',
+    badges: ['Dispersión de Honorarios Automática', 'Banca en Línea Corporativa'],
   },
   {
     icon: 'crypto',
@@ -61,6 +62,13 @@ const integrations = [
           <div class="p-4 bg-[#050608] border border-[#1a1e23] rounded-xl">
             <div class="text-2xl font-bold text-white mb-1">{integration.value}</div>
             <div class="text-xs text-slate-500">{integration.subvalue}</div>
+            {integration.badges && (
+              <div class="flex flex-wrap gap-2 mt-3">
+                {integration.badges.map((badge) => (
+                  <span class="text-[10px] font-medium text-emerald-400/80 bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20">{badge}</span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       ))}
