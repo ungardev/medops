@@ -1,107 +1,145 @@
 ---
-const portals = [
-  {
-    icon: 'user-check',
-    label: 'DOCTOR PORTAL',
-    title: 'Centro de Operaciones Clínicas',
-    description: 'Workstation integral para el médico especialista. Gestiona pacientes, citas, consultas y pagos desde un solo lugar.',
-    features: [
-      'Sala de Espera en Tiempo Real',
-      'Expediente Clínico Digital',
-      'CIE-11 + SNOMED CT Diagnósticos',
-      'Gestión de Cirugías',
-      'Hospitalización y Camas',
-      'Dashboard Financiero',
-      'Órdenes de Cobro',
-      'Reportes y Métricas',
-    ],
-    status: 'Disponible',
-    href: 'https://app.medopz.com/',
-  },
-  {
-    icon: 'heart',
-    label: 'PATIENT PORTAL',
-    title: 'Expediente en Tu Mano',
-    description: 'Acceso 24/7 al historial médico, citas y resultados desde cualquier dispositivo.',
-    features: [
-      'Expediente Digital Personal',
-      'Citas Programadas',
-      'Historial de Consultas',
-      'Resultados de Laboratorio',
-      'Historial de Pagos',
-      'Portal Instituciones Próximamente',
-    ],
-    status: 'Incluido',
-    href: 'https://patient.medopz.com/',
-  },
-];
+const doctorPortal = {
+  icon: 'user-check',
+  label: 'DOCTOR PORTAL',
+  title: 'Centro de Control Clínico de Alta Disponibilidad',
+  description: 'Workstation institucional para la gestión integral del ciclo clínico: desde la sala de espera hasta la liquidación transaccional, todo sincronizado bajo un mismo motor operativo.',
+  badges: ['Sala de Espera Live', 'Codificación CIE-11/SNOMED', 'Quirófanos y Camas', 'Telemetría Financiera'],
+  status: 'Disponible',
+  href: 'https://app.medopz.com/',
+  placeholder: 'Centro de Control Clínico',
+};
+
+const patientPortal = {
+  icon: 'heart',
+  label: 'PATIENT PORTAL',
+  title: 'El Expediente Clínico Universal en Manos del Paciente',
+  description: 'Acceso cifrado de grado médico al expediente personal, recetas con firma digital y historial de pagos integrado — disponible 24/7 desde cualquier dispositivo.',
+  badges: ['Acceso Cifrado 24/7', 'Recetas con Firma Digital', 'Historial de Pagos Integrado'],
+  status: 'Incluido',
+  href: 'https://patient.medopz.com/',
+  placeholder: 'Expediente Paciente',
+};
 ---
 
 <section id="portals" class="py-24 lg:py-32 px-6 bg-[#050608] relative">
   <div class="max-w-[1200px] mx-auto relative">
-    <div class="text-center mb-16">
-      <span class="text-xs font-bold text-emerald-400 uppercase tracking-[0.2em]">Ecosistema</span>
+    <div class="text-center mb-20">
+      <span class="text-xs font-bold text-emerald-400 uppercase tracking-[0.2em]">Ecosistema Omnicanal</span>
       <h2 class="text-4xl md:text-5xl font-bold text-white mt-4 tracking-tight">
-        Dos Portales, Un Solo Objetivo
+        Dos Portales Dedicados. Sincronización Absoluta.
       </h2>
-      <p class="text-lg text-slate-300 mt-4">La conexión directa entre médico y paciente</p>
+      <p class="text-lg text-slate-300 mt-4 max-w-[700px] mx-auto leading-relaxed">
+        La convergencia definitiva entre la gestión clínica institucional y la autonomía del paciente, operando bajo un mismo motor transaccional.
+      </p>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {portals.map((portal) => (
-        <div
-          class="group relative p-8 lg:p-10 bg-[#0c0e12] border border-[#1a1e23] rounded-2xl transition-all duration-500 hover:border-emerald-500/30 hover:shadow-[0_0_30px_rgba(16,185,129,0.05)]"
-        >
-          <div class="absolute top-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
-          <div class="flex flex-col h-full">
-            <div class="flex items-center justify-between mb-8">
-              <div class="flex items-center gap-4">
-                <div class="w-14 h-14 rounded-xl bg-[#0a0a0b] border border-[#1a1e23] flex items-center justify-center transition-all duration-300 group-hover:border-emerald-500/40 group-hover:shadow-[0_0_20px_rgba(16,185,129,0.1)]">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-slate-200 group-hover:text-emerald-400 transition-colors">
-                    {portal.icon === 'user-check' && <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></>}
-                    {portal.icon === 'heart' && <><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></>}
-                  </svg>
-                </div>
-                <div>
-                  <span class="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">{portal.label}</span>
-                  <div class="flex items-center gap-2 mt-1">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                    <span class="text-sm text-slate-400">{portal.status}</span>
-                  </div>
-                </div>
-              </div>
+    <!-- Doctor Portal Block: Text Left, Image Right -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center mb-24 lg:mb-32">
+      <div class="lg:col-span-5 order-2 lg:order-1">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-12 h-12 rounded-xl bg-[#0c0e12] border border-[#1a1e23] flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-400">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <polyline points="16 11 18 13 22 9"/>
+            </svg>
+          </div>
+          <div>
+            <span class="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">{doctorPortal.label}</span>
+            <div class="flex items-center gap-2 mt-0.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span class="text-xs text-slate-400">{doctorPortal.status}</span>
             </div>
-
-            <div class="mb-8">
-              <h3 class="text-2xl font-semibold text-white mb-3">{portal.title}</h3>
-              <p class="text-base text-slate-400 leading-relaxed">{portal.description}</p>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3 mb-8 flex-grow">
-              {portal.features.map((feature) => (
-                <div class="flex items-center gap-3">
-                  <div class="w-1.5 h-1.5 rounded-full bg-emerald-500/70 shrink-0"></div>
-                  <span class="text-sm text-slate-200 font-medium">{feature}</span>
-                </div>
-              ))}
-            </div>
-
-            <div class="bg-[#050608] border border-slate-800/60 rounded-xl h-[180px] flex items-center justify-center mb-6">
-              <span class="text-slate-600 text-sm font-mono">[Screenshot: {portal.title}]</span>
-            </div>
-
-            <a
-              href={portal.href}
-              target="_blank"
-              class="group/btn inline-flex items-center gap-3 px-6 py-3.5 bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 hover:text-emerald-300 rounded-xl transition-all w-fit hover:border-emerald-500/40 text-sm font-medium"
-            >
-              Acceder al Portal
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="group-hover/btn:translate-x-0.5 transition-transform"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-            </a>
           </div>
         </div>
-      ))}
+
+        <h3 class="text-2xl md:text-3xl font-bold text-white mb-4 leading-tight">
+          {doctorPortal.title}
+        </h3>
+        <p class="text-sm text-slate-400 leading-relaxed mb-6">
+          {doctorPortal.description}
+        </p>
+
+        <div class="flex flex-wrap gap-2 mb-8">
+          {doctorPortal.badges.map((badge) => (
+            <span class="px-3 py-1.5 bg-[#0c0e12] border border-[#1a1e23] rounded-lg text-[11px] font-medium text-slate-300">
+              {badge}
+            </span>
+          ))}
+        </div>
+
+        <a
+          href={doctorPortal.href}
+          target="_blank"
+          class="inline-flex items-center gap-3 px-6 py-3.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 hover:text-emerald-300 rounded-xl transition-all text-sm font-medium hover:border-emerald-500/50"
+        >
+          Acceder al Portal Doctor
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </a>
+      </div>
+
+      <div class="lg:col-span-7 order-1 lg:order-2">
+        <div class="bg-[#0a0b0d]/80 border border-slate-800/80 rounded-xl shadow-2xl overflow-hidden hover:scale-[1.01] transition-transform duration-500 h-[350px] flex items-center justify-center">
+          <div class="text-center">
+            <span class="text-slate-500 text-sm font-mono tracking-wide block mb-2">[ Workstation Médica ]</span>
+            <span class="text-slate-600 text-xs">Screenshot: {doctorPortal.placeholder}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Patient Portal Block: Image Left, Text Right -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      <div class="lg:col-span-7 order-1">
+        <div class="bg-[#0a0b0d]/80 border border-slate-800/80 rounded-xl shadow-2xl overflow-hidden hover:scale-[1.01] transition-transform duration-500 h-[350px] flex items-center justify-center">
+          <div class="text-center">
+            <span class="text-slate-500 text-sm font-mono tracking-wide block mb-2">[ Portal Paciente Mobile ]</span>
+            <span class="text-slate-600 text-xs">Screenshot: {patientPortal.placeholder}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="lg:col-span-5 order-2">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-12 h-12 rounded-xl bg-[#0c0e12] border border-[#1a1e23] flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-400">
+              <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+            </svg>
+          </div>
+          <div>
+            <span class="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">{patientPortal.label}</span>
+            <div class="flex items-center gap-2 mt-0.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span class="text-xs text-slate-400">{patientPortal.status}</span>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="text-2xl md:text-3xl font-bold text-white mb-4 leading-tight">
+          {patientPortal.title}
+        </h3>
+        <p class="text-sm text-slate-400 leading-relaxed mb-6">
+          {patientPortal.description}
+        </p>
+
+        <div class="flex flex-wrap gap-2 mb-8">
+          {patientPortal.badges.map((badge) => (
+            <span class="px-3 py-1.5 bg-[#0c0e12] border border-[#1a1e23] rounded-lg text-[11px] font-medium text-slate-300">
+              {badge}
+            </span>
+          ))}
+        </div>
+
+        <a
+          href={patientPortal.href}
+          target="_blank"
+          class="inline-flex items-center gap-3 px-6 py-3.5 bg-white/5 hover:bg-white/10 border border-white/15 text-white/80 hover:text-white rounded-xl transition-all text-sm font-medium hover:border-white/25"
+        >
+          Acceder al Portal Paciente
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </a>
+      </div>
     </div>
   </div>
 </section>
