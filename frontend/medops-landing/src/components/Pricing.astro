@@ -4,16 +4,16 @@ const plans = [
     name: 'Professional',
     price: '$25',
     period: '/ médico / mes',
-    description: 'Infraestructura óptima para consultas independientes y médicos especialistas autónomos.',
+    description: 'Infraestructura de alta disponibilidad óptima para consultas independientes y médicos especialistas autónomos que requieren blindaje operativo.',
     features: [
-      'Récord clínico digital completo',
-      'Buscador inteligente e indexado CIE-11',
-      'Módulo de recetas digitales INHRR',
-      'Órdenes de cobro y control operativo de 1 sede',
-      'Sala de espera live',
-      'Portal paciente básico',
+      'Expediente Clínico Digital Unificado e Inmutable',
+      'Motor de Búsqueda Indexado CIE-11 y SNOMED CT',
+      'Módulo de Prescripción Digital Homologado INHRR',
+      'Órdenes de Cobro y Liquidación Multi-Moneda (1 Sede)',
+      'Sala de Espera Live con Sincronización Automatizada',
+      'Ecosistema Omnicanal con Acceso Nativo al Portal Paciente',
     ],
-    cta: 'Comenzar',
+    cta: 'Desplegar Workstation',
     href: 'https://app.medopz.com/',
     featured: false,
   },
@@ -21,16 +21,16 @@ const plans = [
     name: 'Institutional',
     price: '$40',
     period: '/ médico / mes',
-    description: 'Diseñado para clínicas, centros de diagnóstico y policlínicas con múltiples dependencias.',
+    description: 'Diseñado para clínicas, policlínicas y centros de diagnóstico con flujos complejos y múltiples dependencias operativas interconectadas.',
     features: [
-      'Todo lo incluido en Professional',
-      'Arquitectura e interconexión Multi-Sede',
-      'Gestión de quirófanos y asignación de camas',
-      'Matriz de seguridad con permisos granulares por roles',
-      'Acceso a la API de Telemetría Financiera',
-      'Soporte priorario 24/7',
+      'Todo lo incluido en el nivel Professional',
+      'Arquitectura de Datos Multi-Sede Federada',
+      'Control Logístico de Quirófanos y Asignación de Camas',
+      'Matriz de Seguridad con Permisos Granulares por Roles',
+      'Consola Centralizada de Telemetría y Conciliación Financiera',
+      'Soporte Prioritario de Infraestructura 24/7/365',
     ],
-    cta: 'Contactar Soluciones',
+    cta: 'Contactar Ingeniería de Soluciones',
     href: 'mailto:info@medopz.com?subject=Plan Institutional',
     featured: true,
   },
@@ -38,14 +38,16 @@ const plans = [
     name: 'Enterprise',
     price: 'Custom',
     period: '',
-    description: 'The MEDOPZ Transactional Engine. Infraestructura masiva y exclusiva para redes hospitalarias y banca corporativa.',
+    description: 'The MEDOPZ Transactional Engine. Infraestructura masiva, aislada y exclusiva para redes hospitalarias de alta escala y banca corporativa.',
     features: [
-      'Instancia aislada y base de datos dedicada de alta disponibilidad',
-      'Pasarela de recaudación integrada (Mercantil P2C / Banesco)',
-      'Conciliación automatizada masiva en tiempo real',
-      'SLA prioritario 24/7/365',
+      'Instancia Aislada y Base de Datos Dedicada en NeonDB/PostgreSQL',
+      'Rieles de Recaudación Core API (Bancaribe Core / Mercantil P2C / Banesco)',
+      'Procesamiento Asincrónico y Conciliación Automatizada Masiva',
+      'Gobernanza de Datos de Extremo a Extremo (Cumplimiento HIPAA / HL7)',
+      'Entorno de Pruebas (Sandbox) para Pruebas de Carga y Estrés',
+      'SLA Prioritario y Comité Técnico de Ingeniería Dedicado',
     ],
-    cta: 'Consultar Comité',
+    cta: 'Solicitar Auditoría de Comité',
     href: 'mailto:info@medopz.com?subject=The MEDOPZ Transactional Engine',
     featured: false,
   },
@@ -61,7 +63,7 @@ const plans = [
         Modelos de Licenciamiento
       </h2>
       <p class="text-lg text-slate-300 mt-4">Inversión inteligente adaptada a la escala de su institución</p>
-      <p class="text-sm text-slate-500 mt-2">Estructura SaaS por suscripción mensual calculada por médico activo.</p>
+      <p class="text-sm text-slate-500 mt-2">Estructura de licenciamiento por suscripción calculada por nodo de especialista clínico activo.</p>
     </div>
 
     <!-- Pricing Grid -->
@@ -124,13 +126,13 @@ const plans = [
 </section>
 
 <style>
-  #pricing .grid > div {
+  #plans .grid > div {
     opacity: 0;
     transform: translateY(20px);
     transition: opacity 0.5s ease-out, transform 0.5s ease-out;
   }
   
-  #pricing .grid > div.visible {
+  #plans .grid > div.visible {
     opacity: 1;
     transform: translateY(0);
   }
