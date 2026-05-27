@@ -19,10 +19,8 @@ from django.contrib import admin
 from django.urls import path, include, re_path
 from django.conf import settings
 from django.views.static import serve
-from django.contrib.staticfiles import static
-from core.api_views import verify_document
 from django.conf.urls.static import static
-from django.views.static import serve
+from core.api_views import verify_document
 from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework_simplejwt.views import TokenRefreshView
 
