@@ -9,7 +9,7 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 
-VERIFICATION_DOMAIN = "verify.medopz.com"
+VERIFICATION_DOMAIN = "api.medopz.com"
 
 
 def get_verification_base_url() -> str:
@@ -28,9 +28,9 @@ def get_verification_url(audit_code: str) -> str:
         audit_code: The unique audit code of the document (12-char uppercase)
 
     Returns:
-        Full URL: https://verify.medopz.com/v/{audit_code}
+        Full URL: https://api.medopz.com/api/d/{audit_code}
     """
-    return f"{get_verification_base_url()}/d/{audit_code}"
+    return f"{get_verification_base_url()}/api/d/{audit_code}"
 
 
 def get_qr_payload_for_document(audit_code: str) -> str:

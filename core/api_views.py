@@ -1811,7 +1811,7 @@ def patient_dependents(request, patient_id):
 
 
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def register_minor(request):
     """
     POST /api/patients/register-minor/
@@ -1877,7 +1877,7 @@ def register_minor(request):
 
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def minor_verification(request):
     """
     GET /api/patients/minor-verification/
@@ -3871,7 +3871,7 @@ def mercantil_p2c_config_status(request):
 # MERCANTIL P2C - VERIFICACIÓN DE PAGOS MÓVILES
 # ==========================================
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def verify_mobile_payment(request):
     """
     🎯 ELITE VERIFICATION: Mobile Payment Reference Verification
@@ -4948,7 +4948,7 @@ def patient_login(request):
 
 
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def patient_logout(request):
     """
     POST /api/patient-auth/logout/

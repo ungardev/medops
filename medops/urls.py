@@ -20,7 +20,6 @@ from django.urls import path, include, re_path
 from django.conf import settings
 from django.views.static import serve
 from django.conf.urls.static import static
-from core.api_views import verify_document
 from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -32,8 +31,6 @@ urlpatterns = [
     path("api/auth/login/", obtain_auth_token, name="api_token_auth"),
     # 🔹 SimpleJWT token refresh
     path("api/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-    # 🔹 Document Verification (publico - no requiere auth)
-    path("d/<str:audit_code>/", verify_document, name="verify-document"),
 ]
 
 if settings.DEBUG:
