@@ -761,7 +761,7 @@ urlpatterns = [
         name="patient-search-services",
     ),
     # 🔹 Document Verification (publico - no requiere auth)
-    path("d/<str:audit_code>/", api_views.verify_document, name="verify-document"),
+    path("d/<str:audit_code>", api_views.verify_document, name="verify-document"),
     path("auth/verify/", verify_token, name="verify_token"),
     path("patient/auth/verify/", verify_patient_token, name="verify-patient-token"),
     path(
