@@ -33,7 +33,7 @@ urlpatterns = [
     # 🔹 SimpleJWT token refresh
     path("api/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     # 🔹 Document Verification (publico - no requiere auth)
-    path("v/<str:audit_code>/", verify_document, name="verify-document"),
+    path("d/<str:audit_code>/", verify_document, name="verify-document"),
 ]
 
 if settings.DEBUG:

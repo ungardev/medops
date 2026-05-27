@@ -30,7 +30,7 @@ def get_verification_url(audit_code: str) -> str:
     Returns:
         Full URL: https://verify.medopz.com/v/{audit_code}
     """
-    return f"{get_verification_base_url()}/v/{audit_code}"
+    return f"{get_verification_base_url()}/d/{audit_code}"
 
 
 def get_qr_payload_for_document(audit_code: str) -> str:
