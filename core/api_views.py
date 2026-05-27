@@ -313,7 +313,9 @@ class PatientViewSet(viewsets.ModelViewSet):
             if appointment_id:
                 queryset = queryset.filter(appointment_id=appointment_id)
 
-            serializer = MedicalDocumentReadSerializer(queryset, many=True)
+            serializer = MedicalDocumentReadSerializer(
+                queryset, many=True, context={"request": request}
+            )
             return Response({"list": serializer.data})
         except Exception as e:
             logger.error(f"Error en documents: {str(e)}")
@@ -2294,8 +2296,11 @@ def generate_medical_report(request, pk):
 
         doc.file.save(filename, ContentFile(pdf_bytes))
 
+        base_url = request.build_absolute_uri("/")
         report.file_url = (
-            doc.file.url if doc.file else f"/media/medical_reports/{filename}"
+            f"{base_url}{doc.file.url}"
+            if doc.file
+            else f"/media/medical_reports/{filename}"
         )
         report.save()
 
@@ -2579,7 +2584,7 @@ def generate_used_documents(request, pk):
         user = request.user if request.user.is_authenticated else None
 
         # Usar el servicio existente de generación en lote
-        result = services.bulk_generate_appointment_docs(appointment, user)
+        result = services.bulk_generate_appointment_docs(appointment, user, request)
 
         # ✅ FIX: Devolver estructura que coincide con el interface del frontend
         return Response(

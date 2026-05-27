@@ -2177,15 +2177,14 @@ def generate_treatment_bundle(
     return pdf_bytes, filename, audit_code
 
 
-def bulk_generate_appointment_docs(appointment, user) -> Dict[str, Any]:
+def bulk_generate_appointment_docs(appointment, user, request=None) -> Dict[str, Any]:
     """
     Genera automáticamente todos los documentos PDF de una cita.
     Implementación ELITE: Consolida múltiples prescripciones/tratamientos en un solo documento.
-
-    ✅ FASE 1: Documentos consolidados (bundle) para prescripciones y tratamientos.
     """
     generated_files = []
     errors = []
+    base_url = request.build_absolute_uri("/") if request else ""
 
     from core.models import Prescription, Treatment
 
@@ -2241,7 +2240,7 @@ def bulk_generate_appointment_docs(appointment, user) -> Dict[str, Any]:
                     "title": filename,
                     "filename": filename,
                     "audit_code": audit_code,
-                    "file_url": doc.file.url if doc.file else None,
+                    "file_url": f"{base_url}{doc.file.url}" if doc.file else None,
                     "description": description,
                 }
             )
@@ -2296,7 +2295,7 @@ def bulk_generate_appointment_docs(appointment, user) -> Dict[str, Any]:
                     "title": filename,
                     "filename": filename,
                     "audit_code": audit_code,
-                    "file_url": doc.file.url if doc.file else None,
+                    "file_url": f"{base_url}{doc.file.url}" if doc.file else None,
                     "description": description,
                 }
             )
@@ -2367,7 +2366,7 @@ def bulk_generate_appointment_docs(appointment, user) -> Dict[str, Any]:
                         "title": filename,
                         "filename": filename,
                         "audit_code": audit_code,
-                        "file_url": doc.file.url if doc.file else None,
+                        "file_url": f"{base_url}{doc.file.url}" if doc.file else None,
                         "description": description,
                     }
                 )
