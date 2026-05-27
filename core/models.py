@@ -1546,6 +1546,12 @@ class MedicalDocument(models.Model):
 
     # Identificador Único de Verificación (QR/Auditoría)
     audit_code = models.CharField(max_length=64, unique=True, editable=False, null=True)
+    file_url = models.CharField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="URL pública del archivo en R2 (Cloudflare) o URL absoluta",
+    )
     # Trazabilidad de Usuarios
     uploaded_at = models.DateTimeField(auto_now_add=True)
     uploaded_by = models.ForeignKey(
