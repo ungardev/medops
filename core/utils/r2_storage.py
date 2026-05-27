@@ -57,6 +57,9 @@ class R2StorageClient:
 
     @property
     def public_url_base(self) -> str:
+        custom_url = getattr(settings, "CLOUDFLARE_R2_PUBLIC_URL_BASE", "")
+        if custom_url:
+            return custom_url.rstrip("/")
         return f"https://{self.bucket_name}.{settings.CLOUDFLARE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
 
     def upload_file(
