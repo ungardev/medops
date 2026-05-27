@@ -28,9 +28,9 @@ def get_verification_url(audit_code: str) -> str:
         audit_code: The unique audit code of the document (12-char uppercase)
 
     Returns:
-        Full URL: https://www.medopz.com/verify/{audit_code}
+        Full URL: https://verify.medopz.com/v/{audit_code}
     """
-    return f"{get_verification_base_url()}/verify/{audit_code}"
+    return f"{get_verification_base_url()}/v/{audit_code}"
 
 
 def get_qr_payload_for_document(audit_code: str) -> str:
