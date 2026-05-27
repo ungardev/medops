@@ -2296,13 +2296,22 @@ def generate_medical_report(request, pk):
 
         doc.file.save(filename, ContentFile(pdf_bytes))
 
-        base_url = request.build_absolute_uri("/")
-        report.file_url = (
-            f"{base_url}{doc.file.url}"
-            if doc.file
-            else f"/media/medical_reports/{filename}"
-        )
-        report.save()
+        from core.utils.r2_storage import get_r2_client, upload_medical_report_pdf
+
+        r2_client = get_r2_client()
+        if settings.R2_ENABLED and r2_client:
+            r2_url = upload_medical_report_pdf(pdf_bytes, report.id, filename)
+            if r2_url:
+                report.file_url = r2_url
+                report.save(update_fields=["file_url"])
+        else:
+            base_url = request.build_absolute_uri("/")
+            report.file_url = (
+                f"{base_url}{doc.file.url}"
+                if doc.file
+                else f"/media/medical_reports/{filename}"
+            )
+            report.save()
 
         response = HttpResponse(pdf_bytes, content_type="application/pdf")
         response["Content-Disposition"] = f'attachment; filename="{filename}"'

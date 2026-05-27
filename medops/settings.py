@@ -361,3 +361,28 @@ if SENTRY_DSN:
         release=os.environ.get("GIT_COMMIT_SHA", "unknown"),
     )
     print(f"[SENTRY] Monitorización habilitada para entorno: {ENVIRONMENT}")
+
+
+# =====================================================
+# Cloudflare R2 Configuration
+# =====================================================
+CLOUDFLARE_R2_ACCOUNT_ID = os.environ.get("CLOUDFLARE_R2_ACCOUNT_ID", "")
+CLOUDFLARE_R2_ACCESS_KEY_ID = os.environ.get("CLOUDFLARE_R2_ACCESS_KEY_ID", "")
+CLOUDFLARE_R2_SECRET_ACCESS_KEY = os.environ.get("CLOUDFLARE_R2_SECRET_ACCESS_KEY", "")
+CLOUDFLARE_R2_BUCKET_NAME = os.environ.get(
+    "CLOUDFLARE_R2_BUCKET_NAME", "medops-documents"
+)
+CLOUDFLARE_R2_ENDPOINT_URL = os.environ.get(
+    "CLOUDFLARE_R2_ENDPOINT_URL",
+    f"https://{CLOUDFLARE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+    if CLOUDFLARE_R2_ACCOUNT_ID
+    else "",
+)
+
+R2_ENABLED = all(
+    [
+        CLOUDFLARE_R2_ACCOUNT_ID,
+        CLOUDFLARE_R2_ACCESS_KEY_ID,
+        CLOUDFLARE_R2_SECRET_ACCESS_KEY,
+    ]
+)

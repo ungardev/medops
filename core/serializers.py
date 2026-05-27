@@ -2267,7 +2267,9 @@ class MedicalDocumentReadSerializer(serializers.ModelSerializer):
         return None
 
     def get_file_url(self, obj):
-        """Devuelve la URL del archivo para compatibilidad con frontend."""
+        """Devuelve la URL del archivo. Prioriza URL de R2 si está disponible."""
+        if obj.file_url:
+            return obj.file_url
         if obj.file:
             request = self.context.get("request")
             if request:

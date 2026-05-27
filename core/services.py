@@ -15,6 +15,7 @@ from typing import Dict, Any, cast, Optional, List, Tuple, Union
 
 # from PIL import Image as PILImage
 from reportlab.platypus import Image as RLImage
+from core.utils.r2_storage import get_r2_client, upload_medical_document
 
 # 2. Django Core
 from django.conf import settings
@@ -2185,6 +2186,8 @@ def bulk_generate_appointment_docs(appointment, user, request=None) -> Dict[str,
     generated_files = []
     errors = []
     base_url = request.build_absolute_uri("/") if request else ""
+    r2_client = get_r2_client()
+    r2_enabled = settings.R2_ENABLED and r2_client is not None
 
     from core.models import Prescription, Treatment
 
@@ -2233,6 +2236,12 @@ def bulk_generate_appointment_docs(appointment, user, request=None) -> Dict[str,
             )
             doc.file.save(filename, ContentFile(pdf_bytes))
 
+            if r2_enabled:
+                r2_url = upload_medical_document(pdf_bytes, "prescription", filename)
+                if r2_url:
+                    doc.file_url = r2_url
+                    doc.save(update_fields=["file_url"])
+
             generated_files.append(
                 {
                     "id": doc.id,
@@ -2240,7 +2249,9 @@ def bulk_generate_appointment_docs(appointment, user, request=None) -> Dict[str,
                     "title": filename,
                     "filename": filename,
                     "audit_code": audit_code,
-                    "file_url": f"{base_url}{doc.file.url}" if doc.file else None,
+                    "file_url": doc.file_url or f"{base_url}{doc.file.url}"
+                    if doc.file
+                    else None,
                     "description": description,
                 }
             )
@@ -2288,6 +2299,12 @@ def bulk_generate_appointment_docs(appointment, user, request=None) -> Dict[str,
             )
             doc.file.save(filename, ContentFile(pdf_bytes))
 
+            if r2_enabled:
+                r2_url = upload_medical_document(pdf_bytes, "treatment", filename)
+                if r2_url:
+                    doc.file_url = r2_url
+                    doc.save(update_fields=["file_url"])
+
             generated_files.append(
                 {
                     "id": doc.id,
@@ -2295,7 +2312,9 @@ def bulk_generate_appointment_docs(appointment, user, request=None) -> Dict[str,
                     "title": filename,
                     "filename": filename,
                     "audit_code": audit_code,
-                    "file_url": f"{base_url}{doc.file.url}" if doc.file else None,
+                    "file_url": doc.file_url or f"{base_url}{doc.file.url}"
+                    if doc.file
+                    else None,
                     "description": description,
                 }
             )
@@ -2359,6 +2378,12 @@ def bulk_generate_appointment_docs(appointment, user, request=None) -> Dict[str,
                 )
                 doc.file.save(filename, ContentFile(pdf_bytes))
 
+                if r2_enabled:
+                    r2_url = upload_medical_document(pdf_bytes, category, filename)
+                    if r2_url:
+                        doc.file_url = r2_url
+                        doc.save(update_fields=["file_url"])
+
                 generated_files.append(
                     {
                         "id": doc.id,
@@ -2366,7 +2391,9 @@ def bulk_generate_appointment_docs(appointment, user, request=None) -> Dict[str,
                         "title": filename,
                         "filename": filename,
                         "audit_code": audit_code,
-                        "file_url": f"{base_url}{doc.file.url}" if doc.file else None,
+                        "file_url": doc.file_url or f"{base_url}{doc.file.url}"
+                        if doc.file
+                        else None,
                         "description": description,
                     }
                 )
