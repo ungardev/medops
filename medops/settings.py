@@ -34,9 +34,9 @@ DEBUG = os.environ.get("DEBUG", "False") == "True"
 ADMIN_API_KEY = os.environ.get("ADMIN_API_KEY", "")
 
 # Ajuste para Docker y local
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0").split(
-    ","
-)
+ALLOWED_HOSTS = os.environ.get(
+    "ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0,verify.medopz.com"
+).split(",")
 
 # === SITE URL (para callback URLs de webhooks y P2C) ===
 SITE_URL = os.environ.get("SITE_URL", "https://medopz.com")
