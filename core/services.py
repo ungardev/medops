@@ -225,7 +225,7 @@ def generate_audit_code(appointment, patient):
     Combina ID de consulta, ID de paciente y timestamp.
     """
     raw = f"{appointment.id}-{patient.id}-{timezone.now().isoformat()}"
-    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:12]  # 12 caracteres
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:12].upper()  # 12 caracteres
 
 
 def get_bcv_rate_logic():

@@ -1629,7 +1629,7 @@ class MedicalDocument(models.Model):
 
             # ✅ FIX: Solo regenerar audit_code si es UN REGISTRO NUEVO sin audit_code
             # Si el audit_code ya existe (desde creación), PRESERVARLO
-            if not self.audit_code and self.audit_code is None:
+            if not self.audit_code:
                 if is_new:
                     unique_str = f"{self.patient_id}-{self.checksum_sha256}"
                     self.audit_code = (
