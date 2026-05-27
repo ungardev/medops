@@ -35,6 +35,7 @@ import qrcode
 import base64
 from io import BytesIO
 from .services import generate_audit_code, get_bcv_rate, get_bcv_rate_logic
+from core.utils.document_verification import get_verification_url
 import traceback
 import secrets
 import string
@@ -2242,10 +2243,7 @@ def generate_medical_report(request, pk):
             doctor_specialties = [s.name for s in doctor.specialties.all()]
 
         audit_code = generate_audit_code(appointment, patient)
-        qr_payload = (
-            f"Consulta:{appointment.id}|MedicalReport:{report.id}|Audit:{audit_code}"
-        )
-        qr_img = qrcode.make(qr_payload)
+        qr_img = qrcode.make(get_verification_url(audit_code))
         buffer = BytesIO()
         qr_img.save(buffer, "PNG")
         qr_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
@@ -2458,12 +2456,7 @@ def generate_chargeorder_pdf(request, pk):
 
         # Generar código de auditoría
         audit_code = generate_audit_code(charge_order.appointment, charge_order.patient)
-
-        # Generar QR
-        qr_payload = (
-            f"ORD:{charge_order.id}|PAC:{charge_order.patient.id}|AUDIT:{audit_code}"
-        )
-        qr_img = qrcode.make(qr_payload)
+        qr_img = qrcode.make(get_verification_url(audit_code))
         buffer = BytesIO()
         qr_img.save(buffer, "PNG")
         qr_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
@@ -9041,3 +9034,57 @@ def scrape_bcv_admin_api(request):
             {"error": str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def verify_document(request, audit_code):
+    """
+    GET /verify/{audit_code}/
+    Página pública de verificación de documento médico.
+    No requiere autenticación.
+    Muestra datos públicos del documento para validación de autenticidad.
+    """
+    from .models import MedicalDocument
+    from .serializers import MedicalDocumentVerificationSerializer
+
+    try:
+        doc = (
+            MedicalDocument.objects.select_related("patient", "doctor", "institution")
+            .filter(audit_code=audit_code.upper())
+            .first()
+        )
+
+        if not doc:
+            return render(
+                request,
+                "verify/document_not_found.html",
+                {"audit_code": audit_code.upper() if audit_code else ""},
+                status=404,
+            )
+
+        serializer = MedicalDocumentVerificationSerializer(doc)
+        context = {
+            "document": serializer.data,
+            "is_valid": True,
+            "verification_url": f"https://www.medopz.com/verify/{audit_code.upper()}",
+        }
+        return render(request, "verify/document_verification.html", context)
+
+    except Exception as e:
+        logger.error(f"Error in verify_document: {str(e)}")
+        return render(
+            request,
+            "verify/document_not_found.html",
+            {"audit_code": audit_code.upper() if audit_code else ""},
+            status=404,
+        )
+
+
+def render(request, template_name, context=None, status=200):
+    """
+    Helper to render Django template from API view context.
+    """
+    from django.shortcuts import render as django_render
+
+    return django_render(request, template_name, context or {}, status=status)

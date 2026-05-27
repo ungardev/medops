@@ -16,6 +16,7 @@ from typing import Dict, Any, cast, Optional, List, Tuple, Union
 # from PIL import Image as PILImage
 from reportlab.platypus import Image as RLImage
 from core.utils.r2_storage import get_r2_client, upload_medical_document
+from core.utils.document_verification import get_verification_url
 
 # 2. Django Core
 from django.conf import settings
@@ -1363,7 +1364,7 @@ def generate_generic_pdf(
     raw_code = f"{category}-{instance.id}-{timezone.now().timestamp()}"
     audit_code = hashlib.sha256(raw_code.encode()).hexdigest()[:12].upper()
     qr = qrcode.QRCode(box_size=10, border=2)
-    qr.add_data(f"VERIFY_DOC:{audit_code}")
+    qr.add_data(get_verification_url(audit_code))
     qr.make(fit=True)
     img_qr = qr.make_image(fill_color="black", back_color="white")
 
@@ -1881,7 +1882,7 @@ def generate_prescription_bundle(
 
     # QR
     qr = qrcode.QRCode(box_size=10, border=2)
-    qr.add_data(f"VERIFY_DOC:{audit_code}")
+    qr.add_data(get_verification_url(audit_code))
     qr.make(fit=True)
     img_qr = qr.make_image(fill_color="black", back_color="white")
     buffer = BytesIO()
@@ -2056,7 +2057,7 @@ def generate_treatment_bundle(
 
     # QR
     qr = qrcode.QRCode(box_size=10, border=2)
-    qr.add_data(f"VERIFY_DOC:{audit_code}")
+    qr.add_data(get_verification_url(audit_code))
     qr.make(fit=True)
     img_qr = qr.make_image(fill_color="black", back_color="white")
     buffer = BytesIO()

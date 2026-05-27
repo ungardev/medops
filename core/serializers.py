@@ -2278,6 +2278,54 @@ class MedicalDocumentReadSerializer(serializers.ModelSerializer):
         return None
 
 
+class MedicalDocumentVerificationSerializer(serializers.ModelSerializer):
+    """
+    Serializer de VERIFICACIÓN PÚBLICA para documentos médicos.
+    Muestra SOLO datos públicos sin información sensible.
+    Diseñado para la página de verificación via QR.
+    """
+
+    category_display = serializers.CharField(
+        source="get_category_display", read_only=True
+    )
+    patient_name = serializers.SerializerMethodField()
+    doctor_name = serializers.SerializerMethodField()
+    institution_name = serializers.SerializerMethodField()
+    generated_at = serializers.DateTimeField(source="uploaded_at", read_only=True)
+
+    class Meta:
+        model = MedicalDocument
+        fields = [
+            "audit_code",
+            "category",
+            "category_display",
+            "patient_name",
+            "doctor_name",
+            "institution_name",
+            "generated_at",
+            "description",
+        ]
+
+    def get_patient_name(self, obj):
+        if obj.patient:
+            full_name = obj.patient.get_full_name()
+            parts = full_name.split()
+            if len(parts) >= 2:
+                return f"{parts[0]} {' '.join(p[0] + '.' for p in parts[1:])}"
+            return parts[0] if parts else "Paciente"
+        return "Paciente"
+
+    def get_doctor_name(self, obj):
+        if obj.doctor:
+            return f"Dr. {obj.doctor.get_full_name()}"
+        return "Médico no especificado"
+
+    def get_institution_name(self, obj):
+        if obj.institution:
+            return obj.institution.name
+        return "Institución no especificada"
+
+
 # --- Sala de espera (detallado con cita completa) ---
 class WaitingRoomEntryDetailSerializer(serializers.ModelSerializer):
     """
