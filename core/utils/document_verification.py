@@ -9,7 +9,7 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 
-VERIFICATION_DOMAIN = "www.medopz.com"
+VERIFICATION_DOMAIN = "verify.medopz.com"
 
 
 def get_verification_base_url() -> str:
