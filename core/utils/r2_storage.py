@@ -179,7 +179,7 @@ def upload_medical_document(
 
     client = get_r2_client()
     date_path = datetime.now().strftime("%Y/%m/%d")
-    object_key = f"medical_documents/{date_path}/{category}_{filename}"
+    object_key = f"medical_documents/{date_path}/{filename}"
     return client.upload_file(file_content, object_key, "application/pdf")
 
 

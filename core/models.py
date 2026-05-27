@@ -1613,29 +1613,28 @@ class MedicalDocument(models.Model):
 
     def save(self, *args, **kwargs):
         """Lógica automática de metadatos y seguridad."""
-        # NUEVO: Auto-completar doctor e institution desde appointment
+        is_new = self.pk is None
         if self.appointment:
             self.doctor = self.appointment.doctor
             self.institution = self.appointment.institution
 
         if self.file:
-            # 1. Almacenar tamaño automáticamente
             self.size_bytes = self.file.size
 
-            # 2. Generar Checksum SHA256 para integridad (si es archivo nuevo)
             if not self.checksum_sha256:
                 sha256 = hashlib.sha256()
                 for chunk in self.file.chunks():
                     sha256.update(chunk)
                 self.checksum_sha256 = sha256.hexdigest()
-            # 3. Generar Audit Code único (para validación externa vía QR)
-            if not self.audit_code:
-                unique_str = (
-                    f"{self.patient_id}-{self.uploaded_at}-{self.checksum_sha256}"
-                )
-                self.audit_code = (
-                    hashlib.sha1(unique_str.encode()).hexdigest()[:16].upper()
-                )
+
+            # ✅ FIX: Solo regenerar audit_code si es UN REGISTRO NUEVO sin audit_code
+            # Si el audit_code ya existe (desde creación), PRESERVARLO
+            if not self.audit_code and self.audit_code is None:
+                if is_new:
+                    unique_str = f"{self.patient_id}-{self.checksum_sha256}"
+                    self.audit_code = (
+                        hashlib.sha1(unique_str.encode()).hexdigest()[:16].upper()
+                    )
         super().save(*args, **kwargs)
 
 
