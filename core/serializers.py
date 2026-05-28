@@ -41,8 +41,6 @@ from .models import (
     ClinicalNote,
     VitalSigns,
     MedicalTestCatalog,
-    MercantilP2CTransaction,
-    MercantilP2CConfig,
     WhatsAppMessage,
     PaymentGateway,
     DoctorPaymentConfig,
@@ -3632,30 +3630,6 @@ class DoctorMiniSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "specialties", "is_verified"]
 
 
-class MercantilP2CTransactionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = MercantilP2CTransaction
-        fields = "__all__"
-        read_only_fields = ("id", "generated_at", "confirmed_at")
-
-
-class MercantilP2CConfigSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = MercantilP2CConfig
-        fields = "__all__"
-        exclude = ("secret_key", "webhook_secret")  # No exponer secrets
-
-
-class MercantilP2CCreateTransactionSerializer(serializers.Serializer):
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
-    charge_order_id = serializers.IntegerField(required=False, allow_null=True)
-
-    def validate_amount(self, value):
-        if value <= 0:
-            raise serializers.ValidationError("Amount must be greater than 0")
-        return value
-
-
 # ==========================================
 # SERIALIZERS WHATSAPP
 # ==========================================
@@ -3758,10 +3732,6 @@ class DoctorPaymentConfigSerializer(serializers.ModelSerializer):
             "bank_rif",
             "bank_phone",
             "bank_account_holder",
-            # Mercantil
-            "mercantil_client_id",
-            "mercantil_enabled",
-            "mercantil_is_test_mode",
             # Banesco
             "banesco_client_id",
             "banesco_enabled",
@@ -3801,8 +3771,6 @@ class DoctorPaymentConfigSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         extra_kwargs = {
-            "mercantil_secret_key": {"write_only": True},
-            "mercantil_webhook_secret": {"write_only": True},
             "banesco_secret_key": {"write_only": True},
             "binance_api_secret": {"write_only": True},
             "binance_webhook_secret": {"write_only": True},
@@ -3830,7 +3798,6 @@ class DoctorPaymentConfigPublicSerializer(serializers.ModelSerializer):
             "bank_rif",
             "bank_phone",
             "bank_account_holder",
-            "mercantil_enabled",
             "banesco_enabled",
             "binance_enabled",
             "manual_verification_enabled",

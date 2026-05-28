@@ -35,7 +35,7 @@ export interface IdentityInstitution {
   phone?: string; // Teléfono
   
   // 🆕 MOTOR FINANCIERO
-  active_gateway: 'none' | 'mercantil_ve' | 'banesco_ve' | 'stripe' | 'binance_pay' | 'paypal';
+  active_gateway: 'none' | 'banesco_ve' | 'stripe' | 'binance_pay' | 'paypal';
   is_gateway_test_mode: boolean;
   settlement_bank_name?: string;
   settlement_account_id?: string;

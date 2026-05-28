@@ -1,21 +1,12 @@
 // src/services/websocket.ts
-import { P2CWebSocketUpdate } from '../types/payments';
 // =====================================================
 // 🔧 INTERFACES WEBSOCKET CORE
 // =====================================================
 export interface WebSocketMessage {
-  type: 'p2c_status_update' | 'payment_update' | 'system_notification';
+  type: 'payment_update' | 'system_notification';
   data: any;
   timestamp: string;
   message_id: string;
-}
-export interface P2CWebSocketData {
-  merchant_order_id: string;
-  status: 'generated' | 'pending' | 'confirmed' | 'expired' | 'cancelled' | 'failed';
-  amount?: string;
-  confirmed_at?: string;
-  mercantil_transaction_id?: string;
-  gateway_response?: Record<string, any>;
 }
 export interface WebSocketConfig {
   url?: string;
@@ -191,56 +182,8 @@ export class WebSocketService {
     return true;
   }
   // =====================================================
-  // 🔧 SUSCRIPCIONES P2C MERCANTIL
+  // 🔧 SUSCRIPCIONES DE PAGOS
   // =====================================================
-  /**
-   * Suscribirse a actualizaciones de transacción P2C específica
-   */
-  subscribeToP2CTransaction(
-    merchantOrderId: string,
-    callback: (data: P2CWebSocketData) => void
-  ): () => void {
-    const subscriptionId = `p2c_${merchantOrderId}_${Date.now()}`;
-    
-    const subscription: WebSocketSubscription = {
-      id: subscriptionId,
-      type: 'p2c_status_update',
-      filter: { merchant_order_id: merchantOrderId },
-      callback,
-      createdAt: new Date()
-    };
-    this.subscriptions.set(subscriptionId, subscription);
-    
-    // Enviar mensaje de suscripción al servidor
-    this.sendSubscriptionMessage(subscription);
-    this.log(`Suscrito a transacción P2C: ${merchantOrderId}`);
-    // Retornar función de unsuscribe
-    return () => this.unsubscribe(subscriptionId);
-  }
-  /**
-   * Suscribirse a todas las actualizaciones P2C de una institución
-   */
-  subscribeToInstitutionP2C(
-    institutionId: number,
-    callback: (data: P2CWebSocketData) => void
-  ): () => void {
-    const subscriptionId = `institution_p2c_${institutionId}_${Date.now()}`;
-    
-    const subscription: WebSocketSubscription = {
-      id: subscriptionId,
-      type: 'p2c_status_update',
-      filter: { institution_id: institutionId },
-      callback,
-      createdAt: new Date()
-    };
-    this.subscriptions.set(subscriptionId, subscription);
-    this.sendSubscriptionMessage(subscription);
-    this.log(`Suscrito a P2C de institución: ${institutionId}`);
-    return () => this.unsubscribe(subscriptionId);
-  }
-  /**
-   * Suscribirse a actualizaciones generales de pagos
-   */
   subscribeToPayments(
     callback: (data: any) => void,
     institutionId?: number
@@ -509,7 +452,6 @@ export const WEBSOCKET_EVENTS = {
   MAX_RECONNECT_REACHED: 'max_reconnect_reached'
 } as const;
 export const WEBSOCKET_MESSAGE_TYPES = {
-  P2C_STATUS_UPDATE: 'p2c_status_update',
   PAYMENT_UPDATE: 'payment_update',
   SYSTEM_NOTIFICATION: 'system_notification',
   HEARTBEAT: 'heartbeat',

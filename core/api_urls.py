@@ -104,13 +104,6 @@ from .api_views import (
     refresh_emergency_access,
     # 🔥 NUEVO: Verificación de WeasyPrint
     verify_weasyprint_output,
-    # 🆕 MERCANTIL P2C ENDPOINTS ---
-    mercantil_p2c_generate_qr,
-    mercantil_p2c_check_status,
-    mercantil_p2c_webhook,
-    mercantil_p2c_config_status,
-    # 🆕 VERIFICACIÓN DE PAGOS MÓVILES ---
-    verify_mobile_payment,
     # 🆕 NUEVO: Dashboard de institución activa
     active_institution_dashboard_api,
     # ✅ NUEVO: Dashboard con 8 métricas y filtros
@@ -159,7 +152,6 @@ from .api_views import (
     payment_create_api,
     payment_transactions_api,
     payment_stats_api,
-    webhook_mercantil,
     webhook_banesco,
     webhook_binance,
     subscriptions_api,
@@ -470,31 +462,6 @@ urlpatterns = [
     path(
         "charge-orders/search/", chargeorder_search_api, name="chargeorder-search-api"
     ),
-    # 🆕 MERCANTIL P2C ENDPOINTS ---
-    path(
-        "payments/p2c/mercantil/generate-qr/",
-        mercantil_p2c_generate_qr,
-        name="mercantil_p2c_generate_qr",
-    ),
-    path(
-        "payments/p2c/mercantil/status/<str:merchant_order_id>/",
-        mercantil_p2c_check_status,
-        name="mercantil_p2c_check_status",
-    ),
-    path(
-        "webhooks/mercantil-p2c/", mercantil_p2c_webhook, name="mercantil_p2c_webhook"
-    ),
-    path(
-        "payments/p2c/mercantil/config-status/",
-        mercantil_p2c_config_status,
-        name="mercantil_p2c_config_status",
-    ),
-    # 🆕 VERIFICACIÓN DE PAGOS MÓVILES ---
-    path(
-        "payments/verify-mobile-payment/",
-        verify_mobile_payment,
-        name="verify-mobile-payment",
-    ),
     # --- Auditoría ---
     path("events/", api_views.event_log_api, name="event-log-api"),
     path("notifications/", notifications_api, name="notifications-api"),
@@ -686,9 +653,6 @@ urlpatterns = [
     ),
     path("payments/stats/", payment_stats_api, name="payment-stats-api"),
     # Webhooks
-    path(
-        "payments/webhook/mercantil/", mercantil_p2c_webhook, name="webhook-mercantil"
-    ),
     path("payments/webhook/banesco/", webhook_banesco, name="webhook-banesco"),
     path("payments/webhook/binance/", webhook_binance, name="webhook-binance"),
     # Subscriptions

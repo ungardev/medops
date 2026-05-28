@@ -5,7 +5,6 @@ import PageHeader from "@/components/Common/PageHeader";
 import PaymentList from "@/components/Payments/PaymentList";
 import PaymentMethodSelectorModal from "@/components/Payments/PaymentMethodSelectorModal";
 import CashPaymentModal from "@/components/Payments/CashPaymentModal";
-import { useVerifyMobilePayment, type VerifyMobilePaymentData, VerifyMobilePaymentError } from '@/hooks/payments/useVerifyMobilePayment';
 import ManualPaymentModal from '@/components/Payments/ManualPaymentModal';
 import { useState } from "react";
 import { ChargeOrder, ChargeOrderStatus } from "@/types/payments"; 
@@ -19,8 +18,6 @@ import {
   GiftIcon, 
   PlusIcon,
   ClockIcon,
-  UserIcon,
-  HashtagIcon,
   BuildingOfficeIcon
 } from "@heroicons/react/24/outline";
 interface Event {
@@ -36,39 +33,11 @@ export default function ChargeOrderDetail() {
   
   const [showPaymentSelector, setShowPaymentSelector] = useState(false);
   const [showCashModal, setShowCashModal] = useState(false);
-  const [verificationError, setVerificationError] = useState<string | null>(null);
   const [showManualModal, setShowManualModal] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
   
   const invalidateChargeOrders = useInvalidateChargeOrders();
   const { activeInstitution } = useInstitutions();
-  
-  const verifyMobilePayment = useVerifyMobilePayment({
-    onSuccess: (data: VerifyMobilePaymentData) => {
-      setToast({ 
-        message: `Pago verificado: $${data.amount_verified} registrado exitosamente`, 
-        type: "success" 
-      });
-      setShowManualModal(false);
-      setVerificationError(null);
-      invalidateChargeOrders(id);
-    },
-    onError: (error: VerifyMobilePaymentError) => {
-      if (error.code === 'MERCANTIL_API_ERROR' || error.fallback_required) {
-        setShowManualModal(true);
-        setToast({ 
-          message: "Error de conexión API. Registro manual requerido.", 
-          type: "info" 
-        });
-      } else {
-        setVerificationError(error.message);
-        setToast({ 
-          message: `Verificación fallida: ${error.error}`, 
-          type: "error" 
-        });
-      }
-    }
-  });
   
   const handlePaymentMethodSelect = (paymentData: any) => {
     setShowPaymentSelector(false);
@@ -76,11 +45,7 @@ export default function ChargeOrderDetail() {
     if (paymentData.method === 'cash') {
       setShowCashModal(true);
     } else if (paymentData.method === 'mobile') {
-      verifyMobilePayment.mutate({
-        chargeOrderId: order!.id,
-        expectedAmount: pending,
-        timeWindowHours: 24
-      });
+      setShowManualModal(true);
     }
   };
   

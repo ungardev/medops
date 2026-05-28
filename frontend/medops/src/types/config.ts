@@ -41,7 +41,7 @@ export interface InstitutionSettings {
   municipality_name?: string | null; // 🆕 Nombre del municipio
   parish_name?: string | null;     // 🆕 Nombre de la parroquia
   // 💰 Motor Financiero
-  active_gateway: 'none' | 'mercantil_ve' | 'banesco_ve' | 'stripe' | 'binance_pay' | 'paypal';
+  active_gateway: 'none' | 'banesco_ve' | 'stripe' | 'binance_pay' | 'paypal';
   is_gateway_test_mode: boolean; // Sandbox vs Production
   // 🆕 CAMBIO: Compatible con null (backend consistency)
   settlement_bank_name?: string | null;    // 🆕 Cambiado a null-compatible
