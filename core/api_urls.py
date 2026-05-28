@@ -157,6 +157,12 @@ from .api_views import (
     webhook_bancaribe,
     subscriptions_api,
     subscription_cancel_api,
+    doctor_wallet_api,
+    doctor_wallet_summary_api,
+    disbursement_api,
+    disbursement_detail_api,
+    disbursement_cancel_api,
+    platform_earnings_api,
     # ViewSets
     PaymentGatewayViewSet,
     DoctorPaymentConfigViewSet,
@@ -685,6 +691,25 @@ urlpatterns = [
         api_views.verify_payment,
         name="verify-payment",
     ),
+    # Doctor Wallet & Disbursements
+    path("doctor/wallet/", doctor_wallet_api, name="doctor-wallet"),
+    path(
+        "doctor/wallet/summary/",
+        doctor_wallet_summary_api,
+        name="doctor-wallet-summary",
+    ),
+    path("doctor/disbursements/", disbursement_api, name="disbursements"),
+    path(
+        "doctor/disbursements/<int:pk>/",
+        disbursement_detail_api,
+        name="disbursement-detail",
+    ),
+    path(
+        "doctor/disbursements/<int:pk>/cancel/",
+        disbursement_cancel_api,
+        name="disbursement-cancel",
+    ),
+    path("admin/earnings/", platform_earnings_api, name="platform-earnings"),
     # --- 🆕 NUEVOS ENDPOINTS DE COMPRA Y CONFIRMACIÓN ---
     # 1. Verificar disponibilidad de horarios (kebab-case)
     path(

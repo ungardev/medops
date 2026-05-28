@@ -8566,3 +8566,223 @@ def render(request, template_name, context=None, status=200):
     from django.shortcuts import render as django_render
 
     return django_render(request, template_name, context or {}, status=status)
+
+
+# ============================================================================
+# BANCARIBE WALLET & DISBURSEMENT API VIEWS
+# ============================================================================
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def doctor_wallet_api(request):
+    """
+    GET: Obtener wallet del doctor autenticado
+    POST: Agregar fondos manualmente (para testing)
+    """
+    user = request.user
+
+    if not hasattr(user, "doctor"):
+        return Response(
+            {"error": "Solo doctores tienen wallet"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    doctor = user.doctor
+    from core.models import DoctorWallet
+    from core.serializers import DoctorWalletSerializer
+    from core.services.disbursement_service import DisbursementService
+
+    if request.method == "GET":
+        wallet, created = DoctorWallet.objects.get_or_create(
+            doctor=doctor, defaults={"balance": Decimal("0.00")}
+        )
+        serializer = DoctorWalletSerializer(wallet)
+        return Response(serializer.data)
+
+    elif request.method == "POST":
+        amount = request.data.get("amount")
+        transaction_ref = request.data.get("transaction_ref", "")
+        concept = request.data.get("concept", "Depósito manual")
+
+        if not amount:
+            return Response(
+                {"error": "Monto requerido"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        service = DisbursementService()
+        result = service.add_to_wallet(
+            doctor=doctor,
+            amount=Decimal(str(amount)),
+            transaction_ref=transaction_ref,
+            concept=concept,
+        )
+
+        if result.get("success"):
+            return Response(result, status=status.HTTP_200_OK)
+        return Response(result, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def doctor_wallet_summary_api(request):
+    """
+    Obtener resumen del wallet del doctor.
+    """
+    user = request.user
+
+    if not hasattr(user, "doctor"):
+        return Response(
+            {"error": "Solo doctores tienen wallet"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    from core.services.disbursement_service import DisbursementService
+
+    service = DisbursementService()
+    result = service.get_wallet_summary(user.doctor)
+
+    return Response(result)
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def disbursement_api(request):
+    """
+    GET: Listar disbursements del doctor
+    POST: Crear nuevo disbursement (retiro de fondos)
+    """
+    user = request.user
+
+    if not hasattr(user, "doctor"):
+        return Response(
+            {"error": "Solo doctores pueden crear disbursements"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    doctor = user.doctor
+    from core.models import Disbursement
+    from core.serializers import DisbursementSerializer, DisbursementCreateSerializer
+
+    if request.method == "GET":
+        disbursements = Disbursement.objects.filter(doctor=doctor).order_by(
+            "-created_at"
+        )[:50]
+        serializer = DisbursementSerializer(disbursements, many=True)
+        return Response(serializer.data)
+
+    elif request.method == "POST":
+        amount = request.data.get("amount")
+        bank_code = request.data.get("bank_code")
+        bank_account = request.data.get("bank_account")
+        disbursement_type = request.data.get("disbursement_type", "instant")
+
+        if not all([amount, bank_code, bank_account]):
+            return Response(
+                {"error": "amount, bank_code y bank_account son requeridos"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from core.services.disbursement_service import DisbursementService
+        from core.models import BancaribeAPIConfig
+
+        bancaribe_config = BancaribeAPIConfig.objects.filter(is_active=True).first()
+        service = DisbursementService(bancaribe_config=bancaribe_config)
+
+        result = service.create_disbursement(
+            doctor=doctor,
+            amount=Decimal(str(amount)),
+            bank_code=bank_code,
+            bank_account=bank_account,
+            disbursement_type=disbursement_type,
+        )
+
+        if result.get("success"):
+            return Response(result, status=status.HTTP_201_CREATED)
+        return Response(result, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def disbursement_detail_api(request, pk):
+    """
+    Obtener detalle de un disbursement específico.
+    """
+    user = request.user
+
+    if not hasattr(user, "doctor"):
+        return Response(
+            {"error": "Solo doctores pueden ver disbursements"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    from core.models import Disbursement
+    from core.serializers import DisbursementSerializer
+
+    try:
+        disbursement = Disbursement.objects.get(pk=pk, doctor=user.doctor)
+        serializer = DisbursementSerializer(disbursement)
+        return Response(serializer.data)
+    except Disbursement.DoesNotExist:
+        return Response(
+            {"error": "Disbursement no encontrado"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def disbursement_cancel_api(request, pk):
+    """
+    Cancelar un disbursement pendiente.
+    """
+    user = request.user
+
+    if not hasattr(user, "doctor"):
+        return Response(
+            {"error": "Solo doctores pueden cancelar disbursements"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    from core.services.disbursement_service import DisbursementService
+
+    service = DisbursementService()
+    result = service.cancel_disbursement(pk)
+
+    if result.get("success"):
+        return Response(result)
+    return Response(result, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def platform_earnings_api(request):
+    """
+    Obtener ganancias de la plataforma (admin).
+    """
+    from core.models import PlatformEarnings
+    from core.serializers import PlatformEarningsSerializer
+    from django.db.models import Sum
+
+    if not (hasattr(user, "doctor") and user.doctor.is_superuser):
+        return Response(
+            {"error": "Solo superadmin puede ver earnings"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    earnings = PlatformEarnings.objects.all().order_by("-created_at")[:100]
+    serializer = PlatformEarningsSerializer(earnings, many=True)
+
+    totals = PlatformEarnings.objects.aggregate(
+        total_gross=Sum("gross_amount"),
+        total_commission=Sum("commission_amount"),
+        total_net=Sum("net_amount"),
+    )
+
+    return Response(
+        {
+            "earnings": serializer.data,
+            "totals": totals,
+        }
+    )
