@@ -97,6 +97,15 @@ import DoctorProfile from "./pages/PatientPortal/DoctorProfile";
 // Doctor Portal Imports
 import DoctorActivate from "./pages/DoctorPortal/DoctorActivate";
 
+// Admin Portal Imports
+import AdminLayout from "./pages/Admin/AdminLayout";
+import AdminOverview from "./pages/Admin/AdminOverview";
+import BancaribeConfig from "./pages/Admin/BancaribeConfig";
+import DoctorsList from "./pages/Admin/DoctorsList";
+import DisbursementsAdmin from "./pages/Admin/DisbursementsAdmin";
+import PlatformEarnings from "./pages/Admin/PlatformEarnings";
+import InstitutionsAdmin from "./pages/Admin/InstitutionsAdmin";
+
 // Subdomain-aware root redirect component
 const SubdomainRootRedirect: React.FC = () => {
   const portal = getCurrentPortal();
@@ -254,6 +263,16 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                       element={<LazyRoute><Diagnosis /></LazyRoute>}
                     />
                   </Route>
+                </Route>
+
+                {/* === ADMIN PORTAL === */}
+                <Route path="admin" element={<AdminLayout />}>
+                  <Route index element={<AdminOverview />} />
+                  <Route path="bancaribe" element={<BancaribeConfig />} />
+                  <Route path="doctors" element={<DoctorsList />} />
+                  <Route path="disbursements" element={<DisbursementsAdmin />} />
+                  <Route path="earnings" element={<PlatformEarnings />} />
+                  <Route path="institutions" element={<InstitutionsAdmin />} />
                 </Route>
               </Routes>
             </AuthProvider>

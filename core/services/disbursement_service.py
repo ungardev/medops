@@ -48,6 +48,14 @@ class DisbursementService:
             if not payment_config:
                 return {"success": False, "error": "Doctor sin configuración de pago"}
 
+            min_amount = payment_config.min_disbursement_amount or Decimal("20.00")
+            if amount < min_amount:
+                return {
+                    "success": False,
+                    "error": f"Monto mínimo para disbursement es ${min_amount}",
+                    "min_amount": str(min_amount),
+                }
+
             disbursement = Disbursement.objects.create(
                 doctor=doctor,
                 amount=amount,

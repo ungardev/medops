@@ -159,6 +159,7 @@ from .api_views import (
     subscription_cancel_api,
     doctor_wallet_api,
     doctor_wallet_summary_api,
+    doctor_wallet_movements_api,
     disbursement_api,
     disbursement_detail_api,
     disbursement_cancel_api,
@@ -169,6 +170,11 @@ from .api_views import (
     vuelto_resend_otp_api,
     vuelto_cancel_api,
     vuelto_status_api,
+    admin_bancaribe_config,
+    admin_doctors_list,
+    admin_disbursements_list,
+    admin_institutions_list,
+    admin_earnings_api,
     # ViewSets
     PaymentGatewayViewSet,
     DoctorPaymentConfigViewSet,
@@ -704,6 +710,11 @@ urlpatterns = [
         doctor_wallet_summary_api,
         name="doctor-wallet-summary",
     ),
+    path(
+        "doctor/wallet/movements/",
+        doctor_wallet_movements_api,
+        name="doctor-wallet-movements",
+    ),
     path("doctor/disbursements/", disbursement_api, name="disbursements"),
     path(
         "doctor/disbursements/<int:pk>/",
@@ -777,6 +788,20 @@ urlpatterns = [
     ),
     path("vueltos/<int:pk>/cancel/", vuelto_cancel_api, name="vuelto-cancel"),
     path("vueltos/<int:pk>/status/", vuelto_status_api, name="vuelto-status"),
+    # Admin Endpoints
+    path(
+        "admin/bancaribe/config/", admin_bancaribe_config, name="admin-bancaribe-config"
+    ),
+    path("admin/doctors/", admin_doctors_list, name="admin-doctors-list"),
+    path(
+        "admin/disbursements/",
+        admin_disbursements_list,
+        name="admin-disbursements-list",
+    ),
+    path(
+        "admin/institutions/", admin_institutions_list, name="admin-institutions-list"
+    ),
+    path("admin/earnings/", admin_earnings_api, name="admin-earnings"),
 ]
 # --- Documentación OpenAPI ---
 # DESHABILITADO: El endpoint dinámico /api/schema/ causa errores de introspección

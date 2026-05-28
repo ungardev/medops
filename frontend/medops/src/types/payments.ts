@@ -164,3 +164,42 @@ export interface VerifyPaymentResponse {
     message: string;
   };
 }
+
+export interface DoctorWallet {
+  id: number;
+  doctor: number;
+  doctor_name: string;
+  balance: string;
+  pending_balance: string;
+  total_earned: string;
+  total_disbursed: string;
+  last_disbursement_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Disbursement {
+  id: number;
+  doctor: number;
+  doctor_name: string;
+  reference: string;
+  bancaribe_reference: string;
+  amount: string;
+  currency: string;
+  amount_ves: string | null;
+  bank_code: string;
+  bank_account: string;
+  bank_reference: string;
+  status: "pending" | "processing" | "completed" | "failed" | "cancelled";
+  status_display: string;
+  disbursement_type: "instant" | "scheduled" | "batch";
+  type_display: string;
+  doctor_wallet: number | null;
+  scheduled_at: string | null;
+  processed_at: string | null;
+  completed_at: string | null;
+  error_message: string;
+  raw_response: any;
+  created_at: string;
+  updated_at: string;
+}

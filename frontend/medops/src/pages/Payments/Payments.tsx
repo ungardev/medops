@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/Common/PageHeader";
 import PaymentsSummary from "@/components/Payments/PaymentsSummary";
+import WalletDrawer from "@/components/Wallet/WalletDrawer";
 import { useInstitutions } from "@/hooks/settings/useInstitutions";
 import { useChargeOrdersPaginated } from "@/hooks/payments/useChargeOrdersPaginated";
 import { useChargeOrdersSearch } from "@/hooks/payments/useChargeOrdersSearch";
@@ -13,7 +14,8 @@ import {
   BanknotesIcon,
   CircleStackIcon,
   ShieldCheckIcon,
-  BuildingOfficeIcon
+  BuildingOfficeIcon,
+  WalletIcon
 } from "@heroicons/react/24/outline";
 import type { ChargeOrder, ChargeOrderStatus } from "@/types/payments";
 export default function Payments() {
@@ -21,6 +23,7 @@ export default function Payments() {
   
   const [query, setQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isWalletOpen, setIsWalletOpen] = useState(false);
   const pageSize = 10;
   
   const { activeInstitution, institutions } = useInstitutions();
@@ -78,11 +81,20 @@ export default function Payments() {
           }
         ]}
         actions={
-          <div className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/15 rounded-lg">
-            <BuildingOfficeIcon className="w-4 h-4 text-white/30" />
-            <span className="text-[10px] text-white/50">
-              {activeInstitution?.tax_id || "N/A"}
-            </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsWalletOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/20 transition-colors"
+            >
+              <WalletIcon className="w-4 h-4" />
+              <span className="text-[10px] font-medium">Mi Wallet</span>
+            </button>
+            <div className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/15 rounded-lg">
+              <BuildingOfficeIcon className="w-4 h-4 text-white/30" />
+              <span className="text-[10px] text-white/50">
+                {activeInstitution?.tax_id || "N/A"}
+              </span>
+            </div>
           </div>
         }
       />
@@ -279,6 +291,8 @@ export default function Payments() {
           )}
         </div>
       </section>
+
+      <WalletDrawer isOpen={isWalletOpen} onClose={() => setIsWalletOpen(false)} />
     </div>
   );
 }

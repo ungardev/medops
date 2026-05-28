@@ -8646,6 +8646,61 @@ def doctor_wallet_summary_api(request):
     return Response(result)
 
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def doctor_wallet_movements_api(request):
+    """
+    Obtener movimientos unificados del wallet (payments + disbursements).
+    """
+    user = request.user
+
+    if not hasattr(user, "doctor"):
+        return Response(
+            {"error": "Solo doctores tienen wallet"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    from core.models import PaymentTransaction, Disbursement
+    from core.serializers import PaymentTransactionSerializer, DisbursementSerializer
+
+    limit = int(request.query_params.get("limit", 10))
+    offset = int(request.query_params.get("offset", 0))
+
+    doctor = user.doctor
+
+    payments = PaymentTransaction.objects.filter(
+        doctor=doctor, status="confirmed"
+    ).order_by("-created_at")
+
+    disbursements = Disbursement.objects.filter(doctor=doctor).order_by("-created_at")
+
+    payments_serializer = PaymentTransactionSerializer(
+        payments[offset : offset + limit], many=True
+    )
+    disbursements_serializer = DisbursementSerializer(
+        disbursements[offset : offset + limit], many=True
+    )
+
+    payments_data = [{"type": "payment", "data": p} for p in payments_serializer.data]
+    disbursements_data = [
+        {"type": "disbursement", "data": d} for d in disbursements_serializer.data
+    ]
+
+    movements = sorted(
+        payments_data + disbursements_data,
+        key=lambda x: x["data"]["created_at"],
+        reverse=True,
+    )[:limit]
+
+    return Response(
+        {
+            "movements": movements,
+            "total_payments": payments.count(),
+            "total_disbursements": disbursements.count(),
+        }
+    )
+
+
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def disbursement_api(request):
@@ -8950,3 +9005,182 @@ def vuelto_status_api(request, pk):
     if result.get("success"):
         return Response(result)
     return Response(result, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ============================================================================
+# ADMIN API VIEWS
+# ============================================================================
+
+
+@api_view(["GET", "PATCH"])
+@permission_classes([IsAuthenticated])
+def admin_bancaribe_config(request):
+    """
+    Admin: Get/Update Bancaribe API configuration.
+    """
+    user = request.user
+
+    if not (hasattr(user, "doctor") and user.doctor.is_superuser):
+        return Response(
+            {"error": "Solo admin puede ver esta información"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    from core.models import BancaribeAPIConfig
+    from core.serializers import BancaribeAPIConfigSerializer
+
+    config = BancaribeAPIConfig.objects.first()
+    if not config:
+        return Response(
+            {"error": "Configuración no encontrada"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    if request.method == "GET":
+        serializer = BancaribeAPIConfigSerializer(config)
+        return Response(serializer.data)
+
+    elif request.method == "PATCH":
+        serializer = BancaribeAPIConfigSerializer(
+            config, data=request.data, partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def admin_doctors_list(request):
+    """
+    Admin: List all doctors with wallet info.
+    """
+    user = request.user
+
+    if not (hasattr(user, "doctor") and user.doctor.is_superuser):
+        return Response(
+            {"error": "Solo admin puede ver esta información"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    from core.models import DoctorOperator, DoctorWallet
+
+    doctors = DoctorOperator.objects.select_related("user").all()
+
+    result = []
+    for doctor in doctors:
+        wallet = getattr(doctor, "wallet", None)
+        result.append(
+            {
+                "id": doctor.id,
+                "full_name": doctor.user.get_full_name() or doctor.user.username,
+                "email": doctor.user.email,
+                "specialty": getattr(doctor, "specialty", "") or "",
+                "is_verified": doctor.is_verified,
+                "wallet_balance": str(wallet.balance) if wallet else "0.00",
+                "total_earned": str(wallet.total_earned) if wallet else "0.00",
+                "institutions_count": doctor.institutions.count()
+                if hasattr(doctor, "institutions")
+                else 0,
+            }
+        )
+
+    return Response(result)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def admin_disbursements_list(request):
+    """
+    Admin: List all disbursements.
+    """
+    user = request.user
+
+    if not (hasattr(user, "doctor") and user.doctor.is_superuser):
+        return Response(
+            {"error": "Solo admin puede ver esta información"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    from core.models import Disbursement
+    from core.serializers import DisbursementSerializer
+
+    disbursements = Disbursement.objects.select_related(
+        "doctor", "doctor__user"
+    ).order_by("-created_at")[:100]
+    serializer = DisbursementSerializer(disbursements, many=True)
+    return Response(serializer.data)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def admin_institutions_list(request):
+    """
+    Admin: List all institutions.
+    """
+    user = request.user
+
+    if not (hasattr(user, "doctor") and user.doctor.is_superuser):
+        return Response(
+            {"error": "Solo admin puede ver esta información"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    from core.models import InstitutionSettings
+
+    institutions = InstitutionSettings.objects.all()
+
+    result = []
+    for inst in institutions:
+        result.append(
+            {
+                "id": inst.id,
+                "name": inst.name,
+                "tax_id": inst.tax_id,
+                "address": inst.address or "",
+                "is_active": inst.is_active,
+                "doctors_count": inst.doctors.count()
+                if hasattr(inst, "doctors")
+                else 0,
+                "created_at": inst.created_at.isoformat()
+                if hasattr(inst, "created_at")
+                else "",
+            }
+        )
+
+    return Response(result)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def admin_earnings_api(request):
+    """
+    Admin: Platform earnings overview.
+    """
+    user = request.user
+
+    if not (hasattr(user, "doctor") and user.doctor.is_superuser):
+        return Response(
+            {"error": "Solo admin puede ver esta información"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    from core.models import PlatformEarnings
+    from core.serializers import PlatformEarningsSerializer
+    from django.db.models import Sum
+
+    earnings = PlatformEarnings.objects.all().order_by("-created_at")[:100]
+    serializer = PlatformEarningsSerializer(earnings, many=True)
+
+    totals = PlatformEarnings.objects.aggregate(
+        total_gross=Sum("gross_amount"),
+        total_commission=Sum("commission_amount"),
+        total_net=Sum("net_amount"),
+    )
+
+    return Response(
+        {
+            "earnings": serializer.data,
+            "totals": totals,
+        }
+    )

@@ -5121,6 +5121,15 @@ class DoctorPaymentConfig(models.Model):
         blank=True, verbose_name="Notas de verificación"
     )
 
+    # === DISBURSEMENT ===
+    min_disbursement_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal("20.00"),
+        verbose_name="Monto Mínimo Disbursement",
+        help_text="Monto mínimo para solicitar desembolso (default $20 USD)",
+    )
+
     # === MÉTODOS HABILITADOS ===
     enabled_methods = models.ManyToManyField(
         PaymentGateway,
