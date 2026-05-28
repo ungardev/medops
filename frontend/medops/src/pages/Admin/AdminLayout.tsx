@@ -7,7 +7,7 @@ import { Toaster } from "react-hot-toast";
 export default function AdminLayout() {
   const { user } = useAuth();
 
-  const isAdmin = user && "doctor" in user && user.doctor && (user.doctor as any)?.is_superuser;
+  const isAdmin = user && user.is_superuser === true;
   if (!isAdmin) {
     return <Navigate to="/doctor" replace />;
   }
