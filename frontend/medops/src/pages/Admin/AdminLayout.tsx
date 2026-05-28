@@ -1,15 +1,22 @@
 // src/pages/Admin/AdminLayout.tsx
 import { Outlet, Navigate } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import { useAdminAuth } from "@/context/AdminAuthContext";
 import AdminSidebar from "@/components/Admin/AdminSidebar";
 import { Toaster } from "react-hot-toast";
 
 export default function AdminLayout() {
-  const { user } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAdminAuth();
 
-  const isAdmin = user && user.is_superuser === true;
-  if (!isAdmin) {
-    return <Navigate to="/doctor" replace />;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-emerald-400 animate-pulse">Cargando...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
+    return <Navigate to="/admin/login" replace />;
   }
 
   return (

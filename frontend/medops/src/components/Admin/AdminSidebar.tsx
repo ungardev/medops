@@ -8,7 +8,9 @@ import {
   ChartBar,
   Building2,
   ArrowLeftIcon,
+  LogOut,
 } from "lucide-react";
+import { useAdminAuth } from "@/context/AdminAuthContext";
 
 const navItems = [
   { path: "/admin", label: "Overview", icon: LayoutDashboard },
@@ -21,6 +23,7 @@ const navItems = [
 
 export default function AdminSidebar() {
   const location = useLocation();
+  const { logout, user } = useAdminAuth();
 
   return (
     <div className="flex flex-col h-full">
@@ -61,7 +64,7 @@ export default function AdminSidebar() {
       </nav>
 
       {/* Back to Doctor Portal */}
-      <div className="px-3 py-4 border-t border-white/10">
+      <div className="px-3 py-4 border-t border-white/10 space-y-1">
         <Link
           to="/doctor"
           className="flex items-center gap-3 px-3 py-2.5 text-white/40 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
@@ -69,6 +72,13 @@ export default function AdminSidebar() {
           <ArrowLeftIcon className="w-4 h-4" />
           <span className="text-[12px]">Volver al Portal</span>
         </Link>
+        <button
+          onClick={logout}
+          className="w-full flex items-center gap-3 px-3 py-2.5 text-red-400/60 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+          <span className="text-[12px]">Cerrar Sesión Admin</span>
+        </button>
       </div>
     </div>
   );

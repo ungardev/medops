@@ -9,6 +9,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { queryClient } from "@/lib/reactQuery";
 import { NotifyProvider } from "./context/NotifyContext";
 import { AuthProvider } from "./context/AuthContext";
+import { AdminAuthProvider } from "./context/AdminAuthContext";
 import axios from "axios";
 import * as Sentry from "@sentry/react";
 import { getCurrentPortal, getPortalConfig } from "@/lib/subdomain";
@@ -99,6 +100,7 @@ import DoctorActivate from "./pages/DoctorPortal/DoctorActivate";
 
 // Admin Portal Imports
 import AdminLayout from "./pages/Admin/AdminLayout";
+import AdminLogin from "./pages/Admin/Login";
 import AdminOverview from "./pages/Admin/AdminOverview";
 import BancaribeConfig from "./pages/Admin/BancaribeConfig";
 import DoctorsList from "./pages/Admin/DoctorsList";
@@ -266,7 +268,15 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 </Route>
 
                 {/* === ADMIN PORTAL === */}
-                <Route path="admin" element={<AdminLayout />}>
+                <Route path="admin/login" element={<AdminLogin />} />
+                <Route
+                  path="admin"
+                  element={
+                    <AdminAuthProvider>
+                      <AdminLayout />
+                    </AdminAuthProvider>
+                  }
+                >
                   <Route index element={<AdminOverview />} />
                   <Route path="bancaribe" element={<BancaribeConfig />} />
                   <Route path="doctors" element={<DoctorsList />} />

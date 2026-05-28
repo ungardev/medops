@@ -5781,6 +5781,58 @@ def doctor_login(request):
 
 
 # ==========================================
+# ADMIN LOGIN SYSTEM
+# ==========================================
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def admin_login_api(request):
+    """
+    POST /api/admin/login/
+    Login exclusivo para superusers (admins de la plataforma MEDOPZ).
+    Verifica is_superuser antes de retornar tokens.
+    """
+    from django.contrib.auth import authenticate
+
+    username = request.data.get("username")
+    password = request.data.get("password")
+
+    if not username or not password:
+        return Response({"error": "Usuario y contraseña requeridos"}, status=400)
+
+    user = authenticate(username=username, password=password)
+
+    if not user:
+        return Response({"error": "Credenciales inválidas"}, status=401)
+
+    if not user.is_superuser:
+        return Response(
+            {"error": "Esta cuenta no tiene acceso al panel de administración"},
+            status=403,
+        )
+
+    from rest_framework_simplejwt.tokens import RefreshToken
+
+    refresh = RefreshToken.for_user(user)
+    refresh["role"] = "admin"
+
+    return Response(
+        {
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "is_superuser": user.is_superuser,
+                "is_staff": user.is_staff,
+            },
+        }
+    )
+
+
+# ==========================================
 # DOCTOR INVITATION SYSTEM - JWT AUTH
 # ==========================================
 

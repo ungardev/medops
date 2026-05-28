@@ -789,6 +789,7 @@ urlpatterns = [
     path("vueltos/<int:pk>/cancel/", vuelto_cancel_api, name="vuelto-cancel"),
     path("vueltos/<int:pk>/status/", vuelto_status_api, name="vuelto-status"),
     # Admin Endpoints
+    path("admin/login/", api_views.admin_login_api, name="admin-login"),
     path(
         "admin/bancaribe/config/", admin_bancaribe_config, name="admin-bancaribe-config"
     ),
