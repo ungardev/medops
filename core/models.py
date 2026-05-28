@@ -5818,3 +5818,499 @@ class ServiceSchedule(models.Model):
 
     def __str__(self):
         return f"{self.service.name} - {self.get_day_of_week_display()} {self.start_time}-{self.end_time}"
+
+
+# ============================================================================
+# SECTION 7: BANCARIBE INTEGRATION MODELS
+# ============================================================================
+
+
+class BancaribeAPIConfig(models.Model):
+    """
+    Configuración global de la API de Bancaribe a nivel de plataforma.
+    Almacena credenciales OAuth2 y configuración de webhooks.
+    """
+
+    institution = models.OneToOneField(
+        "InstitutionSettings",
+        on_delete=models.CASCADE,
+        related_name="bancaribe_config",
+        verbose_name="Institución",
+    )
+
+    client_id = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Client ID",
+        help_text="Client ID de la aplicación Bancaribe",
+    )
+    client_secret = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name="Client Secret",
+        help_text="Client Secret de la aplicación Bancaribe",
+    )
+    webhook_secret = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Webhook Secret",
+        help_text="Secret para verificar webhooks de Bancaribe",
+    )
+
+    is_test_mode = models.BooleanField(
+        default=True,
+        verbose_name="Modo Sandbox",
+        help_text="Usar ambiente de pruebas de Bancaribe",
+    )
+    is_active = models.BooleanField(
+        default=False,
+        verbose_name="Activo",
+        help_text="Habilitar integración con Bancaribe",
+    )
+
+    settlement_account = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name="Cuenta de Liquidación",
+        help_text="Cuenta bancaria de MEDOPZ para recibir fondos",
+    )
+    settlement_bank_code = models.CharField(
+        max_length=4,
+        blank=True,
+        verbose_name="Código Banco Liquidación",
+        help_text="Código del banco de liquidación (ej: 0114 Bancaribe)",
+    )
+
+    auto_verify_payments = models.BooleanField(
+        default=True,
+        verbose_name="Verificación Automática",
+        help_text="Verificar pagos automáticamente via API",
+    )
+    auto_disbursement_enabled = models.BooleanField(
+        default=False,
+        verbose_name="Desembolso Automático",
+        help_text="Desembolsar a doctores automáticamente",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "bancaribe_api_config"
+        verbose_name = "Configuración Bancaribe"
+        verbose_name_plural = "Configuraciones Bancaribe"
+
+    def __str__(self):
+        mode = "SANDBOX" if self.is_test_mode else "PRODUCTION"
+        status = "ACTIVO" if self.is_active else "INACTIVO"
+        return f"Bancaribe [{mode}] - {status} ({self.institution.name})"
+
+    def has_valid_credentials(self) -> bool:
+        return bool(self.client_id and self.client_secret)
+
+
+class DoctorWallet(models.Model):
+    """
+    Wallet virtual del doctor para acumular fondos antes de desembolsar.
+    """
+
+    doctor = models.OneToOneField(
+        "DoctorOperator",
+        on_delete=models.CASCADE,
+        related_name="wallet",
+        verbose_name="Doctor",
+    )
+
+    balance = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name="Balance Disponible",
+    )
+    pending_balance = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name="Balance Pendiente",
+        help_text="Monto en proceso de desembolso",
+    )
+    total_earned = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name="Total Ganado",
+    )
+    total_disbursed = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name="Total Desembolsado",
+    )
+
+    last_disbursement_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Último Desembolso",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "doctor_wallet"
+        verbose_name = "Wallet Doctor"
+        verbose_name_plural = "Wallets Doctores"
+
+    def __str__(self):
+        return f"Wallet {self.doctor.user.get_full_name()}: ${self.balance}"
+
+    def add_funds(self, amount: Decimal, transaction_ref: str) -> None:
+        """Agrega fondos al wallet"""
+        from decimal import Decimal as D
+
+        self.balance += D(str(amount))
+        self.total_earned += D(str(amount))
+        self.save()
+
+    def subtract_funds(self, amount: Decimal, transaction_ref: str) -> None:
+        """Resta fondos del wallet (para vueltos o comisiones)"""
+        from decimal import Decimal as D
+
+        if self.balance < D(str(amount)):
+            raise ValueError("Balance insuficiente")
+        self.balance -= D(str(amount))
+        self.save()
+
+
+class PlatformEarnings(models.Model):
+    """
+    Registra las comisiones que gana MEDOPZ por cada transacción.
+    """
+
+    transaction = models.ForeignKey(
+        "PaymentTransaction",
+        on_delete=models.CASCADE,
+        related_name="earnings",
+        verbose_name="Transacción",
+    )
+
+    gross_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name="Monto Bruto",
+    )
+    commission_rate = models.DecimalField(
+        max_digits=5,
+        decimal_places=4,
+        verbose_name="Tasa Comisión",
+        help_text="Porcentaje de comisión (ej: 0.03 = 3%)",
+    )
+    commission_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name="Monto Comisión",
+    )
+    net_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name="Monto Neto",
+        help_text="Monto que recibe el doctor",
+    )
+
+    currency = models.CharField(
+        max_length=3,
+        default="USD",
+        verbose_name="Moneda",
+    )
+    exchange_rate_bcv = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Tasa BCV",
+        help_text="Tasa de cambio USD/VES al momento",
+    )
+    amount_ves = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Monto VES",
+    )
+
+    is_settled = models.BooleanField(
+        default=False,
+        verbose_name="Liquidado",
+        help_text="Si la comisión ha sido liquidada a MEDOPZ",
+    )
+    settled_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha Liquidación",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "platform_earnings"
+        verbose_name = "Ganancia Plataforma"
+        verbose_name_plural = "Ganancias Plataforma"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return (
+            f"Earnings #{self.id}: ${self.commission_amount} ({self.commission_rate}%)"
+        )
+
+
+class Disbursement(models.Model):
+    """
+    Registro de desembolso a un doctor.
+    """
+
+    STATUS_CHOICES = [
+        ("pending", "Pendiente"),
+        ("processing", "Procesando"),
+        ("completed", "Completado"),
+        ("failed", "Fallido"),
+        ("cancelled", "Cancelado"),
+    ]
+
+    TYPE_CHOICES = [
+        ("instant", "Instantáneo"),
+        ("scheduled", "Programado"),
+        ("batch", "Lote"),
+    ]
+
+    doctor = models.ForeignKey(
+        "DoctorOperator",
+        on_delete=models.CASCADE,
+        related_name="disbursements",
+        verbose_name="Doctor",
+    )
+
+    reference = models.CharField(
+        max_length=50,
+        unique=True,
+        verbose_name="Referencia",
+        help_text="Referencia única del desembolso",
+    )
+    bancaribe_reference = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Referencia Bancaribe",
+        help_text="Referencia retornada por Bancaribe",
+    )
+
+    amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name="Monto",
+    )
+    currency = models.CharField(
+        max_length=3,
+        default="USD",
+        verbose_name="Moneda",
+    )
+    amount_ves = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Monto VES",
+    )
+
+    bank_code = models.CharField(
+        max_length=4,
+        verbose_name="Código Banco",
+    )
+    bank_account = models.CharField(
+        max_length=50,
+        verbose_name="Cuenta Bancaria",
+    )
+    bank_reference = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name="Referencia Bancaria",
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="pending",
+        verbose_name="Estado",
+    )
+    disbursement_type = models.CharField(
+        max_length=20,
+        choices=TYPE_CHOICES,
+        default="scheduled",
+        verbose_name="Tipo",
+    )
+
+    doctor_wallet = models.ForeignKey(
+        DoctorWallet,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="disbursements",
+        verbose_name="Wallet Origen",
+    )
+
+    scheduled_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Programado Para",
+    )
+    processed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Procesado En",
+    )
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Completado En",
+    )
+
+    error_message = models.TextField(
+        blank=True,
+        verbose_name="Mensaje Error",
+    )
+    raw_response = models.JSONField(
+        null=True,
+        blank=True,
+        verbose_name="Respuesta Raw",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "disbursement"
+        verbose_name = "Desembolso"
+        verbose_name_plural = "Desembolsos"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Disbursement #{self.reference}: ${self.amount} -> {self.doctor}"
+
+    def save(self, *args, **kwargs):
+        if not self.reference:
+            import time
+
+            self.reference = f"DISB-{int(time.time())}-{self.doctor.id}"
+        super().save(*args, **kwargs)
+
+
+class VueltoRequest(models.Model):
+    """
+    Solicitud de vuelto (reembolso) a un paciente.
+    """
+
+    STATUS_CHOICES = [
+        ("pending", "Pendiente"),
+        ("sent", "Enviado"),
+        ("delivered", "Entregado"),
+        ("failed", "Fallido"),
+        ("expired", "Expirado"),
+        ("cancelled", "Cancelado"),
+    ]
+
+    payment_transaction = models.ForeignKey(
+        "PaymentTransaction",
+        on_delete=models.CASCADE,
+        related_name="vuelto_requests",
+        verbose_name="Transacción Original",
+    )
+
+    reference = models.CharField(
+        max_length=50,
+        unique=True,
+        verbose_name="Referencia",
+    )
+    bancaribe_reference = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Referencia Bancaribe",
+    )
+
+    amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name="Monto",
+    )
+    currency = models.CharField(
+        max_length=3,
+        default="VES",
+        verbose_name="Moneda",
+    )
+
+    patient_phone = models.CharField(
+        max_length=20,
+        verbose_name="Teléfono Paciente",
+    )
+    patient_national_id = models.CharField(
+        max_length=20,
+        verbose_name="Cédula Paciente",
+    )
+    patient_bank_code = models.CharField(
+        max_length=4,
+        verbose_name="Código Banco",
+    )
+
+    otp_code = models.CharField(
+        max_length=6,
+        blank=True,
+        verbose_name="Código OTP",
+        help_text="Código OTP enviado al paciente para confirmar",
+    )
+    otp_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="OTP Enviado En",
+    )
+    otp_expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="OTP Expira En",
+    )
+    otp_verified = models.BooleanField(
+        default=False,
+        verbose_name="OTP Verificado",
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="pending",
+        verbose_name="Estado",
+    )
+
+    error_message = models.TextField(
+        blank=True,
+        verbose_name="Mensaje Error",
+    )
+    raw_response = models.JSONField(
+        null=True,
+        blank=True,
+        verbose_name="Respuesta Raw",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "vuelto_request"
+        verbose_name = "Solicitud Vuelto"
+        verbose_name_plural = "Solicitudes Vuelto"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Vuelto #{self.reference}: {self.amount} {self.currency}"
+
+    def save(self, *args, **kwargs):
+        if not self.reference:
+            import time
+
+            self.reference = f"VUELTO-{int(time.time())}"
+        super().save(*args, **kwargs)
