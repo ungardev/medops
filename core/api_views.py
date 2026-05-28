@@ -8582,13 +8582,13 @@ def doctor_wallet_api(request):
     """
     user = request.user
 
-    if not hasattr(user, "doctor"):
+    if not hasattr(user, "doctor_profile"):
         return Response(
             {"error": "Solo doctores tienen wallet"},
             status=status.HTTP_403_FORBIDDEN,
         )
 
-    doctor = user.doctor
+    doctor = user.doctor_profile
     from core.models import DoctorWallet
     from core.serializers import DoctorWalletSerializer
     from core.services.disbursement_service import DisbursementService
@@ -8632,7 +8632,7 @@ def doctor_wallet_summary_api(request):
     """
     user = request.user
 
-    if not hasattr(user, "doctor"):
+    if not hasattr(user, "doctor_profile"):
         return Response(
             {"error": "Solo doctores tienen wallet"},
             status=status.HTTP_403_FORBIDDEN,
@@ -8641,7 +8641,7 @@ def doctor_wallet_summary_api(request):
     from core.services.disbursement_service import DisbursementService
 
     service = DisbursementService()
-    result = service.get_wallet_summary(user.doctor)
+    result = service.get_wallet_summary(user.doctor_profile)
 
     return Response(result)
 
@@ -8654,7 +8654,7 @@ def doctor_wallet_movements_api(request):
     """
     user = request.user
 
-    if not hasattr(user, "doctor"):
+    if not hasattr(user, "doctor_profile"):
         return Response(
             {"error": "Solo doctores tienen wallet"},
             status=status.HTTP_403_FORBIDDEN,
@@ -8666,7 +8666,7 @@ def doctor_wallet_movements_api(request):
     limit = int(request.query_params.get("limit", 10))
     offset = int(request.query_params.get("offset", 0))
 
-    doctor = user.doctor
+    doctor = user.doctor_profile
 
     payments = PaymentTransaction.objects.filter(
         doctor=doctor, status="confirmed"
@@ -8710,13 +8710,13 @@ def disbursement_api(request):
     """
     user = request.user
 
-    if not hasattr(user, "doctor"):
+    if not hasattr(user, "doctor_profile"):
         return Response(
             {"error": "Solo doctores pueden crear disbursements"},
             status=status.HTTP_403_FORBIDDEN,
         )
 
-    doctor = user.doctor
+    doctor = user.doctor_profile
     from core.models import Disbursement
     from core.serializers import DisbursementSerializer, DisbursementCreateSerializer
 
@@ -8766,7 +8766,7 @@ def disbursement_detail_api(request, pk):
     """
     user = request.user
 
-    if not hasattr(user, "doctor"):
+    if not hasattr(user, "doctor_profile"):
         return Response(
             {"error": "Solo doctores pueden ver disbursements"},
             status=status.HTTP_403_FORBIDDEN,
@@ -8776,7 +8776,7 @@ def disbursement_detail_api(request, pk):
     from core.serializers import DisbursementSerializer
 
     try:
-        disbursement = Disbursement.objects.get(pk=pk, doctor=user.doctor)
+        disbursement = Disbursement.objects.get(pk=pk, doctor=user.doctor_profile)
         serializer = DisbursementSerializer(disbursement)
         return Response(serializer.data)
     except Disbursement.DoesNotExist:
@@ -8794,7 +8794,7 @@ def disbursement_cancel_api(request, pk):
     """
     user = request.user
 
-    if not hasattr(user, "doctor"):
+    if not hasattr(user, "doctor_profile"):
         return Response(
             {"error": "Solo doctores pueden cancelar disbursements"},
             status=status.HTTP_403_FORBIDDEN,
@@ -8822,7 +8822,7 @@ def platform_earnings_api(request):
 
     user = request.user
 
-    if not (hasattr(user, "doctor") and user.doctor.is_superuser):
+    if not (hasattr(user, "doctor_profile") and user.is_superuser):
         return Response(
             {"error": "Solo superadmin puede ver earnings"},
             status=status.HTTP_403_FORBIDDEN,
@@ -8863,9 +8863,9 @@ def vuelto_api(request):
         from core.models import VueltoRequest
         from core.serializers import VueltoRequestSerializer
 
-        if hasattr(user, "doctor"):
+        if hasattr(user, "doctor_profile"):
             vueltos = VueltoRequest.objects.filter(
-                payment_transaction__doctor=user.doctor
+                payment_transaction__doctor=user.doctor_profile
             ).order_by("-created_at")[:50]
         else:
             vueltos = VueltoRequest.objects.all().order_by("-created_at")[:50]
@@ -9020,7 +9020,7 @@ def admin_bancaribe_config(request):
     """
     user = request.user
 
-    if not (hasattr(user, "doctor") and user.doctor.is_superuser):
+    if not (hasattr(user, "doctor_profile") and user.is_superuser):
         return Response(
             {"error": "Solo admin puede ver esta información"},
             status=status.HTTP_403_FORBIDDEN,
@@ -9057,7 +9057,7 @@ def admin_doctors_list(request):
     """
     user = request.user
 
-    if not (hasattr(user, "doctor") and user.doctor.is_superuser):
+    if not (hasattr(user, "doctor_profile") and user.is_superuser):
         return Response(
             {"error": "Solo admin puede ver esta información"},
             status=status.HTTP_403_FORBIDDEN,
@@ -9096,7 +9096,7 @@ def admin_disbursements_list(request):
     """
     user = request.user
 
-    if not (hasattr(user, "doctor") and user.doctor.is_superuser):
+    if not (hasattr(user, "doctor_profile") and user.is_superuser):
         return Response(
             {"error": "Solo admin puede ver esta información"},
             status=status.HTTP_403_FORBIDDEN,
@@ -9120,7 +9120,7 @@ def admin_institutions_list(request):
     """
     user = request.user
 
-    if not (hasattr(user, "doctor") and user.doctor.is_superuser):
+    if not (hasattr(user, "doctor_profile") and user.is_superuser):
         return Response(
             {"error": "Solo admin puede ver esta información"},
             status=status.HTTP_403_FORBIDDEN,
@@ -9159,7 +9159,7 @@ def admin_earnings_api(request):
     """
     user = request.user
 
-    if not (hasattr(user, "doctor") and user.doctor.is_superuser):
+    if not (hasattr(user, "doctor_profile") and user.is_superuser):
         return Response(
             {"error": "Solo admin puede ver esta información"},
             status=status.HTTP_403_FORBIDDEN,
