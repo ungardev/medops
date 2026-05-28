@@ -8591,7 +8591,7 @@ def doctor_wallet_api(request):
     doctor = user.doctor_profile
     from core.models import DoctorWallet
     from core.serializers import DoctorWalletSerializer
-    from core.services.disbursement_service import DisbursementService
+    from core.bancaribe_services.disbursement_service import DisbursementService
 
     if request.method == "GET":
         wallet, created = DoctorWallet.objects.get_or_create(
@@ -8638,7 +8638,7 @@ def doctor_wallet_summary_api(request):
             status=status.HTTP_403_FORBIDDEN,
         )
 
-    from core.services.disbursement_service import DisbursementService
+    from core.bancaribe_services.disbursement_service import DisbursementService
 
     service = DisbursementService()
     result = service.get_wallet_summary(user.doctor_profile)
@@ -8739,7 +8739,7 @@ def disbursement_api(request):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        from core.services.disbursement_service import DisbursementService
+        from core.bancaribe_services.disbursement_service import DisbursementService
         from core.models import BancaribeAPIConfig
 
         bancaribe_config = BancaribeAPIConfig.objects.filter(is_active=True).first()
@@ -8800,7 +8800,7 @@ def disbursement_cancel_api(request, pk):
             status=status.HTTP_403_FORBIDDEN,
         )
 
-    from core.services.disbursement_service import DisbursementService
+    from core.bancaribe_services.disbursement_service import DisbursementService
 
     service = DisbursementService()
     result = service.cancel_disbursement(pk)
@@ -8897,7 +8897,7 @@ def vuelto_api(request):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        from core.services.vuelto_service import VueltoService
+        from core.bancaribe_services.vuelto_service import VueltoService
 
         service = VueltoService()
         result = service.create_vuelto_request(
@@ -8949,7 +8949,7 @@ def vuelto_verify_otp_api(request, pk):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    from core.services.vuelto_service import VueltoService
+    from core.bancaribe_services.vuelto_service import VueltoService
 
     service = VueltoService()
     result = service.verify_otp_and_send_vuelto(pk, otp_code)
@@ -8965,7 +8965,7 @@ def vuelto_resend_otp_api(request, pk):
     """
     Reenvía OTP para un vuelto.
     """
-    from core.services.vuelto_service import VueltoService
+    from core.bancaribe_services.vuelto_service import VueltoService
 
     service = VueltoService()
     result = service.resend_otp(pk)
@@ -8981,7 +8981,7 @@ def vuelto_cancel_api(request, pk):
     """
     Cancela un vuelto pendiente.
     """
-    from core.services.vuelto_service import VueltoService
+    from core.bancaribe_services.vuelto_service import VueltoService
 
     service = VueltoService()
     result = service.cancel_vuelto(pk)
@@ -8997,7 +8997,7 @@ def vuelto_status_api(request, pk):
     """
     Consulta status de un vuelto via Bancaribe.
     """
-    from core.services.vuelto_service import VueltoService
+    from core.bancaribe_services.vuelto_service import VueltoService
 
     service = VueltoService()
     result = service.get_vuelto_status(pk)
