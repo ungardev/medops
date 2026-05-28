@@ -5320,6 +5320,123 @@ def webhook_binance(request):
     return Response({"status": "received"})
 
 
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def webhook_bancaribe(request):
+    """
+    Webhook para Bancaribe - Notificaciones de pago y transferencias.
+
+    Eventos soportados:
+    - pago_recibido: Pago Móvil recibido
+    - transferencia_completada: Transferencia a doctor completada
+    - transferencia_fallida: Transferencia fallida
+    - reverso: Reverso de transacción
+    """
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    try:
+        payload = request.data
+        event_type = payload.get("evento", payload.get("type", ""))
+        event_data = payload.get("data", {})
+
+        logger.info(f"Bancaribe webhook recibido: {event_type}")
+
+        if event_type == "pago_recibido":
+            reference = event_data.get("referencia", "")
+            amount = event_data.get("monto", 0)
+            bank_code = event_data.get("banco", "")
+            phone = event_data.get("telefono", "")
+            national_id = event_data.get("cedula", "")
+
+            logger.info(f"Pago recibido: ref={reference}, monto={amount}")
+
+            # Buscar transacción por reference y actualizar status
+            from .models import PaymentTransaction
+
+            try:
+                transaction = PaymentTransaction.objects.filter(
+                    reference_number=reference
+                ).first()
+                if transaction:
+                    transaction.gateway_transaction_id = event_data.get(
+                        "id_transaccion", ""
+                    )
+                    transaction.gateway_response_raw = payload
+                    transaction.confirm(verified_by="webhook")
+                    logger.info(f"Transacción {reference} confirmada via webhook")
+                else:
+                    logger.warning(f"Transacción no encontrada: {reference}")
+            except Exception as e:
+                logger.error(f"Error procesando pago_recibido: {e}")
+
+        elif event_type == "transferencia_completada":
+            reference = event_data.get("referencia", "")
+            logger.info(f"Transferencia completada: {reference}")
+
+            # Buscar disbursement y actualizar
+            from .models import Disbursement
+
+            try:
+                disbursement = Disbursement.objects.filter(reference=reference).first()
+                if disbursement:
+                    disbursement.status = "completed"
+                    disbursement.bancaribe_reference = event_data.get(
+                        "id_transaccion", ""
+                    )
+                    disbursement.completed_at = timezone.now()
+                    disbursement.raw_response = payload
+                    disbursement.save()
+                    logger.info(f"Disbursement {reference} completado")
+            except Exception as e:
+                logger.error(f"Error procesando transferencia_completada: {e}")
+
+        elif event_type == "transferencia_fallida":
+            reference = event_data.get("referencia", "")
+            error_msg = event_data.get("error", "Transferencia fallida")
+
+            logger.warning(f"Transferencia fallida: {reference} - {error_msg}")
+
+            from .models import Disbursement
+
+            try:
+                disbursement = Disbursement.objects.filter(reference=reference).first()
+                if disbursement:
+                    disbursement.status = "failed"
+                    disbursement.error_message = error_msg
+                    disbursement.raw_response = payload
+                    disbursement.save()
+            except Exception as e:
+                logger.error(f"Error procesando transferencia_fallida: {e}")
+
+        elif event_type == "reverso":
+            original_reference = event_data.get("referencia_original", "")
+            logger.warning(f"Reverso recibido para: {original_reference}")
+
+            from .models import PaymentTransaction
+
+            try:
+                transaction = PaymentTransaction.objects.filter(
+                    reference_number=original_reference
+                ).first()
+                if transaction:
+                    transaction.status = "reversed"
+                    transaction.gateway_response_raw = payload
+                    transaction.save()
+            except Exception as e:
+                logger.error(f"Error procesando reverso: {e}")
+
+        else:
+            logger.info(f"Evento Bancaribe no manejado: {event_type}")
+
+        return Response({"status": "received"}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        logger.error(f"Error en webhook_bancaribe: {e}")
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 # ============================================================================
 # SUBSCRIPTIONS API VIEWS
 # ============================================================================

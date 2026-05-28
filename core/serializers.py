@@ -56,6 +56,11 @@ from .models import (
     Bed,
     SnomedEntry,
     SnomedUpdateLog,
+    BancaribeAPIConfig,
+    DoctorWallet,
+    PlatformEarnings,
+    Disbursement,
+    VueltoRequest,
 )
 from .choices import (
     UNIT_CHOICES,
@@ -4623,3 +4628,179 @@ class SnomedEntrySerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
+
+
+# =====================================================
+# BANCARIBE INTEGRATION SERIALIZERS
+# =====================================================
+class BancaribeAPIConfigSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BancaribeAPIConfig
+        fields = [
+            "id",
+            "institution",
+            "client_id",
+            "client_secret",
+            "webhook_secret",
+            "is_test_mode",
+            "is_active",
+            "settlement_account",
+            "settlement_bank_code",
+            "auto_verify_payments",
+            "auto_disbursement_enabled",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+        extra_kwargs = {
+            "client_secret": {"write_only": True},
+            "webhook_secret": {"write_only": True},
+        }
+
+
+class DoctorWalletSerializer(serializers.ModelSerializer):
+    doctor_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DoctorWallet
+        fields = [
+            "id",
+            "doctor",
+            "doctor_name",
+            "balance",
+            "pending_balance",
+            "total_earned",
+            "total_disbursed",
+            "last_disbursement_at",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "total_earned",
+            "total_disbursed",
+            "created_at",
+            "updated_at",
+        ]
+
+    def get_doctor_name(self, obj):
+        return obj.doctor.user.get_full_name() or obj.doctor.user.username
+
+
+class PlatformEarningsSerializer(serializers.ModelSerializer):
+    transaction_reference = serializers.CharField(
+        source="transaction.reference", read_only=True
+    )
+
+    class Meta:
+        model = PlatformEarnings
+        fields = [
+            "id",
+            "transaction",
+            "transaction_reference",
+            "gross_amount",
+            "commission_rate",
+            "commission_amount",
+            "net_amount",
+            "currency",
+            "exchange_rate_bcv",
+            "amount_ves",
+            "is_settled",
+            "settled_at",
+            "created_at",
+        ]
+        read_only_fields = ["id", "created_at"]
+
+
+class DisbursementSerializer(serializers.ModelSerializer):
+    doctor_name = serializers.SerializerMethodField()
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    type_display = serializers.CharField(
+        source="get_disbursement_type_display", read_only=True
+    )
+
+    class Meta:
+        model = Disbursement
+        fields = [
+            "id",
+            "doctor",
+            "doctor_name",
+            "reference",
+            "bancaribe_reference",
+            "amount",
+            "currency",
+            "amount_ves",
+            "bank_code",
+            "bank_account",
+            "bank_reference",
+            "status",
+            "status_display",
+            "disbursement_type",
+            "type_display",
+            "doctor_wallet",
+            "scheduled_at",
+            "processed_at",
+            "completed_at",
+            "error_message",
+            "raw_response",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "reference", "created_at", "updated_at"]
+
+
+class DisbursementCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Disbursement
+        fields = [
+            "doctor",
+            "amount",
+            "currency",
+            "amount_ves",
+            "bank_code",
+            "bank_account",
+            "disbursement_type",
+            "scheduled_at",
+        ]
+
+
+class VueltoRequestSerializer(serializers.ModelSerializer):
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+
+    class Meta:
+        model = VueltoRequest
+        fields = [
+            "id",
+            "payment_transaction",
+            "reference",
+            "bancaribe_reference",
+            "amount",
+            "currency",
+            "patient_phone",
+            "patient_national_id",
+            "patient_bank_code",
+            "otp_code",
+            "otp_sent_at",
+            "otp_expires_at",
+            "otp_verified",
+            "status",
+            "status_display",
+            "error_message",
+            "raw_response",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "reference", "created_at", "updated_at"]
+
+
+class VueltoRequestCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VueltoRequest
+        fields = [
+            "payment_transaction",
+            "amount",
+            "currency",
+            "patient_phone",
+            "patient_national_id",
+            "patient_bank_code",
+        ]

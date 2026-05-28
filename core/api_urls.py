@@ -154,6 +154,7 @@ from .api_views import (
     payment_stats_api,
     webhook_banesco,
     webhook_binance,
+    webhook_bancaribe,
     subscriptions_api,
     subscription_cancel_api,
     # ViewSets
@@ -655,6 +656,7 @@ urlpatterns = [
     # Webhooks
     path("payments/webhook/banesco/", webhook_banesco, name="webhook-banesco"),
     path("payments/webhook/binance/", webhook_binance, name="webhook-binance"),
+    path("payments/webhook/bancaribe/", webhook_bancaribe, name="webhook-bancaribe"),
     # Subscriptions
     path("subscriptions/", subscriptions_api, name="subscriptions-api"),
     path(
