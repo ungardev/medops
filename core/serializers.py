@@ -1497,7 +1497,7 @@ class WaitingRoomEntrySerializer(serializers.ModelSerializer):
     """
 
     patient = PatientReadSerializer(read_only=True)
-    patient_name = serializers.CharField(source="patient.get_full_name", read_only=True)
+    patient_name = serializers.CharField(source="patient.full_name", read_only=True)
     patient_id_number = serializers.CharField(
         source="patient.national_id", read_only=True
     )
@@ -2183,7 +2183,7 @@ class MedicalDocumentReadSerializer(serializers.ModelSerializer):
     """
 
     # 1. Identidad del Paciente
-    patient_name = serializers.CharField(source="patient.get_full_name", read_only=True)
+    patient_name = serializers.CharField(source="patient.full_name", read_only=True)
 
     # 2. Etiquetas legibles para la UI
     category_display = serializers.CharField(
@@ -2308,7 +2308,7 @@ class MedicalDocumentVerificationSerializer(serializers.ModelSerializer):
 
     def get_patient_name(self, obj):
         if obj.patient:
-            full_name = obj.patient.get_full_name()
+            full_name = obj.patient.full_name
             parts = full_name.split()
             if len(parts) >= 2:
                 return f"{parts[0]} {' '.join(p[0] + '.' for p in parts[1:])}"
@@ -2317,7 +2317,7 @@ class MedicalDocumentVerificationSerializer(serializers.ModelSerializer):
 
     def get_doctor_name(self, obj):
         if obj.doctor:
-            return f"Dr. {obj.doctor.get_full_name()}"
+            return f"Dr. {obj.doctor.full_name}"
         return "Médico no especificado"
 
     def get_institution_name(self, obj):
