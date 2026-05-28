@@ -163,6 +163,12 @@ from .api_views import (
     disbursement_detail_api,
     disbursement_cancel_api,
     platform_earnings_api,
+    vuelto_api,
+    vuelto_detail_api,
+    vuelto_verify_otp_api,
+    vuelto_resend_otp_api,
+    vuelto_cancel_api,
+    vuelto_status_api,
     # ViewSets
     PaymentGatewayViewSet,
     DoctorPaymentConfigViewSet,
@@ -760,6 +766,17 @@ urlpatterns = [
         api_views.create_charge_order_from_service,
         name="create-charge-order-from-service",
     ),
+    # Vuelto (Refund) Endpoints
+    path("vueltos/", vuelto_api, name="vueltos"),
+    path("vueltos/<int:pk>/", vuelto_detail_api, name="vuelto-detail"),
+    path(
+        "vueltos/<int:pk>/verify-otp/", vuelto_verify_otp_api, name="vuelto-verify-otp"
+    ),
+    path(
+        "vueltos/<int:pk>/resend-otp/", vuelto_resend_otp_api, name="vuelto-resend-otp"
+    ),
+    path("vueltos/<int:pk>/cancel/", vuelto_cancel_api, name="vuelto-cancel"),
+    path("vueltos/<int:pk>/status/", vuelto_status_api, name="vuelto-status"),
 ]
 # --- Documentación OpenAPI ---
 # DESHABILITADO: El endpoint dinámico /api/schema/ causa errores de introspección

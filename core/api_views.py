@@ -8765,6 +8765,8 @@ def platform_earnings_api(request):
     from core.serializers import PlatformEarningsSerializer
     from django.db.models import Sum
 
+    user = request.user
+
     if not (hasattr(user, "doctor") and user.doctor.is_superuser):
         return Response(
             {"error": "Solo superadmin puede ver earnings"},
@@ -8786,3 +8788,165 @@ def platform_earnings_api(request):
             "totals": totals,
         }
     )
+
+
+# ============================================================================
+# VUELTO (REFUND) API VIEWS
+# ============================================================================
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def vuelto_api(request):
+    """
+    GET: Listar vueltos del doctor/institución
+    POST: Crear solicitud de vuelto (solo admin/doctor)
+    """
+    user = request.user
+
+    if request.method == "GET":
+        from core.models import VueltoRequest
+        from core.serializers import VueltoRequestSerializer
+
+        if hasattr(user, "doctor"):
+            vueltos = VueltoRequest.objects.filter(
+                payment_transaction__doctor=user.doctor
+            ).order_by("-created_at")[:50]
+        else:
+            vueltos = VueltoRequest.objects.all().order_by("-created_at")[:50]
+
+        serializer = VueltoRequestSerializer(vueltos, many=True)
+        return Response(serializer.data)
+
+    elif request.method == "POST":
+        payment_transaction_id = request.data.get("payment_transaction")
+        amount = request.data.get("amount")
+        patient_phone = request.data.get("patient_phone")
+        patient_national_id = request.data.get("patient_national_id")
+        patient_bank_code = request.data.get("patient_bank_code")
+        currency = request.data.get("currency", "VES")
+
+        if not all(
+            [
+                payment_transaction_id,
+                amount,
+                patient_phone,
+                patient_national_id,
+                patient_bank_code,
+            ]
+        ):
+            return Response(
+                {
+                    "error": "payment_transaction, amount, patient_phone, patient_national_id, patient_bank_code son requeridos"
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from core.services.vuelto_service import VueltoService
+
+        service = VueltoService()
+        result = service.create_vuelto_request(
+            payment_transaction=payment_transaction_id,
+            amount=Decimal(str(amount)),
+            patient_phone=patient_phone,
+            patient_national_id=patient_national_id,
+            patient_bank_code=patient_bank_code,
+            currency=currency,
+        )
+
+        if result.get("success"):
+            return Response(result, status=status.HTTP_201_CREATED)
+        return Response(result, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def vuelto_detail_api(request, pk):
+    """
+    Obtener detalle de un vuelto.
+    """
+    from core.models import VueltoRequest
+    from core.serializers import VueltoRequestSerializer
+
+    try:
+        vuelto = VueltoRequest.objects.get(pk=pk)
+        serializer = VueltoRequestSerializer(vuelto)
+        return Response(serializer.data)
+    except VueltoRequest.DoesNotExist:
+        return Response(
+            {"error": "Vuelto no encontrado"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def vuelto_verify_otp_api(request, pk):
+    """
+    Verifica OTP y envía el vuelto.
+    Público porque el paciente verifica con el código.
+    """
+    otp_code = request.data.get("otp_code")
+
+    if not otp_code:
+        return Response(
+            {"error": "otp_code es requerido"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    from core.services.vuelto_service import VueltoService
+
+    service = VueltoService()
+    result = service.verify_otp_and_send_vuelto(pk, otp_code)
+
+    if result.get("success"):
+        return Response(result)
+    return Response(result, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def vuelto_resend_otp_api(request, pk):
+    """
+    Reenvía OTP para un vuelto.
+    """
+    from core.services.vuelto_service import VueltoService
+
+    service = VueltoService()
+    result = service.resend_otp(pk)
+
+    if result.get("success"):
+        return Response(result)
+    return Response(result, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def vuelto_cancel_api(request, pk):
+    """
+    Cancela un vuelto pendiente.
+    """
+    from core.services.vuelto_service import VueltoService
+
+    service = VueltoService()
+    result = service.cancel_vuelto(pk)
+
+    if result.get("success"):
+        return Response(result)
+    return Response(result, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def vuelto_status_api(request, pk):
+    """
+    Consulta status de un vuelto via Bancaribe.
+    """
+    from core.services.vuelto_service import VueltoService
+
+    service = VueltoService()
+    result = service.get_vuelto_status(pk)
+
+    if result.get("success"):
+        return Response(result)
+    return Response(result, status=status.HTTP_400_BAD_REQUEST)
