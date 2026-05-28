@@ -18,6 +18,7 @@ import {
   GiftIcon, 
   PlusIcon,
   ClockIcon,
+  HashtagIcon,
   BuildingOfficeIcon
 } from "@heroicons/react/24/outline";
 interface Event {
