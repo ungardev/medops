@@ -1,11 +1,17 @@
 // src/pages/Admin/Login.tsx
 import { useState } from "react";
-import { useAdminAuthToken } from "@/hooks/useAdminAuthToken";
 import { Link, useNavigate } from "react-router-dom";
 import { Lock, User, Loader2, ShieldCheck } from "lucide-react";
 
+const STORAGE_KEYS = {
+  ADMIN_ACCESS: 'admin_access_token',
+  ADMIN_REFRESH: 'admin_refresh_token',
+  ADMIN_USER: 'admin_user',
+};
+
+const authChannel = new BroadcastChannel('admin_auth_channel');
+
 export default function AdminLogin() {
-  const { saveToken } = useAdminAuthToken();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -39,7 +45,20 @@ export default function AdminLogin() {
       const data = await res.json();
       if (!data.access) throw new Error("Respuesta inválida del servidor");
       
-      saveToken(data.access, data.refresh, data.user);
+      // Save tokens directly to localStorage
+      localStorage.setItem(STORAGE_KEYS.ADMIN_ACCESS, data.access);
+      if (data.refresh) {
+        localStorage.setItem(STORAGE_KEYS.ADMIN_REFRESH, data.refresh);
+      }
+      localStorage.setItem(STORAGE_KEYS.ADMIN_USER, JSON.stringify(data.user));
+      
+      // Broadcast to other tabs/components
+      authChannel.postMessage({
+        type: 'ADMIN_AUTH_CHANGE',
+        action: 'ADMIN_LOGIN',
+        tokens: { access: data.access, refresh: data.refresh },
+        user: data.user,
+      });
       
       setTimeout(() => {
         navigate("/admin");
