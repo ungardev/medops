@@ -2,30 +2,30 @@
 const integrations = [
   {
     icon: 'bcv',
-    label: 'Oráculo Cambiario Automático',
-    title: 'Indexación Dinámica de Divisas BCV',
-    description: 'Motor de sincronización asincrónica y en tiempo real con el nodo del Banco Central de Venezuela. Automatice la tasación contable, recalcule presupuestos institucionales, órdenes de hospitalización y honorarios profesionales al instante, blindando el flujo de caja operativo contra el descalce cambiario sin intervención manual.',
-    value: 'Sincronización Automática API',
-    subvalue: 'Tasación en Tiempo Real',
-    badges: ['Protección Patrimonial', 'Recalculo en Milisegundos', 'Mitigación de Devaluación'],
+    label: 'BCV',
+    title: 'Tasa Oficial',
+    description: 'Sincronización automática con el Banco Central de Venezuela.',
+    value: 'Tiempo Real',
+    subvalue: 'Protección patrimonial',
+    badges: ['Milisegundos', 'Mitigación de riesgo'],
   },
   {
     icon: 'bancaribe',
-    label: 'Bancaribe Core API Integration',
-    title: 'Rieles de Liquidación e Interconexión Bancaria',
-    description: 'Interconexión directa con el nodo core de la banca mediante APIs institucionales de alta disponibilidad. Automatice flujos transaccionales complejos que van más allá del punto de venta: procesamiento de cobros inmediatos (C2P), dispersión masiva automatizada de honorarios médicos, cuentas puente institucionales y conciliación en tiempo real mediante Webhooks seguros de grado bancario.',
-    value: 'Protocolo C2P / P2C',
-    subvalue: 'Webhooks de Conciliación',
-    badges: ['Dispersión de Honorarios Automática', 'Banca en Línea Corporativa'],
+    label: 'BANCARIBE',
+    title: 'Pagos y Transferencias',
+    description: 'APIs de bancaria para cobros y dispersión de honorarios.',
+    value: 'C2P / P2P',
+    subvalue: 'Webhooks de conciliación',
+    badges: ['Dispersión automática', 'Conciliación real'],
   },
   {
-    icon: 'crypto',
-    label: 'Riel Transfronterizo Web3',
-    title: 'Clearing y Recaudación Global Multiactivos',
-    description: 'Pasarela de liquidez y tesorería internacional nativa para el procesamiento seguro de activos digitales estables (USDT). Habilite la captación de fondos internacionales de aseguradoras y pacientes extranjeros sin intermediación de corresponsalía bancaria tradicional, canalizando los fondos directo a la contabilidad de la institución.',
-    value: 'Binance Pay / Web3 Layer',
-    subvalue: 'USDT Settlement Inmediato',
-    badges: ['Tesorería Internacional', 'Cero Fricción de Corretaje', 'Custodia Cifrada'],
+    icon: 'wallet',
+    label: 'WALLET',
+    title: 'Wallet Doctor',
+    description: 'Acumulación de ganancias y retiros instantáneos o batch.',
+    value: 'Instant / Batch',
+    subvalue: 'Mínimo $20 USD',
+    badges: ['3% comisión', 'Auto-retiro'],
   },
 ];
 ---
@@ -35,12 +35,12 @@ const integrations = [
 
   <div class="max-w-[1200px] mx-auto relative">
     <div class="text-center mb-16">
-      <span class="text-xs font-bold text-emerald-400 uppercase tracking-[0.2em]">Integraciones</span>
-      <h2 class="text-4xl md:text-5xl font-bold text-white mt-4 tracking-tight">
-        Infraestructura Financiera
+      <span class="text-xs font-bold text-emerald-400 uppercase tracking-[0.2em]">Financiero</span>
+      <h2 class="text-5xl md:text-6xl font-bold text-white mt-4 tracking-tight">
+        Bancaribe APIs
       </h2>
-      <p class="text-lg text-slate-300 mt-4 max-w-[700px] mx-auto leading-relaxed">
-        Pagos integrados con el ecosistema financiero venezolano e internacional
+      <p class="text-xl text-slate-300 mt-4 max-w-[600px] mx-auto">
+        Infraestructura financiera integrada
       </p>
     </div>
 
@@ -53,13 +53,13 @@ const integrations = [
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-slate-200 group-hover:text-emerald-400 transition-colors">
               {integration.icon === 'bcv' && <><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></>}
               {integration.icon === 'bancaribe' && <><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></>}
-              {integration.icon === 'crypto' && <><path d="M12 2v4"/><path d="m6.34 6.34 2.83 2.83"/><path d="M2 12h4"/><path d="m17.66 6.34-2.83 2.83"/><path d="M12 18v4"/><path d="m17.66 17.66-2.83-2.83"/><path d="M22 12h-4"/><path d="m6.34 17.66 2.83-2.83"/></>}
+              {integration.icon === 'wallet' && <><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><circle cx="18" cy="16" r="2"/></>}
             </svg>
           </div>
 
           <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-2 block">{integration.label}</span>
-          <h3 class="text-xl font-semibold text-white mb-3">{integration.title}</h3>
-          <p class="text-sm text-slate-400 mb-6 leading-relaxed">{integration.description}</p>
+          <h3 class="text-2xl font-semibold text-white mb-3">{integration.title}</h3>
+          <p class="text-sm text-slate-400 mb-6">{integration.description}</p>
 
           <div class="p-4 bg-[#050608] border border-[#1a1e23] rounded-xl">
             <div class="text-2xl font-bold text-white mb-1">{integration.value}</div>

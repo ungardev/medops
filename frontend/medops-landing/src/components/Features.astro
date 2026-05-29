@@ -2,38 +2,38 @@
 const pillars = [
   {
     icon: 'fintech',
-    label: 'FINTECH ENGINE',
-    title: 'Pago Móvil + Bimonetario',
-    description: 'Infraestructura financiera integrada para Venezuela',
+    label: 'FINANCIERO',
+    title: 'Bancaribe APIs',
+    description: 'Infraestructura financiera integrada.',
     features: [
-      { label: 'Mercantil P2C', desc: 'Pagos instantáneos' },
-      { label: 'Banesco API', desc: 'Integración bancaria' },
-      { label: 'BCV Rate', desc: 'Tasa oficial en tiempo real' },
-      { label: 'USDT Crypto', desc: 'Activos digitales' },
+      { label: 'API Transferencias', desc: 'Pagos a doctores' },
+      { label: 'API Pagos C2P', desc: 'Vueltos automáticos' },
+      { label: 'BCV Rate', desc: 'Tasa en tiempo real' },
+      { label: 'Wallet Doctor', desc: 'Acumulación y retiro' },
     ],
   },
   {
     icon: 'legal',
-    label: 'LEGAL & COMPLIANCE',
-    title: 'MPPS + Colegiado ID',
-    description: 'Verificación institucional y sellado digital',
+    label: 'COMPLIANCE',
+    title: 'Estándares Venezolanos',
+    description: 'Verificación médica institucional.',
     features: [
-      { label: 'MPPS Verification', desc: 'Licencia sanitaria' },
+      { label: 'MPPS', desc: 'Licencia sanitaria' },
       { label: 'Colegiado ID', desc: 'Documento profesional' },
-      { label: 'Sellado Digital', desc: 'Certificación criptográfica' },
-      { label: 'INHRR Catalog', desc: 'Registro nacional' },
+      { label: 'Sellado Digital', desc: 'Certificación' },
+      { label: 'INHRR', desc: 'Registro nacional' },
     ],
   },
   {
     icon: 'clinical',
-    label: 'CLINICAL INTELLIGENCE',
-    title: 'ICD-11 + SNOMED CT',
-    description: 'Estándares internacionales de diagnóstico',
+    label: 'CLÍNICO',
+    title: 'ICD-11 OMS',
+    description: 'Diagnóstico internacional.',
     features: [
       { label: 'ICD-11 WHO', desc: 'Clasificación oficial' },
       { label: 'SNOMED CT', desc: 'Terminología clínica' },
-      { label: 'CIE-11 Search', desc: 'Búsqueda inteligente' },
-      { label: 'Coding Engine', desc: 'Sugerencia automática' },
+      { label: 'Búsqueda', desc: 'Inteligente' },
+      { label: 'Coding', desc: 'Automático' },
     ],
   },
 ];
@@ -43,25 +43,18 @@ const pillars = [
   <div class="absolute inset-0 bg-[linear-gradient(to_right,#1a1e23_1px,transparent_1px),linear-gradient(to_bottom,#1a1e23_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-[0.04]"></div>
   
   <div class="max-w-[1200px] mx-auto relative">
-    <!-- Section Header -->
     <div class="text-center mb-16">
       <span class="text-xs font-bold text-emerald-400 uppercase tracking-[0.2em]">Stack Tecnológico</span>
-      <h2 class="text-4xl md:text-5xl font-bold text-white mt-4 tracking-tight">
-        Infraestructura Tecnológica
+      <h2 class="text-5xl md:text-6xl font-bold text-white mt-4 tracking-tight">
+        Infraestructura
       </h2>
-      <p class="text-lg text-slate-300 mt-4 max-w-[700px] mx-auto leading-relaxed">
-        El motor de datos que impulsa las operaciones médicas de nivel corporativo
-      </p>
     </div>
     
-    <!-- Bento Grid - 3 Pillars -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {pillars.map((pillar) => (
         <div class="group relative p-8 bg-[#0c0e12] border border-[#1a1e23] rounded-2xl transition-all duration-500 hover:border-emerald-500/30">
-          <!-- Accent Line Top -->
           <div class="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
           
-          <!-- Icon -->
           <div class="w-14 h-14 rounded-xl bg-[#0a0a0b] border border-[#1a1e23] flex items-center justify-center mb-6 transition-all duration-300 group-hover:border-emerald-500/30 group-hover:shadow-[0_0_20px_rgba(16,185,129,0.1)]">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-slate-200 group-hover:text-emerald-400 transition-colors">
               {pillar.icon === 'fintech' && <><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/><path d="M6 15h4"/></>}
@@ -70,16 +63,12 @@ const pillars = [
             </svg>
           </div>
           
-          <!-- Label -->
           <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-2 block">{pillar.label}</span>
           
-          <!-- Title -->
-          <h3 class="text-xl font-semibold text-white mb-3">{pillar.title}</h3>
+          <h3 class="text-2xl font-semibold text-white mb-3">{pillar.title}</h3>
           
-          <!-- Description -->
-          <p class="text-sm text-slate-400 mb-6 leading-relaxed">{pillar.description}</p>
+          <p class="text-sm text-slate-400 mb-6">{pillar.description}</p>
           
-          <!-- Features Grid -->
           <div class="grid grid-cols-2 gap-3">
             {pillar.features.map((feature) => (
               <div class="p-3 bg-[#050608] border border-[#1a1e23] rounded-lg">

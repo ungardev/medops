@@ -3,37 +3,37 @@ const differentiators = [
   {
     icon: 'geography',
     title: 'Venezuela Completa',
-    description: 'Cobertura geográfica en los 23 estados, 335 municipios y 330+ parroquias. No solo una ciudad — todo el país.',
+    description: 'Cobertura en los 23 estados, 335 municipios.',
     umia: 'Solo principales ciudades',
   },
   {
     icon: 'finance',
     title: 'Finanzas Integradas',
-    description: 'BCV Rate en tiempo real, pagos por Bancaribe API y Binance Crypto. El ciclo financiero completo dentro de la plataforma.',
+    description: 'BCV Rate + Bancaribe APIs. Ciclo financiero completo.',
     umia: 'No menciona finanzas',
   },
   {
     icon: 'cycle',
-    title: 'Ciclo Completo del Paciente',
-    description: 'Desde sala de espera hasta cirugía, hospitalización y pago — 12 módulos interconectados en un solo flujo.',
+    title: 'Ciclo Completo',
+    description: 'Sala de espera, cirugía, hospitalización, pagos.',
     umia: 'Solo documentación',
   },
   {
     icon: 'clinical',
-    title: 'Estándares Clínicos Internacionales',
-    description: 'ICD-11 WHO y SNOMED CT integrados. Diagnósticos precisos y trazabilidad médica internacional.',
+    title: 'ICD-11 OMS',
+    description: 'Diagnósticos precisos con estándares internacionales.',
     umia: 'CIE-10 genérico',
   },
   {
     icon: 'institution',
     title: 'Infraestructura Institucional',
-    description: 'Apoyo de UCAB, Bancaribe y Banesco. Diseñado para hospitales y clínicas, no solo consultorios individuales.',
+    description: 'Diseño para hospitales y clínicas, no solo consultorios.',
     umia: 'Solo consultorios',
   },
   {
     icon: 'compliance',
     title: 'Compliance Venezolano',
-    description: 'Verificación MPPS, Colegiado ID y sellado digital. Cumplimiento con las regulaciones sanitarias venezolanas.',
+    description: 'Verificación MPPS, Colegiado ID, sellado digital.',
     umia: 'HIPAA (internacional)',
   },
 ];
@@ -45,12 +45,9 @@ const differentiators = [
   <div class="max-w-[1200px] mx-auto relative">
     <div class="text-center mb-16">
       <span class="text-xs font-bold text-emerald-400 uppercase tracking-[0.2em]">Diferenciadores</span>
-      <h2 class="text-4xl md:text-5xl font-bold text-white mt-4 tracking-tight">
+      <h2 class="text-5xl md:text-6xl font-bold text-white mt-4 tracking-tight">
         ¿Por qué MEDOPZ?
       </h2>
-      <p class="text-lg text-slate-300 mt-4 max-w-[700px] mx-auto leading-relaxed">
-        Somos la única plataforma que integra el ciclo clínico, financiero y geográfico de Venezuela
-      </p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -69,7 +66,7 @@ const differentiators = [
             </svg>
           </div>
 
-          <h3 class="text-lg font-semibold text-white mb-2">{diff.title}</h3>
+          <h3 class="text-xl font-semibold text-white mb-2">{diff.title}</h3>
           <p class="text-sm text-slate-400 leading-relaxed mb-4">{diff.description}</p>
 
           <div class="pt-4 border-t border-[#1a1e23]">
@@ -80,11 +77,6 @@ const differentiators = [
           </div>
         </div>
       ))}
-    </div>
-
-    <div class="mt-12 p-6 bg-[#0c0e12] border border-emerald-500/20 rounded-2xl text-center">
-      <p class="text-white font-medium mb-2">¿Listo para operar a nivel institucional?</p>
-      <p class="text-sm text-slate-400">A diferencia de otros, MEDOPZ está diseñado para hospitales y clínicas, no solo consultorios individuales.</p>
     </div>
   </div>
 </section>
