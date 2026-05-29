@@ -9205,6 +9205,107 @@ def admin_institutions_list(request):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+def admin_overview_api(request):
+    """
+    GET /api/admin/overview/
+    Admin dashboard overview with aggregated stats and recent activity.
+    """
+    user = request.user
+
+    if not (hasattr(user, "doctor_profile") and user.is_superuser):
+        return Response(
+            {"error": "Solo admin puede ver esta información"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    from django.db.models import Sum, Count
+    from django.utils import timezone
+    from datetime import timedelta
+    from core.models import (
+        DoctorOperator,
+        DoctorWallet,
+        Disbursement,
+        PlatformEarnings,
+        InstitutionSettings,
+    )
+
+    today = timezone.now().date()
+    month_start = today.replace(day=1)
+
+    today_disbursements = Disbursement.objects.filter(created_at__date=today)
+    pending_disbursements = Disbursement.objects.filter(status="pending")
+
+    month_earnings = PlatformEarnings.objects.filter(created_at__date__gte=month_start)
+
+    disbursements_today_count = today_disbursements.count()
+    disbursements_today_amount = today_disbursements.aggregate(Sum("amount"))[
+        "amount__sum"
+    ] or Decimal("0.00")
+    pending_count = pending_disbursements.count()
+    pending_amount = pending_disbursements.aggregate(Sum("amount"))[
+        "amount__sum"
+    ] or Decimal("0.00")
+
+    month_gross = month_earnings.aggregate(Sum("gross_amount"))[
+        "gross_amount__sum"
+    ] or Decimal("0.00")
+    month_commission = month_earnings.aggregate(Sum("commission_amount"))[
+        "commission_amount__sum"
+    ] or Decimal("0.00")
+
+    recent_disbursements = Disbursement.objects.select_related("doctor").order_by(
+        "-created_at"
+    )[:5]
+    recent_earnings = PlatformEarnings.objects.order_by("-created_at")[:5]
+
+    recent_activity = []
+
+    for d in recent_disbursements:
+        recent_activity.append(
+            {
+                "type": "disbursement",
+                "id": d.id,
+                "description": f"{d.doctor.full_name} - ${d.amount}",
+                "status": d.status,
+                "amount": str(d.amount),
+                "timestamp": d.created_at.isoformat(),
+            }
+        )
+
+    for e in recent_earnings:
+        recent_activity.append(
+            {
+                "type": "earnings",
+                "id": e.id,
+                "description": f"Earnings - ${e.gross_amount}",
+                "status": "registered",
+                "amount": str(e.gross_amount),
+                "timestamp": e.created_at.isoformat(),
+            }
+        )
+
+    recent_activity.sort(key=lambda x: x["timestamp"], reverse=True)
+    recent_activity = recent_activity[:10]
+
+    return Response(
+        {
+            "stats": {
+                "total_doctors": DoctorOperator.objects.count(),
+                "total_institutions": InstitutionSettings.objects.count(),
+                "month_gross": str(month_gross),
+                "month_commission": str(month_commission),
+                "today_disbursements_count": disbursements_today_count,
+                "today_disbursements_amount": str(disbursements_today_amount),
+                "pending_disbursements_count": pending_count,
+                "pending_disbursements_amount": str(pending_amount),
+            },
+            "recent_activity": recent_activity,
+        }
+    )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def admin_earnings_api(request):
     """
     Admin: Platform earnings overview.

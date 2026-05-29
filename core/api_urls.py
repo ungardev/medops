@@ -174,6 +174,7 @@ from .api_views import (
     admin_doctors_list,
     admin_disbursements_list,
     admin_institutions_list,
+    admin_overview_api,
     admin_earnings_api,
     # ViewSets
     PaymentGatewayViewSet,
@@ -802,6 +803,7 @@ urlpatterns = [
     path(
         "admin/institutions/", admin_institutions_list, name="admin-institutions-list"
     ),
+    path("admin/overview/", admin_overview_api, name="admin-overview"),
     path("admin/earnings/", admin_earnings_api, name="admin-earnings"),
 ]
 # --- Documentación OpenAPI ---

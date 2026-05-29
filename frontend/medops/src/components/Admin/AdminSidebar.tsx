@@ -28,18 +28,22 @@ export default function AdminSidebar() {
   return (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="flex items-center gap-2 px-4 h-14 border-b border-white/10">
+      <div className="flex items-center gap-3 px-4 h-14 border-b border-white/10">
         <Link to="/admin" className="flex items-center gap-2">
           <img
             src="/medopz_logo_blanco_solo.svg"
             alt="Logo"
             className="h-8 w-8 object-contain"
           />
-          <div>
-            <span className="text-sm font-semibold text-white">MEDOPZ</span>
-            <span className="text-[10px] text-emerald-400 block -mt-1">Admin</span>
-          </div>
+          <img
+            src="/medopz_fuente_blanco.svg"
+            alt="MEDOPZ"
+            className="h-3.5 w-auto object-contain"
+          />
         </Link>
+        <span className="ml-1 px-1.5 py-0.5 text-[9px] font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded uppercase tracking-wider">
+          Admin
+        </span>
       </div>
 
       {/* Navigation */}
