@@ -74,10 +74,18 @@ const patientPortal = {
       </div>
 
       <div class="lg:col-span-7 order-1 lg:order-2">
-        <div class="bg-[#0a0b0d]/80 border border-slate-800/80 rounded-xl shadow-2xl overflow-hidden hover:scale-[1.01] transition-transform duration-500 h-[400px] flex items-center justify-center">
-          <div class="text-center">
-            <span class="text-slate-400 text-base font-mono tracking-wide block mb-3">[ Workstation Médica ]</span>
-            <span class="text-slate-400 text-sm">Screenshot: {doctorPortal.placeholder}</span>
+        <div class="relative bg-[#0a0b0d]/80 border border-slate-800/80 rounded-xl shadow-2xl overflow-hidden hover:scale-[1.01] transition-transform duration-500 h-[400px] flex items-center justify-center group">
+          <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent"></div>
+          <div class="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent"></div>
+          <div class="text-center relative z-10">
+            <div class="w-16 h-16 rounded-2xl bg-[#0c0e12] border border-[#1a1e23] flex items-center justify-center mx-auto mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" class="text-emerald-400/50" aria-hidden="true" role="img">
+                <use href={`/icons.svg#icon-dashboard`} />
+              </svg>
+            </div>
+            <span class="text-slate-500 text-sm font-medium block mb-2">Workstation Médica</span>
+            <span class="text-slate-600 text-xs">Screenshot pronto disponible</span>
           </div>
         </div>
       </div>
@@ -85,10 +93,18 @@ const patientPortal = {
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
       <div class="lg:col-span-7 order-1">
-        <div class="bg-[#0a0b0d]/80 border border-slate-800/80 rounded-xl shadow-2xl overflow-hidden hover:scale-[1.01] transition-transform duration-500 h-[400px] flex items-center justify-center">
-          <div class="text-center">
-            <span class="text-slate-400 text-base font-mono tracking-wide block mb-3">[ Portal Paciente ]</span>
-            <span class="text-slate-400 text-sm">Screenshot: {patientPortal.placeholder}</span>
+        <div class="relative bg-[#0a0b0d]/80 border border-slate-800/80 rounded-xl shadow-2xl overflow-hidden hover:scale-[1.01] transition-transform duration-500 h-[400px] flex items-center justify-center group">
+          <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent"></div>
+          <div class="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent"></div>
+          <div class="text-center relative z-10">
+            <div class="w-16 h-16 rounded-2xl bg-[#0c0e12] border border-[#1a1e23] flex items-center justify-center mx-auto mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" class="text-emerald-400/50" aria-hidden="true" role="img">
+                <use href={`/icons.svg#icon-heart`} />
+              </svg>
+            </div>
+            <span class="text-slate-500 text-sm font-medium block mb-2">Portal Paciente</span>
+            <span class="text-slate-600 text-xs">Screenshot pronto disponible</span>
           </div>
         </div>
       </div>
