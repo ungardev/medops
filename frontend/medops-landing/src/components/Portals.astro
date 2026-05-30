@@ -3,7 +3,7 @@ const doctorPortal = {
   icon: 'usercheck',
   label: 'DOCTOR PORTAL',
   title: 'Workstation Médica',
-  description: 'Todo tu consultorio en una pantalla. Sala de espera, diagnósticos, pagos.',
+  description: 'Todo tu consultorio en una pantalla.',
   badges: ['Sala de Espera Live', 'Codificación CIE-11', 'Quirófanos', 'Wallet'],
   status: 'Disponible',
   href: 'https://app.medopz.com/',
@@ -14,7 +14,7 @@ const patientPortal = {
   icon: 'heart',
   label: 'PATIENT PORTAL',
   title: 'Tu Historia Clínica Digital',
-  description: 'Accede a tus recetas, citas y pagos desde tu celular.',
+  description: 'Accede a recetas, citas y pagos cuando quieras',
   badges: ['Acceso 24/7', 'Recetas Digitales', 'Mis Pagos'],
   status: 'Incluido',
   href: 'https://patient.medopz.com/',
@@ -51,7 +51,7 @@ const patientPortal = {
         <h3 class="text-3xl md:text-4xl font-bold text-white mb-4 leading-tight">
           {doctorPortal.title}
         </h3>
-        <p class="text-base text-slate-200 leading-relaxed mb-8">
+        <p class="text-lg md:text-xl text-slate-200 leading-relaxed mb-8">
           {doctorPortal.description}
         </p>
 
@@ -128,7 +128,7 @@ const patientPortal = {
         <h3 class="text-3xl md:text-4xl font-bold text-white mb-4 leading-tight">
           {patientPortal.title}
         </h3>
-        <p class="text-base text-slate-200 leading-relaxed mb-8">
+        <p class="text-lg md:text-xl text-slate-200 leading-relaxed mb-8">
           {patientPortal.description}
         </p>
 
