@@ -4,14 +4,12 @@ const plans = [
     name: 'Professional',
     price: '$25',
     period: '/ médico / mes',
-    description: 'Infraestructura de alta disponibilidad óptima para consultas independientes y médicos especialistas autónomos que requieren blindaje operativo.',
+    description: 'Ideal para médicos independientes',
     features: [
-      'Expediente Clínico Digital Unificado e Inmutable',
-      'Motor de Búsqueda Indexado CIE-11 y SNOMED CT',
-      'Módulo de Prescripción Digital Homologado INHRR',
-      'Órdenes de Cobro y Liquidación Multi-Moneda (1 Sede)',
-      'Sala de Espera Live con Sincronización Automatizada',
-      'Ecosistema Omnicanal con Acceso Nativo al Portal Paciente',
+      'Expediente Clínico Digital',
+      'Codificación CIE-11 / SNOMED',
+      'Prescripción Digital INHRR',
+      'Wallet con Bancaribe',
     ],
     cta: 'Desplegar Workstation',
     href: 'https://app.medopz.com/',
@@ -21,16 +19,14 @@ const plans = [
     name: 'Institutional',
     price: '$40',
     period: '/ médico / mes',
-    description: 'Diseñado para clínicas, policlínicas y centros de diagnóstico con flujos complejos y múltiples dependencias operativas interconectadas.',
+    description: 'Para clínicas y consultorios múltiples',
     features: [
-      'Todo lo incluido en el nivel Professional',
-      'Arquitectura de Datos Multi-Sede Federada',
-      'Control Logístico de Quirófanos y Asignación de Camas',
-      'Matriz de Seguridad con Permisos Granulares por Roles',
-      'Consola Centralizada de Telemetría y Conciliación Financiera',
-      'Soporte Prioritario de Infraestructura 24/7/365',
+      'Todo lo de Professional',
+      'Multi-Sede Federada',
+      'Quirófanos y Camas',
+      'Soporte 24/7',
     ],
-    cta: 'Contactar Ingeniería de Soluciones',
+    cta: 'Contactar Ventas',
     href: 'mailto:info@medopz.com?subject=Plan Institutional',
     featured: true,
   },
@@ -38,16 +34,14 @@ const plans = [
     name: 'Enterprise',
     price: 'Custom',
     period: '',
-    description: 'The MEDOPZ Transactional Engine. Infraestructura masiva, aislada y exclusiva para redes hospitalarias de alta escala y banca corporativa.',
+    description: 'Para hospitales y redes grandes',
     features: [
-      'Instancia Aislada y Base de Datos Dedicada en NeonDB/PostgreSQL',
-      'Rieles de Recaudación Core API (Bancaribe Core / Mercantil P2C / Banesco)',
-      'Procesamiento Asincrónico y Conciliación Automatizada Masiva',
-      'Gobernanza de Datos de Extremo a Extremo (Cumplimiento HIPAA / HL7)',
-      'Entorno de Pruebas (Sandbox) para Pruebas de Carga y Estrés',
-      'SLA Prioritario y Comité Técnico de Ingeniería Dedicado',
+      'Instancia Aislada Dedicada',
+      'Core API + Conciliación',
+      'Cumplimiento HIPAA / HL7',
+      'SLA y Comité Técnico',
     ],
-    cta: 'Solicitar Auditoría de Comité',
+    cta: 'Solicitar Auditoría',
     href: 'mailto:info@medopz.com?subject=The MEDOPZ Transactional Engine',
     featured: false,
   },
@@ -56,17 +50,14 @@ const plans = [
 
 <section id="plans" class="py-24 lg:py-32 px-6 bg-[#050608] border-t border-[#1a1e23] relative">
   <div class="max-w-[1200px] mx-auto">
-    <!-- Section Header -->
     <div class="text-center max-w-[800px] mx-auto mb-16">
       <span class="text-xs font-bold text-emerald-400 uppercase tracking-[0.2em]">Precios</span>
       <h2 class="text-4xl md:text-5xl font-bold text-white mt-4 tracking-tight">
-        Modelos de Licenciamiento
+        Planes Simples y Transparentes
       </h2>
-      <p class="text-lg text-slate-300 mt-4">Inversión inteligente adaptada a la escala de su institución</p>
-      <p class="text-sm text-slate-500 mt-2">Estructura de licenciamiento por suscripción calculada por nodo de especialista clínico activo.</p>
+      <p class="text-lg text-slate-300 mt-4">Sin sorpresas. Sin letra pequeña.</p>
     </div>
 
-    <!-- Pricing Grid -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
       {plans.map((plan) => (
         <div 
@@ -83,21 +74,17 @@ const plans = [
           )}
           
           <div>
-            <!-- Plan Name -->
             <span class="text-xs font-bold tracking-widest text-slate-400 uppercase">{plan.name}</span>
             
-            <!-- Price -->
             <div class="flex items-baseline gap-1 mt-4">
               <span class={`text-5xl font-bold ${plan.featured ? 'text-emerald-400' : 'text-white'}`}>{plan.price}</span>
-              {plan.period && <span class="text-slate-500 text-sm">{plan.period}</span>}
+              {plan.period && <span class="text-slate-400 text-sm">{plan.period}</span>}
             </div>
             
-            <!-- Description -->
-            <p class="text-sm text-slate-400 mt-4 leading-relaxed">{plan.description}</p>
+            <p class="text-sm text-slate-300 mt-4 font-medium">{plan.description}</p>
             
             <div class="h-px bg-[#1a1e23] my-6"></div>
             
-            <!-- Features -->
             <ul class="space-y-4">
               {plan.features.map((feature) => (
                 <li class="flex items-start gap-3 text-sm text-white">
@@ -108,7 +95,6 @@ const plans = [
             </ul>
           </div>
           
-          <!-- CTA -->
           <a 
             href={plan.href}
             class={`mt-8 block w-full text-center py-3 px-4 rounded-xl font-medium transition-all duration-300 text-sm ${

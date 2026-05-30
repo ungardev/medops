@@ -23,11 +23,9 @@ const links = {
 
 <footer class="border-t border-[#1a1e23] py-12 px-6 bg-[#050608]">
   <div class="max-w-[1200px] mx-auto">
-    <!-- Links Grid -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
-      <!-- Producto -->
       <div>
-        <h4 class="text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-4">Producto</h4>
+        <h2 class="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-4">Producto</h2>
         <ul class="space-y-3">
           {links.producto.map((link) => (
             <li><a href={link.href} class="text-sm text-slate-300 hover:text-white transition-colors">{link.label}</a></li>
@@ -35,9 +33,8 @@ const links = {
         </ul>
       </div>
       
-      <!-- Portales -->
       <div>
-        <h4 class="text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-4">Portales</h4>
+        <h2 class="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-4">Portales</h2>
         <ul class="space-y-3">
           {links.portales.map((link) => (
             <li><a href={link.href} class="text-sm text-slate-300 hover:text-emerald-400 transition-colors">{link.label}</a></li>
@@ -45,9 +42,8 @@ const links = {
         </ul>
       </div>
       
-      <!-- Empresa -->
       <div>
-        <h4 class="text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-4">Empresa</h4>
+        <h2 class="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-4">Empresa</h2>
         <ul class="space-y-3">
           {links.empresa.map((link) => (
             <li><a href={link.href} class="text-sm text-slate-300 hover:text-white transition-colors">{link.label}</a></li>
@@ -55,9 +51,8 @@ const links = {
         </ul>
       </div>
       
-      <!-- Legal -->
       <div>
-        <h4 class="text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-4">Legal</h4>
+        <h2 class="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-4">Legal</h2>
         <ul class="space-y-3">
           {links.legal.map((link) => (
             <li><a href={link.href} class="text-sm text-slate-300 hover:text-white transition-colors">{link.label}</a></li>
@@ -66,20 +61,17 @@ const links = {
       </div>
     </div>
     
-    <!-- Bottom -->
     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 border-t border-[#1a1e23]">
-      <!-- Brand -->
       <a href="/" class="flex items-center gap-3">
-        <img src="/medopz_logo_blanco_solo.svg" alt="MEDOPZ" class="h-8 w-8" />
-        <img src="/medopz_fuente_blanco.svg" alt="MEDOPZ" class="h-[14px] w-auto opacity-60" />
+        <img src="/medopz_logo_blanco_solo.svg" alt="MEDOPZ" width="542" height="300" class="h-10 w-10" />
+        <img src="/medopz_fuente_blanco.svg" alt="MEDOPZ" width="668" height="78" class="h-[18px] w-auto opacity-60" />
       </a>
       
-      <!-- Copyright -->
       <div class="flex items-center gap-4">
-        <p class="text-sm text-slate-500">
+        <p class="text-sm text-slate-400">
           © {new Date().getFullYear()} MEDOPZ.
         </p>
-        <p class="text-sm text-slate-500 hidden sm:block">
+        <p class="text-sm text-slate-400 hidden sm:block">
           Hecho en Venezuela
         </p>
       </div>

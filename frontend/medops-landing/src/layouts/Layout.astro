@@ -3,7 +3,7 @@ interface Props {
   title: string;
   description?: string;
 }
-const { title, description = "El Command Center Clínico y Transaccional de la Próxima Generación. MEDOPZ platforma HealthTech de Venezuela." } = Astro.props;
+const { title, description = "Plataforma Healthtech Elite de Venezuela. Web App de Salud para doctores y pacientes." } = Astro.props;
 ---
 <!doctype html>
 <html lang="es" class="dark">
@@ -15,10 +15,8 @@ const { title, description = "El Command Center Clínico y Transaccional de la P
     
     <title>{title} | MEDOPZ</title>
     
-    <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/medopz_logo_blanco_solo.svg" />
     
-    <!-- Open Graph / Social -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://medopz.com/" />
     <meta property="og:title" content={title} />
@@ -27,17 +25,19 @@ const { title, description = "El Command Center Clínico y Transaccional de la P
     <meta property="og:site_name" content="MEDOPZ" />
     <meta property="og:locale" content="es_VE" />
     
-    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@medopz" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content="/og-image.png" />
     
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@200;300;400;500;600&display=swap" rel="stylesheet" />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@200;300;400;500;600&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@200;300;400;500;600&display=swap" media="print" onload="this.media='all'" />
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@200;300;400;500;600&display=swap" />
+    </noscript>
     
     <style is:global>
       * {

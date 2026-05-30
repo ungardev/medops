@@ -4,16 +4,16 @@ const integrations = [
     icon: 'bcv',
     label: 'BCV',
     title: 'Tasa Oficial',
-    description: 'Sincronización automática con el Banco Central de Venezuela.',
-    value: 'Tiempo Real',
+    description: 'Tasa del BCV en tiempo real',
+    value: 'Milisegundos',
     subvalue: 'Protección patrimonial',
     badges: ['Milisegundos', 'Mitigación de riesgo'],
   },
   {
     icon: 'bancaribe',
     label: 'BANCARIBE',
-    title: 'Pagos y Transferencias',
-    description: 'APIs de bancaria para cobros y dispersión de honorarios.',
+    title: 'Pagos Instantáneos',
+    description: 'Cobros y transferencias automáticas',
     value: 'C2P / P2P',
     subvalue: 'Webhooks de conciliación',
     badges: ['Dispersión automática', 'Conciliación real'],
@@ -22,7 +22,7 @@ const integrations = [
     icon: 'wallet',
     label: 'WALLET',
     title: 'Wallet Doctor',
-    description: 'Acumulación de ganancias y retiros instantáneos o batch.',
+    description: 'Acumulación y retiros instantáneos',
     value: 'Instant / Batch',
     subvalue: 'Mínimo $20 USD',
     badges: ['3% comisión', 'Auto-retiro'],
@@ -37,9 +37,9 @@ const integrations = [
     <div class="text-center mb-16">
       <span class="text-xs font-bold text-emerald-400 uppercase tracking-[0.2em]">Financiero</span>
       <h2 class="text-5xl md:text-6xl font-bold text-white mt-4 tracking-tight">
-        Bancaribe APIs
+        Pagos con Bancaribe
       </h2>
-      <p class="text-xl text-slate-300 mt-4 max-w-[600px] mx-auto">
+      <p class="text-xl text-slate-300 mt-4 max-w-[500px] mx-auto">
         Infraestructura financiera integrada
       </p>
     </div>
@@ -63,7 +63,7 @@ const integrations = [
 
           <div class="p-4 bg-[#050608] border border-[#1a1e23] rounded-xl">
             <div class="text-2xl font-bold text-white mb-1">{integration.value}</div>
-            <div class="text-xs text-slate-500">{integration.subvalue}</div>
+            <div class="text-xs text-slate-400">{integration.subvalue}</div>
             {integration.badges && (
               <div class="flex flex-wrap gap-2 mt-3">
                 {integration.badges.map((badge) => (
