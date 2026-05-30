@@ -4,28 +4,30 @@
 
 <section class="relative min-h-screen bg-[#050608] flex flex-col items-center justify-center overflow-hidden pt-32 pb-20 px-6">
   <div class="absolute inset-0 bg-[linear-gradient(to_right,#1a1e23_1px,transparent_1px),linear-gradient(to_bottom,#1a1e23_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-[0.04]"></div>
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-emerald-500/[0.02] rounded-full blur-3xl pointer-events-none"></div>
 
   <div class="relative z-10 max-w-[1100px] mx-auto text-center">
     <div class="mb-12">
       <img src="/medopz_fuente_blanco.svg" alt="MEDOPZ" width="668" height="78" class="w-full max-w-[500px] mx-auto animate-float" />
     </div>
 
-    <h1 class="text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight mx-auto leading-[1] bg-gradient-to-b from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
+    <h1 class="text-6xl md:text-7xl lg:text-8xl font-serif italic font-bold tracking-tight mx-auto leading-[1] text-white">
       Healthtech
     </h1>
 
     <p class="text-xl md:text-2xl text-slate-300 mt-8 max-w-[600px] mx-auto leading-relaxed">
-      Web App de Salud Elite disponible en todos los dispositivos: desktop, mobile y tablet
+      Plataforma de Salud Elite disponible en todos los dispositivos: desktop, mobile y tablet
     </p>
 
     <div class="mt-16 flex flex-col sm:flex-row items-center justify-center gap-6">
       <a
         href="https://app.medopz.com/"
         target="_blank"
-        class="group w-full sm:w-auto inline-flex items-center justify-center gap-3 px-10 py-5 bg-emerald-500 hover:bg-emerald-400 border border-emerald-400 text-neutral-950 font-semibold rounded-xl transition-all duration-300 text-lg shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)]"
+        class="group relative w-full sm:w-auto inline-flex items-center justify-center gap-3 px-10 py-5 bg-gradient-to-r from-emerald-500/20 to-emerald-600/10 hover:from-emerald-500/30 hover:to-emerald-600/20 border-2 border-emerald-500/30 hover:border-emerald-500/50 rounded-xl transition-all duration-300 text-lg font-semibold text-white"
       >
-        Portal Doctor
-        <span class="ml-1">→</span>
+        <span class="absolute inset-0 rounded-xl bg-gradient-to-r from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+        <span class="relative">Portal Doctor</span>
+        <span class="relative ml-1">→</span>
       </a>
 
       <a
