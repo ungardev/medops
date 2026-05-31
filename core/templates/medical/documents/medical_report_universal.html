@@ -107,7 +107,7 @@
   <!-- SECCIÓN DEL MÉDICO -->
   <div class="section">
     <strong>Médico Tratante:</strong> {{ doctor.full_name }}<br>
-    {% if doctor.colegiado_id %}Nº Colegiado: {{ doctor.colegiado_id }}<br>{% endif %}
+    {% if doctor.agregado_id %}Nº Colegiado: {{ doctor.agregado_id }}<br>{% endif %}
     {% if doctor_specialties %}Especialidades: {{ doctor_specialties|join:", " }}{% endif %}
     {% if doctor.signature %}
     <div style="margin-top:6px;">
@@ -404,7 +404,7 @@
       <tr>
         <td width="50%">
           <strong>{{ doctor.full_name }}</strong><br>
-          Nº Colegiado: {{ doctor.colegiado_id|default:"N/A" }}<br>
+          Nº Colegiado: {{ doctor.agregado_id|default:"N/A" }}<br>
           {% if doctor_specialties %}
           Especialidades: {{ doctor_specialties|join:", " }}<br>
           {% endif %}

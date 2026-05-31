@@ -198,7 +198,7 @@ def get_doctor_context() -> dict:
     )
     return {
         "full_name": doctor.full_name if doctor else "",
-        "colegiado_id": doctor.colegiado_id if doctor else "",
+        "colegiado_id": doctor.agregado_id if doctor else "",
         "specialties": specialties if specialties else ["No especificadas"],
         "signature": doctor.signature if (doctor and doctor.signature) else None,
     }
@@ -573,7 +573,7 @@ def export_institutional_report(
         if doc_op:
             elements.append(
                 Paragraph(
-                    f"Médico operador: {doc_op.full_name or ''} • Colegiado: {doc_op.colegiado_id or ''} • {specialty_str}",
+                    f"Médico operador: {doc_op.full_name or ''} • Colegiado: {doc_op.agregado_id or ''} • {specialty_str}",
                     styles["Normal"],
                 )
             )
@@ -839,7 +839,7 @@ def generate_pdf_document(category: str, queryset, appointment):
         "institution": institution,
         "doctor": {
             "full_name": doctor.full_name if doctor else "",
-            "colegiado_id": doctor.colegiado_id if doctor else "",
+            "colegiado_id": doctor.agregado_id if doctor else "",
             "specialties": specialties if specialties else ["No especificadas"],
             "signature": doctor.signature if (doctor and doctor.signature) else None,
         },
@@ -1535,7 +1535,7 @@ def generate_generic_pdf(
             referring_doctor_data = {
                 "id": doctor.id,
                 "full_name": doctor.full_name or "",
-                "colegiado_id": getattr(doctor, "colegiado_id", None) or "",
+                "colegiado_id": getattr(doctor, "agregado_id", None) or "",
                 "specialties": doctor_specialties,
                 "signature": getattr(doctor, "signature", None),
             }
@@ -1607,7 +1607,7 @@ def generate_generic_pdf(
             prescribing_doctor_data = {
                 "id": doctor.id,
                 "full_name": doctor.full_name or "",
-                "colegiado_id": getattr(doctor, "colegiado_id", None) or "",
+                "colegiado_id": getattr(doctor, "agregado_id", None) or "",
                 "specialties": doctor_specialties,
                 "signature": getattr(doctor, "signature", None),
                 "is_verified": getattr(doctor, "is_verified", False),
@@ -1673,7 +1673,7 @@ def generate_generic_pdf(
             treating_doctor_data = {
                 "id": doctor.id,
                 "full_name": doctor.full_name or "",
-                "colegiado_id": getattr(doctor, "colegiado_id", None) or "",
+                "colegiado_id": getattr(doctor, "agregado_id", None) or "",
                 "specialties": doctor_specialties,
                 "signature": getattr(doctor, "signature", None),
             }
@@ -1717,7 +1717,7 @@ def generate_generic_pdf(
             ordering_doctor_data = {
                 "id": doctor.id,
                 "full_name": doctor.full_name or "",
-                "colegiado_id": getattr(doctor, "colegiado_id", None) or "",
+                "colegiado_id": getattr(doctor, "agregado_id", None) or "",
                 "specialties": doctor_specialties,
             }
 
@@ -1992,7 +1992,7 @@ def generate_prescription_bundle(
 
     doctor_data = {
         "full_name": doctor.full_name if doctor else "",
-        "colegiado_id": getattr(doctor, "colegiado_id", "") or "",
+        "colegiado_id": getattr(doctor, "agregado_id", "") or "",
         "specialties": doctor_specialties,
         "signature": getattr(doctor, "signature", None),
     }
@@ -2139,7 +2139,7 @@ def generate_treatment_bundle(
 
     doctor_data = {
         "full_name": doctor.full_name if doctor else "",
-        "colegiado_id": getattr(doctor, "colegiado_id", "") or "",
+        "colegiado_id": getattr(doctor, "agregado_id", "") or "",
         "specialties": doctor_specialties,
         "signature": getattr(doctor, "signature", None),
     }
@@ -2676,14 +2676,14 @@ def update_doctor_config(
         if user and hasattr(user, "doctor_profile"):
             doctor_obj = user.doctor_profile
         else:
-            colegiado_id = data.get("colegiado_id")
-            if colegiado_id:
+            num_colegiado = data.get("agregado_id")
+            if num_colegiado:
                 doctor_obj = DoctorOperator.objects.filter(
-                    colegiado_id=colegiado_id
+                    agregado_id=num_colegiado
                 ).first()
                 if not doctor_obj:
                     doctor_obj = DoctorOperator.objects.create(
-                        colegiado_id=colegiado_id,
+                        agregado_id=num_colegiado,
                         full_name="Operador Por Defecto",
                         gender="M",
                     )
@@ -2691,11 +2691,11 @@ def update_doctor_config(
                 doctor_obj = DoctorOperator.objects.first()
                 if not doctor_obj:
                     doctor_obj = DoctorOperator.objects.create(
-                        full_name="Operador Por Defecto", gender="M", colegiado_id="N/A"
+                        full_name="Operador Por Defecto", gender="M", agregado_id="N/A"
                     )
     except DoctorOperator.DoesNotExist:
         doctor_obj = DoctorOperator.objects.create(
-            full_name="Operador Por Defecto", gender="M", colegiado_id="N/A"
+            full_name="Operador Por Defecto", gender="M", agregado_id="N/A"
         )
 
     # ✅ CORREGIDO: Manejar specialty_ids que vienen como strings del FormData
@@ -2817,7 +2817,7 @@ def create_institution_for_doctor(
             doctor.save()
 
         logger.info(
-            f"Institution created for doctor {doctor.colegiado_id}: {institution.name}"
+            f"Institution created for doctor {doctor.agregado_id}: {institution.name}"
         )
         return institution
 
@@ -2850,7 +2850,7 @@ def add_institution_to_doctor(
 
         if institution in doctor.institutions.all():
             raise ValidationError(
-                f"El doctor {doctor.colegiado_id} ya tiene la institución {institution.name}"
+                f"El doctor {doctor.agregado_id} ya tiene la institución {institution.name}"
             )
 
         doctor.institutions.add(institution)
@@ -2860,7 +2860,7 @@ def add_institution_to_doctor(
             doctor.save()
 
         logger.info(
-            f"Institution {institution.name} added to doctor {doctor.colegiado_id}"
+            f"Institution {institution.name} added to doctor {doctor.agregado_id}"
         )
         return institution
 
@@ -2898,7 +2898,7 @@ def delete_institution_from_doctor(
 
         if institution not in doctor.institutions.all():
             raise ValidationError(
-                f"El doctor {doctor.colegiado_id} no tiene la institución {institution.name}"
+                f"El doctor {doctor.agregado_id} no tiene la institución {institution.name}"
             )
 
         if doctor.institutions.count() == 1:
@@ -2916,7 +2916,7 @@ def delete_institution_from_doctor(
                 doctor.save()
 
         logger.info(
-            f"Institution {institution.name} deleted from doctor {doctor.colegiado_id}"
+            f"Institution {institution.name} deleted from doctor {doctor.agregado_id}"
         )
         return {"success": True, "message": "Institución eliminada correctamente"}
 
@@ -2953,14 +2953,14 @@ def set_active_institution(
 
         if institution not in doctor.institutions.all():
             raise ValidationError(
-                f"El doctor {doctor.colegiado_id} no tiene la institución {institution.name}"
+                f"El doctor {doctor.agregado_id} no tiene la institución {institution.name}"
             )
 
         doctor.active_institution = institution
         doctor.save()
 
         logger.info(
-            f"Active institution set to {institution.name} for doctor {doctor.colegiado_id}"
+            f"Active institution set to {institution.name} for doctor {doctor.agregado_id}"
         )
         return institution
 

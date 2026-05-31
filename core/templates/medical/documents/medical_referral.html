@@ -101,7 +101,7 @@
         <td><span class="label">Médico Referente:</span></td>
         <td>{{ referring_doctor.full_name }}</td>
         <td><span class="label">Colegiado:</span></td>
-        <td>{{ referring_doctor.colegiado_id|default:"N/A" }}</td>
+        <td>{{ referring_doctor.agregado_id|default:"N/A" }}</td>
       </tr>
       <tr>
         <td><span class="label">Especialidades Referente:</span></td>
@@ -201,7 +201,7 @@
       <tr>
         <td width="50%">
           <strong>{{ referring_doctor.full_name }}</strong><br>
-          Nº Colegiado: {{ referring_doctor.colegiado_id|default:"N/A" }}<br>
+          Nº Colegiado: {{ referring_doctor.agregado_id|default:"N/A" }}<br>
           {% if referring_doctor.specialties %}
           Especialidades: {{ referring_doctor.specialties|join:", " }}<br>
           {% endif %}

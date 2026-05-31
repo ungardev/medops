@@ -48,7 +48,7 @@
 
   <div class="section">
     <strong>Médico:</strong> {{ doctor.full_name }}
-    {% if doctor.colegiado_id %} — Nº Colegiado: {{ doctor.colegiado_id }}{% endif %}
+    {% if doctor.agregado_id %} — Nº Colegiado: {{ doctor.agregado_id }}{% endif %}
     <div class="meta-small">
       {% if doctor.specialties %}<strong>Especialidades:</strong> {{ doctor.specialties|join:", " }}{% endif %}
     </div>

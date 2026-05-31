@@ -2107,7 +2107,7 @@ class DoctorOperator(models.Model):
 
     def __str__(self):
         status = "[VERIFIED]" if self.is_verified else "[PENDING]"
-        return f"{status} {self.formal_title} — {self.colegiado_id}"
+        return f"{status} {self.formal_title} — {self.agregado_id}"
 
     def clean(self):
         """Validaciones de integridad antes de persistir en DB"""
