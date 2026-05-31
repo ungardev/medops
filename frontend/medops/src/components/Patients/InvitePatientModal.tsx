@@ -112,10 +112,7 @@ export default function InvitePatientModal({
                 {copied ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} />}
               </button>
             </div>
-            <p className="text-[10px] text-white/30">
-              El paciente deberá pagar $5 USD para activar su cuenta.
-            </p>
-          </div>
+            </div>
         )}
       </div>
     </div>
