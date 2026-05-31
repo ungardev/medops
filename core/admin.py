@@ -746,7 +746,6 @@ class DoctorOperatorAdmin(admin.ModelAdmin):
             "AUDITORÍA DE SISTEMA",
             {
                 "fields": (
-                    "created_at",
                     "updated_at",
                     "updated_by",
                 ),
@@ -754,6 +753,8 @@ class DoctorOperatorAdmin(admin.ModelAdmin):
             },
         ),
     )
+
+    readonly_fields = ("created_at", "updated_at", "updated_by")
 
     @admin.display(description="Especialidades")
     def get_specialties_display(self, obj):
