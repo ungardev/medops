@@ -73,20 +73,20 @@ const plans = [
           )}
           
           <div>
-            <span class="text-xs font-bold tracking-widest text-slate-400 uppercase">{plan.name}</span>
+            <span class="text-sm font-bold tracking-widest text-slate-400 uppercase">{plan.name}</span>
             
             <div class="flex items-baseline gap-1 mt-4">
               <span class={`text-5xl font-bold ${plan.featured ? 'text-emerald-400' : 'text-white'}`}>{plan.price}</span>
               {plan.period && <span class="text-slate-400 text-sm">{plan.period}</span>}
             </div>
             
-            <p class="text-sm text-slate-300 mt-4 font-medium">{plan.description}</p>
+            <p class="text-base text-slate-300 mt-4 font-medium">{plan.description}</p>
             
             <div class="h-px bg-[#1a1e23] my-6"></div>
             
             <ul class="space-y-4 text-center md:text-left">
               {plan.features.map((feature) => (
-                <li class="flex items-center md:items-start justify-center md:justify-start gap-3 text-sm text-white">
+                <li class="flex items-center md:items-start justify-center md:justify-start gap-3 text-base text-white">
                   <span class="text-emerald-400 font-bold mt-0.5">✓</span>
                   <span>{feature}</span>
                 </li>
