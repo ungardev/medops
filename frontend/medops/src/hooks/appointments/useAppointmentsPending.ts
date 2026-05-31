@@ -16,11 +16,11 @@ export interface AppointmentPending {
 }
 // ✅ CORREGIDO: Enviar token + X-Institution-ID
 async function fetchAppointmentsPending(): Promise<AppointmentPending[]> {
-  const token = localStorage.getItem('authToken') || '';
+  const token = localStorage.getItem('doctor_access_token') || '';
   const institutionId = localStorage.getItem('active_institution_id') || '';
   
   const headers: Record<string, string> = {
-    'Authorization': `Token ${token}`,
+    'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json',
   };
   

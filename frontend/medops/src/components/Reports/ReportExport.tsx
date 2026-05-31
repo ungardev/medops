@@ -16,7 +16,7 @@ export default function ReportExport({ filters, data }: Props) {
   const handleExport = async (format: ExportFormat) => {
     setIsExporting(format);
     try {
-      const token = localStorage.getItem("authToken");
+      const token = localStorage.getItem("doctor_access_token");
       const serializedData = data.map((row) => ({
         id: row.id,
         date: row.date,
@@ -32,7 +32,7 @@ export default function ReportExport({ filters, data }: Props) {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            ...(token ? { Authorization: `Token ${token}` } : {}),
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({
             format,

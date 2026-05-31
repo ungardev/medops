@@ -24,12 +24,12 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
   const handleExport = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      const token = localStorage.getItem("authToken");
+      const token = localStorage.getItem("doctor_access_token");
       const response = await fetch(
         `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/charge-orders/${order.id}/export/`,
         {
           method: "GET",
-          headers: { ...(token ? { Authorization: `Token ${token}` } : {}) },
+          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           credentials: "include",
         }
       );

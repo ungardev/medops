@@ -86,8 +86,8 @@ export class ProfessionalPDFService {
           'Content-Type': 'application/json',
           'X-Requested-With': 'XMLHttpRequest',
           // 🔥 Agregar headers de autenticación si es necesario
-          ...(localStorage.getItem('token') && {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          ...(localStorage.getItem('doctor_access_token') && {
+            'Authorization': `Bearer ${localStorage.getItem('doctor_access_token')}`
           })
         },
         body: JSON.stringify(request)
@@ -231,8 +231,8 @@ export class ProfessionalPDFService {
       const response = await fetch(`${API_BASE_URL}/config/institution/`, {
         headers: {
           'Content-Type': 'application/json',
-          ...(localStorage.getItem('token') && {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          ...(localStorage.getItem('doctor_access_token') && {
+            'Authorization': `Bearer ${localStorage.getItem('doctor_access_token')}`
           })
         }
       });

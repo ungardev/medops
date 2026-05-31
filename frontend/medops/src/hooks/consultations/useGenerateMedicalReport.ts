@@ -4,11 +4,11 @@ export function useGenerateMedicalReport(): UseMutationResult<void, Error, numbe
   const queryClient = useQueryClient();
   return useMutation<void, Error, number>({
     mutationFn: async (appointmentId: number): Promise<void> => {
-      const token = localStorage.getItem("authToken") || import.meta.env.VITE_DEV_TOKEN || "";
+      const token = localStorage.getItem("doctor_access_token") || "";
       const activeInstitutionId = localStorage.getItem("active_institution_id");
       
       const headers: Record<string, string> = {
-        ...(token ? { Authorization: `Token ${token}` } : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(activeInstitutionId ? { "X-Institution-ID": activeInstitutionId } : {}),
       };
       

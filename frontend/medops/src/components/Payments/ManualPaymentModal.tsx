@@ -96,7 +96,7 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/payments/ocr/`, {
         method: 'POST',
         headers: {
-          'Authorization': `Token ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${localStorage.getItem('doctor_access_token')}`
         },
         body: formDataToSend
       });
@@ -202,7 +202,7 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/payments/`, {
           method: 'POST',
           headers: {
-            'Authorization': `Token ${localStorage.getItem('authToken')}`
+            'Authorization': `Bearer ${localStorage.getItem('doctor_access_token')}`
           },
           body: formDataToSend
         });

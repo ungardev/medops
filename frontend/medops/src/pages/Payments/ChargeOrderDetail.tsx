@@ -71,10 +71,10 @@ export default function ChargeOrderDetail() {
   const handleExport = async () => {
     if (!order?.id) return;
     try {
-      const token = localStorage.getItem("authToken");
+      const token = localStorage.getItem("doctor_access_token");
       const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
       const response = await fetch(`${API_BASE}/charge-orders/${order.id}/export/`, {
-        headers: { ...(token ? { Authorization: `Token ${token}` } : {}) },
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       });
       if (!response.ok) throw new Error();
       const blob = await response.blob();

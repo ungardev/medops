@@ -51,7 +51,7 @@ export default function ManageServicesPage() {
       const month = String(confirmAndScheduleDate.getMonth() + 1).padStart(2, '0');
       const day = String(confirmAndScheduleDate.getDate()).padStart(2, '0');
       const dateStr = `${year}-${month}-${day}`;
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('doctor_access_token');
       
       const doctorId = (selectedPayment as any).charge_order?.doctor?.id;
       const institutionId = (selectedPayment as any).charge_order?.institution?.id;
@@ -65,7 +65,7 @@ export default function ManageServicesPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Token ${token}`,
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           patient: selectedPayment.patient.id,
