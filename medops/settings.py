@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     "simple_history",
     "rangefilter",
     "rest_framework_simplejwt",
+    "django.contrib.postgres",
     # App Principal
     "core.apps.CoreConfig",
 ]
