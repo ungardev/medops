@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { X, Copy, Check, UserPlus, Send } from 'lucide-react';
 import { apiFetch } from '../../api/client';
+import { getPatientPortalUrl } from '../../lib/subdomain';
 interface InvitePatientModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -46,7 +47,7 @@ export default function InvitePatientModal({
     }
   };
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(window.location.origin + inviteLink);
+    navigator.clipboard.writeText(getPatientPortalUrl(inviteLink!));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -101,7 +102,7 @@ export default function InvitePatientModal({
             <div className="flex gap-2">
               <input
                 type="text"
-                value={window.location.origin + inviteLink}
+                value={getPatientPortalUrl(inviteLink!)}
                 readOnly
                 className="flex-1 px-3 py-2.5 bg-white/5 border border-white/15 rounded-lg text-[11px] text-white/60 focus:outline-none"
               />

@@ -31,3 +31,11 @@ export function getPortalConfig(portal: PortalType = getCurrentPortal()) {
 export function isPatientSubdomain(): boolean {
   return getCurrentPortal() === 'patient';
 }
+
+export function getPatientPortalUrl(path: string = ''): string {
+  return `https://${SUBDOMAIN_CONFIG.patient.hostname}${path}`;
+}
+
+export function getAppPortalUrl(path: string = ''): string {
+  return `https://${SUBDOMAIN_CONFIG.app.hostname}${path}`;
+}
