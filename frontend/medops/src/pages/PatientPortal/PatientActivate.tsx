@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { CheckCircle, Lock, Loader2 } from 'lucide-react';
+import { apiFetch } from '../../api/client';
 export default function PatientActivate() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
@@ -33,9 +34,8 @@ export default function PatientActivate() {
     setIsLoading(true);
     
     try {
-      const res = await fetch('/api/patient-activate/', {
+      const res = await apiFetch('patient-activate/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, password })
       });
       
