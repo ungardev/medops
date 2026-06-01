@@ -28,6 +28,15 @@ import json
 import hashlib
 import hmac
 import uuid
+import re
+import unicodedata
+
+
+def remove_accents(text: str) -> str:
+    nfkd = unicodedata.normalize("NFKD", text)
+    return "".join(c for c in nfkd if not unicodedata.combining(c))
+
+
 from typing import Dict, Optional, cast, Any
 from rest_framework import filters
 from django_filters.rest_framework import DjangoFilterBackend
@@ -2945,19 +2954,17 @@ def patient_search_api(request):
         return Response([])
 
     try:
-        # Dividir query en palabras individuales para búsqueda más flexible
-        # Ejemplo: "ungar e" busca pacientes que contengan "ungar" Y "e"
         words = q.split()
 
-        # Construir filtros para cada palabra - todas deben coincidir
-        # ✅ AGREGADO: middle_name y second_last_name
         query = Q(active=True)
         for word in words:
+            normalized_word = remove_accents(word)
+            pattern = rf"(?i){re.escape(normalized_word)}"
             query &= (
-                Q(first_name__icontains=word)
-                | Q(middle_name__icontains=word)
-                | Q(last_name__icontains=word)
-                | Q(second_last_name__icontains=word)
+                Q(first_name__regex=pattern)
+                | Q(middle_name__regex=pattern)
+                | Q(last_name__regex=pattern)
+                | Q(second_last_name__regex=pattern)
                 | Q(national_id__icontains=word)
             )
 
