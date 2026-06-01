@@ -5595,6 +5595,87 @@ def send_welcome_email(email: str, patient_name: str):
     )
 
 
+def send_welcome_email_via_resend_api(email: str, patient_name: str):
+    """Envía email de bienvenida al paciente via Resend REST API (HTTPS).
+
+    Más confiable que SMTP en Railway - usa puerto 443 en vez de 587.
+    """
+    import os
+
+    RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
+
+    if not RESEND_API_KEY:
+        logger.warning(
+            f"[send_welcome_email_via_resend_api] RESEND_API_KEY not configured, skipping welcome email for {email}"
+        )
+        return
+
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+            .header {{ background: #059669; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }}
+            .content {{ background: #f8fafc; padding: 30px; border: 1px solid #e2e8f0; }}
+            .footer {{ text-align: center; padding: 20px; color: #64748b; font-size: 12px; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>🏥 MEDOPZ</h1>
+                <p>Portal del Paciente</p>
+            </div>
+            <div class="content">
+                <h2 style="color: #059669;">¡Bienvenido, {patient_name}!</h2>
+                <p>Tu cuenta en el <strong>Portal del Paciente MEDOPZ</strong> ha sido activada exitosamente.</p>
+                <p>Ya puedes acceder a todos los servicios de salud digital.</p>
+                <p>¿Necesitas ayuda? Contáctanos en <a href="mailto:info.medopz@gmail.com">info.medopz@gmail.com</a></p>
+            </div>
+            <div class="footer">
+                <p>© MEDOPZ — Sistema de Salud Inteligente</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """.strip()
+
+    try:
+        response = requests.post(
+            "https://api.resend.com/emails",
+            headers={
+                "Authorization": f"Bearer {RESEND_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "from": "MEDOPZ <admin@medopz.com>",
+                "to": [email],
+                "subject": "✅ Tu cuenta MEDOPZ ha sido activada",
+                "html": html_content,
+            },
+            timeout=10,
+        )
+
+        if response.status_code not in (200, 201):
+            logger.error(
+                f"[send_welcome_email_via_resend_api] Resend API error: {response.status_code} - {response.text}"
+            )
+            raise Exception(f"Resend API error: {response.status_code}")
+
+        logger.info(
+            f"[send_welcome_email_via_resend_api] Welcome email sent to {email}"
+        )
+
+    except Exception as e:
+        logger.error(
+            f"[send_welcome_email_via_resend_api] Failed to send welcome email to {email}: {e}"
+        )
+        raise
+
+
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def activate_patient_portal(request):
@@ -5680,9 +5761,14 @@ def activate_patient_portal(request):
     invitation.save()
 
     # ============================================================
-    # OPCIÓN C: Enviar email de bienvenida
+    # Enviar email de bienvenida via Resend REST API
     # ============================================================
-    send_welcome_email(email, patient.full_name)
+    try:
+        send_welcome_email_via_resend_api(email, patient.full_name)
+    except Exception as e:
+        logger.warning(
+            f"[activate_patient_portal] Welcome email failed (non-blocking): {e}"
+        )
 
     # Generar token DRF
     from rest_framework.authtoken.models import Token
