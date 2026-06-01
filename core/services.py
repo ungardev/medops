@@ -2497,13 +2497,6 @@ def get_institution_settings(request=None, active_only=False):
                 if active_only:
                     return cast(Dict[str, Any], {})
                 return cast(Dict[str, Any], [])
-            if active_only:
-                return cast(
-                    Dict[str, Any], InstitutionSettingsSerializer(institution).data
-                )
-            return [
-                cast(Dict[str, Any], InstitutionSettingsSerializer(institution).data)
-            ]
 
         # Obtener todas las instituciones del doctor
         institutions = doctor.institutions.all()
@@ -2528,13 +2521,20 @@ def get_institution_settings(request=None, active_only=False):
                 institution = institutions.first()
 
             return (
-                cast(Dict[str, Any], InstitutionSettingsSerializer(institution).data)
+                cast(
+                    Dict[str, Any],
+                    InstitutionSettingsSerializer(
+                        institution, context={"request": request}
+                    ).data,
+                )
                 if institution
                 else {}
             )
 
         # Devolver todas las instituciones del doctor
-        serializer = InstitutionSettingsSerializer(institutions, many=True)
+        serializer = InstitutionSettingsSerializer(
+            institutions, many=True, context={"request": request}
+        )
         return cast(Dict[str, Any], serializer.data)
 
     except Exception as e:
@@ -2638,7 +2638,7 @@ def get_doctor_config(
 
     if doctor.active_institution:
         data["active_institution"] = InstitutionSettingsSerializer(
-            doctor.active_institution
+            doctor.active_institution, context={"request": request}
         ).data
     else:
         data["active_institution"] = None

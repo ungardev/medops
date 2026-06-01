@@ -2747,7 +2747,11 @@ def institution_settings_api(request):
             data = request.data
             files = request.FILES
             settings_obj = services.update_institution_settings_ext(data, None, files)
-            return Response(InstitutionSettingsSerializer(settings_obj).data)
+            return Response(
+                InstitutionSettingsSerializer(
+                    settings_obj, context={"request": request}
+                ).data
+            )
         return Response(data)
 
     # Si hay autenticación, comportamiento nuevo
@@ -2786,7 +2790,11 @@ def institution_settings_api(request):
             data = request.data
             settings_obj = services.update_institution_settings_ext(data, request.user)
 
-        return Response(InstitutionSettingsSerializer(settings_obj).data)
+        return Response(
+            InstitutionSettingsSerializer(
+                settings_obj, context={"request": request}
+            ).data
+        )
 
 
 @api_view(["GET"])
@@ -3166,7 +3174,10 @@ def create_institution_api(request):
             return Response({"error": "Doctor profile not found"}, status=404)
 
         data = services.create_institution_for_doctor(request.data, doctor)
-        return Response(InstitutionSettingsSerializer(data).data, status=201)
+        return Response(
+            InstitutionSettingsSerializer(data, context={"request": request}).data,
+            status=201,
+        )
     except ValidationError as e:
         return Response({"error": str(e)}, status=400)
     except Exception as e:
@@ -3189,7 +3200,10 @@ def add_institution_api(request):
             return Response({"error": "institution_id is required"}, status=400)
 
         data = services.add_institution_to_doctor(institution_id, doctor)
-        return Response(InstitutionSettingsSerializer(data).data, status=201)
+        return Response(
+            InstitutionSettingsSerializer(data, context={"request": request}).data,
+            status=201,
+        )
     except ValidationError as e:
         return Response({"error": str(e)}, status=400)
     except Exception as e:
@@ -3229,7 +3243,9 @@ def set_active_institution_api(request, institution_id):
             return Response({"error": "Doctor profile not found"}, status=404)
 
         data = services.set_active_institution(institution_id, doctor)
-        return Response(InstitutionSettingsSerializer(data).data)
+        return Response(
+            InstitutionSettingsSerializer(data, context={"request": request}).data
+        )
     except ValidationError as e:
         return Response({"error": str(e)}, status=400)
     except Exception as e:
@@ -3646,7 +3662,9 @@ def active_institution_with_metrics(request):
         }
 
         # Serializar institución
-        institution_data = InstitutionSettingsSerializer(active_inst).data
+        institution_data = InstitutionSettingsSerializer(
+            active_inst, context={"request": request}
+        ).data
 
         return Response({"institution": institution_data, "metrics": metrics})
 
