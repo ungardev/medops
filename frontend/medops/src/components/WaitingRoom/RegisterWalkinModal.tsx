@@ -135,21 +135,6 @@ const RegisterWalkinModal: React.FC<Props> = ({
                     {!alreadyInWaitingRoom && <CheckIcon className="w-6 h-6 text-emerald-400" />}
                   </div>
                   
-                  <div className="mt-4">
-                    <label className={labelStyles}>Tipo de Servicio</label>
-                    <select
-                      value={selectedServiceId ?? ''}
-                      onChange={(e) => setSelectedServiceId(e.target.value ? Number(e.target.value) : null)}
-                      className={inputStyles}
-                    >
-                      <option value="">Seleccionar Servicio</option>
-                      {services.map(service => (
-                        <option key={service.id} value={service.id}>
-                          {service.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
                   {alreadyInWaitingRoom ? (
                     <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-medium text-center rounded-lg">
                       ⚠ El paciente ya tiene un registro activo
@@ -172,6 +157,23 @@ const RegisterWalkinModal: React.FC<Props> = ({
                   )}
                 </div>
               )}
+
+              <div className="mt-4">
+                <label className={labelStyles}>Tipo de Servicio</label>
+                <select
+                  value={selectedServiceId ?? ''}
+                  onChange={(e) => setSelectedServiceId(e.target.value ? Number(e.target.value) : null)}
+                  className={inputStyles}
+                >
+                  <option value="">Seleccionar Servicio</option>
+                  {services.map(service => (
+                    <option key={service.id} value={service.id}>
+                      {service.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <button 
                 onClick={() => setShowNewPatientModal(true)}
                 className="w-full py-3 border border-dashed border-white/15 text-white/30 hover:text-white/50 hover:border-white/25 hover:bg-white/5 transition-all flex items-center justify-center gap-2 text-[10px] font-medium"
