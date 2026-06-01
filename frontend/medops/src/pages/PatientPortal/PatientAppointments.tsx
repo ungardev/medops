@@ -49,7 +49,7 @@ const PatientAppointments: React.FC = () => {
     );
   }
   return (
-    <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
         <div className="h-[1px] w-4 bg-white/10"></div>
         <h2 className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Mis Citas</h2>
