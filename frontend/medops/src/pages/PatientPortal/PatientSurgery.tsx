@@ -35,7 +35,7 @@ const tabs = [
 export default function PatientSurgery() {
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading, patient: authPatient } = usePatientAuth();
-  const patientId = Number(localStorage.getItem("patient_id")) || authPatient?.id;
+  const patientId = Number(localStorage.getItem("patient_id")) || authPatient?.id || 0;
 
   const [activeTab, setActiveTab] = useState("all");
   const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
@@ -166,7 +166,7 @@ export default function PatientSurgery() {
                     )}
                   </div>
                   <div className="flex flex-wrap gap-2 mt-1">
-                    <span className={`inline-flex items-center px-2 py-0.5 text-[9px] font-medium rounded-md border ${statusColors[surgery.status] || "bg-white/5 text-white/40 border-white/10"}`}>
+                    <span className={`inline-flex items-center px-2 py-0.5 text-[9px] font-medium rounded-md border ${statusColors[surgery.status as keyof typeof statusColors] || "bg-white/5 text-white/40 border-white/10"}`}>
                       {surgery.status_display || surgery.status}
                     </span>
                     {(surgery as any).risk_level_display && (

@@ -39,7 +39,7 @@ const tabs = [
 export default function PatientHospitalization() {
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading, patient: authPatient } = usePatientAuth();
-  const patientId = Number(localStorage.getItem("patient_id")) || authPatient?.id;
+  const patientId = Number(localStorage.getItem("patient_id")) || authPatient?.id || 0;
 
   const [activeTab, setActiveTab] = useState("all");
   const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
@@ -190,7 +190,7 @@ export default function PatientHospitalization() {
                     )}
                   </div>
                   <div className="flex flex-wrap gap-2 mt-1">
-                    <span className={`inline-flex items-center px-2 py-0.5 text-[9px] font-medium rounded-md border ${statusColors[hosp.status] || "bg-white/5 text-white/40 border-white/10"}`}>
+                    <span className={`inline-flex items-center px-2 py-0.5 text-[9px] font-medium rounded-md border ${statusColors[hosp.status as keyof typeof statusColors] || "bg-white/5 text-white/40 border-white/10"}`}>
                       {hosp.status_display || hosp.status}
                     </span>
                     {(hosp as any).institution_name && (
