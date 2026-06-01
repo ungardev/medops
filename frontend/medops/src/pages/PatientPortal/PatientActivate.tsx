@@ -34,24 +34,27 @@ export default function PatientActivate() {
     setIsLoading(true);
     
     try {
-      const res = await apiFetch('patient-activate/', {
+      const data = await apiFetch<{
+        success: boolean;
+        token: string;
+        patient: { id: number; full_name: string };
+        error?: string;
+      }>('patient-activate/', {
         method: 'POST',
         body: JSON.stringify({ token, password })
       });
       
-      const data = await res.json();
-      
-      if (res.ok) {
+      if (data.success) {
         setPatientName(data.patient.full_name);
         localStorage.setItem('patient_access_token', data.token);
-        localStorage.setItem('patient_id', data.patient.id);
+        localStorage.setItem('patient_id', data.patient.id.toString());
         localStorage.setItem('userRole', 'patient');
         setSuccess(true);
       } else {
         setError(data.error || 'Error al activar cuenta');
       }
-    } catch (err) {
-      setError('Error de conexión');
+    } catch (err: any) {
+      setError(err.message || 'Error de conexión');
     } finally {
       setIsLoading(false);
     }
