@@ -86,31 +86,31 @@ export default function PatientLogin() {
                 className="w-full pl-10 pr-4 py-3 bg-[#0c0e12]/60 border border-slate-800/60 rounded-lg text-sm text-white placeholder:text-white/50 focus:outline-none focus:border-[#10b981]/60 focus:ring-1 focus:ring-[#10b981]/30 focus:shadow-[0_0_15px_rgba(16,185,129,0.15)] transition-all duration-300"
               />
             </div>
-          </form>
-          
-          {(error || errorMsg) && (
-            <div className="mt-6 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-              <p className="text-red-400 text-xs text-center font-medium">{error || errorMsg}</p>
-            </div>
-          )}
-          
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full mt-8 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 py-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="animate-spin" size={18} />
-                Autenticando...
-              </>
-            ) : (
-              <>
-                <Lock size={16} />
-                Iniciar Sesión
-              </>
+            
+            {(error || errorMsg) && (
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                <p className="text-red-400 text-xs text-center font-medium">{error || errorMsg}</p>
+              </div>
             )}
-          </button>
+            
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full mt-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 py-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="animate-spin" size={18} />
+                  Autenticando...
+                </>
+              ) : (
+                <>
+                  <Lock size={16} />
+                  Iniciar Sesión
+                </>
+              )}
+            </button>
+          </form>
           
           <div className="mt-6 text-center">
             <Link
