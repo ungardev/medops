@@ -95,13 +95,16 @@ export default function AppointmentForm({ date, preselectedServiceId, onClose, o
     const num = parseFloat(String(price));
     return isNaN(num) ? 0 : num;
   };
+  const normalizeString = (str: string): string => {
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  };
   const filteredPatients = useMemo(() => {
     if (!patientSearch.trim()) return patientList;
-    const search = patientSearch.toLowerCase();
+    const search = normalizeString(patientSearch);
     return patientList.filter((p) => 
-      p.full_name?.toLowerCase().includes(search) ||
-      p.national_id?.toLowerCase().includes(search) ||
-      p.email?.toLowerCase().includes(search)
+      normalizeString(p.full_name || '').includes(search) ||
+      normalizeString(p.national_id || '').includes(search) ||
+      normalizeString(p.email || '').includes(search)
     );
   }, [patientList, patientSearch]);
   

@@ -1181,18 +1181,36 @@ def appointment_search_api(request):
         return Response([])
 
     try:
-        # ✅ FIX: Usar campos reales de BD, no properties (full_name es property)
-        appointments = (
-            Appointment.objects.filter(
-                Q(patient__first_name__icontains=q)
-                | Q(patient__last_name__icontains=q)
-                | Q(patient__national_id__icontains=q)
-                | Q(id__icontains=q)
-                | Q(appointment_date__icontains=q)
+        from django.db import connection
+
+        db_vendor = connection.vendor
+
+        if db_vendor == "postgresql":
+            appointments = (
+                Appointment.objects.filter(
+                    Q(patient__first_name__unaccent__icontains=q)
+                    | Q(patient__last_name__unaccent__icontains=q)
+                    | Q(patient__national_id__icontains=q)
+                    | Q(id__icontains=q)
+                    | Q(appointment_date__icontains=q)
+                )
+                .select_related("patient", "doctor", "institution")
+                .order_by("-appointment_date")[:limit]
             )
-            .select_related("patient", "doctor", "institution")
-            .order_by("-appointment_date")[:limit]
-        )
+        else:
+            norm_q = remove_accents(q).lower()
+            pattern = rf"(?i){re.escape(norm_q)}"
+            appointments = (
+                Appointment.objects.filter(
+                    Q(patient__first_name__regex=pattern)
+                    | Q(patient__last_name__regex=pattern)
+                    | Q(patient__national_id__icontains=q)
+                    | Q(id__icontains=q)
+                    | Q(appointment_date__icontains=q)
+                )
+                .select_related("patient", "doctor", "institution")
+                .order_by("-appointment_date")[:limit]
+            )
 
         serializer = AppointmentSerializer(appointments, many=True)
         return Response(serializer.data)
@@ -1214,20 +1232,40 @@ def chargeorder_search_api(request):
         return Response([])
 
     try:
-        # ✅ CORREGIDO: Buscar en campos reales del paciente (no en property full_name)
-        charge_orders = (
-            ChargeOrder.objects.filter(
-                Q(patient__first_name__icontains=q)
-                | Q(patient__middle_name__icontains=q)
-                | Q(patient__last_name__icontains=q)
-                | Q(patient__second_last_name__icontains=q)
-                | Q(patient__national_id__icontains=q)
-                | Q(id__icontains=q)
-                | Q(appointment__id__icontains=q)
+        from django.db import connection
+
+        db_vendor = connection.vendor
+
+        if db_vendor == "postgresql":
+            charge_orders = (
+                ChargeOrder.objects.filter(
+                    Q(patient__first_name__unaccent__icontains=q)
+                    | Q(patient__middle_name__unaccent__icontains=q)
+                    | Q(patient__last_name__unaccent__icontains=q)
+                    | Q(patient__second_last_name__unaccent__icontains=q)
+                    | Q(patient__national_id__icontains=q)
+                    | Q(id__icontains=q)
+                    | Q(appointment__id__icontains=q)
+                )
+                .select_related("appointment", "patient", "institution", "doctor")
+                .order_by("-issued_at")[:limit]
             )
-            .select_related("appointment", "patient", "institution", "doctor")
-            .order_by("-issued_at")[:limit]
-        )
+        else:
+            norm_q = remove_accents(q).lower()
+            pattern = rf"(?i){re.escape(norm_q)}"
+            charge_orders = (
+                ChargeOrder.objects.filter(
+                    Q(patient__first_name__regex=pattern)
+                    | Q(patient__middle_name__regex=pattern)
+                    | Q(patient__last_name__regex=pattern)
+                    | Q(patient__second_last_name__regex=pattern)
+                    | Q(patient__national_id__icontains=q)
+                    | Q(id__icontains=q)
+                    | Q(appointment__id__icontains=q)
+                )
+                .select_related("appointment", "patient", "institution", "doctor")
+                .order_by("-issued_at")[:limit]
+            )
 
         serializer = ChargeOrderSerializer(charge_orders, many=True)
         return Response(serializer.data)
@@ -1312,57 +1350,97 @@ def search(request):
     LIMIT = 5
 
     try:
-        # 🔍 Búsqueda de Pacientes (reutiliza lógica existente)
+        from django.db import connection
+
+        db_vendor = connection.vendor
+
+        # 🔍 Búsqueda de Pacientes
         from .models import Patient
 
-        patients = Patient.objects.filter(
-            Q(first_name__icontains=query)
-            | Q(last_name__icontains=query)
-            | Q(national_id__icontains=query)
-            | Q(email__icontains=query)
-        ).filter(active=True)[
-            :LIMIT
-        ]  # ✅ ELIMINADO: select_related('institution') - NO EXISTE
+        if db_vendor == "postgresql":
+            patients = Patient.objects.filter(
+                Q(first_name__unaccent__icontains=query)
+                | Q(last_name__unaccent__icontains=query)
+                | Q(national_id__icontains=query)
+                | Q(email__icontains=query)
+            ).filter(active=True)[:LIMIT]
+        else:
+            norm_q = remove_accents(query).lower()
+            pattern = rf"(?i){re.escape(norm_q)}"
+            patients = Patient.objects.filter(
+                Q(first_name__regex=pattern)
+                | Q(last_name__regex=pattern)
+                | Q(national_id__icontains=query)
+                | Q(email__icontains=query)
+            ).filter(active=True)[:LIMIT]
 
-        # Serializar pacientes
         from .serializers import PatientListSerializer
 
         patients_data = PatientListSerializer(patients, many=True).data
 
-        # 📅 Búsqueda de Citas (reutiliza lógica existente)
+        # 📅 Búsqueda de Citas
         from .models import Appointment
 
-        appointments = (
-            Appointment.objects.filter(
-                Q(patient__first_name__icontains=query)
-                | Q(patient__last_name__icontains=query)
-                | Q(patient__national_id__icontains=query)
-                | Q(id__icontains=query)
-                | Q(appointment_date__icontains=query)
+        if db_vendor == "postgresql":
+            appointments = (
+                Appointment.objects.filter(
+                    Q(patient__first_name__unaccent__icontains=query)
+                    | Q(patient__last_name__unaccent__icontains=query)
+                    | Q(patient__national_id__icontains=query)
+                    | Q(id__icontains=query)
+                    | Q(appointment_date__icontains=query)
+                )
+                .select_related("patient", "doctor", "institution", "note")
+                .order_by("-appointment_date")[:LIMIT]
             )
-            .select_related("patient", "doctor", "institution", "note")
-            .order_by("-appointment_date")[:LIMIT]
-        )
+        else:
+            norm_q = remove_accents(query).lower()
+            pattern = rf"(?i){re.escape(norm_q)}"
+            appointments = (
+                Appointment.objects.filter(
+                    Q(patient__first_name__regex=pattern)
+                    | Q(patient__last_name__regex=pattern)
+                    | Q(patient__national_id__icontains=query)
+                    | Q(id__icontains=query)
+                    | Q(appointment_date__icontains=query)
+                )
+                .select_related("patient", "doctor", "institution", "note")
+                .order_by("-appointment_date")[:LIMIT]
+            )
 
-        # Serializar citas
         from .serializers import AppointmentSerializer
 
         appointments_data = AppointmentSerializer(appointments, many=True).data
 
-        # 💳 Búsqueda de Órdenes de Cobro (reutiliza lógica existente)
+        # 💳 Búsqueda de Órdenes de Cobro
         from .models import ChargeOrder
 
-        charge_orders = (
-            ChargeOrder.objects.filter(
-                Q(patient__first_name__icontains=query)
-                | Q(patient__last_name__icontains=query)
-                | Q(patient__national_id__icontains=query)
-                | Q(id__icontains=query)
-                | Q(appointment__id__icontains=query)
+        if db_vendor == "postgresql":
+            charge_orders = (
+                ChargeOrder.objects.filter(
+                    Q(patient__first_name__unaccent__icontains=query)
+                    | Q(patient__last_name__unaccent__icontains=query)
+                    | Q(patient__national_id__icontains=query)
+                    | Q(id__icontains=query)
+                    | Q(appointment__id__icontains=query)
+                )
+                .select_related("appointment", "patient", "institution", "doctor")
+                .order_by("-issued_at")[:LIMIT]
             )
-            .select_related("appointment", "patient", "institution", "doctor")
-            .order_by("-issued_at")[:LIMIT]
-        )
+        else:
+            norm_q = remove_accents(query).lower()
+            pattern = rf"(?i){re.escape(norm_q)}"
+            charge_orders = (
+                ChargeOrder.objects.filter(
+                    Q(patient__first_name__regex=pattern)
+                    | Q(patient__last_name__regex=pattern)
+                    | Q(patient__national_id__icontains=query)
+                    | Q(id__icontains=query)
+                    | Q(appointment__id__icontains=query)
+                )
+                .select_related("appointment", "patient", "institution", "doctor")
+                .order_by("-issued_at")[:LIMIT]
+            )
 
         # Serializar órdenes
         from .serializers import ChargeOrderSerializer
@@ -2954,19 +3032,32 @@ def patient_search_api(request):
         return Response([])
 
     try:
-        words = q.split()
+        from django.db import connection
 
+        db_vendor = connection.vendor
+
+        words = q.split()
         query = Q(active=True)
+
         for word in words:
-            normalized_word = remove_accents(word)
-            pattern = rf"(?i){re.escape(normalized_word)}"
-            query &= (
-                Q(first_name__regex=pattern)
-                | Q(middle_name__regex=pattern)
-                | Q(last_name__regex=pattern)
-                | Q(second_last_name__regex=pattern)
-                | Q(national_id__icontains=word)
-            )
+            if db_vendor == "postgresql":
+                query &= (
+                    Q(first_name__unaccent__icontains=word)
+                    | Q(middle_name__unaccent__icontains=word)
+                    | Q(last_name__unaccent__icontains=word)
+                    | Q(second_last_name__unaccent__icontains=word)
+                    | Q(national_id__icontains=word)
+                )
+            else:
+                w = remove_accents(word).lower()
+                pattern = rf"(?i){re.escape(w)}"
+                query &= (
+                    Q(first_name__regex=pattern)
+                    | Q(middle_name__regex=pattern)
+                    | Q(last_name__regex=pattern)
+                    | Q(second_last_name__regex=pattern)
+                    | Q(national_id__icontains=word)
+                )
 
         patients = Patient.objects.filter(query)[:limit]
 
