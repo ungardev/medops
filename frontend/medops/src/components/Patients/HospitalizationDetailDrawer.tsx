@@ -25,7 +25,8 @@ interface Props {
   open: boolean;
   onClose: () => void;
   hospitalization?: Hospitalization;
-  onEdit: (hospitalization: Hospitalization) => void;
+  onEdit?: (hospitalization: Hospitalization) => void;
+  readOnly?: boolean;
 }
 
 const statusConfig: Record<string, { label: string; color: string; bg: string; border: string }> = {
@@ -39,7 +40,7 @@ const statusConfig: Record<string, { label: string; color: string; bg: string; b
   deceased: { label: "Fallecido", color: "text-red-500", bg: "bg-red-900/20", border: "border-red-900/30" },
 };
 
-export default function HospitalizationDetailDrawer({ open, onClose, hospitalization, onEdit }: Props) {
+export default function HospitalizationDetailDrawer({ open, onClose, hospitalization, onEdit, readOnly }: Props) {
   if (!open || !hospitalization) return null;
 
   const statusKey = hospitalization.status || "admitted";
@@ -382,15 +383,17 @@ export default function HospitalizationDetailDrawer({ open, onClose, hospitaliza
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-white/15 bg-[#1f1f1f]">
-          <button
-            onClick={() => onEdit(hospitalization)}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/25 text-blue-400 rounded-lg transition-all text-[12px] font-medium"
-          >
-            <Pencil className="w-4 h-4" />
-            Editar Hospitalización
-          </button>
-        </div>
+        {!readOnly && (
+          <div className="px-6 py-4 border-t border-white/15 bg-[#1f1f1f]">
+            <button
+              onClick={() => onEdit?.(hospitalization)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/25 text-blue-400 rounded-lg transition-all text-[12px] font-medium"
+            >
+              <Pencil className="w-4 h-4" />
+              Editar Hospitalización
+            </button>
+          </div>
+        )}
       </div>
     </>
   );

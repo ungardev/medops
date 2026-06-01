@@ -94,6 +94,8 @@ import PatientAppointments from "./pages/PatientPortal/PatientAppointments";
 import PatientPayments from "./pages/PatientPortal/PatientPayments";
 import PatientChargeOrderDetail from "./pages/PatientPortal/PatientChargeOrderDetail";
 import DoctorProfile from "./pages/PatientPortal/DoctorProfile";
+import PatientSurgery from "./pages/PatientPortal/PatientSurgery";
+import PatientHospitalization from "./pages/PatientPortal/PatientHospitalization";
 
 // Doctor Portal Imports
 import DoctorActivate from "./pages/DoctorPortal/DoctorActivate";
@@ -169,6 +171,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                   <Route path="payments" element={<PatientPayments />} />
                   <Route path="payments/:id" element={<PatientChargeOrderDetail />} />
                   <Route path="charge-orders/:id/pay" element={<PatientChargeOrderDetail />} />
+                  <Route path="surgery" element={<PatientSurgery />} />
+                  <Route path="hospitalization" element={<PatientHospitalization />} />
                 </Route>
 
                 {/* === DOCTOR PORTAL - PUBLIC === */}

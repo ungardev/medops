@@ -24,7 +24,8 @@ interface Props {
   open: boolean;
   onClose: () => void;
   surgery?: Surgery;
-  onEdit: (surgery: Surgery) => void;
+  onEdit?: (surgery: Surgery) => void;
+  readOnly?: boolean;
 }
 
 const statusConfig: Record<string, { label: string; color: string; bg: string; border: string }> = {
@@ -43,7 +44,7 @@ const riskConfig: Record<string, { label: string; color: string }> = {
   critical: { label: "Riesgo Crítico", color: "text-red-400" },
 };
 
-export default function SurgeryDetailDrawer({ open, onClose, surgery, onEdit }: Props) {
+export default function SurgeryDetailDrawer({ open, onClose, surgery, onEdit, readOnly }: Props) {
   if (!open || !surgery) return null;
 
   const statusKey = surgery.status || "scheduled";
@@ -304,15 +305,17 @@ export default function SurgeryDetailDrawer({ open, onClose, surgery, onEdit }: 
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-white/15 bg-[#1f1f1f]">
-          <button
-            onClick={() => onEdit(surgery)}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 text-emerald-400 rounded-lg transition-all text-[12px] font-medium"
-          >
-            <Pencil className="w-4 h-4" />
-            Editar Cirugía
-          </button>
-        </div>
+        {!readOnly && (
+          <div className="px-6 py-4 border-t border-white/15 bg-[#1f1f1f]">
+            <button
+              onClick={() => onEdit?.(surgery)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 text-emerald-400 rounded-lg transition-all text-[12px] font-medium"
+            >
+              <Pencil className="w-4 h-4" />
+              Editar Cirugía
+            </button>
+          </div>
+        )}
       </div>
     </>
   );
