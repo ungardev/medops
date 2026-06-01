@@ -93,6 +93,8 @@ export default function PatientDetail() {
   
   const [portalStatus, setPortalStatus] = useState<PortalStatus>({ has_invitation: false, has_portal_access: false });
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   
   const { data: completedConsultations } = useConsultationsByPatient(patientId);
   const appointmentsList: AppointmentWithVitals[] = completedConsultations?.list ?? [];
@@ -181,6 +183,22 @@ export default function PatientDetail() {
       setPortalStatus({ has_invitation: true, has_portal_access: false });
     }
   };
+
+  const handleResetPortal = async () => {
+    setIsResetting(true);
+    try {
+      await apiFetch(`patients/${patientId}/reset-portal/`, {
+        method: "POST",
+      });
+      setShowResetConfirm(false);
+      setPortalStatus({ has_invitation: false, has_portal_access: false });
+    } catch (err) {
+      console.error("Error resetting portal:", err);
+      alert("Error al revocar acceso al portal");
+    } finally {
+      setIsResetting(false);
+    }
+  };
   
   useEffect(() => {
     const tabFromUrl = normalizeTab(searchParams.get("tab") ?? "info");
@@ -261,9 +279,17 @@ export default function PatientDetail() {
         actions={
           <div className="flex items-center gap-3">
             {portalStatus.has_portal_access ? (
-              <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/15 border border-emerald-500/25 rounded-lg">
-                <span className="text-[10px] font-medium text-emerald-400">Portal Activo</span>
-              </div>
+              <>
+                <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/15 border border-emerald-500/25 rounded-lg">
+                  <span className="text-[10px] font-medium text-emerald-400">Portal Activo</span>
+                </div>
+                <button 
+                  onClick={() => setShowResetConfirm(true)}
+                  className="flex items-center gap-2 px-3 py-2 bg-red-500/15 hover:bg-red-500/25 border border-red-500/25 text-red-400 rounded-lg transition-colors"
+                >
+                  <span className="text-[10px] font-medium">Revocar Acceso</span>
+                </button>
+              </>
             ) : (
               <>
                 {portalStatus.has_invitation && (
@@ -370,6 +396,32 @@ export default function PatientDetail() {
         patientName={patient.full_name}
         onSuccess={handleInviteSuccess}
       />
+      {showResetConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowResetConfirm(false)} />
+          <div className="relative bg-[#1a1a1b] border border-red-500/25 rounded-lg p-6 w-full max-w-sm shadow-2xl">
+            <h3 className="text-[12px] font-semibold text-red-400 mb-2">¿Revocar acceso al portal?</h3>
+            <p className="text-[11px] text-white/50 mb-4">
+              El paciente <span className="text-white/70 font-medium">{patient.full_name}</span> ya no podrá hacer login en el Portal del Paciente. Deberás enviar una nueva invitación para restore acceso.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowResetConfirm(false)}
+                className="flex-1 px-3 py-2 bg-white/5 border border-white/15 text-white/60 rounded-lg text-[11px] font-medium hover:bg-white/10 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleResetPortal}
+                disabled={isResetting}
+                className="flex-1 px-3 py-2 bg-red-500/15 hover:bg-red-500/25 border border-red-500/25 text-red-400 rounded-lg text-[11px] font-medium transition-colors disabled:opacity-50"
+              >
+                {isResetting ? "Revocando..." : "Revocar Acceso"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

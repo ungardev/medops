@@ -5821,6 +5821,61 @@ def get_patient_invitation_status(request, patient_id):
 
 
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def reset_patient_portal_access(request, patient_id):
+    """
+    POST /api/patients/{patient_id}/reset-portal/
+    Resetea el portal access de un paciente - cancela invitación y desactiva PatientUser.
+    Doctor JWT required.
+    """
+    try:
+        patient = Patient.objects.get(pk=patient_id)
+    except Patient.DoesNotExist:
+        return Response({"error": "Paciente no encontrado"}, status=404)
+
+    # Verificar que el usuario es doctor
+    if not hasattr(request.user, "doctor_profile"):
+        return Response(
+            {"error": "Solo doctores pueden resetear portal de pacientes"},
+            status=403,
+        )
+
+    # Encontrar invitación activada más reciente
+    invitation = PatientInvitation.objects.filter(
+        patient=patient, status="activated"
+    ).first()
+
+    if not invitation:
+        return Response(
+            {"error": "No se encontró invitación activada para este paciente"},
+            status=404,
+        )
+
+    # Cancelar invitación
+    invitation.status = "cancelled"
+    invitation.save()
+
+    # Desactivar PatientUser para bloquear login
+    if hasattr(patient, "patient_user") and patient.patient_user:
+        patient.patient_user.is_active = False
+        patient.patient_user.save()
+        logger.info(
+            f"[reset_patient_portal_access] PatientUser deactivated for patient {patient_id} by doctor {request.user.doctor_profile.full_name}"
+        )
+
+    logger.info(
+        f"[reset_patient_portal_access] Portal access reset for patient {patient_id} by {request.user}"
+    )
+
+    return Response(
+        {
+            "success": True,
+            "message": "Acceso al portal revocado exitosamente. El paciente ya no puede hacer login.",
+        }
+    )
+
+
+@api_view(["POST"])
 @permission_classes([AllowAny])
 def doctor_login(request):
     """

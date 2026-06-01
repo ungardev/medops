@@ -45,6 +45,7 @@ from .models import (
     InstitutionSettings,
     DoctorInvitation,
     DoctorLicense,
+    PatientInvitation,
 )
 
 logger = logging.getLogger("core")
@@ -1424,6 +1425,41 @@ class InstitutionSettingsAdmin(admin.ModelAdmin):
                     "updated_at",
                     "updated_by",
                 )
+            },
+        ),
+    )
+
+
+# =====================================================
+# PATIENT INVITATION ADMIN
+# =====================================================
+@admin.register(PatientInvitation)
+class PatientInvitationAdmin(admin.ModelAdmin):
+    list_display = ("id", "patient", "doctor", "status", "created_at", "expires_at")
+    list_filter = ("status", "created_at")
+    search_fields = ("patient__first_name", "patient__last_name", "token")
+    readonly_fields = ("token", "created_at", "activated_at")
+    autocomplete_fields = ["patient", "doctor"]
+    ordering = ("-created_at",)
+    list_per_page = 25
+
+    fieldsets = (
+        (
+            "Paciente y Doctor",
+            {
+                "fields": ("patient", "doctor"),
+            },
+        ),
+        (
+            "Token y Estado",
+            {
+                "fields": ("token", "status"),
+            },
+        ),
+        (
+            "Timestamps",
+            {
+                "fields": ("created_at", "activated_at", "expires_at"),
             },
         ),
     )

@@ -694,6 +694,11 @@ urlpatterns = [
         name="patient-invitation-status",
     ),
     path(
+        "patients/<int:patient_id>/reset-portal/",
+        api_views.reset_patient_portal_access,
+        name="patient-reset-portal",
+    ),
+    path(
         "patient-activate/", api_views.activate_patient_portal, name="activate-patient"
     ),
     path(
