@@ -2548,6 +2548,7 @@ def update_institution_settings_ext(
     """
     Actualiza la configuración de la institución.
     Soporta FormData (con archivos) o JSON (sin archivos).
+    Los logos se suben a R2 para persistencia permanente.
 
     Args:
         data: Datos a actualizar
@@ -2569,19 +2570,55 @@ def update_institution_settings_ext(
             if settings_obj not in doctor.institutions.all():
                 raise ValidationError("No tienes permiso para editar esta institución")
 
+        # Manejar logo - subir a R2 si se proporciona nuevo archivo
+        logo_file = files.get("logo") if files else None
+        if logo_file:
+            # Eliminar logo anterior de R2 si existe
+            from .utils.r2_storage import upload_institution_logo, get_r2_client
+
+            old_logo_filename = (
+                settings_obj.logo.name.split("/")[-1] if settings_obj.logo else None
+            )
+            if old_logo_filename:
+                r2_client = get_r2_client()
+                if r2_client and r2_client.file_exists(
+                    f"institution_logos/{settings_obj.id}/{old_logo_filename}"
+                ):
+                    r2_client.delete_file(
+                        f"institution_logos/{settings_obj.id}/{old_logo_filename}"
+                    )
+
+            # Subir nuevo logo a R2
+            logo_content = logo_file.read()
+            logo_filename = logo_file.name
+            r2_url = upload_institution_logo(
+                logo_content, settings_obj.id, logo_filename
+            )
+
+            if r2_url:
+                # Guardar el filename en el campo logo (no el URL completo)
+                # El serializer construirá la URL absoluta con request.build_absolute_uri
+                from django.core.files.base import ContentFile
+
+                settings_obj.logo.save(
+                    logo_filename, ContentFile(logo_content), save=False
+                )
+                logger.info(f"Logo uploaded to R2: {r2_url}")
+            else:
+                # Fallback: guardar localmente
+                settings_obj.logo = logo_file
+                logger.warning("R2 upload failed, saving logo locally")
+
         for key, value in data.items():
             if key in ["neighborhood_id", "neighborhood"]:
                 if value and value != "":
                     settings_obj.neighborhood_id = value
+            elif key == "logo":
+                # Logo ya manejado arriba
+                pass
             elif hasattr(settings_obj, key):
                 setattr(settings_obj, key, value)
 
-        if files:
-            for key, file in files.items():
-                if hasattr(settings_obj, key):
-                    setattr(settings_obj, key, file)
-
-        # ✅ FIX: Línea 1210 - Agregar 'user and' antes de 'user.is_authenticated'
         if user and user.is_authenticated:
             settings_obj.updated_by = user
 

@@ -7,6 +7,7 @@ import { queryClient } from "@/lib/reactQuery";
 import { DashboardFiltersProvider } from "@/context/DashboardFiltersContext";
 import ActiveInstitutionCard from "@/components/Dashboard/ActiveInstitutionCard";
 import { useInstitutions } from "@/hooks/settings/useInstitutions";
+import { getInstitutionLogoUrl } from "@/utils/institutionLogo";
 import type { InstitutionSettings } from "@/types/config";
 export default function DoctorDashboard() {
   const { tokens, user } = useAuth();
@@ -88,8 +89,8 @@ export default function DoctorDashboard() {
                     onClick={() => institution.id && setActiveInstitution(institution.id)}
                   >
                     <div className="flex items-center gap-3 mb-4">
-                      {institution.logo && typeof institution.logo === 'string' ? (
-                        <img src={institution.logo} alt={institution.name} className="w-10 h-10 object-contain" />
+                      {institution.logo ? (
+                        <img src={getInstitutionLogoUrl(institution.logo)} alt={institution.name} className="w-10 h-10 object-contain" />
                       ) : (
                         <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
                           <svg className="w-5 h-5 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">

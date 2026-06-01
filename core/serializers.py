@@ -1490,6 +1490,23 @@ class InstitutionSettingsSerializer(serializers.ModelSerializer):
         else:
             response["has_api_secret_configured"] = False
 
+        # --- Lógica de Logo con URL Absoluta ---
+        # Si el logo existe, generar URL absoluta para que funcione en producción
+        # (Vercel no sirve /media/*, necesita URL completa al backend)
+        if instance.logo:
+            request = self.context.get("request")
+            if request:
+                # Si la URL ya es absoluta (R2), dejarla igual
+                logo_url = instance.logo.url
+                if logo_url.startswith("http"):
+                    response["logo"] = logo_url
+                else:
+                    # Es URL relativa - construir absoluta usando request.build_absolute_uri
+                    response["logo"] = request.build_absolute_uri(logo_url)
+            else:
+                # Sin request disponible, usar url directamente (fallback)
+                response["logo"] = instance.logo.url
+
         return response
 
 

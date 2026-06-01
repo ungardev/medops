@@ -97,6 +97,25 @@ class R2StorageClient:
             logger.error(f"Failed to upload to R2: {e}")
             return None
 
+    def upload_image(
+        self,
+        file_content: bytes,
+        object_key: str,
+        content_type: str = "image/png",
+    ) -> Optional[str]:
+        """
+        Upload an image file to R2 and return the public URL.
+
+        Args:
+            file_content: Raw bytes of the image
+            object_key: Path/filename in the bucket (e.g., 'logos/institution_1/logo.png')
+            content_type: MIME type of the image
+
+        Returns:
+            Public URL of the uploaded file, or None if upload failed
+        """
+        return self.upload_file(file_content, object_key, content_type)
+
     def delete_file(self, object_key: str) -> bool:
         """
         Delete a file from R2.
@@ -203,3 +222,51 @@ def upload_medical_report_pdf(
     date_path = datetime.now().strftime("%Y/%m/%d")
     object_key = f"medical_reports/{date_path}/report_{report_id}_{filename}"
     return client.upload_file(file_content, object_key, "application/pdf")
+
+
+def upload_institution_logo(
+    file_content: bytes, institution_id: int, filename: str
+) -> Optional[str]:
+    """
+    Upload an institution logo to R2 with proper path structure.
+    Logos are stored permanently in R2 to persist across deployments.
+
+    Args:
+        file_content: Raw bytes of the image
+        institution_id: InstitutionSettings ID
+        filename: Original filename (e.g., 'logo.png')
+
+    Returns:
+        Public URL of the uploaded logo, or None if upload failed
+    """
+    client = get_r2_client()
+    object_key = f"institution_logos/{institution_id}/{filename}"
+
+    content_type = "image/png"
+    if filename.lower().endswith(".jpg") or filename.lower().endswith(".jpeg"):
+        content_type = "image/jpeg"
+    elif filename.lower().endswith(".svg"):
+        content_type = "image/svg+xml"
+    elif filename.lower().endswith(".gif"):
+        content_type = "image/gif"
+
+    return client.upload_image(file_content, object_key, content_type)
+
+
+def get_institution_logo_r2_url(institution_id: int, filename: str) -> Optional[str]:
+    """
+    Build the R2 URL for an institution logo.
+
+    Args:
+        institution_id: InstitutionSettings ID
+        filename: Logo filename
+
+    Returns:
+        R2 URL for the logo, or None if R2 is not configured
+    """
+    client = get_r2_client()
+    if client is None:
+        return None
+
+    object_key = f"institution_logos/{institution_id}/{filename}"
+    return client.get_public_url(object_key)

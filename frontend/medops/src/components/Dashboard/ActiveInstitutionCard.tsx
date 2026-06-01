@@ -17,6 +17,7 @@ import { useActiveInstitution } from "@/hooks/dashboard/useActiveInstitution";
 import { useBCVRate } from "@/hooks/dashboard/useBCVRate";
 import { usePublicInstitutionLocation } from "@/hooks/settings/usePublicInstitutionLocation";
 import ButtonGroup from "@/components/Common/ButtonGroup";
+import { getInstitutionLogoUrl } from "@/utils/institutionLogo";
 import moment from "moment";
 import type { InstitutionSettings } from "@/types/config";
 const metricsConfig = {
@@ -198,9 +199,9 @@ export const ActiveInstitutionCard: React.FC = () => {
       <div className="flex flex-col md:flex-row items-start gap-5 mb-6">
         
         <div className="w-16 h-16 bg-white border border-gray-200 flex items-center justify-center p-2 shrink-0 overflow-hidden mx-auto md:mx-0 rounded-lg">
-          {typeof institution.logo === 'string' ? (
+          {institution.logo && typeof institution.logo === 'string' ? (
             <img 
-              src={institution.logo} 
+              src={getInstitutionLogoUrl(institution.logo)} 
               className="max-h-full object-contain filter grayscale hover:grayscale-0 transition-all duration-300" 
               alt={`${institution.name} logo`} 
             />

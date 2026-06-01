@@ -2596,11 +2596,25 @@ def generate_chargeorder_pdf(request, pk):
         doctor_signature_path = (
             doctor.signature.path if doctor and doctor.signature else None
         )
-        institution_logo_path = (
-            charge_order.institution.logo.path
-            if charge_order.institution.logo
-            else None
-        )
+
+        # Logo de institución: usar R2 URL si está disponible, sino fallback a path local
+        institution_logo_path = None
+        if charge_order.institution.logo:
+            r2_url = None
+            try:
+                from .utils.r2_storage import get_institution_logo_r2_url
+
+                filename = charge_order.institution.logo.name.split("/")[-1]
+                r2_url = get_institution_logo_r2_url(
+                    charge_order.institution.id, filename
+                )
+            except Exception:
+                pass
+
+            if r2_url:
+                institution_logo_path = r2_url
+            else:
+                institution_logo_path = charge_order.institution.logo.path
 
         context = {
             "charge_order": charge_order,
