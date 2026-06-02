@@ -18,8 +18,8 @@ export const useOperationalHub = (institutionId: number | null) => {
       }
       return apiFetch(`operational-hub/?institution_id=${institutionId}`);
     },
-    staleTime: 30000,
-    refetchInterval: 30000,
+    staleTime: 60_000,
+    refetchInterval: 60_000,
     enabled: !!institutionId,
   });
 };

@@ -16,14 +16,12 @@ import CollapsiblePanel from "../../components/Common/CollapsiblePanel";
 import Toast from "../../components/Common/Toast";
 import ExportErrorToast from "../../components/Common/ExportErrorToast";
 import ExportSuccessToast from "../../components/Common/ExportSuccessToast";
-import MedicalReportSuccessToast from "../../components/Common/MedicalReportSuccessToast";
 import { useCurrentConsultation } from "../../hooks/consultations/useCurrentConsultation";
 import { useGenerateMedicalReport } from "../../hooks/consultations/useGenerateMedicalReport";
 import { useGenerateConsultationDocuments } from "../../hooks/consultations/useGenerateConsultationDocuments";
 import { useInstitutions } from "../../hooks/settings/useInstitutions";
 import type { GenerateDocumentsResponse, GeneratedDocument } from "../../hooks/consultations/useGenerateConsultationDocuments";
 import { toPatientHeaderPatient } from "../../utils/patientTransform";
-import { getPatient } from "../../api/patients";
 const SessionTimer = ({ startTime }: { startTime: string | undefined | null }) => {
   const [elapsed, setElapsed] = useState("00:00");
   useEffect(() => {
@@ -63,8 +61,6 @@ export default function Consultation() {
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
   const [exportErrors, setExportErrors] = useState<{ category: string; error: string }[] | null>(null);
   const [exportSuccess, setExportSuccess] = useState<{ documents: GeneratedDocument[]; skipped: string[] } | null>(null);
-  const [reportSuccess, setReportSuccess] = useState<{ fileUrl?: string | null; auditCode?: string | null } | null>(null);
-  const [patientProfile, setPatientProfile] = useState<any | null>(null);
   const [showCommitModal, setShowCommitModal] = useState(false);
   
   useEffect(() => {
@@ -72,14 +68,7 @@ export default function Consultation() {
       navigate("/waitingroom");
     }
   }, [appointment, isLoading, navigate]);
-  
-  useEffect(() => {
-    if (appointment?.patient?.id) {
-      getPatient(appointment.patient.id)
-        .then((full) => setPatientProfile(full))
-        .catch((e) => console.error("Error al cargar perfil del paciente:", e));
-    }
-  }, [appointment?.patient?.id]);
+
   if (isLoading) return (
     <div className="min-h-screen flex items-center justify-center bg-black">
       <div className="text-center space-y-4">
@@ -93,7 +82,7 @@ export default function Consultation() {
   
   if (!appointment) return null;
   
-  const patient = patientProfile ? toPatientHeaderPatient(patientProfile) : null;
+  const patient = appointment.patient ? toPatientHeaderPatient(appointment.patient as any) : null;
   const canGenerateReport = appointment.status === "in_consultation" || appointment.status === "completed";
   const isInstitutionMatch = !appointment.institution || appointment.institution === activeInstitution?.id;
   const isCrossInstitution = !!appointment.institution && appointment.institution !== activeInstitution?.id;
@@ -265,7 +254,6 @@ export default function Consultation() {
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       {exportErrors && <ExportErrorToast errors={exportErrors} onClose={() => setExportErrors(null)} />}
       {exportSuccess && <ExportSuccessToast documents={exportSuccess.documents} skipped={exportSuccess.skipped} onClose={() => setExportSuccess(null)} />}
-      {reportSuccess && <MedicalReportSuccessToast fileUrl={reportSuccess.fileUrl} auditCode={reportSuccess.auditCode} onClose={() => setReportSuccess(null)} />}
     </div>
   );
 }

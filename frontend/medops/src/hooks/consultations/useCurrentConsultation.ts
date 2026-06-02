@@ -18,11 +18,10 @@ export function useCurrentConsultation() {
       const res = await apiFetch("consultations/current/");
       if (!res) return null;
       const clinical = res as ClinicalAppointment;
-      // mapAppointment normaliza status y maneja el cronómetro con started_at
       return mapAppointment(clinical);
     },
-    refetchInterval: 30_000, // Refresco automático cada 30s
-    staleTime: 10_000,
+    staleTime: 60_000,
+    refetchInterval: 60_000,
   });
   
   // 2. MUTACIÓN: Actualizar Notas (con Invalidación Local)

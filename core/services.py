@@ -453,11 +453,31 @@ def get_current_consultation() -> Optional[Dict[str, Any]]:
     Obtiene la consulta activa actual.
     Busca cualquier appointment con status "in_consultation",
     ordenando por started_at descendente (más reciente primero).
+
+    OPTIMIZADO: Usa prefetch_related para evitar N+1 queries en serializer.
     """
     appointment = (
         Appointment.objects.filter(status="in_consultation")
-        .select_related("patient")
-        .prefetch_related("diagnoses__treatments", "diagnoses__prescriptions")
+        .select_related(
+            "patient",
+            "institution",
+            "doctor",
+            "vital_signs",
+            "note",
+            "doctor_service",
+            "doctor_service__category",
+        )
+        .prefetch_related(
+            "diagnoses",
+            "diagnoses__treatments",
+            "diagnoses__prescriptions",
+            "diagnoses__prescriptions__components",
+            "charge_orders",
+            "documents",
+            "medical_tests",
+            "referrals",
+            "referrals__specialties",
+        )
         .order_by("-started_at")
         .first()
     )

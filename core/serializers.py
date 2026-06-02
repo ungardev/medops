@@ -3243,8 +3243,24 @@ class AppointmentDetailSerializer(AppointmentSerializer):
     def get_treatments(self, obj):
         """
         Obtiene tratamientos vinculados a los diagnósticos de esta cita.
-        Optimizado para evitar el problema N+1.
+        OPTIMIZADO: Usa prefetched data si está disponible.
         """
+        # Usar datos prefetched si existen
+        if (
+            hasattr(obj, "_prefetched_objects_cache")
+            and "diagnoses" in obj._prefetched_objects_cache
+        ):
+            diagnoses = obj._prefetched_objects_cache["diagnoses"]
+            treatment_ids = set()
+            for diag in diagnoses:
+                if hasattr(diag, "treatments"):
+                    for t in diag.treatments.all():
+                        treatment_ids.add(t.id)
+            if treatment_ids:
+                qs = Treatment.objects.filter(id__in=treatment_ids).select_related(
+                    "diagnosis"
+                )
+                return TreatmentSerializer(qs, many=True).data
         qs = Treatment.objects.filter(diagnosis__appointment=obj).select_related(
             "diagnosis"
         )
@@ -3253,7 +3269,23 @@ class AppointmentDetailSerializer(AppointmentSerializer):
     def get_prescriptions(self, obj):
         """
         Obtiene recetas y sus componentes (medicamentos) asociados a la cita.
+        OPTIMIZADO: Usa prefetched data si está disponible.
         """
+        if (
+            hasattr(obj, "_prefetched_objects_cache")
+            and "diagnoses" in obj._prefetched_objects_cache
+        ):
+            diagnoses = obj._prefetched_objects_cache["diagnoses"]
+            prescription_ids = set()
+            for diag in diagnoses:
+                if hasattr(diag, "prescriptions"):
+                    for p in diag.prescriptions.all():
+                        prescription_ids.add(p.id)
+            if prescription_ids:
+                qs = Prescription.objects.filter(
+                    id__in=prescription_ids
+                ).prefetch_related("components")
+                return PrescriptionSerializer(qs, many=True).data
         qs = Prescription.objects.filter(diagnosis__appointment=obj).prefetch_related(
             "components"
         )
