@@ -2045,7 +2045,9 @@ def reports_export_api(request):
 
         if report_type == "FINANCIAL":
             # Reporte financiero: pagos por período
-            payments = Payment.objects.filter(status="confirmed")
+            payments = Payment.objects.filter(status="confirmed").select_related(
+                "charge_order", "charge_order__patient"
+            )
 
             if start_date:
                 payments = payments.filter(received_at__date__gte=start_date)
@@ -2093,7 +2095,9 @@ def reports_export_api(request):
         elif report_type == "COMBINED":
             # Reporte combinado: pagos + citas
             # Pagos
-            payments = Payment.objects.filter(status="confirmed")
+            payments = Payment.objects.filter(status="confirmed").select_related(
+                "charge_order", "charge_order__patient"
+            )
 
             if start_date:
                 payments = payments.filter(received_at__date__gte=start_date)
@@ -2284,7 +2288,12 @@ def generate_medical_report(request, pk):
     pk = appointment_id (ID de la consulta)
     """
     try:
-        appointment = get_object_or_404(Appointment, pk=pk)
+        appointment = get_object_or_404(
+            Appointment.objects.select_related(
+                "patient", "doctor", "institution", "note", "vital_signs"
+            ).prefetch_related("diagnoses", "documents"),
+            pk=pk,
+        )
         patient = appointment.patient
         doctor = appointment.doctor
         institution = appointment.institution
@@ -2303,14 +2312,15 @@ def generate_medical_report(request, pk):
             patient=appointment.patient,
             doctor=appointment.doctor,
             institution=appointment.institution,
-        )
+        ).select_related("diagnosis")
         prescriptions = Prescription.objects.filter(
             patient=appointment.patient,
             doctor=appointment.doctor,
             institution=appointment.institution,
-        )
-        medical_tests = MedicalTest.objects.filter(appointment=appointment)
-        # ✅ FIX: Agregar prefetch_related para cargar especialidades de las referencias
+        ).select_related("medication_catalog", "diagnosis")
+        medical_tests = MedicalTest.objects.filter(
+            appointment=appointment
+        ).select_related("appointment")
         referrals = MedicalReferral.objects.filter(
             appointment=appointment
         ).prefetch_related("specialties")
@@ -3691,43 +3701,46 @@ def active_institution_with_metrics(request):
 
     # Métricas específicas para esta institución
     try:
-        # ✅ Citas agendadas
-        scheduled_count = Appointment.objects.filter(
-            institution=active_inst,
-            status="scheduled",
-            appointment_date__gte=start_date,
-            appointment_date__lt=end_date,
-        ).count()
+        # ✅ OPTIMIZADO: Una sola query con agregación condicional para citas
+        from django.db.models import Count, Case, When, Sum, Q
 
-        # ✅ Citas pendientes totales
-        pending_count = Appointment.objects.filter(
-            institution=active_inst, status="pending"
-        ).count()
-
-        # ✅ Citas en sala de espera
-        waiting_count = Appointment.objects.filter(
-            institution=active_inst, status="arrived"
-        ).count()
-
-        # ✅ Citas en consulta
-        in_consultation_count = Appointment.objects.filter(
-            institution=active_inst, status="in_consultation"
-        ).count()
-
-        # ✅ Citas completadas
-        completed_count = Appointment.objects.filter(
-            institution=active_inst,
-            status="completed",
-            appointment_date__gte=start_date,
-            appointment_date__lt=end_date,
-        ).count()
-
-        # ✅ Métricas financieras - OPTIMIZADO
-        charge_orders = ChargeOrder.objects.filter(
-            institution=active_inst, issued_at__gte=start_date, issued_at__lt=end_date
+        appointment_metrics = Appointment.objects.filter(
+            institution=active_inst
+        ).aggregate(
+            scheduled_count=Count(
+                Case(
+                    When(
+                        status="scheduled",
+                        appointment_date__gte=start_date,
+                        appointment_date__lt=end_date,
+                        then=1,
+                    )
+                )
+            ),
+            pending_count=Count(Case(When(status="pending", then=1))),
+            waiting_count=Count(Case(When(status="arrived", then=1))),
+            in_consultation_count=Count(Case(When(status="in_consultation", then=1))),
+            completed_count=Count(
+                Case(
+                    When(
+                        status="completed",
+                        appointment_date__gte=start_date,
+                        appointment_date__lt=end_date,
+                        then=1,
+                    )
+                )
+            ),
         )
 
-        total_usd = sum(order.total for order in charge_orders)
+        # ✅ OPTIMIZADO: Una sola query para métricas financieras
+        financial_metrics = ChargeOrder.objects.filter(
+            institution=active_inst, issued_at__gte=start_date, issued_at__lt=end_date
+        ).aggregate(
+            total_usd=Sum("total"),
+            exempted_count=Count(Case(When(status="waived", then=1))),
+        )
+
+        total_usd = financial_metrics["total_usd"] or Decimal("0.00")
 
         # ✅ FIX: Obtener tasa BCV con manejo de errores mejorado
         # Esta función ahora solo usa cache, nunca hace scraping
@@ -3753,23 +3766,15 @@ def active_institution_with_metrics(request):
             status="confirmed",
         ).count()
 
-        # ✅ Órdenes exoneradas
-        exempted_count = ChargeOrder.objects.filter(
-            institution=active_inst,
-            status="waived",
-            issued_at__gte=start_date,
-            issued_at__lt=end_date,
-        ).count()
-
         metrics = {
-            "scheduled_count": scheduled_count,
-            "pending_count": pending_count,
-            "waiting_count": waiting_count,
-            "in_consultation_count": in_consultation_count,
-            "completed_count": completed_count,
+            "scheduled_count": appointment_metrics["scheduled_count"],
+            "pending_count": appointment_metrics["pending_count"],
+            "waiting_count": appointment_metrics["waiting_count"],
+            "in_consultation_count": appointment_metrics["in_consultation_count"],
+            "completed_count": appointment_metrics["completed_count"],
             "total_amount": float(total_amount),
             "payments_count": payments_count,
-            "exempted_count": exempted_count,
+            "exempted_count": financial_metrics["exempted_count"],
             "bcv_rate": bcv_rate,  # ✅ NUEVO: Incluir rate en respuesta
         }
 

@@ -1140,6 +1140,11 @@ class Prescription(models.Model):
         verbose_name = "Récipe / Receta"
         verbose_name_plural = "Récipes / Recetas"
         ordering = ["-issued_at"]
+        indexes = [
+            models.Index(fields=["doctor", "issued_at"]),
+            models.Index(fields=["institution", "issued_at"]),
+            models.Index(fields=["patient", "issued_at"]),
+        ]
 
     def save(self, *args, **kwargs):
         # Al guardar, "fotografiamos" el contexto para que sea inmutable
@@ -1811,6 +1816,9 @@ class ChargeItem(models.Model):
     class Meta:
         verbose_name = "Ítem de Cobro"
         verbose_name_plural = "Ítems de Cobro"
+        indexes = [
+            models.Index(fields=["order", "code"]),
+        ]
 
     def __str__(self):
         return f"{self.description or self.code} (x{self.qty})"
@@ -3691,6 +3699,11 @@ class Surgery(models.Model):
         verbose_name = "Cirugía"
         verbose_name_plural = "Cirugías"
         ordering = ["-scheduled_date"]
+        indexes = [
+            models.Index(fields=["patient", "scheduled_date"]),
+            models.Index(fields=["institution", "status"]),
+            models.Index(fields=["surgeon", "status"]),
+        ]
 
     def save(self, *args, **kwargs):
         self.name = normalize_title_case(self.name)
@@ -3835,6 +3848,11 @@ class Hospitalization(models.Model):
         verbose_name = "Hospitalización"
         verbose_name_plural = "Hospitalizaciones"
         ordering = ["-admission_date"]
+        indexes = [
+            models.Index(fields=["patient", "admission_date"]),
+            models.Index(fields=["institution", "status"]),
+            models.Index(fields=["attending_doctor", "status"]),
+        ]
 
     def __str__(self):
         return f"{self.patient} — {self.ward} Cama {self.bed_number} [{self.get_status_display()}]"
