@@ -62,16 +62,24 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
   const { mutate: updateDiagnosis } = useUpdateDiagnosis();
   const { mutate: deleteDiagnosis } = useDeleteDiagnosis();
   const itemRefs = useRef<Array<HTMLDivElement | null>>([]);
+  
   useEffect(() => {
     itemRefs.current = [];
     setHighlightIndex(-1);
   }, [results]);
+  
   useEffect(() => {
     if (highlightIndex >= 0) {
       const el = itemRefs.current[highlightIndex];
       if (el) el.scrollIntoView({ block: "nearest" });
     }
   }, [highlightIndex]);
+  
+  useEffect(() => {
+    if (query.length === 0) {
+      setShowResults(false);
+    }
+  }, [query]);
   const handleSelect = (item: IcdResult | SnomedResult) => {
     setSelectedDiagnosis(item);
     setDescription("");
@@ -187,8 +195,9 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
               placeholder={`Buscar en ${catalog === "icd11" ? "CIE-11" : "SNOMED CT"}...`}
               value={query}
               onChange={(e) => { 
-                setQuery(e.target.value); 
-                setShowResults(true);
+                const value = e.target.value;
+                setQuery(value); 
+                setShowResults(value.length > 0 && value.trim().length > 0);
                 setHighlightIndex(-1); 
               }}
               onKeyDown={(e) => {
@@ -201,7 +210,21 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
               className="w-full bg-white/5 border border-white/15 pl-12 pr-4 py-3 text-[12px] focus:border-emerald-500/50 outline-none transition-all rounded-lg placeholder:text-white/30"
             />
           </div>
-          {/* Resultados */}
+          {/* Loading indicator */}
+          {showResults && isLoading && query.length > 0 && (
+            <div className="border border-white/15 bg-[#0a0a0b] p-4 text-center rounded-lg">
+              <span className="text-[11px] text-emerald-400 animate-pulse">Buscando...</span>
+            </div>
+          )}
+          
+          {/* No results */}
+          {!isLoading && showResults && query.length > 0 && results.length === 0 && (
+            <div className="border border-white/15 bg-[#0a0a0b] p-4 text-center rounded-lg">
+              <span className="text-[11px] text-white/50">Sin resultados para "{query}"</span>
+            </div>
+          )}
+          
+          {/* Results dropdown */}
           {showResults && results.length > 0 && (
             <div 
               className="border border-white/15 bg-[#0a0a0b] shadow-2xl max-h-64 overflow-y-auto rounded-lg"
@@ -224,7 +247,7 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
             </div>
           )}
           {/* Diagnóstico seleccionado */}
-          {!showResults && selectedDiagnosis && (
+          {selectedDiagnosis && !showResults && (
             <div className="bg-emerald-500/10 border border-emerald-500/25 p-5 space-y-4 animate-in fade-in zoom-in-95 duration-200 rounded-lg">
               <div className="flex items-center justify-between pb-3 border-b border-emerald-500/20">
                 <div className="flex items-center gap-2">
