@@ -1,5 +1,6 @@
 // src/hooks/consultations/useMedicalReferrals.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData } from "@tanstack/react-query";
 import { apiFetch } from "../../api/client";
 import type { MedicalReferral } from "../../types/consultation";
 export function useMedicalReferrals(appointmentId: number) {
@@ -14,6 +15,7 @@ export function useMedicalReferrals(appointmentId: number) {
     },
     staleTime: 1000 * 60 * 10,
     gcTime: 1000 * 60 * 30,
+    placeholderData: keepPreviousData,
     enabled: !!appointmentId,
   });
 }

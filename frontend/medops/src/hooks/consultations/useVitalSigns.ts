@@ -1,5 +1,6 @@
 // src/hooks/consultations/useVitalSigns.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData } from "@tanstack/react-query";
 import { VitalSigns, CreateVitalSignsInput, UpdateVitalSignsInput } from "../../types/clinical";
 import { getVitalSigns, createVitalSigns, updateVitalSigns, deleteVitalSigns } from "../../api/vitalSigns";
 // 🔹 Obtener signos vitales de una cita
@@ -9,6 +10,7 @@ export function useVitalSigns(appointmentId: number) {
     queryFn: async () => getVitalSigns(appointmentId),
     staleTime: 1000 * 60 * 10,
     gcTime: 1000 * 60 * 30,
+    placeholderData: keepPreviousData,
     enabled: !!appointmentId,
   });
 }

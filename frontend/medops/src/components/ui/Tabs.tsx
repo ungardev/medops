@@ -26,6 +26,11 @@ export function Tabs({
   const tabs = React.Children.toArray(children).filter((child) => {
     return isValidElement(child);
   }) as ReactElement<TabProps>[];
+
+  const contentContainerClass = layout === "vertical"
+    ? "grid grid-cols-1 md:grid-cols-2 gap-4"
+    : "space-y-4";
+
   return (
     <div className={className ?? "space-y-4"}>
       
@@ -51,21 +56,27 @@ export function Tabs({
           );
         })}
       </div>
-      <div className={layout === "vertical" ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "space-y-4"}>
-        {tabs.map((tab) =>
-          tab.props.id === value ? (
+
+      <div className={`relative ${contentContainerClass}`}>
+        {tabs.map((tab) => {
+          const isActive = tab.props.id === value;
+          return (
             <div
               key={tab.props.id}
-              className={`animate-in fade-in slide-in-from-bottom-1 duration-300 ease-out ${
-                layout === "vertical" ? "" : "w-full"
-              }`}
+              className={`
+                transition-all duration-300 ease-out
+                ${isActive 
+                  ? "opacity-100 relative" 
+                  : "opacity-0 absolute inset-0 pointer-events-none"}
+                ${layout === "vertical" ? "" : "w-full"}
+              `}
             >
-              <div className="bg-white/5 border border-white/15 rounded-lg p-5 sm:p-6">
+              <div className="bg-white/5 border border-white/15 rounded-lg p-5 sm:p-6 h-full">
                 {tab.props.children}
               </div>
             </div>
-          ) : null
-        )}
+          );
+        })}
       </div>
     </div>
   );

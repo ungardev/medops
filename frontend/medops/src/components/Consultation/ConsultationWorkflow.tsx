@@ -59,13 +59,9 @@ export default function ConsultationWorkflow({
   const createTreatment = useCreateTreatment();
   const createPrescription = useCreatePrescription();
   const [activeTab, setActiveTab] = useState<TabId>("vital-signs");
-  
-  const [renderedTabs, setRenderedTabs] = useState<Set<TabId>>(new Set(["vital-signs"]));
 
   const handleTabChange = useCallback((tabId: string) => {
-    const id = tabId as TabId;
-    setActiveTab(id);
-    setRenderedTabs(prev => new Set(prev).add(id));
+    setActiveTab(tabId as TabId);
   }, []);
 
   const tabIcons = useMemo(() => ({

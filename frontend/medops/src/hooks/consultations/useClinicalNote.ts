@@ -1,5 +1,6 @@
 // src/hooks/consultations/useClinicalNote.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData } from "@tanstack/react-query";
 import { ClinicalNote, CreateClinicalNoteInput, UpdateClinicalNoteInput } from "../../types/clinical";
 import { 
   getClinicalNote, 
@@ -15,6 +16,7 @@ export function useClinicalNote(appointmentId: number) {
     queryFn: async () => getClinicalNote(appointmentId),
     staleTime: 1000 * 60 * 10,
     gcTime: 1000 * 60 * 30,
+    placeholderData: keepPreviousData,
     enabled: !!appointmentId,
   });
 }
