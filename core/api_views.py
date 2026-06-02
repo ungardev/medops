@@ -2308,15 +2308,11 @@ def generate_medical_report(request, pk):
         )
 
         diagnoses = Diagnosis.objects.filter(appointment=appointment)
-        treatments = Treatment.objects.filter(
-            patient=appointment.patient,
-            doctor=appointment.doctor,
-            institution=appointment.institution,
-        ).select_related("diagnosis")
+        treatments = Treatment.objects.filter(appointment=appointment).select_related(
+            "diagnosis"
+        )
         prescriptions = Prescription.objects.filter(
-            patient=appointment.patient,
-            doctor=appointment.doctor,
-            institution=appointment.institution,
+            appointment=appointment
         ).select_related("medication_catalog", "diagnosis")
         medical_tests = MedicalTest.objects.filter(
             appointment=appointment

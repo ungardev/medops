@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "../../api/client";
 import type { Appointment } from "../../types/appointments";
 async function fetchConsultationById(id: number): Promise<Appointment | null> {
-  if (!id || isNaN(id)) return null; // 👇 blindaje contra NaN o 0
-  return apiFetch<Appointment>(`appointments//`); // 👇 ruta corregida
+  if (!id || isNaN(id)) return null;
+  return apiFetch<Appointment>(`appointments/${id}/`);
 }
 export function useConsultationById(id: number) {
   return useQuery<Appointment | null, Error>({
