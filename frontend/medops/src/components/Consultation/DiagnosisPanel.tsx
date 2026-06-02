@@ -149,7 +149,7 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
                 type={d.type}
                 status={d.status}
                 catalog={d.catalog}
-                isOptimistic={d.isOptimistic}
+                isOptimistic={(d as any).isOptimistic}
                 {...(!readOnly && {
                   onEdit: (id, desc) => updateDiagnosis({ id, description: desc }),
                   onDelete: (id) => deleteDiagnosis(id),
