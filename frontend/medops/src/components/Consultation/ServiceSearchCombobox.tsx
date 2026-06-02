@@ -4,11 +4,10 @@ import { useState, Fragment } from "react";
 import type { DoctorService } from "../../types/services";
 import { useDoctorServicesSearch } from "../../hooks/services/useDoctorServices";
 import { 
-  MagnifyingGlassIcon, 
-  ChevronUpDownIcon,
-  CurrencyDollarIcon,
-  CheckIcon
-} from "@heroicons/react/20/solid";
+    MagnifyingGlassIcon, 
+    ChevronUpDownIcon,
+    CheckIcon
+  } from "@heroicons/react/20/solid";
 interface Props {
   onSelect: (service: DoctorService) => void;
   disabled?: boolean;
@@ -49,7 +48,7 @@ export default function ServiceSearchCombobox({ onSelect, disabled }: Props) {
           leaveTo="opacity-0"
           afterLeave={() => setQuery("")}
         >
-          <Combobox.Options className="absolute mt-1 max-h-60 w-full overflow-auto border border-white/15 bg-[#1a1a1b] py-1 shadow-2xl z-[10001] focus:outline-none min-w-[300px] rounded-lg">
+          <Combobox.Options className="absolute mt-1 max-h-60 w-full overflow-auto border border-white/15 bg-[#1a1a1b] py-1 shadow-2xl z-[10001] focus:outline-none min-w-[200px] max-w-[320px] rounded-lg">
             {isFetching ? (
               <div className="relative cursor-default select-none py-3 px-4 text-[11px] text-white/40 flex items-center gap-2">
                 <div className="w-3 h-3 border-2 border-white/30 border-t-transparent rounded-full animate-spin"></div>
@@ -75,12 +74,12 @@ export default function ServiceSearchCombobox({ onSelect, disabled }: Props) {
                     }
                     value={service}
                   >
-                    {({ selected, active }) => (
+                    {({ selected }) => (
                       <>
                         <div className="flex items-center justify-between gap-4">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="text-white/40">[{service.code}]</span>
+                              <span className="text-white/40 truncate">[{service.code}]</span>
                               <span className="tracking-wide truncate">
                                 {service.name}
                               </span>
