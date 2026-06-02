@@ -80,11 +80,11 @@ const patientPortal = {
             <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent z-20"></div>
             
             {/* Image with Ken Burns animation */}
-            <div class="relative w-full aspect-video overflow-hidden">
+            <div class="relative w-full overflow-hidden">
               <img 
                 src="/screenshots/doctor-portal.png" 
                 alt="Doctor Portal Dashboard" 
-                class="w-full h-full object-cover ken-burns-doctor"
+                class="w-full h-auto object-contain ken-burns-doctor"
               />
               
               {/* Gradient overlays for premium feel */}
@@ -119,19 +119,19 @@ const patientPortal = {
         }
         
         @keyframes kenBurnsDoctor {
-          0%   { transform: scale(1.15) translate(-5%, -2%); }
-          25%  { transform: scale(1.25) translate(5%, -4%); }
-          50%  { transform: scale(1.35) translate(-3%, -6%); }
-          75%  { transform: scale(1.25) translate(4%, -4%); }
-          100% { transform: scale(1.15) translate(-5%, -2%); }
+          0%   { transform: scale(1.0); }
+          25%  { transform: scale(1.05); }
+          50%  { transform: scale(1.08); }
+          75%  { transform: scale(1.05); }
+          100% { transform: scale(1.0); }
         }
         
         @keyframes kenBurnsPatient {
-          0%   { transform: scale(1.15) translate(5%, -2%); }
-          25%  { transform: scale(1.25) translate(-5%, -4%); }
-          50%  { transform: scale(1.35) translate(3%, -6%); }
-          75%  { transform: scale(1.25) translate(-4%, -4%); }
-          100% { transform: scale(1.15) translate(5%, -2%); }
+          0%   { transform: scale(1.05); }
+          25%  { transform: scale(1.08); }
+          50%  { transform: scale(1.0); }
+          75%  { transform: scale(1.05); }
+          100% { transform: scale(1.05); }
         }
       </style>
     </div>
@@ -148,11 +148,11 @@ const patientPortal = {
             <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/40 to-transparent z-20"></div>
             
             {/* Image with Ken Burns animation */}
-            <div class="relative w-full aspect-video overflow-hidden">
+            <div class="relative w-full overflow-hidden">
               <img 
                 src="/screenshots/patient-portal.png" 
                 alt="Patient Portal Dashboard" 
-                class="w-full h-full object-cover ken-burns-patient"
+                class="w-full h-auto object-contain ken-burns-patient"
               />
               
               {/* Gradient overlays for premium feel */}
