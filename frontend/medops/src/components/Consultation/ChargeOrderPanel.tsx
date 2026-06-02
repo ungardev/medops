@@ -156,7 +156,7 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
             {!hasOrder ? 'Sin Orden' : isPaid ? 'Pagado' : 'Pendiente'}
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 gap-4 md:gap-6">
           <div>
             <p className="text-[10px] text-white/50 uppercase">Total</p>
             <p className="text-xl font-semibold mt-0.5">
@@ -211,7 +211,7 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
                 </div>
                 
                 {pendingItems.length > 0 && (
-                  <div className="space-y-3 border border-emerald-500/25 bg-emerald-500/5 p-4 rounded-lg">
+                  <div className="space-y-3 border border-emerald-500/25 bg-emerald-500/5 p-4 rounded-lg overflow-hidden">
                     <div className="flex justify-between items-center">
                       <span className="text-[10px] font-medium text-emerald-400 uppercase tracking-wider">
                         Ítems Pendientes
