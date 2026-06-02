@@ -1,5 +1,5 @@
 // src/components/Consultation/ConsultationWorkflow.tsx
-import { useState } from "react";
+import { useState, useMemo, memo, useCallback } from "react";
 import DiagnosisPanel from "./DiagnosisPanel";
 import TreatmentPanel from "./TreatmentPanel";
 import PrescriptionPanel from "./PrescriptionPanel";
@@ -22,12 +22,34 @@ import {
   DocumentTextIcon,
   BuildingOfficeIcon
 } from "@heroicons/react/24/outline";
+
+type TabId = "vital-signs" | "clinical-note" | "diagnosis" | "treatment" | "prescription" | "tests" | "referrals";
+
 interface ConsultationWorkflowProps {
   diagnoses: Diagnosis[];
   appointmentId: number;
   treatments?: Treatment[];
   readOnly: boolean;
 }
+
+const tabConfig: Record<TabId, { icon: React.ReactNode; label: string }> = {
+  "vital-signs": { icon: <HeartIcon className="w-5 h-5" />, label: "Signos Vitales" },
+  "clinical-note": { icon: <DocumentTextIcon className="w-5 h-5" />, label: "Nota Clínica" },
+  diagnosis: { icon: <BeakerIcon className="w-5 h-5" />, label: "Diagnóstico" },
+  treatment: { icon: <ClipboardDocumentCheckIcon className="w-5 h-5" />, label: "Tratamiento" },
+  prescription: { icon: <PencilSquareIcon className="w-5 h-5" />, label: "Receta" },
+  tests: { icon: <QueueListIcon className="w-5 h-5" />, label: "Exámenes" },
+  referrals: { icon: <ArrowRightCircleIcon className="w-5 h-5" />, label: "Referencias" },
+};
+
+const MemoizedVitalSignsPanel = memo(VitalSignsPanel);
+const MemoizedClinicalNotePanel = memo(ClinicalNotePanel);
+const MemoizedDiagnosisPanel = memo(DiagnosisPanel);
+const MemoizedTreatmentPanel = memo(TreatmentPanel);
+const MemoizedPrescriptionPanel = memo(PrescriptionPanel);
+const MemoizedMedicalTestsPanel = memo(MedicalTestsPanel);
+const MemoizedMedicalReferralsPanel = memo(MedicalReferralsPanel);
+
 export default function ConsultationWorkflow({
   diagnoses,
   appointmentId,
@@ -36,18 +58,27 @@ export default function ConsultationWorkflow({
 }: ConsultationWorkflowProps) {
   const createTreatment = useCreateTreatment();
   const createPrescription = useCreatePrescription();
-  const [activeTab, setActiveTab] = useState("vital-signs");
+  const [activeTab, setActiveTab] = useState<TabId>("vital-signs");
   
-  const tabIcons = {
-    "vital-signs": <HeartIcon className="w-5 h-5" />,
-    "clinical-note": <DocumentTextIcon className="w-5 h-5" />,
-    diagnosis: <BeakerIcon className="w-5 h-5" />,
-    treatment: <ClipboardDocumentCheckIcon className="w-5 h-5" />,
-    prescription: <PencilSquareIcon className="w-5 h-5" />,
-    tests: <QueueListIcon className="w-5 h-5" />,
-    referrals: <ArrowRightCircleIcon className="w-5 h-5" />,
-  };
-  const handleCreateTreatment = async (data: {
+  const [renderedTabs, setRenderedTabs] = useState<Set<TabId>>(new Set(["vital-signs"]));
+
+  const handleTabChange = useCallback((tabId: string) => {
+    const id = tabId as TabId;
+    setActiveTab(id);
+    setRenderedTabs(prev => new Set(prev).add(id));
+  }, []);
+
+  const tabIcons = useMemo(() => ({
+    "vital-signs": tabConfig["vital-signs"].icon,
+    "clinical-note": tabConfig["clinical-note"].icon,
+    diagnosis: tabConfig.diagnosis.icon,
+    treatment: tabConfig.treatment.icon,
+    prescription: tabConfig.prescription.icon,
+    tests: tabConfig.tests.icon,
+    referrals: tabConfig.referrals.icon,
+  }), []);
+
+  const handleCreateTreatment = useCallback(async (data: {
     appointment: number;
     diagnosis: number;
     plan: string;
@@ -76,7 +107,80 @@ export default function ConsultationWorkflow({
       console.error("Error creando tratamiento:", error);
       alert("Error al crear tratamiento. Por favor intenta de nuevo.");
     }
-  };
+  }, [createTreatment, diagnoses, appointmentId]);
+
+  const renderTabContent = useCallback((tabId: TabId) => {
+    const key = `panel-${tabId}`;
+    
+    switch (tabId) {
+      case "vital-signs":
+        return (
+          <MemoizedVitalSignsPanel 
+            key={key}
+            appointmentId={appointmentId} 
+            readOnly={readOnly} 
+          />
+        );
+      case "clinical-note":
+        return (
+          <MemoizedClinicalNotePanel 
+            key={key}
+            appointmentId={appointmentId} 
+            readOnly={readOnly} 
+          />
+        );
+      case "diagnosis":
+        return (
+          <MemoizedDiagnosisPanel 
+            key={key}
+            diagnoses={diagnoses} 
+            readOnly={readOnly} 
+            appointmentId={appointmentId}
+          />
+        );
+      case "treatment":
+        return (
+          <MemoizedTreatmentPanel 
+            key={key}
+            diagnoses={diagnoses}
+            appointmentId={appointmentId} 
+            treatments={treatments}
+            readOnly={readOnly}
+            onAdd={handleCreateTreatment}
+          />
+        );
+      case "prescription":
+        return (
+          <MemoizedPrescriptionPanel 
+            key={key}
+            diagnoses={diagnoses}
+            appointmentId={appointmentId} 
+            readOnly={readOnly}
+            onAdd={(data: CreatePrescriptionInput) => createPrescription.mutateAsync(data)}
+          />
+        );
+      case "tests":
+        return (
+          <MemoizedMedicalTestsPanel 
+            key={key}
+            appointmentId={appointmentId} 
+            readOnly={readOnly} 
+          />
+        );
+      case "referrals":
+        return (
+          <MemoizedMedicalReferralsPanel 
+            key={key}
+            appointmentId={appointmentId} 
+            diagnoses={diagnoses}
+            readOnly={readOnly} 
+          />
+        );
+      default:
+        return null;
+    }
+  }, [appointmentId, readOnly, diagnoses, treatments, handleCreateTreatment, createPrescription]);
+
   return (
     <div className="w-full space-y-6">
       {readOnly && (
@@ -95,91 +199,25 @@ export default function ConsultationWorkflow({
       
       <Tabs
         value={activeTab}
-        onChange={setActiveTab}
+        onChange={handleTabChange}
         layout="horizontal"
         className="w-full space-y-6"
       >
-        <Tab 
-          id="vital-signs" 
-          label={<span className="flex items-center gap-2 text-[12px] font-medium">{tabIcons["vital-signs"]} Signos Vitales</span>}
-        >
-          <div className="w-full">
-            <VitalSignsPanel appointmentId={appointmentId} readOnly={readOnly} />
-          </div>
-        </Tab>
-        
-        <Tab 
-          id="clinical-note" 
-          label={<span className="flex items-center gap-2 text-[12px] font-medium">{tabIcons["clinical-note"]} Nota Clínica</span>}
-        >
-          <div className="w-full">
-            <ClinicalNotePanel appointmentId={appointmentId} readOnly={readOnly} />
-          </div>
-        </Tab>
-        
-        <Tab 
-          id="diagnosis" 
-          label={<span className="flex items-center gap-2 text-[12px] font-medium">{tabIcons.diagnosis} Diagnóstico</span>}
-        >
-          <div className="w-full">
-            <DiagnosisPanel 
-              diagnoses={diagnoses} 
-              readOnly={readOnly} 
-              appointmentId={appointmentId}
-            />
-          </div>
-        </Tab>
-        
-        <Tab 
-          id="treatment" 
-          label={<span className="flex items-center gap-2 text-[12px] font-medium">{tabIcons.treatment} Tratamiento</span>}
-        >
-          <div className="w-full">
-            <TreatmentPanel 
-              diagnoses={diagnoses}
-              appointmentId={appointmentId} 
-              treatments={treatments}
-              readOnly={readOnly}
-              onAdd={handleCreateTreatment}
-            />
-          </div>
-        </Tab>
-        
-        <Tab 
-          id="prescription" 
-          label={<span className="flex items-center gap-2 text-[12px] font-medium">{tabIcons.prescription} Receta</span>}
-        >
-          <div className="w-full">
-            <PrescriptionPanel 
-              diagnoses={diagnoses}
-              appointmentId={appointmentId} 
-              readOnly={readOnly}
-              onAdd={(data: CreatePrescriptionInput) => createPrescription.mutateAsync(data)}
-            />
-          </div>
-        </Tab>
-        
-        <Tab 
-          id="tests" 
-          label={<span className="flex items-center gap-2 text-[12px] font-medium">{tabIcons.tests} Exámenes</span>}
-        >
-          <div className="w-full">
-            <MedicalTestsPanel appointmentId={appointmentId} readOnly={readOnly} />
-          </div>
-        </Tab>
-        
-        <Tab 
-          id="referrals" 
-          label={<span className="flex items-center gap-2 text-[12px] font-medium">{tabIcons.referrals} Referencias</span>}
-        >
-          <div className="w-full">
-            <MedicalReferralsPanel 
-              appointmentId={appointmentId} 
-              diagnoses={diagnoses}
-              readOnly={readOnly} 
-            />
-          </div>
-        </Tab>
+        {(Object.keys(tabConfig) as TabId[]).map(tabId => (
+          <Tab 
+            key={tabId}
+            id={tabId} 
+            label={
+              <span className="flex items-center gap-2 text-[12px] font-medium">
+                {tabIcons[tabId]} {tabConfig[tabId].label}
+              </span>
+            }
+          >
+            <div className="w-full">
+              {renderTabContent(tabId)}
+            </div>
+          </Tab>
+        ))}
       </Tabs>
     </div>
   );

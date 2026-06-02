@@ -38,8 +38,6 @@ export function useDocuments(patientId: number, appointmentId?: number) {
       const params = new URLSearchParams({ patient: String(patientId) });
       if (appointmentId) params.append("appointment", String(appointmentId));
       const res = await apiFetch(`documents/?${params.toString()}`);
-      // Caso 1: backend devuelve wrapper con documents (skipped opcional)
-      // ✅ FIX: Usar type assertion para acceder a propiedades
       if (res && typeof res === "object" && "documents" in res) {
         const data = res as BackendDocumentsResponse;
         return {
@@ -51,7 +49,6 @@ export function useDocuments(patientId: number, appointmentId?: number) {
           errors: data.errors || [],
         } as DocumentsResponse;
       }
-      // Caso 2: backend devuelve array clásico de MedicalDocument[]
       if (Array.isArray(res)) {
         const documents: DocumentItem[] = (res as any[]).map((d: any) => {
           const fileUrl: string | null = d.file ?? d.file_url ?? null;
@@ -74,7 +71,6 @@ export function useDocuments(patientId: number, appointmentId?: number) {
           errors: [],
         } as DocumentsResponse;
       }
-      // Caso 3: respuesta inesperada — devolvemos vacío defensivo
       return {
         consultation_id: appointmentId ?? 0,
         audit_code: null,
@@ -84,6 +80,8 @@ export function useDocuments(patientId: number, appointmentId?: number) {
         errors: [],
       };
     },
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
   });
 }
 export function useUploadDocument(patientId: number, appointmentId?: number) {

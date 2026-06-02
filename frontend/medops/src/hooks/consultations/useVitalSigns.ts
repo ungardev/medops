@@ -7,7 +7,8 @@ export function useVitalSigns(appointmentId: number) {
   return useQuery<VitalSigns, Error>({
     queryKey: ["vital-signs", appointmentId],
     queryFn: async () => getVitalSigns(appointmentId),
-    staleTime: 1000 * 60 * 5, // 5 minutos
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
     enabled: !!appointmentId,
   });
 }

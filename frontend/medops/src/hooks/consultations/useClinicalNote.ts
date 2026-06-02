@@ -13,7 +13,8 @@ export function useClinicalNote(appointmentId: number) {
   return useQuery<ClinicalNote, Error>({
     queryKey: ["clinical-note", appointmentId],
     queryFn: async () => getClinicalNote(appointmentId),
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
     enabled: !!appointmentId,
   });
 }

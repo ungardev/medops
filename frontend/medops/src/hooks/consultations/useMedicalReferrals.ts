@@ -12,6 +12,8 @@ export function useMedicalReferrals(appointmentId: number) {
       );
       return data?.results ?? [];
     },
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
     enabled: !!appointmentId,
   });
 }

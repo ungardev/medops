@@ -7,13 +7,14 @@ export function useMedicalTest(appointmentId: number) {
     queryKey: ["medical-test", appointmentId],
     queryFn: async (): Promise<MedicalTest[]> => {
       console.debug("📡 Fetching medical tests for appointment:", appointmentId);
-      // ⚔️ FIX: ahora filtramos por appointmentId en la query string
       const data = await apiFetch<{ count: number; results: MedicalTest[] }>(
         `medical-tests/?appointment=${appointmentId}`,
         { method: "GET" }
       );
       return data.results;
     },
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
     enabled: !!appointmentId,
   });
 }
