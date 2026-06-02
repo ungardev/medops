@@ -155,7 +155,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
         substance: c.substance.trim(),
         dosage: String(c.dosage),
         unit: c.unit,
-      })) : undefined,
+      })) : [],
     };
     
     onAdd?.(payload);

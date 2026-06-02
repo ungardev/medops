@@ -720,8 +720,9 @@ class PrescriptionComponentWriteSerializer(serializers.ModelSerializer):
 
 
 class PrescriptionWriteSerializer(serializers.ModelSerializer):
-    # Definimos los componentes para permitir la creación de la receta y sus fármacos en un solo JSON
-    components = PrescriptionComponentSerializer(many=True)
+    components = PrescriptionComponentSerializer(
+        many=True, required=False, allow_empty=True
+    )
 
     class Meta:
         model = Prescription
@@ -730,12 +731,12 @@ class PrescriptionWriteSerializer(serializers.ModelSerializer):
             "diagnosis",
             "medication_catalog",
             "medication_text",
-            "dosage_form",  # 👈 Nuevo: Tableta, Jarabe, Ampolla...
+            "dosage_form",
             "route",
             "frequency",
             "duration",
-            "indications",  # 👈 Nuevo: Instrucciones para el paciente
-            "components",  # Lista de sustancias activas
+            "indications",
+            "components",
         ]
 
     def validate(self, data):

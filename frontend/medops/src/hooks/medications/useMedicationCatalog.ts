@@ -18,9 +18,9 @@ export function useMedicationCatalog(searchTerm: string, enabled: boolean = true
         ordering: 'name'
       });
       
-      const response = await apiFetch<{ results: MedicationCatalogItem[] }>(`/medications/?${params.toString()}`);
+      const response = await apiFetch<MedicationCatalogItem[]>(`/medications/?${params.toString()}`);
       
-      return response?.results || [];
+      return Array.isArray(response) ? response : [];
     },
     enabled: enabled && debouncedSearch.length >= 2,
     staleTime: 5 * 60 * 1000,
