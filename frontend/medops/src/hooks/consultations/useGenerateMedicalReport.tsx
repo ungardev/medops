@@ -1,7 +1,5 @@
 import { useMutation, useQueryClient, UseMutationResult } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
-import MedicalReportSuccessToast from "../../components/Common/MedicalReportSuccessToast";
-import { apiFetch } from "../../api/client";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
