@@ -35,6 +35,7 @@ export function useCreatePrescription() {
       
       queryClient.setQueryData(["appointment", "current"], (old: any) => {
         if (!old) return old;
+        
         const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const optimisticPrescription = {
           id: tempId,
@@ -50,9 +51,23 @@ export function useCreatePrescription() {
           components: newPrescription.components || [],
           isOptimistic: true,
         };
+        
+        const updatedPrescriptions = [...(old.prescriptions || []), optimisticPrescription];
+        
+        const updatedDiagnoses = (old.diagnoses || []).map((d: any) => {
+          if (d.id === newPrescription.diagnosis) {
+            return {
+              ...d,
+              prescriptions: [...(d.prescriptions || []), optimisticPrescription],
+            };
+          }
+          return d;
+        });
+        
         return {
           ...old,
-          prescriptions: [...(old.prescriptions || []), optimisticPrescription],
+          prescriptions: updatedPrescriptions,
+          diagnoses: updatedDiagnoses,
         };
       });
       
