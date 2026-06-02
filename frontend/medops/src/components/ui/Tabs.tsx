@@ -66,8 +66,8 @@ export function Tabs({
               className={`
                 transition-all duration-300 ease-out
                 ${isActive 
-                  ? "opacity-100 relative" 
-                  : "opacity-0 absolute inset-0 pointer-events-none"}
+                  ? "opacity-100 relative visible" 
+                  : "opacity-0 absolute inset-0 pointer-events-none overflow-hidden"}
                 ${layout === "vertical" ? "" : "w-full"}
               `}
             >
