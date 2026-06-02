@@ -39,10 +39,46 @@ export function useCreateMedicalReferral() {
       });
       return data;
     },
+    onMutate: async (newReferral) => {
+      await queryClient.cancelQueries({ queryKey: ["medical-referrals", newReferral.appointment] });
+      const previous = queryClient.getQueryData(["medical-referrals", newReferral.appointment]);
+      
+      queryClient.setQueryData(["medical-referrals", newReferral.appointment], (old: any) => {
+        if (!old) return old;
+        const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const optimisticReferral = {
+          id: tempId,
+          appointment: newReferral.appointment,
+          diagnosis: newReferral.diagnosis,
+          referred_to_external: newReferral.referred_to_external,
+          referred_to: newReferral.referred_to_external,
+          reason: newReferral.reason,
+          specialty_ids: newReferral.specialty_ids || [],
+          urgency: newReferral.urgency || "routine",
+          status: newReferral.status || "issued",
+          specialties: [],
+          isOptimistic: true,
+        };
+        return {
+          ...old,
+          results: [...(old.results || []), optimisticReferral],
+        };
+      });
+      
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["medical-referrals", _vars.appointment], context.previous);
+      }
+    },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["medical-referrals", variables.appointment],
       });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["medical-referrals"] });
     },
   });
 }

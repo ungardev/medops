@@ -23,6 +23,7 @@ export function useMedicalTest(appointmentId: number) {
 
 export function useCreateMedicalTest() {
   const queryClient = useQueryClient();
+  
   return useMutation({
     mutationFn: async (payload: Partial<MedicalTest> & { appointment: number }) => {
       const finalPayload = {
@@ -36,10 +37,40 @@ export function useCreateMedicalTest() {
       });
       return data;
     },
+    onMutate: async (newTest) => {
+      await queryClient.cancelQueries({ queryKey: ["medical-test", newTest.appointment] });
+      const previous = queryClient.getQueryData(["medical-test", newTest.appointment]);
+      
+      queryClient.setQueryData(["medical-test", newTest.appointment], (old: any) => {
+        if (!old) return old;
+        const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const optimisticTest = {
+          id: tempId,
+          appointment: newTest.appointment,
+          test_type: newTest.test_type,
+          description: newTest.description,
+          urgency: newTest.urgency || "routine",
+          status: newTest.status || "pending",
+          test_type_display: newTest.test_type ? newTest.test_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : newTest.test_type,
+          isOptimistic: true,
+        };
+        return [...(Array.isArray(old) ? old : []), optimisticTest];
+      });
+      
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["medical-test", _vars.appointment], context.previous);
+      }
+    },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["medical-test", variables.appointment],
       });
+    },
+    onSettled: (_, _vars, context) => {
+      queryClient.invalidateQueries({ queryKey: ["medical-test"] });
     },
   });
 }

@@ -22,7 +22,8 @@ import {
   UserGroupIcon,
   BuildingOfficeIcon,
   ClockIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  CloudIcon,
 } from "@heroicons/react/24/outline";
 const URGENCY_CONFIG = {
   routine: { label: "RUTINA", color: "text-slate-400", bgColor: "bg-slate-500/15", borderColor: "border-slate-500/25" },
@@ -135,7 +136,13 @@ export default function MedicalReferralsPanel({
               const statusConfig = STATUS_CONFIG[r.status] || STATUS_CONFIG.issued;
               
               return (
-                <div key={r.id} className="border border-white/15 bg-white/5 p-4 rounded-lg space-y-3">
+                <div key={r.id} className={`relative border bg-white/5 p-4 rounded-lg space-y-3 ${(r as any).isOptimistic ? "animate-pulse opacity-80 border-emerald-500/30" : "border-white/15"}`}>
+                  {(r as any).isOptimistic && (
+                    <div className="absolute -top-2 -right-2 flex items-center gap-1 bg-emerald-500/20 text-emerald-400 text-[9px] font-medium px-2 py-1 rounded-full border border-emerald-500/30 z-10">
+                      <CloudIcon className="w-3 h-3 animate-bounce" />
+                      <span>Guardando...</span>
+                    </div>
+                  )}
                   {editingReferral?.id === r.id ? (
                     <div className="space-y-3 animate-in fade-in duration-200">
                       <input
@@ -178,7 +185,7 @@ export default function MedicalReferralsPanel({
                             </span>
                           )}
                         </div>
-                        {!readOnly && (
+                        {!readOnly && !(r as any).isOptimistic && (
                           <div className="flex gap-1">
                             <button onClick={() => setEditingReferral(r)} className="p-2 text-white/50 hover:text-emerald-400 rounded-lg hover:bg-white/5 transition-colors">
                               <PencilSquareIcon className="w-4 h-4" />
