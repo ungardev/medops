@@ -117,8 +117,8 @@ export default function Consultation() {
   const handleCommitSession = async () => {
     queryClient.setQueryData(["appointment", "current"], null);
     await updateStatus.mutateAsync({ id: appointment.id, status: "completed" });
-    setShowCommitModal(false);
     setToast({ message: "Sesión completada exitosamente", type: "success" });
+    setShowCommitModal(false);
     navigate("/waitingroom");
   };
   const billingTotal = Number(appointment.charge_order?.total_amount || 0);
@@ -198,16 +198,34 @@ export default function Consultation() {
                     <button
                       disabled={generateDocuments.isPending}
                       onClick={handleGenerateDocuments}
-                      className="flex items-center gap-2 px-4 py-2.5 text-[11px] font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all rounded-lg disabled:opacity-50"
+                      className="flex items-center gap-2 px-4 py-2.5 text-[11px] font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all rounded-lg disabled:opacity-70"
                     >
-                      <DocumentTextIcon className="w-4 h-4" /> Generar Documentos
+                      {generateDocuments.isPending ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                          Generando...
+                        </>
+                      ) : (
+                        <>
+                          <DocumentTextIcon className="w-4 h-4" /> Generar Documentos
+                        </>
+                      )}
                     </button>
                     <button
                       disabled={generateReport.isPending}
                       onClick={handleGenerateReport}
-                      className="flex items-center gap-2 px-4 py-2.5 text-[11px] font-medium bg-blue-500/15 text-blue-400 border border-blue-500/25 hover:bg-blue-500/25 transition-all rounded-lg disabled:opacity-50"
+                      className="flex items-center gap-2 px-4 py-2.5 text-[11px] font-medium bg-blue-500/15 text-blue-400 border border-blue-500/25 hover:bg-blue-500/25 transition-all rounded-lg disabled:opacity-70"
                     >
-                      <ShieldCheckIcon className="w-4 h-4" /> Informe Médico
+                      {generateReport.isPending ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                          Generando...
+                        </>
+                      ) : (
+                        <>
+                          <ShieldCheckIcon className="w-4 h-4" /> Informe Médico
+                        </>
+                      )}
                     </button>
                   </>
                 )}
@@ -216,10 +234,19 @@ export default function Consultation() {
                   disabled={updateStatus.isPending || !isInstitutionMatch}
                   className="group flex items-center gap-2 px-5 py-2.5 bg-blue-500 text-white hover:bg-blue-400 transition-all rounded-lg disabled:opacity-50"
                 >
-                  <span className="text-[11px] font-semibold">
-                    Completar Sesión
-                  </span>
-                  <ChevronRightIcon className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                  {updateStatus.isPending ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span className="text-[11px] font-semibold">Completando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-[11px] font-semibold">
+                        Completar Sesión
+                      </span>
+                      <ChevronRightIcon className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                    </>
+                  )}
                 </button>
               </div>
             </footer>
