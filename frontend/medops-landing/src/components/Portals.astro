@@ -84,7 +84,7 @@ const patientPortal = {
               <img 
                 src="/screenshots/doctor-portal.png" 
                 alt="Doctor Portal Dashboard" 
-                class="w-full h-auto object-contain ken-burns-doctor"
+                class="w-full h-auto object-contain"
               />
               
               {/* Gradient overlays for premium feel */}
@@ -103,37 +103,6 @@ const patientPortal = {
           </div>
         </div>
       </div>
-      
-      <style>
-        .ken-burns-doctor {
-          animation: kenBurnsDoctor 12s ease-in-out infinite;
-        }
-        .ken-burns-doctor:hover {
-          animation-play-state: paused;
-        }
-        .ken-burns-patient {
-          animation: kenBurnsPatient 12s ease-in-out infinite;
-        }
-        .ken-burns-patient:hover {
-          animation-play-state: paused;
-        }
-        
-        @keyframes kenBurnsDoctor {
-          0%   { transform: scale(1.0); }
-          25%  { transform: scale(1.05); }
-          50%  { transform: scale(1.08); }
-          75%  { transform: scale(1.05); }
-          100% { transform: scale(1.0); }
-        }
-        
-        @keyframes kenBurnsPatient {
-          0%   { transform: scale(1.05); }
-          25%  { transform: scale(1.08); }
-          50%  { transform: scale(1.0); }
-          75%  { transform: scale(1.05); }
-          100% { transform: scale(1.05); }
-        }
-      </style>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
@@ -152,7 +121,7 @@ const patientPortal = {
               <img 
                 src="/screenshots/patient-portal.png" 
                 alt="Patient Portal Dashboard" 
-                class="w-full h-auto object-contain ken-burns-patient"
+                class="w-full h-auto object-contain"
               />
               
               {/* Gradient overlays for premium feel */}
