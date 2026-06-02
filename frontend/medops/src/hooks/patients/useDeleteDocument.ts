@@ -2,9 +2,9 @@
 import { useMutation, useQueryClient, QueryKey } from "@tanstack/react-query";
 import { apiFetch } from "../../api/client";
 import { MedicalDocument } from "../../types/documents";
-import { InstitutionalListResult } from "../core/useInstitutionalList";
 
-type MutationContext = { previous: InstitutionalListResult<MedicalDocument> | undefined };
+type DeleteDocCache = { list: MedicalDocument[]; totalCount: number } | undefined;
+type MutationContext = { previous: DeleteDocCache };
 
 export function useDeleteDocument(patientId: number) {
   const queryClient = useQueryClient();
@@ -17,10 +17,10 @@ export function useDeleteDocument(patientId: number) {
     onMutate: async (documentId: number) => {
       const queryKey: QueryKey = ["patient-documents", patientId];
       await queryClient.cancelQueries({ queryKey });
-      const previous = queryClient.getQueryData<InstitutionalListResult<MedicalDocument>>(queryKey);
-      queryClient.setQueryData<InstitutionalListResult<MedicalDocument>>(
+      const previous = queryClient.getQueryData<DeleteDocCache>(queryKey);
+      queryClient.setQueryData<DeleteDocCache>(
         queryKey,
-        (old) => {
+        (old: DeleteDocCache) => {
           if (!old) return old;
           return {
             ...old,
