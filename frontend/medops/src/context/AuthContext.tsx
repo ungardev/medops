@@ -170,6 +170,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     verifyToken();
   }, []);
 
+  // Auto-refresh access token cada 50 minutos (1 min antes de expiry si eran 60min)
+  useEffect(() => {
+    const intervalId = setInterval(async () => {
+      const refreshToken = localStorage.getItem(STORAGE_KEYS.DOCTOR_REFRESH);
+      if (refreshToken) {
+        const newToken = await refreshAccessToken();
+        if (newToken) {
+          console.log('[AuthContext] Auto-refresh successful');
+        }
+      }
+    }, 50 * 60 * 1000); // 50 minutos
+
+    return () => clearInterval(intervalId);
+  }, []);
+
   useEffect(() => {
     const handleAuthChange = (event: MessageEvent) => {
       if (event.data.type === 'AUTH_CHANGE') {

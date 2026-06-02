@@ -2,6 +2,54 @@
 import { isPatientSubdomain, getCurrentPortal, getPortalConfig } from '@/lib/subdomain';
 
 const API_BASE = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+
+// Flag para prevenir múltiples refresh simultáneos
+let isRefreshing = false;
+let refreshSubscribers: Array<(token: string) => void> = [];
+
+const subscribeTokenRefresh = (callback: (token: string) => void) => {
+  refreshSubscribers.push(callback);
+};
+
+const onRefreshed = (token: string) => {
+  refreshSubscribers.forEach(callback => callback(token));
+  refreshSubscribers = [];
+};
+
+// Función para refrescar el access token
+async function refreshAccessToken(): Promise<string | null> {
+  const refreshToken = localStorage.getItem("doctor_refresh_token");
+  if (!refreshToken) return null;
+
+  try {
+    const response = await fetch(`${API_URL}/auth/token/refresh/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh: refreshToken }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const newAccessToken = data.access;
+      localStorage.setItem("doctor_access_token", newAccessToken);
+      
+      // Si rotated, actualizar refresh token también
+      if (data.refresh) {
+        localStorage.setItem("doctor_refresh_token", data.refresh);
+      }
+      
+      return newAccessToken;
+    }
+  } catch {
+    // Refresh falló
+  }
+  
+  // Limpiar tokens si refresh falló
+  localStorage.removeItem("doctor_access_token");
+  localStorage.removeItem("doctor_refresh_token");
+  return null;
+}
 
 async function doFetch<T>(
   endpoint: string,
@@ -44,18 +92,56 @@ async function doFetch<T>(
 
   const response = await fetch(url, { ...options, headers });
 
-  if (response.status === 401) {
-    const portal = getCurrentPortal();
-    const config = getPortalConfig(portal);
+  // Solo para Doctor Portal: intentar refresh en 401
+  if (response.status === 401 && !isPatientPortal && !(options as any)._retry) {
+    const config = getPortalConfig('app');
     
-    if (isPatientPortal) {
-      localStorage.removeItem("patient_access_token");
-      localStorage.removeItem("patient_drf_token");
-      localStorage.removeItem("patient_refresh_token");
-    } else {
-      localStorage.removeItem("doctor_access_token");
-      localStorage.removeItem("authToken");
+    if (isRefreshing) {
+      // Ya hay refresh en progreso - esperar
+      return new Promise((resolve, reject) => {
+        subscribeTokenRefresh(async (token: string) => {
+          (options as any)._retry = true;
+          headers['Authorization'] = `Bearer ${token}`;
+          const retryResponse = await fetch(url, { ...options, headers });
+          resolve(retryResponse);
+        });
+      });
     }
+
+    isRefreshing = true;
+
+    try {
+      const newToken = await refreshAccessToken();
+      
+      if (newToken) {
+        isRefreshing = false;
+        onRefreshed(newToken);
+        
+        // Reintentar request con nuevo token
+        (options as any)._retry = true;
+        headers['Authorization'] = `Bearer ${newToken}`;
+        const retryResponse = await fetch(url, { ...options, headers });
+        return retryResponse;
+      }
+    } catch {
+      isRefreshing = false;
+    }
+
+    // Refresh falló - logout
+    localStorage.removeItem("doctor_access_token");
+    localStorage.removeItem("doctor_refresh_token");
+    localStorage.removeItem("authToken");
+    window.location.href = getPortalConfig('app').loginPath;
+    throw new Error("Sesion expirada. Redirigiendo al login...");
+  }
+
+  // Para Patient Portal 401 o Doctor 401 después de refresh fallido
+  if (response.status === 401 && isPatientPortal) {
+    const config = getPortalConfig('patient');
+    
+    localStorage.removeItem("patient_access_token");
+    localStorage.removeItem("patient_drf_token");
+    localStorage.removeItem("patient_refresh_token");
     
     window.location.href = config.loginPath;
     throw new Error("Sesion expirada. Redirigiendo al login...");
