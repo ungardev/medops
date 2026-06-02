@@ -129,6 +129,7 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
                         onEdit={handleEdit}
                         onDelete={handleDelete}
                         showMetadata={true}
+                        isOptimistic={(t as any).isOptimistic}
                       />
                     ))}
                   </div>

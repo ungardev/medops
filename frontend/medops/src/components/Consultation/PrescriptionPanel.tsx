@@ -228,6 +228,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                       issuedAt={p.issued_at || undefined}
                       doctor={p.doctor}
                       institution={p.institution}
+                      isOptimistic={(p as any).isOptimistic}
                       {...(!readOnly && {
                         onEdit: (id, med, dur, freq, rt, comps) =>
                           updatePrescription({
@@ -250,6 +251,53 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
               </div>
             </div>
           ))
+        )}
+        {prescriptions && prescriptions.length > 0 && (
+          <div className="border-t border-white/10 pt-6 mt-6">
+            <div className="flex items-center gap-2 mb-4">
+              <BeakerIcon className="w-5 h-5 text-emerald-400" />
+              <span className="text-[11px] font-bold uppercase tracking-wider text-white">
+                Todas las Prescripciones
+              </span>
+            </div>
+            <div className="grid gap-3">
+              {prescriptions.map((p) => (
+                <PrescriptionBadge
+                  key={p.id}
+                  id={p.id}
+                  medication={p.medication_catalog?.name || p.medication_text || "—"}
+                  medicationCatalog={p.medication_catalog ? {
+                    name: p.medication_catalog.name,
+                    presentation: p.medication_catalog.presentation,
+                    concentration: p.medication_catalog.concentration,
+                    generic_name: p.medication_catalog.generic_name,
+                  } : null}
+                  isFromCatalog={!!p.medication_catalog}
+                  duration={p.duration ?? undefined}
+                  frequency={p.frequency}
+                  route={p.route}
+                  components={p.components || []}
+                  indications={p.indications || undefined}
+                  issuedAt={p.issued_at || undefined}
+                  doctor={p.doctor}
+                  institution={p.institution}
+                  isOptimistic={(p as any).isOptimistic}
+                  {...(!readOnly && {
+                    onEdit: (id, med, dur, freq, rt, comps) =>
+                      updatePrescription({
+                        id,
+                        medication_text: med,
+                        duration: (dur ?? undefined)?.trim() || undefined,
+                        frequency: freq,
+                        route: rt,
+                        components: comps || [],
+                      } as UpdatePrescriptionInput),
+                    onDelete: (id) => deletePrescription(id),
+                  })}
+                />
+              ))}
+            </div>
+          </div>
         )}
       </div>
       {!readOnly && diagnoses.length > 0 && appointmentId && (

@@ -14,7 +14,8 @@ import {
   BuildingOfficeIcon,
   ShieldCheckIcon,
   DocumentTextIcon,
-  CircleStackIcon
+  CircleStackIcon,
+  CloudIcon
 } from "@heroicons/react/24/outline";
 const FREQUENCY_LABELS: Record<string, string> = {
   "once_daily": "1 vez al día",
@@ -82,6 +83,7 @@ export interface PrescriptionBadgeProps {
   issuedAt?: string;
   doctor?: Prescription['doctor'];
   institution?: Prescription['institution'];
+  isOptimistic?: boolean;
   onEdit?: (
     id: number,
     medication: string,
@@ -105,6 +107,7 @@ export default function PrescriptionBadge({
   issuedAt,
   doctor,
   institution,
+  isOptimistic = false,
   onEdit,
   onDelete,
 }: PrescriptionBadgeProps) {
@@ -131,11 +134,17 @@ export default function PrescriptionBadge({
   };
   
   return (
-    <div className="group border border-white/15 bg-white/5 rounded-lg overflow-hidden transition-all hover:border-white/25">
+    <div className={`group relative border border-white/15 bg-white/5 rounded-lg overflow-hidden transition-all hover:border-white/25 ${isOptimistic ? "animate-pulse opacity-80 border-emerald-500/30" : ""}`}>
+      {isOptimistic && (
+        <div className="absolute -top-2 -right-2 flex items-center gap-1 bg-emerald-500/20 text-emerald-400 text-[9px] font-medium px-2 py-1 rounded-full border border-emerald-500/30 z-10">
+          <CloudIcon className="w-3 h-3 animate-bounce" />
+          <span>Guardando...</span>
+        </div>
+      )}
       <div className="flex items-center justify-between bg-white/5 px-4 py-3 border-b border-white/15">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <BeakerIcon className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-          <span className="text-[12px] font-medium text-white truncate">
+          <span className={`text-[12px] font-medium truncate ${isOptimistic ? "text-white/70" : "text-white"}`}>
             {isEditing ? "Editando..." : medication}
           </span>
           {isFromCatalog ? (
@@ -149,7 +158,7 @@ export default function PrescriptionBadge({
           )}
         </div>
         
-        {!isEditing && (
+        {!isEditing && !isOptimistic && (
           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button onClick={() => setIsEditing(true)} className="p-2 text-white/50 hover:text-emerald-400 rounded-lg hover:bg-white/5 transition-colors">
               <PencilSquareIcon className="w-4 h-4" />

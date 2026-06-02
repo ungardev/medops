@@ -10,7 +10,8 @@ import {
   UserGroupIcon,        
   BuildingOfficeIcon,   
   CalendarDaysIcon,     
-  ArrowPathIcon         
+  ArrowPathIcon,
+  CloudIcon         
 } from "@heroicons/react/24/outline";
 import type { Treatment, TreatmentStatus, TreatmentType } from "../../types/consultation";
 import type { UpdateTreatmentInput } from "../../types/consultation";
@@ -19,12 +20,14 @@ export interface TreatmentBadgeProps {
   onEdit?: (id: number, newData: UpdateTreatmentInput) => void;
   onDelete?: (id: number) => void;
   showMetadata?: boolean;
+  isOptimistic?: boolean;
 }
 export default function TreatmentBadge({
   treatment,
   onEdit,
   onDelete,
   showMetadata = false,
+  isOptimistic = false,
 }: TreatmentBadgeProps) {
   const [isEditing, setIsEditing] = useState(false);
   
@@ -71,7 +74,14 @@ export default function TreatmentBadge({
     setIsEditing(false);
   };
   return (
-    <div className={`group relative border border-white/15 bg-white/5 p-4 transition-all hover:border-white/25 rounded-lg ${isEditing ? 'border-emerald-500/30 bg-emerald-500/5' : ''}`}>
+    <div className={`group relative border border-white/15 bg-white/5 p-4 transition-all hover:border-white/25 rounded-lg ${isEditing ? 'border-emerald-500/30 bg-emerald-500/5' : ''} ${isOptimistic ? "animate-pulse opacity-80 border-emerald-500/30" : ""}`}>
+      
+      {isOptimistic && (
+        <div className="absolute -top-2 -right-2 flex items-center gap-1 bg-emerald-500/20 text-emerald-400 text-[9px] font-medium px-2 py-1 rounded-full border border-emerald-500/30">
+          <CloudIcon className="w-3 h-3 animate-bounce" />
+          <span>Guardando...</span>
+        </div>
+      )}
       
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
@@ -83,7 +93,7 @@ export default function TreatmentBadge({
             {statusConfig[treatment.status]?.label || treatment.status}
           </div>
         </div>
-        {!isEditing && (
+        {!isEditing && !isOptimistic && (
           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             {onEdit && (
               <button onClick={() => setIsEditing(true)} className="p-2 text-white/50 hover:text-emerald-400 rounded-lg hover:bg-white/5 transition-colors">
