@@ -1,8 +1,9 @@
 // src/hooks/medications/useMedicationCatalog.ts
 import { useQuery, UseQueryResult } from "@tanstack/react-query";
-import axios from "axios";
+import { apiFetch } from "../../api/client";
 import { useDebounce } from "../useDebounce";
 import { MedicationCatalogItem } from "../../types/medication";
+
 export function useMedicationCatalog(searchTerm: string, enabled: boolean = true): UseQueryResult<MedicationCatalogItem[], Error> {
   const debouncedSearch = useDebounce(searchTerm, 300);
   return useQuery<MedicationCatalogItem[]>({
@@ -12,29 +13,28 @@ export function useMedicationCatalog(searchTerm: string, enabled: boolean = true
         return [];
       }
       
-      // ✅ Usar ruta relativa y tipo explícito
-      const response = await axios.get<MedicationCatalogItem[]>("/medications/", {
-        params: { 
-          search: debouncedSearch,
-          ordering: 'name'
-        },
+      const params = new URLSearchParams({
+        search: debouncedSearch,
+        ordering: 'name'
       });
       
-      return response.data || [];
+      const response = await apiFetch<{ results: MedicationCatalogItem[] }>(`/medications/?${params.toString()}`);
+      
+      return response?.results || [];
     },
     enabled: enabled && debouncedSearch.length >= 2,
     staleTime: 5 * 60 * 1000,
     placeholderData: (previousData) => previousData,
   });
 }
+
 export function useMedicationDetail(id: number | null): UseQueryResult<MedicationCatalogItem, Error> {
   return useQuery<MedicationCatalogItem>({
     queryKey: ["medication", id],
     queryFn: async (): Promise<MedicationCatalogItem> => {
       if (!id) throw new Error("ID requerido");
-      // ✅ Tipo explícito
-      const response = await axios.get<MedicationCatalogItem>(`/medications/${id}/`);
-      return response.data;
+      const response = await apiFetch<MedicationCatalogItem>(`/medications/${id}/`);
+      return response;
     },
     enabled: !!id,
     staleTime: 10 * 60 * 1000,
