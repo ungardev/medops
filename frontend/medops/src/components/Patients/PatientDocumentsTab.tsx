@@ -6,8 +6,8 @@ import { useUploadDocument } from "../../hooks/patients/useUploadDocument";
 import { useDeleteDocument } from "../../hooks/patients/useDeleteDocument";
 import { MedicalDocument } from "../../types/documents";
 import { useNotify } from "../../hooks/useNotify";
+import EliteModal from "../Common/EliteModal";
 import { 
-  DocumentArrowUpIcon, 
   TrashIcon, 
   DocumentIcon, 
   ArrowTopRightOnSquareIcon,
@@ -25,17 +25,21 @@ const CATEGORY_OPTIONS = [
   { value: "other", label: "Otro" },
 ];
 export default function PatientDocumentsTab({ patient }: PatientTabProps) {
-  const { data, isLoading, error, refetch } = useDocumentsByPatient(patient.id);
+  const { data, isLoading, refetch } = useDocumentsByPatient(patient.id);
   const uploadDocument = useUploadDocument(patient.id);
   const deleteDocument = useDeleteDocument(patient.id);
   const notify = useNotify();
   const [file, setFile] = useState<File | null>(null);
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<MedicalDocument | null>(null);
   useEffect(() => {
     if (uploadDocument.isSuccess) notify.success("Documento subido exitosamente");
     if (deleteDocument.isSuccess) notify.success("Documento eliminado");
-  }, [uploadDocument.isSuccess, deleteDocument.isSuccess]);
+    if (deleteDocument.isError) notify.error("No se pudo eliminar el documento");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uploadDocument.isSuccess, deleteDocument.isSuccess, deleteDocument.isError]);
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file || !description.trim() || !category) {
@@ -48,6 +52,19 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
     setCategory("");
     await refetch();
   };
+  const handleDeleteClick = (doc: MedicalDocument) => {
+    setDocumentToDelete(doc);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (documentToDelete) {
+      deleteDocument.mutate(documentToDelete.id);
+      setShowDeleteConfirm(false);
+      setDocumentToDelete(null);
+    }
+  };
+
   const resolveFileURL = (file_url: string) => {
     if (!file_url) return "";
     return file_url.startsWith("http") ? file_url : `${BASE_URL}${file_url}`;
@@ -141,8 +158,9 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
                       </a>
                     )}
                     <button
-                      onClick={() => { if(confirm("¿Eliminar este documento?")) deleteDocument.mutate(d.id); }}
-                      className="p-2 text-white/50 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition-colors"
+                      onClick={() => handleDeleteClick(d)}
+                      disabled={deleteDocument.isPending}
+                      className="p-2 text-white/50 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition-colors disabled:opacity-50"
                     >
                       <TrashIcon className="w-4 h-4" />
                     </button>
@@ -167,6 +185,35 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
           El acceso a documentos es registrado y auditado por protocolos de seguridad institucional.
         </span>
       </div>
+
+      <EliteModal
+        open={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        title="ELIMINAR DOCUMENTO"
+        subtitle={documentToDelete?.description || ""}
+        maxWidth="max-w-md"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-white/60">
+            ¿Está seguro que desea eliminar este documento? Esta acción no se puede deshacer.
+          </p>
+          <div className="flex gap-3 pt-2">
+            <button
+              onClick={() => setShowDeleteConfirm(false)}
+              className="flex-1 px-4 py-2.5 bg-white/5 border border-white/15 text-[12px] font-medium text-white/60 hover:bg-white/10 hover:text-white/80 rounded-lg transition-all"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleConfirmDelete}
+              disabled={deleteDocument.isPending}
+              className="flex-1 px-4 py-2.5 bg-red-500/20 border border-red-500/30 text-[12px] font-medium text-red-400 hover:bg-red-500/30 rounded-lg transition-all disabled:opacity-50"
+            >
+              {deleteDocument.isPending ? "Eliminando..." : "Eliminar"}
+            </button>
+          </div>
+        </div>
+      </EliteModal>
     </div>
   );
 }
