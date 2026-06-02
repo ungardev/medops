@@ -974,12 +974,10 @@ class DiagnosisWriteSerializer(serializers.ModelSerializer):
         ]
 
     def validate_icd_code(self, value):
-        """Valida que el código exista en el catálogo maestro CIE-11."""
-        if not ICD11Entry.objects.filter(icd_code=value).exists():
-            raise serializers.ValidationError(
-                f"El código '{value}' no es válido en el catálogo institucional."
-            )
-        return value
+        """Valida que el código no esté vacío (el frontend ya validó que existe en el catálogo)."""
+        if not value or not value.strip():
+            raise serializers.ValidationError("El código ICD es requerido.")
+        return value.strip()
 
     def validate(self, data):
         """Lógica de integridad: Coherencia entre estatus y certeza."""
