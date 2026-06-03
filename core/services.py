@@ -2510,13 +2510,24 @@ def get_institution_settings(request=None, active_only=False):
             doctor = DoctorOperator.objects.filter(user=request.user).first()
 
         if not doctor:
-            # FALLBACK CONTINGENCIA: Buscar institución del script demo o la primera disponible
-            # Evita retornar array vacío que rompe la UI del Dashboard
             institution = InstitutionSettings.objects.first()
             if not institution:
                 if active_only:
                     return cast(Dict[str, Any], {})
                 return cast(Dict[str, Any], [])
+            if active_only:
+                return cast(
+                    Dict[str, Any],
+                    InstitutionSettingsSerializer(
+                        institution, context={"request": request}
+                    ).data,
+                )
+            return cast(
+                Dict[str, Any],
+                InstitutionSettingsSerializer(
+                    [institution], many=True, context={"request": request}
+                ).data,
+            )
 
         # Obtener todas las instituciones del doctor
         institutions = doctor.institutions.all()
