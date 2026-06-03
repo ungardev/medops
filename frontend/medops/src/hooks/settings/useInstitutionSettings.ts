@@ -21,16 +21,18 @@ export function useInstitutionSettings() {
     staleTime: 1000 * 60 * 5,
   });
   const mutation = useMutation({
-    mutationFn: async (payload: Partial<InstitutionSettings> & { neighborhood?: number }) => {
+    mutationFn: async (payload: Partial<InstitutionSettings> & { neighborhood?: number; institutionId?: number }) => {
       // Si hay un archivo de logo, hay que usar FormData
       if (payload.logo instanceof File) {
          const formData = new FormData();
+         const institutionId = payload.institutionId;
          
          // ✅ FIX: Manejar cada campo correctamente según su tipo
          Object.keys(payload).forEach(key => {
              const val = payload[key as keyof typeof payload];
              
              if (val === undefined || val === null) return;
+             if (key === 'institutionId') return; // No enviar al backend
              
              // ✅ Los números deben convertirse a string para FormData
              if (key === 'neighborhood' && typeof val === 'number') {
@@ -46,9 +48,12 @@ export function useInstitutionSettings() {
              }
          });
          
-         const res = await api.patch<InstitutionSettings>("config/institution/", formData, {
-            headers: { "Content-Type": "multipart/form-data" },
-         });
+         const headers: Record<string, string> = { "Content-Type": "multipart/form-data" };
+         if (institutionId) {
+             headers["X-Institution-ID"] = String(institutionId);
+         }
+         
+         const res = await api.patch<InstitutionSettings>("config/institution/", formData, { headers });
          return res.data;
       }
       

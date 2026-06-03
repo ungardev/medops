@@ -239,7 +239,17 @@ def upload_institution_logo(
     Returns:
         Public URL of the uploaded logo, or None if upload failed
     """
+    import logging
+
+    logger = logging.getLogger(__name__)
+
     client = get_r2_client()
+    if client is None:
+        logger.error(
+            f"R2 client is None - cannot upload logo for institution {institution_id}"
+        )
+        return None
+
     object_key = f"institution_logos/{institution_id}/{filename}"
 
     content_type = "image/png"
@@ -250,7 +260,17 @@ def upload_institution_logo(
     elif filename.lower().endswith(".gif"):
         content_type = "image/gif"
 
-    return client.upload_image(file_content, object_key, content_type)
+    logger.info(f"Uploading logo to R2: {object_key} (content_type: {content_type})")
+    result = client.upload_image(file_content, object_key, content_type)
+
+    if result:
+        logger.info(f"Logo uploaded successfully to R2: {result}")
+    else:
+        logger.error(
+            f"Logo upload to R2 FAILED for institution {institution_id}, file: {filename}"
+        )
+
+    return result
 
 
 def get_institution_logo_r2_url(institution_id: int, filename: str) -> Optional[str]:

@@ -2574,7 +2574,10 @@ def get_institution_settings(request=None, active_only=False):
 
 
 def update_institution_settings_ext(
-    data: Dict[str, Any], user, files: Optional[Dict[str, Any]] = None
+    data: Dict[str, Any],
+    user,
+    files: Optional[Dict[str, Any]] = None,
+    institution_id: Optional[int] = None,
 ) -> InstitutionSettings:
     """
     Actualiza la configuración de la institución.
@@ -2585,6 +2588,8 @@ def update_institution_settings_ext(
         data: Datos a actualizar
         user: Usuario Django autenticado
         files: Archivos (para FormData)
+        institution_id: ID de la institución a actualizar (opcional).
+                       Si no se provee, usa la primera disponible o active_institution.
 
     Returns:
         InstitutionSettings actualizada
@@ -2593,7 +2598,21 @@ def update_institution_settings_ext(
         ValidationError: Si el doctor no puede editar esa institución
     """
     try:
-        settings_obj = InstitutionSettings.objects.get(id=1)
+        # Obtener institución por ID o usar fallback
+        if institution_id:
+            settings_obj = InstitutionSettings.objects.get(id=institution_id)
+        else:
+            # Fallback: buscar primera institución disponible
+            if user and user.is_authenticated and hasattr(user, "doctor_profile"):
+                doctor = user.doctor_profile
+                if doctor.active_institution:
+                    settings_obj = doctor.active_institution
+                else:
+                    settings_obj = doctor.institutions.first()
+            if not settings_obj:
+                settings_obj = InstitutionSettings.objects.first()
+            if not settings_obj:
+                raise ValidationError("No se encontró institución para actualizar")
 
         # VERIFICACIÓN: El doctor debe tener esta institución
         if user and user.is_authenticated and hasattr(user, "doctor_profile"):

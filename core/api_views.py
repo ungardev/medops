@@ -2891,11 +2891,13 @@ def institution_settings_api(request):
             data = request.data
             files = request.FILES
             settings_obj = services.update_institution_settings_ext(
-                data, request.user, files
+                data, request.user, files, institution_id=institution.id
             )
         else:
             data = request.data
-            settings_obj = services.update_institution_settings_ext(data, request.user)
+            settings_obj = services.update_institution_settings_ext(
+                data, request.user, institution_id=institution.id
+            )
 
         return Response(
             InstitutionSettingsSerializer(

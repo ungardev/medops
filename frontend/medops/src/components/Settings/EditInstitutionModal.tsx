@@ -130,7 +130,8 @@ export default function EditInstitutionModal({ open, onClose, institution }: Pro
         tax_id: formData.tax_id,
         address: formData.address,
         neighborhood: finalNeighborhoodId,
-        logo: formData.logo
+        logo: formData.logo,
+        institutionId: dataSource?.id
       });
       
       onClose();
