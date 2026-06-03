@@ -2652,7 +2652,7 @@ class DoctorServiceSearchSerializer(serializers.ModelSerializer):
 
 
 class DoctorOperatorSerializer(serializers.ModelSerializer):
-    signature = serializers.ImageField(required=False, allow_null=True, use_url=True)
+    signature = serializers.SerializerMethodField()
     specialties = SpecialtySerializer(many=True, read_only=True)
     specialty_ids = serializers.PrimaryKeyRelatedField(
         queryset=Specialty.objects.all(),
@@ -2723,6 +2723,14 @@ class DoctorOperatorSerializer(serializers.ModelSerializer):
         elif delta <= 90:
             return "expiring_soon"
         return "active"
+
+    def get_signature(self, obj):
+        """Retorna signature_url (R2) si existe, o signature.url (local) como fallback."""
+        if obj.signature_url:
+            return obj.signature_url
+        if obj.signature:
+            return obj.signature.url
+        return None
 
     def to_representation(self, instance):
         """

@@ -2868,10 +2868,67 @@ def update_doctor_config(
             except Exception:
                 pass
 
-    # Procesar archivos (signature)
+    # Procesar archivos (signature) - Subir a R2 para persistencia
+    MAX_SIGNATURE_SIZE = 2 * 1024 * 1024  # 2MB
+    ALLOWED_SIGNATURE_TYPES = {"image/png", "image/jpeg", "image/webp", "image/gif"}
+
     if files:
         for field_name, file_obj in files.items():
-            if hasattr(doctor_obj, field_name):
+            if field_name == "signature" and hasattr(doctor_obj, field_name):
+                try:
+                    # Validar tamaño
+                    if file_obj.size > MAX_SIGNATURE_SIZE:
+                        logger.error(
+                            f"Signature too large: {file_obj.size / 1024 / 1024:.1f}MB "
+                            f"(max {MAX_SIGNATURE_SIZE / 1024 / 1024}MB)"
+                        )
+                        continue
+
+                    # Validar tipo de contenido
+                    content_type = getattr(file_obj, "content_type", "")
+                    if content_type and content_type not in ALLOWED_SIGNATURE_TYPES:
+                        logger.error(f"Invalid signature type: {content_type}")
+                        continue
+
+                    # Leer contenido del archivo
+                    file_content = file_obj.read()
+
+                    # Obtener filename original
+                    filename = getattr(file_obj, "name", "signature.png")
+                    if not any(
+                        filename.lower().endswith(ext)
+                        for ext in [".png", ".jpg", ".jpeg", ".webp", ".gif"]
+                    ):
+                        filename = (
+                            f"signature.{content_type.split('/')[-1]}"
+                            if "/" in content_type
+                            else "signature.png"
+                        )
+
+                    # Subir a R2
+                    from .utils.r2_storage import upload_doctor_signature
+
+                    r2_url = upload_doctor_signature(
+                        file_content, doctor_obj.id, filename
+                    )
+
+                    if r2_url:
+                        doctor_obj.signature_url = r2_url
+                        logger.info(
+                            f"Signature uploaded to R2 for doctor {doctor_obj.id}: {r2_url}"
+                        )
+                    else:
+                        logger.warning(
+                            f"R2 upload failed, keeping local signature for doctor {doctor_obj.id}"
+                        )
+                        # Fallback: guardar localmente si R2 falla
+                        setattr(doctor_obj, field_name, file_obj)
+                except Exception as e:
+                    logger.error(
+                        f"Error processing signature for doctor {doctor_obj.id}: {e}"
+                    )
+            elif hasattr(doctor_obj, field_name):
+                # Para otros archivos (como photo), mantener comportamiento original
                 try:
                     setattr(doctor_obj, field_name, file_obj)
                 except Exception:

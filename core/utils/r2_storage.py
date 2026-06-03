@@ -290,3 +290,73 @@ def get_institution_logo_r2_url(institution_id: int, filename: str) -> Optional[
 
     object_key = f"institution_logos/{institution_id}/{filename}"
     return client.get_public_url(object_key)
+
+
+def upload_doctor_signature(
+    file_content: bytes, doctor_id: int, filename: str
+) -> Optional[str]:
+    """
+    Upload a doctor signature image to R2 with proper path structure.
+    Signatures are stored permanently in R2 to persist across deployments.
+
+    Args:
+        file_content: Raw bytes of the image
+        doctor_id: DoctorOperator ID
+        filename: Original filename (e.g., 'signature.png')
+
+    Returns:
+        Public URL of the uploaded signature, or None if upload failed
+    """
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    client = get_r2_client()
+    if client is None:
+        logger.error(
+            f"R2 client is None - cannot upload signature for doctor {doctor_id}"
+        )
+        return None
+
+    object_key = f"doctor_signatures/{doctor_id}/{filename}"
+
+    content_type = "image/png"
+    if filename.lower().endswith(".jpg") or filename.lower().endswith(".jpeg"):
+        content_type = "image/jpeg"
+    elif filename.lower().endswith(".webp"):
+        content_type = "image/webp"
+    elif filename.lower().endswith(".gif"):
+        content_type = "image/gif"
+
+    logger.info(
+        f"Uploading doctor signature to R2: {object_key} (content_type: {content_type})"
+    )
+    result = client.upload_image(file_content, object_key, content_type)
+
+    if result:
+        logger.info(f"Doctor signature uploaded successfully to R2: {result}")
+    else:
+        logger.error(
+            f"Signature upload to R2 FAILED for doctor {doctor_id}, file: {filename}"
+        )
+
+    return result
+
+
+def get_doctor_signature_r2_url(doctor_id: int, filename: str) -> Optional[str]:
+    """
+    Build the R2 URL for a doctor signature.
+
+    Args:
+        doctor_id: DoctorOperator ID
+        filename: Signature filename
+
+    Returns:
+        R2 URL for the signature, or None if R2 is not configured
+    """
+    client = get_r2_client()
+    if client is None:
+        return None
+
+    object_key = f"doctor_signatures/{doctor_id}/{filename}"
+    return client.get_public_url(object_key)

@@ -2106,6 +2106,13 @@ class DoctorOperator(models.Model):
         null=True,
         help_text="Foto de perfil del doctor",
     )
+    signature_url = models.URLField(
+        max_length=500,
+        blank=True,
+        null=True,
+        verbose_name="URL de firma en R2",
+        help_text="URL permanente de la firma digitalizada en Cloudflare R2",
+    )
 
     class Meta:
         verbose_name = "Médico Operador"
