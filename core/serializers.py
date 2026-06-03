@@ -1500,12 +1500,16 @@ class InstitutionSettingsSerializer(serializers.ModelSerializer):
                 # Already a full URL (R2 or external) - use directly
                 response["logo"] = logo_url
             else:
-                # Local file path - build absolute URL using request
+                # Local file path - build absolute URL con /media/ prefix
+                # El archivo real está en /media/logos/, no en /logos/
                 request = self.context.get("request")
                 if request:
-                    response["logo"] = request.build_absolute_uri(logo_url)
+                    logo_path = logo_url
+                    if not logo_path.startswith("/media/"):
+                        logo_path = f"/media/{logo_path.lstrip('/')}"
+                    response["logo"] = request.build_absolute_uri(logo_path)
                 else:
-                    response["logo"] = logo_url
+                    response["logo"] = f"/media/{logo_url.lstrip('/')}"
 
         return response
 

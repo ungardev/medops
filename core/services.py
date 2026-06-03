@@ -2649,24 +2649,30 @@ def update_institution_settings_ext(
                 # Guardar archivo local para ImageField (Django necesita esto)
                 from django.core.files.base import ContentFile
 
+                logger.info(f"[LOGO] Uploading to R2 for institution {settings_obj.id}")
                 settings_obj.logo.save(
                     logo_filename, ContentFile(logo_content), save=False
                 )
                 # Guardar URL de R2 en el campo separado para uso en frontend
                 settings_obj.logo_url = r2_url
-                logger.info(f"Logo saved to R2: {r2_url}")
+                # ✅ FIX CRÍTICO: Guardar inmediatamente con update_fields
+                # patrón exacto de MedicalDocuments para evitar overwrite
+                settings_obj.save(update_fields=["logo", "logo_url"])
+                logger.info(f"[LOGO] Saved to R2: {r2_url}")
             else:
                 # Fallback: guardar localmente
                 settings_obj.logo = logo_file
-                logger.warning("R2 upload failed, saving logo locally")
+                settings_obj.logo_url = None  # Limpiar stale URL
+                logger.warning("[LOGO] R2 upload failed, saving logo locally")
 
         for key, value in data.items():
             if key in ["neighborhood_id", "neighborhood"]:
                 if value and value != "":
                     settings_obj.neighborhood_id = value
             elif key == "logo":
-                # Logo ya manejado arriba
-                pass
+                pass  # Logo ya manejado arriba
+            elif key == "logo_url":
+                pass  # No permitir overwrite de logo_url desde data
             elif hasattr(settings_obj, key):
                 setattr(settings_obj, key, value)
 
