@@ -165,7 +165,7 @@ export default function EditInstitutionModal({ open, onClose, institution }: Pro
               
               <div className="mt-4 pt-4 border-t border-white/10">
                 <p className="text-[9px] text-white/30 italic">
-                  Los datos de la institución solo pueden ser editados desde Django Admin.
+                  Los datos de la institución solo pueden ser editados desde Admin.
                 </p>
               </div>
             </div>
