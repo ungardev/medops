@@ -40,7 +40,8 @@ export default function ConfigPage() {
   const { data: doc, updateDoctor, isLoading: docLoading } = useDoctorConfig();
   const { data: specialties = [] } = useSpecialtyChoices();
   
-const [showDoctorModal, setShowDoctorModal] = useState(false);
+  const [showDoctorModal, setShowDoctorModal] = useState(false);
+  const [showInstitutionModal, setShowInstitutionModal] = useState(false);
   const [initialized, setInitialized] = useState(false);
   
   const [doctorForm, setDoctorForm] = useState({
@@ -69,7 +70,7 @@ const [showDoctorModal, setShowDoctorModal] = useState(false);
     whatsapp_business_id: '',
     whatsapp_access_token: '',
     reminder_hours_before: 24,
-});
+  });
 
   useEffect(() => {
     if (!doc || specialties.length === 0 || initialized) return;
@@ -128,7 +129,7 @@ const [showDoctorModal, setShowDoctorModal] = useState(false);
     await updateDoctor(whatsAppData as any);
   };
   
-const handleSaveDoctor = async () => {
+  const handleSaveDoctor = async () => {
     await updateDoctor({
       full_name: doctorForm.full_name,
       national_id: doctorForm.national_id,
@@ -177,7 +178,7 @@ const handleSaveDoctor = async () => {
   const handleRemovePhoto = () => {
     setDoctorForm({ ...doctorForm, photo: null });
     setPhotoPreview(null);
-};
+  };
    
   const handleSelectInstitution = async (id: number | undefined) => {
     if (id === undefined) return;
@@ -274,7 +275,7 @@ const handleSaveDoctor = async () => {
                 </div>
               </div>
               
-              <div className="pt-4 border-t border-white/10">
+              <div className="pt-4 border-tv border-white/10">
                 <button 
                   onClick={() => { if (doc?.id) navigate(`/doctor-profile/${doc.id}`); }}
                   disabled={!doc?.id}
@@ -349,7 +350,16 @@ const handleSaveDoctor = async () => {
                           <p className="font-medium text-white/90">{activeInstitution.name || "Sin nombre"}</p>
                           <p className="text-[9px] text-white/30 mt-1">RIF: {activeInstitution.tax_id || "N/A"}</p>
                         </div>
-                        <span className="text-[9px] font-medium text-emerald-400/70 px-2 py-1 bg-emerald-500/10 rounded-md border border-emerald-500/20">Activa</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] font-medium text-emerald-400/70 px-2 py-1 bg-emerald-500/10 rounded-md border border-emerald-500/20">Activa</span>
+                          <button
+                            onClick={() => setShowInstitutionModal(true)}
+                            className="p-1.5 text-white/40 hover:text-emerald-400 hover:bg-white/5 rounded-lg transition-colors"
+                            title="Editar institución"
+                          >
+                            <PencilSquareIcon className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -431,7 +441,7 @@ const handleSaveDoctor = async () => {
               </div>
               
               <div className="flex gap-3 pt-4">
-                <button type="submit" className="flex-1 bg-emerald-500/15 text-emerald-400 text-[11px] font-medium px-6 py-2.5 hover:bg-emerald-500/25 transition-all rounded-lg border border-emerald-500/25">
+                <button type="submit" className="flex-1 bg-emerald-500/15 text-emerald-400 text-[12px] font-medium px-6 py-2.5 hover:bg-emerald-500/25 transition-all rounded-lg border border-emerald-500/25">
                   <KeyIcon className="w-4 h-4 inline mr-2" /> Guardar Cambios
                 </button>
                 <button type="button" onClick={() => setShowDoctorModal(false)} className="px-6 text-[11px] font-medium text-white/40 hover:text-white/70 transition-colors">Cancelar</button>
@@ -439,6 +449,14 @@ const handleSaveDoctor = async () => {
             </form>
           </div>
         </div>
+      )}
+
+      {showInstitutionModal && (
+        <EditInstitutionModal
+          open={showInstitutionModal}
+          onClose={() => setShowInstitutionModal(false)}
+          institution={activeInstitution}
+        />
       )}
     </div>
   );
