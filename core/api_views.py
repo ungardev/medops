@@ -2887,7 +2887,9 @@ def institution_settings_api(request):
             return Response({"error": "No active institution found"}, status=404)
 
         # Actualizar la institución activa
-        if request.content_type == "multipart/form-data":
+        if request.content_type and request.content_type.startswith(
+            "multipart/form-data"
+        ):
             data = request.data
             files = request.FILES
             logger.info(
