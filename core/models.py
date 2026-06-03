@@ -1843,6 +1843,12 @@ class InstitutionSettings(models.Model):
         max_length=50, unique=True, verbose_name="RIF / NIT / Identificación Fiscal"
     )
     logo = models.ImageField(upload_to="logos/", verbose_name="Logo institucional")
+    logo_url = models.CharField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="URL pública del logo en R2 (Cloudflare) o URL absoluta",
+    )
     phone = models.CharField(max_length=50, verbose_name="Teléfono de contacto")
     # --- CONFIGURACIÓN DE PASARELA UNIVERSAL (FINTECH READY) ---
     GATEWAY_PROVIDERS = [

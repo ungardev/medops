@@ -2616,8 +2616,14 @@ def update_institution_settings_ext(
             )
 
             if r2_url:
-                # Guardar la URL de R2 directamente en el campo logo
-                settings_obj.logo = r2_url
+                # Guardar archivo local para ImageField (Django necesita esto)
+                from django.core.files.base import ContentFile
+
+                settings_obj.logo.save(
+                    logo_filename, ContentFile(logo_content), save=False
+                )
+                # Guardar URL de R2 en el campo separado para uso en frontend
+                settings_obj.logo_url = r2_url
                 logger.info(f"Logo saved to R2: {r2_url}")
             else:
                 # Fallback: guardar localmente
