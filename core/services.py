@@ -2859,8 +2859,14 @@ def update_doctor_config(
         "bank_phone",
         "bank_account",
     ]
+    # Date fields que no deben recibir strings vacíos
+    date_fields = ["license_expiry_date", "birthdate"]
+
     for key, value in data.items():
         if key in excluded_fields:
+            continue
+        # No asignar strings vacíos a campos de fecha
+        if key in date_fields and (value == "" or value is None):
             continue
         if hasattr(doctor_obj, key) and key not in ["specialties", "institutions"]:
             try:

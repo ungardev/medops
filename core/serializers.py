@@ -2714,15 +2714,29 @@ class DoctorOperatorSerializer(serializers.ModelSerializer):
         """Retorna estado de la licencia: active, expiring_soon, expired, unknown"""
         if not obj.license_expiry_date:
             return "unknown"
-        from datetime import date
+        from datetime import date, datetime
 
         today = date.today()
-        delta = (obj.license_expiry_date - today).days
-        if delta < 0:
-            return "expired"
-        elif delta <= 90:
-            return "expiring_soon"
-        return "active"
+        expiry_date = obj.license_expiry_date
+
+        # Si es string, intentar convertirlo
+        if isinstance(expiry_date, str):
+            if not expiry_date.strip():
+                return "unknown"
+            try:
+                expiry_date = datetime.strptime(expiry_date, "%Y-%m-%d").date()
+            except (ValueError, TypeError):
+                return "unknown"
+
+        try:
+            delta = (expiry_date - today).days
+            if delta < 0:
+                return "expired"
+            elif delta <= 90:
+                return "expiring_soon"
+            return "active"
+        except (TypeError, AttributeError):
+            return "unknown"
 
     def get_signature(self, obj):
         """Retorna signature_url (R2) si existe, o signature.url (local) como fallback."""
