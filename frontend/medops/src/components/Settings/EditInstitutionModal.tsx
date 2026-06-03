@@ -71,6 +71,7 @@ export default function EditInstitutionModal({ open, onClose, institution }: Pro
   };
 
   const sectionStyles = "bg-white/5 border border-white/15 rounded-lg p-5 space-y-4";
+  const labelStyles = "text-[10px] font-medium text-white/50 uppercase tracking-wider mb-1.5 block";
   const readOnlyTextStyles = "text-[12px] text-white/70";
 
   if (!open) return null;
