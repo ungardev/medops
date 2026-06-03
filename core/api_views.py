@@ -2890,6 +2890,25 @@ def institution_settings_api(request):
         if request.content_type == "multipart/form-data":
             data = request.data
             files = request.FILES
+            logger.info(
+                f"[LOGO_UPLOAD] request.FILES keys: {list(request.FILES.keys()) if request.FILES else 'EMPTY'}"
+            )
+            logger.info(
+                f"[LOGO_UPLOAD] request.data keys: {list(request.data.keys()) if hasattr(request.data, 'keys') else 'NO KEYS'}"
+            )
+
+            # DEBUG: Si request.FILES está vacío, podría ser que DRF puso los archivos en request.data
+            if not request.FILES or "logo" not in request.FILES:
+                logger.info(
+                    f"[LOGO_UPLOAD] logo NOT in request.FILES, checking request.data"
+                )
+                if "logo" in (request.data if hasattr(request.data, "keys") else {}):
+                    logger.info(
+                        f"[LOGO_UPLOAD] Found logo in request.data - using request.data as files"
+                    )
+                    files = request.data
+                    logger.info(f"[LOGO_UPLOAD] files type: {type(files)}")
+
             settings_obj = services.update_institution_settings_ext(
                 data, request.user, files, institution_id=institution.id
             )

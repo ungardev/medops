@@ -2621,8 +2621,26 @@ def update_institution_settings_ext(
                 raise ValidationError("No tienes permiso para editar esta institución")
 
         # Manejar logo - subir a R2 si se proporciona nuevo archivo
-        logo_file = files.get("logo") if files else None
+        logo_file = None
+        if files:
+            logger.info(
+                f"[LOGO] files type: {type(files)}, keys: {list(files.keys()) if hasattr(files, 'keys') else 'NO KEYS'}"
+            )
+            if hasattr(files, "get"):
+                logo_file = files.get("logo")
+                logger.info(
+                    f"[LOGO] files.get('logo') result: {type(logo_file)}, value: {logo_file}"
+                )
+            elif hasattr(files, "FILES"):
+                logo_file = files.FILES.get("logo")
+                logger.info(
+                    f"[LOGO] files.FILES.get('logo') result: {type(logo_file)}, value: {logo_file}"
+                )
+
         if logo_file:
+            logger.info(
+                f"[LOGO] Processing logo file: {getattr(logo_file, 'name', 'NO NAME')}, size: {getattr(logo_file, 'size', 'NO SIZE')}"
+            )
             # Eliminar logo anterior de R2 si existe
             from .utils.r2_storage import upload_institution_logo, get_r2_client
 
