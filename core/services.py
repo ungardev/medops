@@ -2616,14 +2616,9 @@ def update_institution_settings_ext(
             )
 
             if r2_url:
-                # Guardar el filename en el campo logo (no el URL completo)
-                # El serializer construirá la URL absoluta con request.build_absolute_uri
-                from django.core.files.base import ContentFile
-
-                settings_obj.logo.save(
-                    logo_filename, ContentFile(logo_content), save=False
-                )
-                logger.info(f"Logo uploaded to R2: {r2_url}")
+                # Guardar la URL de R2 directamente en el campo logo
+                settings_obj.logo = r2_url
+                logger.info(f"Logo saved to R2: {r2_url}")
             else:
                 # Fallback: guardar localmente
                 settings_obj.logo = logo_file

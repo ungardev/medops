@@ -1493,18 +1493,17 @@ class InstitutionSettingsSerializer(serializers.ModelSerializer):
         # Si el logo existe, generar URL absoluta para que funcione en producción
         # (Vercel no sirve /media/*, necesita URL completa al backend)
         if instance.logo:
-            request = self.context.get("request")
-            if request:
-                # Si la URL ya es absoluta (R2), dejarla igual
-                logo_url = instance.logo.url
-                if logo_url.startswith("http"):
-                    response["logo"] = logo_url
-                else:
-                    # Es URL relativa - construir absoluta usando request.build_absolute_uri
-                    response["logo"] = request.build_absolute_uri(logo_url)
+            logo_url = str(instance.logo)
+            if logo_url.startswith("http"):
+                # Already a full URL (R2 or external) - use directly
+                response["logo"] = logo_url
             else:
-                # Sin request disponible, usar url directamente (fallback)
-                response["logo"] = instance.logo.url
+                # Local file path - build absolute URL using request
+                request = self.context.get("request")
+                if request:
+                    response["logo"] = request.build_absolute_uri(logo_url)
+                else:
+                    response["logo"] = logo_url
 
         return response
 
