@@ -225,8 +225,8 @@ export default function ConfigPage() {
     await setActiveInstitution(id);
   };
   
-  const labelStyles = `text-[10px] font-medium text-white/50 uppercase tracking-wider mb-1.5 block`;
-  const inputStyles = `w-full bg-white/5 border border-white/15 rounded-lg px-4 py-2.5 text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30`;
+  const labelStyles = `text-sm font-medium text-white/50 uppercase tracking-wider mb-2 block`;
+  const inputStyles = `w-full bg-white/5 border border-white/15 rounded-xl px-5 py-3.5 text-sm text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30`;
   
   return (
     <div className="space-y-6">
@@ -240,16 +240,16 @@ export default function ConfigPage() {
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 items-start">
         
-        <section className="space-y-4">
+        <section className="space-y-5">
           <div className="flex items-center gap-3">
-            <h3 className="text-[12px] font-medium text-white/70">Perfil del Doctor</h3>
+            <h3 className="text-sm font-medium text-white/70">Perfil del Doctor</h3>
           </div>
           
-          <div className="bg-white/5 border border-white/15 p-6 rounded-lg shadow-sm relative overflow-hidden">
-            <div className="absolute top-4 right-4">
+          <div className="bg-white/5 border border-white/15 p-6 rounded-xl shadow-sm relative overflow-hidden">
+            <div className="absolute top-5 right-5">
               <button 
                 onClick={() => setShowDoctorModal(true)}
-                className="p-2 text-white/30 hover:text-emerald-400 transition-colors rounded-lg hover:bg-white/5"
+                className="p-2.5 text-white/30 hover:text-emerald-400 transition-colors rounded-lg hover:bg-white/5"
                 title="Actualizar Firma y Foto"
               >
                 <PencilSquareIcon className="w-5 h-5" />
@@ -259,79 +259,79 @@ export default function ConfigPage() {
             <div className="space-y-6">
               {/* Banner de verificación pendiente */}
               {!doc?.is_verified && (
-                <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <ShieldCheckIcon className="w-4 h-4 text-amber-400" />
-                    <span className="text-[10px] text-amber-400 font-medium">
+                <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <ShieldCheckIcon className="w-5 h-5 text-amber-400" />
+                    <span className="text-sm text-amber-400 font-medium">
                       Verificación MPPS en proceso. El Admin de MEDOPZ está revisando tus credenciales.
                     </span>
                   </div>
                   {doc?.verification_notes && (
-                    <p className="text-[9px] text-white/40 mt-1 ml-6">{doc.verification_notes}</p>
+                    <p className="text-sm text-white/40 mt-2 ml-8">{doc.verification_notes}</p>
                   )}
                 </div>
               )}
 
-              <div className="flex items-center gap-5">
-                <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center rounded-lg">
-                  <FingerPrintIcon className="w-8 h-8 text-emerald-400/40" />
+              <div className="flex items-center gap-6">
+                <div className="w-20 h-20 bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center rounded-xl">
+                  <FingerPrintIcon className="w-10 h-10 text-emerald-400/40" />
                 </div>
                 <div>
-                  <h4 className="text-lg font-medium text-white/90">
+                  <h4 className="text-xl font-medium text-white/90">
                     <span className="text-emerald-400/60 mr-2">{doc?.gender === 'F' ? 'Dra.' : 'Dr.'}</span>
                     {doc?.full_name || "Sin configurar"}
                   </h4>
-                  <p className="text-[10px] text-white/30 mt-1">
+                  <p className="text-sm text-white/30 mt-2">
                     Cédula: {doc?.national_id || "N/A"}
                   </p>
                   {/* License Status Badge */}
-                  <div className="mt-2 flex items-center gap-2">
+                  <div className="mt-3 flex items-center gap-3">
                     {doc?.license_expiry_status === 'active' && (
-                      <span className="inline-flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-md text-[9px] text-emerald-400 font-medium border border-emerald-500/20">
-                          <CheckCircleIcon className="w-3 h-3" /> Licencia Activa
+                      <span className="inline-flex items-center gap-2 bg-emerald-500/10 px-3 py-1.5 rounded-md text-sm text-emerald-400 font-medium border border-emerald-500/20">
+                          <CheckCircleIcon className="w-4 h-4" /> Licencia Activa
                         </span>
                     )}
                     {doc?.license_expiry_status === 'expiring_soon' && (
-                      <span className="inline-flex items-center gap-1 bg-amber-500/10 px-2 py-0.5 rounded-md text-[9px] text-amber-400 font-medium border border-amber-500/20">
-                          <ExclamationTriangleIcon className="w-3 h-3" /> Por Expirar
+                      <span className="inline-flex items-center gap-2 bg-amber-500/10 px-3 py-1.5 rounded-md text-sm text-amber-400 font-medium border border-amber-500/20">
+                          <ExclamationTriangleIcon className="w-4 h-4" /> Por Expirar
                         </span>
                     )}
                     {doc?.license_expiry_status === 'expired' && (
-                      <span className="inline-flex items-center gap-1 bg-red-500/10 px-2 py-0.5 rounded-md text-[9px] text-red-400 font-medium border border-red-500/20">
-                          <XCircleIcon className="w-3 h-3" /> Licencia Expirada
+                      <span className="inline-flex items-center gap-2 bg-red-500/10 px-3 py-1.5 rounded-md text-sm text-red-400 font-medium border border-red-500/20">
+                          <XCircleIcon className="w-4 h-4" /> Licencia Expirada
                         </span>
                     )}
                     {(doc?.license_expiry_status === 'unknown' || !doc?.license_expiry_status) && (
-                      <span className="inline-flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded-md text-[9px] text-white/40 font-medium border border-white/10">
-                          <QuestionMarkCircleIcon className="w-3 h-3" /> Sin Fecha
+                      <span className="inline-flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-md text-sm text-white/40 font-medium border border-white/10">
+                          <QuestionMarkCircleIcon className="w-4 h-4" /> Sin Fecha
                         </span>
                     )}
                     {doc?.is_verified && (
-                      <span className="inline-flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-md text-[9px] text-emerald-400 font-medium border border-emerald-500/20">
-                        <ShieldCheckIcon className="w-3 h-3" /> MPPS Verificado
+                      <span className="inline-flex items-center gap-2 bg-emerald-500/10 px-3 py-1.5 rounded-md text-sm text-emerald-400 font-medium border border-emerald-500/20">
+                        <ShieldCheckIcon className="w-4 h-4" /> MPPS Verificado
                       </span>
                     )}
                   </div>
                 </div>
               </div>
               
-              <div className="pt-4 border-tv border-white/10">
+              <div className="pt-5 border-t border-white/10">
                 <button 
                   onClick={() => { if (doc?.id) navigate(`/doctor-profile/${doc.id}`); }}
                   disabled={!doc?.id}
-                  className={`w-full flex items-center justify-center gap-2 py-2.5 border border-emerald-500/15 bg-emerald-500/5 hover:bg-emerald-500/10 text-[11px] font-medium text-emerald-400/70 hover:text-emerald-400 transition-all rounded-lg ${!doc?.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`w-full flex items-center justify-center gap-2 py-3 border border-emerald-500/15 bg-emerald-500/5 hover:bg-emerald-500/10 text-sm font-medium text-emerald-400/70 hover:text-emerald-400 transition-all rounded-lg ${!doc?.id ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  <EyeIcon className="w-4 h-4" />
+                  <EyeIcon className="w-5 h-5" />
                   Visualizar Perfil Público
                 </button>
               </div>
               
-              <div className="space-y-4 border-y border-white/10 py-5">
-                <div className="flex justify-between items-start text-[10px]">
+              <div className="space-y-5 border-y border-white/10 py-6">
+                <div className="flex justify-between items-start text-sm">
                   <span className="text-white/30 font-medium">Especialidades:</span>
-                  <div className="flex flex-wrap gap-2 justify-end max-w-[200px]">
+                  <div className="flex flex-wrap gap-3 justify-end max-w-[240px]">
                     {doc?.specialties?.map((s: any) => (
-                      <span key={s.id} className="text-[9px] bg-emerald-500/5 text-emerald-400/70 px-2 py-0.5 border border-emerald-500/15 rounded-full">
+                      <span key={s.id} className="text-sm bg-emerald-500/5 text-emerald-400/70 px-3 py-1 border border-emerald-500/15 rounded-full">
                         {s.name}
                       </span>
                     ))}
@@ -367,37 +367,37 @@ export default function ConfigPage() {
           </div>
         </section>
         
-        <section className="space-y-4">
-          <h3 className="text-[12px] font-medium text-white/70">Institución Activa</h3>
+        <section className="space-y-5">
+          <h3 className="text-sm font-medium text-white/70">Institución Activa</h3>
           
-          <div className="space-y-3">
+          <div className="space-y-4">
             {multiInstLoading ? (
-              <div className="h-24 bg-white/5 animate-pulse rounded-lg border border-white/15" />
+              <div className="h-28 bg-white/5 animate-pulse rounded-xl border border-white/15" />
             ) : institutions.length === 0 ? (
-              <div className="p-8 bg-white/5 border border-white/15 rounded-lg text-center">
-                <p className="text-white/30 text-[11px]">
+              <div className="p-10 bg-white/5 border border-white/15 rounded-xl text-center">
+                <p className="text-white/30 text-sm">
                   No hay instituciones configuradas. Contacta al administrador de MEDOPZ.
                 </p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {activeInstitution && (
                   <div className="relative">
-                    <div className="absolute -left-1 top-0 bottom-0 w-1 bg-emerald-400 rounded-full" />
-                    <div className="bg-white/5 border-2 border-emerald-500/20 rounded-lg p-4">
+                    <div className="absolute -left-1.5 top-0 bottom-0 w-1.5 bg-emerald-400 rounded-full" />
+                    <div className="bg-white/5 border-2 border-emerald-500/20 rounded-xl p-5">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-medium text-white/90">{activeInstitution.name || "Sin nombre"}</p>
-                          <p className="text-[9px] text-white/30 mt-1">RIF: {activeInstitution.tax_id || "N/A"}</p>
+                          <p className="font-medium text-white/90 text-lg">{activeInstitution.name || "Sin nombre"}</p>
+                          <p className="text-sm text-white/30 mt-1">RIF: {activeInstitution.tax_id || "N/A"}</p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[9px] font-medium text-emerald-400/70 px-2 py-1 bg-emerald-500/10 rounded-md border border-emerald-500/20">Activa</span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-medium text-emerald-400/70 px-3 py-1.5 bg-emerald-500/10 rounded-md border border-emerald-500/20">Activa</span>
                           <button
                             onClick={() => setShowInstitutionModal(true)}
-                            className="p-1.5 text-white/40 hover:text-emerald-400 hover:bg-white/5 rounded-lg transition-colors"
+                            className="p-2 text-white/40 hover:text-emerald-400 hover:bg-white/5 rounded-lg transition-colors"
                             title="Editar institución"
                           >
-                            <PencilSquareIcon className="w-4 h-4" />
+                            <PencilSquareIcon className="w-5 h-5" />
                           </button>
                         </div>
                       </div>
@@ -406,11 +406,11 @@ export default function ConfigPage() {
                 )}
                 
                 {institutions.filter(inst => inst.id !== activeInstitution?.id).map((inst) => (
-                  <div key={inst.id} className="bg-white/5 border border-white/15 rounded-lg p-4 flex items-center justify-between">
+                  <div key={inst.id} className="bg-white/5 border border-white/15 rounded-xl p-5 flex items-center justify-between">
                     <div>
-                      <span className="font-medium text-white/70">{inst.name || "Institución"}</span>
+                      <span className="font-medium text-white/70 text-lg">{inst.name || "Institución"}</span>
                     </div>
-                    <button onClick={() => handleSelectInstitution(inst.id)} className="text-[10px] font-medium text-emerald-400 hover:text-emerald-300 transition-colors">
+                    <button onClick={() => handleSelectInstitution(inst.id)} className="text-sm font-medium text-emerald-400 hover:text-emerald-300 transition-colors">
                       Activar
                     </button>
                   </div>
@@ -422,31 +422,31 @@ export default function ConfigPage() {
       </div>
       
       {showDoctorModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1a1a1b] border border-white/15 w-full max-w-lg rounded-lg shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/15 bg-white/5">
-              <h3 className="text-[12px] font-semibold text-white">Actualizar Firma y Elementos Gráficos</h3>
-              <button onClick={() => setShowDoctorModal(false)} className="text-white/40 hover:text-white p-1.5 hover:bg-white/10 rounded-lg transition-colors">X</button>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-5">
+          <div className="bg-[#1a1a1b] border border-white/15 w-full max-w-lg rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-white/15 bg-white/5">
+              <h3 className="text-base font-semibold text-white">Actualizar Firma y Elementos Gráficos</h3>
+              <button onClick={() => setShowDoctorModal(false)} className="text-white/40 hover:text-white p-2 hover:bg-white/10 rounded-lg transition-colors">X</button>
             </div>
-            <form onSubmit={async (e) => { e.preventDefault(); await handleSaveDoctor(); }} className="p-6 space-y-5">
+            <form onSubmit={async (e) => { e.preventDefault(); await handleSaveDoctor(); }} className="p-6 space-y-6">
               
               {isLoadingModal ? (
-                <div className="flex items-center justify-center h-40">
-                  <div className="w-8 h-8 border-2 border-emerald-400/50 border-t-transparent rounded-full animate-spin" />
+                <div className="flex items-center justify-center h-48">
+                  <div className="w-10 h-10 border-2 border-emerald-400/50 border-t-transparent rounded-full animate-spin" />
                 </div>
               ) : (
                 <>
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 gap-5">
                 <div>
                   <label className={labelStyles}>Foto de Perfil</label>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-5">
                     {photoPreview && (
                       <div className="relative">
-                        <img src={photoPreview} alt="Foto" className="w-16 h-16 rounded-lg object-cover border border-white/15" />
+                        <img src={photoPreview} alt="Foto" className="w-20 h-20 rounded-xl object-cover border border-white/15" />
                         <button
                           type="button"
                           onClick={handleRemovePhoto}
-                          className="absolute -top-1 -right-1 bg-red-500/80 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px]"
+                          className="absolute -top-1.5 -right-1.5 bg-red-500/80 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm"
                         >
                           ×
                         </button>
@@ -454,7 +454,7 @@ export default function ConfigPage() {
                     )}
                     <label className="cursor-pointer flex-1">
                       <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
-                      <div className="w-full bg-white/5 border border-dashed border-white/15 p-4 text-center text-[11px] text-white/30 hover:text-white/50 hover:border-white/25 transition-all rounded-lg">
+                      <div className="w-full bg-white/5 border border-dashed border-white/15 p-5 text-center text-sm text-white/30 hover:text-white/50 hover:border-white/25 transition-all rounded-xl">
                         {photoPreview ? 'Cambiar foto' : 'Subir foto de perfil'}
                       </div>
                     </label>
@@ -463,14 +463,14 @@ export default function ConfigPage() {
                 
                 <div>
                   <label className={labelStyles}>Firma Digital</label>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-5">
                     {signaturePreview && (
                       <div className="relative">
-                        <img src={signaturePreview} alt="Firma" className="w-32 h-16 object-contain border border-white/15 bg-white/5 rounded-lg" />
+                        <img src={signaturePreview} alt="Firma" className="w-40 h-20 object-contain border border-white/15 bg-white/5 rounded-xl" />
                         <button
                           type="button"
                           onClick={handleRemoveSignature}
-                          className="absolute -top-1 -right-1 bg-red-500/80 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px]"
+                          className="absolute -top-1.5 -right-1.5 bg-red-500/80 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm"
                         >
                           ×
                         </button>
@@ -478,7 +478,7 @@ export default function ConfigPage() {
                     )}
                     <label className="cursor-pointer flex-1">
                       <input type="file" accept="image/*" onChange={handleSignatureUpload} className="hidden" />
-                      <div className="w-full bg-white/5 border border-dashed border-white/15 p-4 text-center text-[11px] text-white/30 hover:text-white/50 hover:border-white/25 transition-all rounded-lg">
+                      <div className="w-full bg-white/5 border border-dashed border-white/15 p-5 text-center text-sm text-white/30 hover:text-white/50 hover:border-white/25 transition-all rounded-xl">
                         {signaturePreview ? 'Cambiar firma' : 'Subir firma digitalizada'}
                       </div>
                     </label>
@@ -486,15 +486,15 @@ export default function ConfigPage() {
                 </div>
               </div>
               
-              <div className="flex gap-3 pt-4">
+              <div className="flex gap-4 pt-5">
                 <button 
                   type="submit" 
                   disabled={isSaving}
-                  className="flex-1 bg-emerald-500/15 text-emerald-400 text-[12px] font-medium px-6 py-2.5 hover:bg-emerald-500/25 transition-all rounded-lg border border-emerald-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 bg-emerald-500/15 text-emerald-400 text-sm font-medium px-6 py-3.5 hover:bg-emerald-500/25 transition-all rounded-xl border border-emerald-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
                 >
                   {isSaving ? (
                     <>
-                      <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                      <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                       </svg>
@@ -502,7 +502,7 @@ export default function ConfigPage() {
                     </>
                   ) : (
                     <>
-                      <KeyIcon className="w-4 h-4" /> Guardar Cambios
+                      <KeyIcon className="w-5 h-5" /> Guardar Cambios
                     </>
                   )}
                 </button>
@@ -510,7 +510,7 @@ export default function ConfigPage() {
                   type="button" 
                   onClick={() => setShowDoctorModal(false)} 
                   disabled={isSaving}
-                  className="px-6 text-[11px] font-medium text-white/40 hover:text-white/70 transition-colors disabled:opacity-50"
+                  className="px-6 text-sm font-medium text-white/40 hover:text-white/70 transition-colors disabled:opacity-50"
                 >
                   Cancelar
                 </button>
