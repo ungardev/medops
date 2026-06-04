@@ -29,19 +29,19 @@ const ConfirmGenericModal: React.FC<ConfirmGenericModalProps> = ({
       title={isDestructive ? "Confirmar Acción" : "Confirmación"}
       maxWidth="max-w-md"
     >
-      <div className="space-y-5">
+      <div className="space-y-6">
         <div>
-          <h4 className="text-[14px] font-medium text-white/90 mb-2 leading-tight">
+          <h4 className="text-base font-medium text-white/90 mb-2 leading-tight">
             {title}
           </h4>
-          <p className="text-[12px] text-white/50 leading-relaxed">
+          <p className="text-sm text-white/50 leading-relaxed">
             {message}
           </p>
         </div>
         
-        <div className="flex gap-3">
+        <div className="flex gap-4">
           <button
-            className={`px-5 py-2.5 rounded-lg text-[11px] font-medium transition-all ${
+            className={`px-6 py-3 rounded-xl text-sm font-medium transition-all ${
               isDestructive 
                 ? 'bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/25' 
                 : 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/25'
@@ -52,7 +52,7 @@ const ConfirmGenericModal: React.FC<ConfirmGenericModalProps> = ({
           </button>
           
           <button
-            className="px-5 py-2.5 rounded-lg text-[11px] font-medium text-white/40 hover:text-white/70 hover:bg-white/5 transition-all"
+            className="px-6 py-3 rounded-xl text-sm font-medium text-white/40 hover:text-white/70 hover:bg-white/5 transition-all"
             onClick={onCancel}
           >
             {cancelLabel}

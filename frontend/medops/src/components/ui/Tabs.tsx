@@ -43,7 +43,7 @@ export function Tabs({
               type="button"
               onClick={() => onChange(tab.props.id)}
               className={`
-                relative px-5 py-3 text-[11px] font-medium transition-all duration-200
+                relative px-6 py-4 text-sm font-medium transition-all duration-200
                 ${isActive 
                   ? "text-white border-b-2 border-white"
                   : "text-white/50 hover:text-white/80 hover:bg-white/5"}
@@ -71,7 +71,7 @@ export function Tabs({
                 ${layout === "vertical" ? "" : "w-full"}
               `}
             >
-              <div className="bg-white/5 border border-white/15 rounded-lg p-5 sm:p-6 h-full">
+              <div className="bg-white/5 border border-white/15 rounded-xl p-6 sm:p-7 h-full">
                 {tab.props.children}
               </div>
             </div>

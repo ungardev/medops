@@ -7,17 +7,17 @@ interface EmptyStateProps {
 }
 export default function EmptyState({ icon, title, message }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-4">
+    <div className="flex flex-col items-center justify-center py-20 px-6">
       {icon && (
-        <div className="mb-4 opacity-30">
+        <div className="mb-5 opacity-40">
           {icon}
         </div>
       )}
-      <h3 className="text-[12px] font-semibold text-white/60 mb-2">
+      <h3 className="text-base font-semibold text-white/60 mb-3">
         {title}
       </h3>
       {message && (
-        <p className="text-[11px] text-white/40 max-w-xs text-center leading-relaxed">
+        <p className="text-sm text-white/40 max-w-sm text-center leading-relaxed">
           {message}
         </p>
       )}

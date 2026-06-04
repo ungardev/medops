@@ -34,15 +34,15 @@ export default function Toast({ message, type, onClose }: ToastProps) {
       <div
         className={`${
           t.visible ? 'animate-in fade-in slide-in-from-right-5' : 'animate-out fade-out slide-out-to-right-5'
-        } max-w-md w-full bg-[#1a1a1b] shadow-2xl pointer-events-auto flex ring-1 ring-white/15 rounded-lg ${current.className}`}
+        } max-w-md w-full bg-[#1a1a1b] shadow-2xl pointer-events-auto flex ring-1 ring-white/15 rounded-xl ${current.className}`}
       >
-        <div className="flex-1 w-0 p-4">
+        <div className="flex-1 w-0 p-5">
           <div className="flex items-start">
             <div className="flex-shrink-0 pt-0.5">
               {current.icon}
             </div>
-            <div className="ml-3 flex-1">
-              <p className="mt-1 text-[12px] font-medium text-white/80">
+            <div className="ml-4 flex-1">
+              <p className="text-sm font-medium text-white/80">
                 {message}
               </p>
             </div>
@@ -51,7 +51,7 @@ export default function Toast({ message, type, onClose }: ToastProps) {
         <div className="flex border-l border-white/10">
           <button
             onClick={() => toast.dismiss(t.id)}
-            className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-[10px] text-white/30 hover:text-white/60 transition-colors"
+            className="w-full border border-transparent rounded-none rounded-r-xl p-5 flex items-center justify-center text-sm text-white/30 hover:text-white/60 transition-colors"
           >
             Cerrar
           </button>

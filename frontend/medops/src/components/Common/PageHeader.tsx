@@ -37,15 +37,15 @@ const PageHeader: React.FC<PageHeaderProps> = ({
     return () => clearInterval(timer);
   }, []);
   return (
-    <section className="relative flex flex-col gap-5 mb-6 animate-in fade-in slide-in-from-top-1 duration-500">
+    <section className="relative flex flex-col gap-6 mb-6 animate-in fade-in slide-in-from-top-1 duration-500">
       
       {/* Breadcrumbs y Reloj */}
-      <div className="flex items-center justify-between border-b border-white/10 pb-3">
+      <div className="flex items-center justify-between border-b border-white/10 pb-4">
         <nav className="flex" aria-label="Breadcrumb">
-          <ol role="list" className="flex items-center space-x-2">
+          <ol role="list" className="flex items-center gap-2">
             <li>
               <Link to={homePath} className="text-white/50 hover:text-white transition-colors">
-                <HomeIcon className="h-4 w-4" aria-hidden="true" />
+                <HomeIcon className="h-5 w-5" aria-hidden="true" />
                 <span className="sr-only">Inicio</span>
               </Link>
             </li>
@@ -53,7 +53,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             {breadcrumbs ? (
               breadcrumbs.map((item, idx) => (
                 <li key={idx}>
-                  <div className="flex items-center">
+                  <div className="flex items-center gap-2">
                     <ChevronRightIcon
                       className="h-4 w-4 flex-shrink-0 text-white/30"
                       aria-hidden="true"
@@ -61,13 +61,13 @@ const PageHeader: React.FC<PageHeaderProps> = ({
                     {item.path ? (
                       <Link
                         to={item.path}
-                        className="ml-2 text-[12px] font-medium text-white/60 hover:text-white transition-colors"
+                        className="text-sm font-medium text-white/60 hover:text-white transition-colors"
                       >
                         {item.label}
                       </Link>
                     ) : (
                       <span
-                        className={`ml-2 text-[12px] font-semibold ${
+                        className={`text-sm font-semibold ${
                           item.active ? "text-white" : "text-white/60"
                         }`}
                         aria-current={item.active ? "page" : undefined}
@@ -80,9 +80,9 @@ const PageHeader: React.FC<PageHeaderProps> = ({
               ))
             ) : (
               <li>
-                <div className="flex items-center">
+                <div className="flex items-center gap-2">
                   <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-white/30" aria-hidden="true" />
-                  <h2 className="ml-2 text-[12px] font-semibold text-white/80">
+                  <h2 className="text-sm font-semibold text-white/80">
                     {breadcrumb}
                   </h2>
                 </div>
@@ -91,9 +91,9 @@ const PageHeader: React.FC<PageHeaderProps> = ({
           </ol>
         </nav>
         
-        <div className="hidden sm:flex items-center gap-3 text-[12px] text-white/50">
+        <div className="hidden sm:flex items-center gap-3 text-sm text-white/50">
           <span className="font-medium">{now.format("HH:mm:ss")}</span>
-          <span className="text-white/30">•</span>
+          <span className="text-white/30">|</span>
           <span>{now.format("DD MMM YYYY")}</span>
         </div>
       </div>
@@ -102,16 +102,16 @@ const PageHeader: React.FC<PageHeaderProps> = ({
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
         
         {stats && stats.length > 0 ? (
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="flex flex-wrap items-center gap-5">
             {stats.map((stat, i) => (
               <div
                 key={i}
-                className="flex flex-col px-4 py-2 min-w-[120px] hover:bg-white/5 rounded-lg transition-colors"
+                className="flex flex-col px-5 py-3 min-w-[140px] hover:bg-white/5 rounded-xl transition-colors"
               >
-                <span className="text-[10px] font-medium text-white/50 uppercase tracking-wider">
+                <span className="text-xs font-medium text-white/50 uppercase tracking-wider">
                   {stat.label}
                 </span>
-                <div className={`text-[16px] font-semibold mt-0.5 ${stat.color || "text-white"}`}>
+                <div className={`text-xl font-semibold mt-1 ${stat.color || "text-white"}`}>
                   {stat.value}
                 </div>
               </div>
@@ -119,20 +119,20 @@ const PageHeader: React.FC<PageHeaderProps> = ({
           </div>
         ) : (
           <div className="flex-1" />
-        )}
+        )
         
         {(actions || children) && (
-          <div className="flex items-center gap-3 self-start lg:self-center">
+          <div className="flex items-center gap-4 self-start lg:self-center">
             {children && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 {children}
               </div>
             )}
             
             {actions && (
               <>
-                {children && <div className="w-[1px] h-6 bg-white/10" />}
-                <div className="flex items-center gap-2">
+                {children && <div className="w-[1px] h-8 bg-white/10" />}
+                <div className="flex items-center gap-3">
                   {actions}
                 </div>
               </>

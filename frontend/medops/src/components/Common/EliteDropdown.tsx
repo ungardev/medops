@@ -41,14 +41,14 @@ export default function EliteDropdown({
       <button
         ref={buttonRef}
         onClick={toggleMenu}
-        className={`flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/15 rounded-lg transition-all ${className} ${
+        className={`flex items-center gap-3 px-4 py-3 bg-white/5 border border-white/15 rounded-lg transition-all ${className} ${
           isOpen ? 'border-white/25' : 'hover:border-white/25'
         }`}
       >
-        <span className="text-[10px] font-medium text-white/70 flex-1 text-left truncate">
+        <span className="text-sm font-medium text-white/70 flex-1 text-left truncate">
           {selectedOption?.name || placeholder}
         </span>
-        <ChevronDownIcon className={`w-3 h-3 text-white/30 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDownIcon className={`w-4 h-4 text-white/30 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
       {isOpen && createPortal(
         <>
@@ -60,16 +60,16 @@ export default function EliteDropdown({
               left: `${coords.left}px`,
               width: `${coords.width}px` 
             }}
-            className="z-[10001] bg-[#1a1a1b] border border-white/15 rounded-lg shadow-2xl overflow-hidden"
+            className="z-[10001] bg-[#1a1a1b] border border-white/15 rounded-xl shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-2 space-y-1">
-              <div className="px-3 py-2 text-[9px] text-white/30 border-b border-white/10 mb-1">
+            <div className="p-3 space-y-2">
+              <div className="px-4 py-2.5 text-xs text-white/30 border-b border-white/10 mb-2">
                 {label}
               </div>
               <div className="max-h-[300px] overflow-y-auto">
                 {options.length === 0 ? (
-                  <div className="px-3 py-2 text-[9px] text-white/30 italic">
+                  <div className="px-4 py-3 text-sm text-white/30 italic">
                     No hay opciones disponibles
                   </div>
                 ) : (
@@ -77,12 +77,12 @@ export default function EliteDropdown({
                     <button
                       key={opt.id}
                       onClick={() => { onChange(opt.id); setIsOpen(false); }}
-                      className="flex items-center justify-between w-full px-3 py-2.5 hover:bg-white/5 rounded-lg transition-colors group"
+                      className="flex items-center justify-between w-full px-4 py-3 hover:bg-white/5 rounded-lg transition-colors group"
                     >
-                      <span className="text-[10px] text-white/60 group-hover:text-white/90 truncate">
+                      <span className="text-sm text-white/60 group-hover:text-white/90 truncate">
                         {opt.name}
                       </span>
-                      {value === opt.id && <CheckIcon className="w-4 h-4 text-emerald-400 shrink-0" />}
+                      {value === opt.id && <CheckIcon className="w-5 h-5 text-emerald-400 shrink-0" />}
                     </button>
                   ))
                 )}

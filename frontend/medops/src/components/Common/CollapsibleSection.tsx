@@ -28,36 +28,36 @@ export default function CollapsibleSection({
     <section className={`relative ${className}`}>
       {isExpanded && (
         <div 
-          className="absolute -left-4 top-0 h-full w-0.5 hidden lg:block rounded-full opacity-30" 
+          className="absolute -left-5 top-0 h-full w-1 hidden lg:block rounded-full opacity-30" 
           style={{ backgroundColor: color.includes("emerald") ? "#34d399" : color.includes("red") ? "#f87171" : color.includes("blue") ? "#60a5fa" : "#fff" }}
         />
       )}
       <div 
-        className="flex items-center gap-3 mb-4 cursor-pointer group"
+        className="flex items-center gap-4 mb-5 cursor-pointer group"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className={`p-2 rounded-lg transition-colors ${colorClass}`}>
+        <div className={`p-2.5 rounded-lg transition-colors ${colorClass}`}>
           <div className="w-5 h-5">
             {icon}
           </div>
         </div>
         
-        <span className={`text-[12px] font-semibold ${color.includes("emerald") ? "text-emerald-400" : color.includes("red") ? "text-red-400" : color.includes("blue") ? "text-blue-400" : "text-white/70"}`}>
+        <span className={`text-base font-semibold ${color.includes("emerald") ? "text-emerald-400" : color.includes("red") ? "text-red-400" : color.includes("blue") ? "text-blue-400" : "text-white/70"}`}>
           {title}
         </span>
         
         <div className="flex-1 h-[1px] bg-gradient-to-r from-white/10 to-transparent" />
         
-        <div className={`p-1.5 rounded-lg transition-colors ${isExpanded ? 'bg-white/5' : 'group-hover:bg-white/5'}`}>
+        <div className={`p-2 rounded-lg transition-colors ${isExpanded ? 'bg-white/5' : 'group-hover:bg-white/5'}`}>
           {isExpanded ? (
-            <ChevronDownIcon className="w-4 h-4 text-white/40" />
+            <ChevronDownIcon className="w-5 h-5 text-white/40" />
           ) : (
-            <ChevronRightIcon className="w-4 h-4 text-white/40" />
+            <ChevronRightIcon className="w-5 h-5 text-white/40" />
           )}
         </div>
       </div>
       {isExpanded && (
-        <div className="pl-2 lg:pl-4 animate-in fade-in slide-in-from-top-2">
+        <div className="pl-3 lg:pl-5 animate-in fade-in slide-in-from-top-2">
           {children}
         </div>
       )}

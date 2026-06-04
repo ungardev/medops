@@ -46,19 +46,19 @@ const SimpleCalendar: React.FC<SimpleCalendarProps> = ({
   const days = getDaysInMonth();
   
   return (
-    <div className="bg-white/5 p-4 rounded-lg border border-white/15">
-      <div className="flex justify-between items-center mb-4">
+    <div className="bg-white/5 p-5 rounded-xl border border-white/15">
+      <div className="flex justify-between items-center mb-5">
         <button 
           onClick={() => {
             const newDate = new Date(currentMonth);
             newDate.setMonth(newDate.getMonth() - 1);
             setCurrentMonth(newDate);
           }}
-          className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+          className="p-2.5 hover:bg-white/10 rounded-lg transition-colors"
         >
-          <ChevronLeft className="w-4 h-4 text-white/50" />
+          <ChevronLeft className="w-5 h-5 text-white/50" />
         </button>
-        <span className="text-[12px] font-medium text-white/80 capitalize">
+        <span className="text-base font-medium text-white/80 capitalize">
           {currentMonth.toLocaleString('es-ES', { month: 'long', year: 'numeric' })}
         </span>
         <button 
@@ -67,21 +67,21 @@ const SimpleCalendar: React.FC<SimpleCalendarProps> = ({
             newDate.setMonth(newDate.getMonth() + 1);
             setCurrentMonth(newDate);
           }}
-          className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+          className="p-2.5 hover:bg-white/10 rounded-lg transition-colors"
         >
-          <ChevronRight className="w-4 h-4 text-white/50" />
+          <ChevronRight className="w-5 h-5 text-white/50" />
         </button>
       </div>
       
-      <div className="grid grid-cols-7 gap-1 mb-2">
+      <div className="grid grid-cols-7 gap-2 mb-3">
         {weekDays.map(day => (
-          <div key={day} className="text-center text-white/30 text-[9px] py-2 font-medium">
+          <div key={day} className="text-center text-white/30 text-sm py-2 font-medium">
             {day}
           </div>
         ))}
       </div>
       
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-2">
         {days.map((date, index) => {
           const currentDayStr = date 
             ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
@@ -98,7 +98,7 @@ const SimpleCalendar: React.FC<SimpleCalendarProps> = ({
               onClick={() => date && onDateSelect(date)}
               disabled={!date}
               className={`
-                relative p-2 text-center rounded-lg transition-all
+                relative p-3 text-center rounded-lg transition-all
                 ${!date ? 'invisible' : 'hover:bg-white/10 cursor-pointer'}
                 ${isSelected ? 'bg-emerald-500/15 text-emerald-400 font-medium border border-emerald-500/25' : 'text-white/70'}
                 ${isToday && !isSelected ? 'border border-white/20' : ''}
@@ -106,7 +106,7 @@ const SimpleCalendar: React.FC<SimpleCalendarProps> = ({
             >
               {date ? date.getDate() : ''}
               {date && isWorking && (
-                <span className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-400/50 rounded-full"></span>
+                <span className="absolute bottom-1.5 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 bg-blue-400/50 rounded-full"></span>
               )}
             </button>
           );
