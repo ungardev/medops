@@ -12,7 +12,6 @@ import { useInstitutionSettings } from "../../hooks/settings/useInstitutionSetti
 interface Props {
   open: boolean;
   onClose: () => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   institution?: any;
 }
 
@@ -70,31 +69,31 @@ export default function EditInstitutionModal({ open, onClose, institution }: Pro
     }
   };
 
-  const sectionStyles = "bg-white/5 border border-white/15 rounded-lg p-5 space-y-4";
-  const labelStyles = "text-[10px] font-medium text-white/50 uppercase tracking-wider mb-1.5 block";
-  const readOnlyTextStyles = "text-[12px] text-white/70";
+  const sectionStyles = "bg-white/5 border border-white/15 rounded-xl p-5 space-y-4";
+  const labelStyles = "text-xs font-medium text-white/50 uppercase tracking-wider mb-2 block";
+  const readOnlyTextStyles = "text-sm text-white/70";
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-5" onClick={onClose}>
       <div 
-        className="bg-[#1a1a1b] border border-white/15 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl rounded-lg"
+        className="bg-[#1a1a1b] border border-white/15 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl rounded-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/15 bg-white/5 sticky top-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-white/15 bg-white/5 sticky top-0">
+          <div className="flex items-center gap-4">
+            <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
               <GlobeAltIcon className="h-5 w-5 text-emerald-400" />
             </div>
             <div>
-              <h3 className="text-[12px] font-semibold text-white">
+              <h3 className="text-base font-semibold text-white">
                 Editar Logo de la Institución
               </h3>
-              <p className="text-[10px] text-white/40 mt-0.5">Subir nuevo logo para la institución</p>
+              <p className="text-sm text-white/40 mt-1">Subir nuevo logo para la institución</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-white/40 hover:text-white p-1.5 hover:bg-white/10 rounded-lg transition-colors">
+          <button onClick={onClose} className="text-white/40 hover:text-white p-2 hover:bg-white/10 rounded-xl transition-colors">
             <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
@@ -104,13 +103,13 @@ export default function EditInstitutionModal({ open, onClose, institution }: Pro
             <div className={sectionStyles}>
               <div className="flex items-center gap-3 mb-4">
                 <GlobeAltIcon className="w-5 h-5 text-emerald-400" />
-                <h3 className="text-[11px] font-medium text-emerald-400/80">
+                <h3 className="text-sm font-medium text-emerald-400/80">
                   Logo de la Institución
                 </h3>
               </div>
               
-              <div className="flex flex-col items-center gap-4">
-                <div className="relative group w-32 h-32 border border-white/15 bg-white/5 p-2 overflow-hidden rounded-lg">
+              <div className="flex flex-col items-center gap-5">
+                <div className="relative group w-36 h-36 border border-white/15 bg-white/5 p-3 overflow-hidden rounded-xl">
                   {(newLogoPreview || logoPreview) ? (
                     <img 
                       src={newLogoPreview || logoPreview || ""}
@@ -122,16 +121,16 @@ export default function EditInstitutionModal({ open, onClose, institution }: Pro
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-white/5">
-                      <BuildingOfficeIcon className="w-12 h-12 text-white/20" />
+                      <BuildingOfficeIcon className="w-14 h-14 text-white/20" />
                     </div>
                   )}
-                  <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer border-2 border-dashed border-emerald-500/30 rounded-lg">
-                    <span className="text-[10px] font-medium text-white/80">Cambiar</span>
+                  <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer border-2 border-dashed border-emerald-500/30 rounded-xl">
+                    <span className="text-sm font-medium text-white/80">Cambiar</span>
                     <input type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
                   </label>
                 </div>
                 <div className="text-center">
-                  <p className="text-[9px] text-white/30">ID: {dataSource?.id || 'N/A'}</p>
+                  <p className="text-xs text-white/30">ID: {dataSource?.id || 'N/A'}</p>
                 </div>
               </div>
             </div>
@@ -139,12 +138,12 @@ export default function EditInstitutionModal({ open, onClose, institution }: Pro
             <div className={sectionStyles}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-1.5 h-1.5 bg-blue-400 rounded-full" />
-                <h3 className="text-[11px] font-medium text-blue-400/80">
+                <h3 className="text-sm font-medium text-blue-400/80">
                   Datos de la Institución
                 </h3>
               </div>
               
-              <div className="grid grid-cols-1 gap-4 space-y-3">
+              <div className="grid grid-cols-1 gap-5 space-y-4">
                 <div>
                   <label className={labelStyles}>Nombre del Centro</label>
                   <p className={readOnlyTextStyles}>{dataSource?.name || 'No disponible'}</p>
@@ -163,36 +162,36 @@ export default function EditInstitutionModal({ open, onClose, institution }: Pro
                 </div>
               </div>
               
-              <div className="mt-4 pt-4 border-t border-white/10">
-                <p className="text-[9px] text-white/30 italic">
+              <div className="mt-5 pt-5 border-t border-white/10">
+                <p className="text-sm text-white/30 italic">
                   Los datos de la institución solo pueden ser editados desde Admin.
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-4 px-6 py-4 border-t border-white/15 bg-white/5">
-            <div className="flex gap-3">
+          <div className="flex items-center justify-end gap-4 px-6 py-5 border-t border-white/15 bg-white/5">
+            <div className="flex gap-4">
               <button 
                 type="button" 
                 onClick={onClose} 
-                className="px-5 py-2.5 text-[11px] font-medium text-white/40 hover:text-white/70 transition-colors"
+                className="px-5 py-3 text-sm font-medium text-white/40 hover:text-white/70 transition-colors"
               >
                 Cancelar
               </button>
               <button 
                 type="submit"
                 disabled={isUpdating || !formData.logo}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-[11px] font-medium text-white bg-emerald-500/15 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all disabled:opacity-50"
+                className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium text-white bg-emerald-500/15 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all disabled:opacity-50"
               >
                 {isUpdating ? (
                   <>
-                    <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                    <ArrowPathIcon className="w-5 h-5 animate-spin" />
                     Guardando...
                   </>
                 ) : (
                   <>
-                    <ShieldCheckIcon className="w-4 h-4" />
+                    <ShieldCheckIcon className="w-5 h-5" />
                     Guardar Logo
                   </>
                 )}

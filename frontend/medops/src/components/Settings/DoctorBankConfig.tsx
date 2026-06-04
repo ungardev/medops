@@ -15,7 +15,6 @@ interface DoctorBankConfigProps {
   bankRif: string;
   bankPhone: string;
   bankAccount: string;
-  // Nuevos campos MPPS Elite
   binanceCryptoWalletAddress?: string;
   binanceNetwork?: string;
   paymentMobileEnabled?: boolean;
@@ -25,7 +24,6 @@ interface DoctorBankConfigProps {
   onUpdate: (data: any) => void;
 }
 
-// Utility: Commission simulator (pure math UI)
 const CommissionSimulator = ({ 
   amount, 
   commissionPercent = 3.0 
@@ -39,9 +37,9 @@ const CommissionSimulator = ({
   const net = amount - commission;
   
   return (
-    <div className="bg-black/20 border border-white/10 p-3 rounded-lg mt-3">
-      <p className="text-[9px] text-white/40 font-medium mb-2">SIMULADOR DE COMISIONES</p>
-      <div className="space-y-1 text-[10px]">
+    <div className="bg-black/20 border border-white/10 p-4 rounded-xl mt-4">
+      <p className="text-xs text-white/40 font-medium mb-2">SIMULADOR DE COMISIONES</p>
+      <div className="space-y-2 text-sm">
         <div className="flex justify-between">
           <span className="text-white/50">Monto bruto:</span>
           <span className="text-white/70 font-mono">${amount.toFixed(2)}</span>
@@ -50,7 +48,7 @@ const CommissionSimulator = ({
           <span className="text-white/50">Comisión ({commissionPercent}%):</span>
           <span className="text-amber-400/70 font-mono">-${commission.toFixed(2)}</span>
         </div>
-        <div className="flex justify-between border-t border-white/10 pt-1 mt-1">
+        <div className="flex justify-between border-t border-white/10 pt-2 mt-2">
           <span className="text-emerald-400/70 font-medium">Neto a recibir:</span>
           <span className="text-emerald-400 font-mono font-bold">${net.toFixed(2)}</span>
         </div>
@@ -59,7 +57,6 @@ const CommissionSimulator = ({
   );
 };
 
-// Payment Method Status Badge
 const PaymentMethodBadge = ({ 
   enabled, 
   label, 
@@ -71,14 +68,14 @@ const PaymentMethodBadge = ({
 }) => {
   const isActive = Boolean(enabled);
   return (
-    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${
+    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${
       isActive 
         ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
         : 'bg-white/5 border-white/10 text-white/30'
     }`}>
       {icon}
-      <span className="text-[10px] font-medium">{label}</span>
-      <span className={`ml-auto text-[9px] ${isActive ? 'text-emerald-400' : 'text-white/20'}`}>
+      <span className="text-sm font-medium">{label}</span>
+      <span className={`ml-auto text-sm ${isActive ? 'text-emerald-400' : 'text-white/20'}`}>
         {isActive ? '● Activo' : '○ Inactivo'}
       </span>
     </div>
@@ -105,10 +102,8 @@ export default function DoctorBankConfig({
     bank_rif: bankRif || "",
     bank_phone: bankPhone || "",
     bank_account: bankAccount || "",
-    // Crypto
     binance_crypto_wallet_address: binanceCryptoWalletAddress || "",
     binance_network: binanceNetwork || "TRC20",
-    // Payment methods
     payment_mobile_enabled: paymentMobileEnabled ?? true,
     bank_transfer_enabled: bankTransferEnabled ?? false,
     crypto_enabled: cryptoEnabled ?? false,
@@ -149,35 +144,32 @@ export default function DoctorBankConfig({
     setIsEditing(false);
   };
 
-  const labelStyles = `text-[10px] font-medium text-white/50 uppercase tracking-wider mb-1.5 block`;
-  const inputStyles = `w-full bg-white/5 border border-white/15 rounded-lg px-4 py-2.5 text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30`;
+  const labelStyles = `text-xs font-medium text-white/50 uppercase tracking-wider mb-2 block`;
+  const inputStyles = `w-full bg-white/5 border border-white/15 rounded-xl px-5 py-3 text-sm text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30`;
 
-  // =====================================================
-  // EMPTY STATE - No hay datos configurados
-  // =====================================================
   if (!isEditing && !hasAnyPaymentMethod) {
     return (
-      <div className="bg-white/5 border border-white/15 p-5 rounded-lg space-y-4">
-        <div className="flex items-center gap-2">
-          <BuildingOfficeIcon className="w-4 h-4 text-white/30" />
-          <h4 className="text-[11px] font-medium text-white/60">
+      <div className="bg-white/5 border border-white/15 p-6 rounded-xl space-y-5">
+        <div className="flex items-center gap-3">
+          <BuildingOfficeIcon className="w-5 h-5 text-white/30" />
+          <h4 className="text-sm font-medium text-white/60">
             Datos de Pago
           </h4>
         </div>
         
-        <div className="bg-white/5 border border-dashed border-white/10 p-6 rounded-lg text-center">
-          <CurrencyDollarIcon className="w-8 h-8 text-white/20 mx-auto mb-3" />
-          <p className="text-[11px] text-white/40 mb-1">
+        <div className="bg-white/5 border border-dashed border-white/10 p-6 rounded-xl text-center">
+          <CurrencyDollarIcon className="w-10 h-10 text-white/20 mx-auto mb-4" />
+          <p className="text-sm text-white/40 mb-2">
             Sin métodos de pago configurados
           </p>
-          <p className="text-[9px] text-white/25">
+          <p className="text-xs text-white/25">
             Configure al menos un método para recibir pagos de pacientes
           </p>
         </div>
 
         <button 
           onClick={() => setIsEditing(true)}
-          className="w-full py-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-medium hover:bg-emerald-500/15 transition-all rounded-lg"
+          className="w-full py-3 px-5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium hover:bg-emerald-500/15 transition-all rounded-xl"
         >
           Configurar Métodos de Pago
         </button>
@@ -185,21 +177,17 @@ export default function DoctorBankConfig({
     );
   }
 
-  // =====================================================
-  // VIEW MODE - Mostrar configuración
-  // =====================================================
   if (!isEditing) {
     return (
-      <div className="bg-white/5 border border-white/15 p-5 rounded-lg space-y-4">
-        {/* Header */}
+      <div className="bg-white/5 border border-white/15 p-6 rounded-xl space-y-5">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <BuildingOfficeIcon className="w-4 h-4 text-white/30" />
-            <h4 className="text-[11px] font-medium text-white/60">
+          <div className="flex items-center gap-3">
+            <BuildingOfficeIcon className="w-5 h-5 text-white/30" />
+            <h4 className="text-sm font-medium text-white/60">
               Métodos de Pago
             </h4>
           </div>
-          <div className={`px-2 py-0.5 rounded-md text-[9px] font-medium ${
+          <div className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
             isComplete 
               ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
               : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
@@ -208,34 +196,32 @@ export default function DoctorBankConfig({
           </div>
         </div>
 
-        {/* Payment Methods Grid */}
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-3">
           <PaymentMethodBadge 
             enabled={form.payment_mobile_enabled && form.bank_phone}
             label="Pago Móvil"
-            icon={<DevicePhoneMobileIcon className="w-3 h-3" />}
+            icon={<DevicePhoneMobileIcon className="w-4 h-4" />}
           />
           <PaymentMethodBadge 
             enabled={form.bank_transfer_enabled && form.bank_account}
             label="Transferencia"
-            icon={<ArrowsRightLeftIcon className="w-3 h-3" />}
+            icon={<ArrowsRightLeftIcon className="w-4 h-4" />}
           />
           <PaymentMethodBadge 
             enabled={form.crypto_enabled && form.binance_crypto_wallet_address}
             label="USDT"
-            icon={<CurrencyDollarIcon className="w-3 h-3" />}
+            icon={<CurrencyDollarIcon className="w-4 h-4" />}
           />
         </div>
 
-        {/* Pago Móvil Details */}
         {form.payment_mobile_enabled && form.bank_phone && (
-          <div className="bg-emerald-500/5 border border-emerald-500/10 p-3 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <DevicePhoneMobileIcon className="w-3 h-3 text-emerald-400/60" />
-              <span className="text-[9px] text-emerald-400/60 font-medium">PAGO MÓVIL</span>
-              <span className="ml-auto text-[9px] text-emerald-400">● Configurado</span>
+          <div className="bg-emerald-500/5 border border-emerald-500/10 p-5 rounded-xl">
+            <div className="flex items-center gap-3 mb-3">
+              <DevicePhoneMobileIcon className="w-4 h-4 text-emerald-400/60" />
+              <span className="text-xs text-emerald-400/60 font-medium">PAGO MÓVIL</span>
+              <span className="ml-auto text-sm text-emerald-400">● Configurado</span>
             </div>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px]">
+            <div className="grid grid-cols-2 gap-4 text-sm">
               {form.bank_name && (
                 <div>
                   <span className="text-white/30">Banco:</span>
@@ -264,40 +250,37 @@ export default function DoctorBankConfig({
           </div>
         )}
 
-        {/* Transferencia Details */}
         {form.bank_transfer_enabled && form.bank_account && (
-          <div className="bg-blue-500/5 border border-blue-500/10 p-3 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <ArrowsRightLeftIcon className="w-3 h-3 text-blue-400/60" />
-              <span className="text-[9px] text-blue-400/60 font-medium">TRANSFERENCIA BANCARIA</span>
-              <span className="ml-auto text-[9px] text-blue-400">● Configurado</span>
+          <div className="bg-blue-500/5 border border-blue-500/10 p-5 rounded-xl">
+            <div className="flex items-center gap-3 mb-3">
+              <ArrowsRightLeftIcon className="w-4 h-4 text-blue-400/60" />
+              <span className="text-xs text-blue-400/60 font-medium">TRANSFERENCIA BANCARIA</span>
+              <span className="ml-auto text-sm text-blue-400">● Configurado</span>
             </div>
-            <div className="text-[10px]">
+            <div className="text-sm">
               <span className="text-white/30">Cuenta:</span>
               <span className="text-white/70 font-mono ml-2">{form.bank_account}</span>
             </div>
           </div>
         )}
 
-        {/* Crypto USDT Details */}
         {form.crypto_enabled && form.binance_crypto_wallet_address && (
-          <div className="bg-amber-500/5 border border-amber-500/10 p-3 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <CurrencyDollarIcon className="w-3 h-3 text-amber-400/60" />
-              <span className="text-[9px] text-amber-400/60 font-medium">USDT ({form.binance_network})</span>
-              <span className="ml-auto text-[9px] text-amber-400">● Configurado</span>
+          <div className="bg-amber-500/5 border border-amber-500/10 p-5 rounded-xl">
+            <div className="flex items-center gap-3 mb-3">
+              <CurrencyDollarIcon className="w-4 h-4 text-amber-400/60" />
+              <span className="text-xs text-amber-400/60 font-medium">USDT ({form.binance_network})</span>
+              <span className="ml-auto text-sm text-amber-400">● Configurado</span>
             </div>
-            <div className="text-[10px]">
+            <div className="text-sm">
               <span className="text-white/30">Wallet:</span>
-              <span className="text-white/70 font-mono ml-2 text-[9px] break-all">
+              <span className="text-white/70 font-mono ml-2 text-xs break-all">
                 {form.binance_crypto_wallet_address}
               </span>
             </div>
           </div>
         )}
 
-        {/* Commission Simulator */}
-        <div className="border-t border-white/10 pt-3">
+        <div className="border-t border-white/10 pt-4">
           <label className={labelStyles}>Simulador de Comisiones</label>
           <input
             type="number"
@@ -316,7 +299,7 @@ export default function DoctorBankConfig({
 
         <button 
           onClick={() => setIsEditing(true)}
-          className="w-full py-2.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-medium hover:bg-amber-500/15 transition-all rounded-lg"
+          className="w-full py-3 px-5 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm font-medium hover:bg-amber-500/15 transition-all rounded-xl"
         >
           Editar Métodos de Pago
         </button>
@@ -324,68 +307,63 @@ export default function DoctorBankConfig({
     );
   }
 
-  // =====================================================
-  // EDIT MODE - Formulario de configuración
-  // =====================================================
   return (
-    <div className="bg-white/5 border border-white/15 p-5 rounded-lg space-y-4">
+    <div className="bg-white/5 border border-white/15 p-6 rounded-xl space-y-5">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <BuildingOfficeIcon className="w-4 h-4 text-white/30" />
-          <h4 className="text-[11px] font-medium text-white/60">
+        <div className="flex items-center gap-3">
+          <BuildingOfficeIcon className="w-5 h-5 text-white/30" />
+          <h4 className="text-sm font-medium text-white/60">
             Configurar Métodos de Pago
           </h4>
         </div>
         <button 
           onClick={() => setIsEditing(false)}
-          className="text-white/40 hover:text-white/70 text-[10px] transition-colors"
+          className="text-white/40 hover:text-white/70 text-sm transition-colors"
         >
           Cancelar
         </button>
       </div>
 
-      {/* Payment Methods Toggles */}
-      <div className="bg-white/5 border border-white/10 p-3 rounded-lg space-y-3">
-        <p className="text-[9px] text-white/40 font-medium uppercase tracking-wider">Métodos de Pago</p>
-        <div className="grid grid-cols-3 gap-2">
-          <label className="flex items-center gap-2 cursor-pointer">
+      <div className="bg-white/5 border border-white/10 p-5 rounded-xl space-y-4">
+        <p className="text-xs text-white/40 font-medium uppercase tracking-wider">Métodos de Pago</p>
+        <div className="grid grid-cols-3 gap-4">
+          <label className="flex items-center gap-3 cursor-pointer">
             <input
               type="checkbox"
               checked={form.payment_mobile_enabled}
               onChange={(e) => setForm({...form, payment_mobile_enabled: e.target.checked})}
-              className="w-4 h-4 rounded border-white/20 bg-white/5"
+              className="w-5 h-5 rounded border-white/20 bg-white/5"
             />
-            <span className="text-[10px] text-white/70">Pago Móvil</span>
+            <span className="text-sm text-white/70">Pago Móvil</span>
           </label>
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label className="flex items-center gap-3 cursor-pointer">
             <input
               type="checkbox"
               checked={form.bank_transfer_enabled}
               onChange={(e) => setForm({...form, bank_transfer_enabled: e.target.checked})}
-              className="w-4 h-4 rounded border-white/20 bg-white/5"
+              className="w-5 h-5 rounded border-white/20 bg-white/5"
             />
-            <span className="text-[10px] text-white/70">Transferencia</span>
+            <span className="text-sm text-white/70">Transferencia</span>
           </label>
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label className="flex items-center gap-3 cursor-pointer">
             <input
               type="checkbox"
               checked={form.crypto_enabled}
               onChange={(e) => setForm({...form, crypto_enabled: e.target.checked})}
-              className="w-4 h-4 rounded border-white/20 bg-white/5"
+              className="w-5 h-5 rounded border-white/20 bg-white/5"
             />
-            <span className="text-[10px] text-white/70">USDT</span>
+            <span className="text-sm text-white/70">USDT</span>
           </label>
         </div>
       </div>
 
-      {/* Pago Móvil Fields */}
       {form.payment_mobile_enabled && (
-        <div className="bg-emerald-500/5 border border-emerald-500/10 p-4 rounded-lg space-y-3">
-          <div className="flex items-center gap-2">
-            <DevicePhoneMobileIcon className="w-4 h-4 text-emerald-400/60" />
-            <span className="text-[10px] text-emerald-400/70 font-semibold">PAGO MÓVIL</span>
+        <div className="bg-emerald-500/5 border border-emerald-500/10 p-5 rounded-xl space-y-4">
+          <div className="flex items-center gap-3">
+            <DevicePhoneMobileIcon className="w-5 h-5 text-emerald-400/60" />
+            <span className="text-sm text-emerald-400/70 font-semibold">PAGO MÓVIL</span>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <label className={labelStyles}>Banco</label>
               <select
@@ -421,12 +399,11 @@ export default function DoctorBankConfig({
         </div>
       )}
 
-      {/* Transferencia Fields */}
       {form.bank_transfer_enabled && (
-        <div className="bg-blue-500/5 border border-blue-500/10 p-4 rounded-lg space-y-3">
-          <div className="flex items-center gap-2">
-            <ArrowsRightLeftIcon className="w-4 h-4 text-blue-400/60" />
-            <span className="text-[10px] text-blue-400/70 font-semibold">TRANSFERENCIA BANCARIA</span>
+        <div className="bg-blue-500/5 border border-blue-500/10 p-5 rounded-xl space-y-4">
+          <div className="flex items-center gap-3">
+            <ArrowsRightLeftIcon className="w-5 h-5 text-blue-400/60" />
+            <span className="text-sm text-blue-400/70 font-semibold">TRANSFERENCIA BANCARIA</span>
           </div>
           <div>
             <label className={labelStyles}>Número de Cuenta</label>
@@ -440,12 +417,11 @@ export default function DoctorBankConfig({
         </div>
       )}
 
-      {/* Crypto USDT Fields */}
       {form.crypto_enabled && (
-        <div className="bg-amber-500/5 border border-amber-500/10 p-4 rounded-lg space-y-3">
-          <div className="flex items-center gap-2">
-            <CurrencyDollarIcon className="w-4 h-4 text-amber-400/60" />
-            <span className="text-[10px] text-amber-400/70 font-semibold">USDT (BINANCE)</span>
+        <div className="bg-amber-500/5 border border-amber-500/10 p-5 rounded-xl space-y-4">
+          <div className="flex items-center gap-3">
+            <CurrencyDollarIcon className="w-5 h-5 text-amber-400/60" />
+            <span className="text-sm text-amber-400/70 font-semibold">USDT (BINANCE)</span>
           </div>
           <div>
             <label className={labelStyles}>Dirección Wallet (USDT-TRC20)</label>
@@ -471,9 +447,8 @@ export default function DoctorBankConfig({
         </div>
       )}
 
-      {/* Commission Simulator Preview */}
       {form.bank_name && (
-        <div className="border-t border-white/10 pt-3">
+        <div className="border-t border-white/10 pt-4">
           <label className={labelStyles}>Simulador de Comisiones</label>
           <input
             type="number"
@@ -493,7 +468,7 @@ export default function DoctorBankConfig({
 
       <button 
         onClick={handleSave}
-        className="w-full py-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-medium hover:bg-emerald-500/15 transition-all rounded-lg"
+        className="w-full py-3 px-5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium hover:bg-emerald-500/15 transition-all rounded-xl"
       >
         Guardar Métodos de Pago
       </button>
