@@ -28,18 +28,21 @@ import {
   BeakerIcon,
   DocumentTextIcon
 } from "@heroicons/react/24/outline";
+
 interface Props {
   date?: Date;
   preselectedServiceId?: number;
   onClose: () => void;
   onSubmit: (data: AppointmentInput) => Promise<void> | void;
 }
+
 interface FormErrors {
   patient?: string;
   services?: string;
   appointment_date?: string;
   appointment_time?: string;
 }
+
 interface TemporaryService {
   id: number | string;
   code: string;
@@ -53,10 +56,12 @@ interface TemporaryService {
   is_active: boolean;
   is_visible_global: boolean;
 }
+
 interface SelectedService {
   service: TemporaryService;
   quantity: number;
 }
+
 export default function AppointmentForm({ date, preselectedServiceId, onClose, onSubmit }: Props) {
   const { institutions, activeInstitution } = useInstitutions();
   const { data: doctorConfig } = useDoctorConfig();
@@ -90,14 +95,17 @@ export default function AppointmentForm({ date, preselectedServiceId, onClose, o
     const num = parseFloat(String(price));
     return isNaN(num) ? "N/A" : num.toFixed(2);
   };
+  
   const safePriceToNumber = (price: any): number => {
     if (price === null || price === undefined || price === "") return 0;
     const num = parseFloat(String(price));
     return isNaN(num) ? 0 : num;
   };
+  
   const normalizeString = (str: string): string => {
     return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   };
+  
   const filteredPatients = useMemo(() => {
     if (!patientSearch.trim()) return patientList;
     const search = normalizeString(patientSearch);
@@ -147,7 +155,6 @@ export default function AppointmentForm({ date, preselectedServiceId, onClose, o
   const availableSlots = useMemo(() => {
     if (!selectedServiceId || !selectedDate) return [];
     
-    // Convert JS day (0=Sun, 1=Mon...) to Python day (0=Mon, 1=Tue..., 6=Sun)
     const jsDayOfWeek = selectedDate.getDay();
     const pythonDayOfWeek = jsDayOfWeek === 0 ? 6 : jsDayOfWeek - 1;
     
@@ -174,6 +181,7 @@ export default function AppointmentForm({ date, preselectedServiceId, onClose, o
     
     return slots;
   }, [selectedServiceId, selectedDate, serviceSchedules]);
+  
   useEffect(() => {
     if (selectedDate) {
       setForm(prev => ({
@@ -322,23 +330,23 @@ export default function AppointmentForm({ date, preselectedServiceId, onClose, o
   
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="flex justify-between items-center px-6 py-4 border-b border-white/15 bg-white/5">
-        <div className="flex items-center gap-3">
-          <div className="p-2 border border-white/15 bg-white/5 rounded-lg">
+      <div className="flex justify-between items-center px-6 py-5 border-b border-white/15 bg-white/5">
+        <div className="flex items-center gap-4">
+          <div className="p-2.5 border border-white/15 bg-white/5 rounded-xl">
             <CalendarIcon className="h-5 w-5 text-white/50" />
           </div>
           <div className="flex flex-col">
-            <span className="text-[9px] font-medium text-white/40 uppercase tracking-wider">
+            <span className="text-xs font-medium text-white/40 uppercase tracking-wider">
               Nueva Cita
             </span>
-            <h2 className="text-[14px] font-semibold text-white">
+            <h2 className="text-base font-semibold text-white">
               Crear Cita Médica
             </h2>
           </div>
         </div>
         <button
           type="button"
-          className="p-2 border border-white/15 bg-white/5 text-white/40 hover:text-red-400 hover:border-red-500/25 transition-all rounded-lg"
+          className="p-2.5 border border-white/15 bg-white/5 text-white/40 hover:text-red-400 hover:border-red-500/25 transition-all rounded-xl"
           onClick={onClose}
         >
           <XMarkIcon className="h-5 w-5" />
@@ -346,8 +354,8 @@ export default function AppointmentForm({ date, preselectedServiceId, onClose, o
       </div>
       
       <div className="p-6 space-y-6">
-        <div className="space-y-3">
-          <h3 className="text-[10px] font-medium text-white/50 uppercase tracking-wider">
+        <div className="space-y-4">
+          <h3 className="text-xs font-medium text-white/50 uppercase tracking-wider">
             Paciente
           </h3>
           <div className="relative">
@@ -356,15 +364,15 @@ export default function AppointmentForm({ date, preselectedServiceId, onClose, o
               value={patientSearch}
               onChange={(e) => setPatientSearch(e.target.value)}
               placeholder="Buscar paciente..."
-              className="w-full bg-white/5 border border-white/15 p-3 text-[12px] text-white/80 rounded-lg focus:border-emerald-500/50 outline-none placeholder:text-white/30"
+              className="w-full bg-white/5 border border-white/15 p-4 text-sm text-white/80 rounded-xl focus:border-emerald-500/50 outline-none placeholder:text-white/30"
             />
             {patientSearch && (
-              <div className="absolute z-50 w-full mt-1 bg-[#1a1a1b] border border-white/15 max-h-60 overflow-y-auto rounded-lg shadow-lg">
+              <div className="absolute z-50 w-full mt-2 bg-[#1a1a1b] border border-white/15 max-h-60 overflow-y-auto rounded-xl shadow-lg">
                 {filteredPatients.map((patient) => (
                   <div
                     key={patient.id}
                     onClick={() => handlePatientSelect(patient)}
-                    className="p-3 hover:bg-white/5 cursor-pointer text-white/80 text-[12px] border-b border-white/5 last:border-0"
+                    className="p-4 hover:bg-white/5 cursor-pointer text-white/80 text-sm border-b border-white/5 last:border-0"
                   >
                     {patient.full_name} - {patient.national_id}
                   </div>
@@ -373,25 +381,25 @@ export default function AppointmentForm({ date, preselectedServiceId, onClose, o
             )}
           </div>
           {selectedPatient && (
-            <div className="mt-2 text-emerald-400 text-[11px]">
+            <div className="mt-2 text-emerald-400 text-sm">
               ✓ {selectedPatient.full_name} seleccionado
             </div>
           )}
           {errors.patient && (
-            <div className="mt-1 text-red-400 text-[10px]">{errors.patient}</div>
+            <div className="mt-1 text-red-400 text-sm">{errors.patient}</div>
           )}
           <button
             type="button"
             onClick={() => setShowNewPatientModal(true)}
-            className="flex items-center gap-2 text-emerald-400 hover:text-emerald-300 text-[11px] mt-2"
+            className="flex items-center gap-2 text-emerald-400 hover:text-emerald-300 text-sm mt-2"
           >
-            <UserPlusIcon className="w-4 h-4" />
+            <UserPlusIcon className="w-5 h-5" />
             Crear nuevo paciente
           </button>
         </div>
         
-        <div className="space-y-3">
-          <h3 className="text-[10px] font-medium text-white/50 uppercase tracking-wider">
+        <div className="space-y-4">
+          <h3 className="text-xs font-medium text-white/50 uppercase tracking-wider">
             Servicios
           </h3>
           
@@ -401,31 +409,31 @@ export default function AppointmentForm({ date, preselectedServiceId, onClose, o
               value={serviceSearch}
               onChange={(e) => setServiceSearch(e.target.value)}
               placeholder="Buscar servicios..."
-              className="w-full bg-white/5 border border-white/15 p-3 text-[12px] text-white/80 rounded-lg focus:border-emerald-500/50 outline-none placeholder:text-white/30"
+              className="w-full bg-white/5 border border-white/15 p-4 text-sm text-white/80 rounded-xl focus:border-emerald-500/50 outline-none placeholder:text-white/30"
             />
             {serviceSearch.length >= 2 && (
-              <div className="absolute z-50 w-full mt-1 bg-[#1a1a1b] border border-white/15 max-h-60 overflow-y-auto rounded-lg shadow-lg">
+              <div className="absolute z-50 w-full mt-2 bg-[#1a1a1b] border border-white/15 max-h-60 overflow-y-auto rounded-xl shadow-lg">
                 {Object.entries(groupedServices).map(([category, services]) => (
                   <div key={category}>
-                    <div className="px-3 py-2 bg-white/5 text-[10px] font-medium text-white/40 uppercase">
+                    <div className="px-4 py-3 bg-white/5 text-xs font-medium text-white/40 uppercase">
                       {category}
                     </div>
                     {services.map((service) => (
                       <div
                         key={service.id}
                         onClick={() => handleAddService(service as DoctorService)}
-                        className="p-3 hover:bg-white/5 cursor-pointer text-white/80 text-[12px] flex justify-between items-center border-b border-white/5 last:border-0"
+                        className="p-4 hover:bg-white/5 cursor-pointer text-white/80 text-sm flex justify-between items-center border-b border-white/5 last:border-0"
                       >
                         <div>
                           <div>{service.name}</div>
-                          <div className="text-white/30 text-[10px]">
+                          <div className="text-white/30 text-xs mt-1">
                             {service.duration_minutes} min
                           </div>
                         </div>
                         <div className="text-right">
                           <div className="text-emerald-400">${formatPrice(service.price_usd)}</div>
                           {service.price_ves && (
-                            <div className="text-amber-400/60 text-[10px]">
+                            <div className="text-amber-400/60 text-xs mt-1">
                               Bs. {service.price_ves.toFixed(2)}
                             </div>
                           )}
@@ -439,40 +447,40 @@ export default function AppointmentForm({ date, preselectedServiceId, onClose, o
           </div>
           
           {selectedServices.length > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {selectedServices.map((selected) => (
                 <div
                   key={selected.service.id}
-                  className="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-lg"
+                  className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-xl"
                 >
                   <div className="flex-1">
-                    <div className="text-white/80 text-[12px]">{selected.service.name}</div>
-                    <div className="text-white/30 text-[10px]">{selected.service.code}</div>
+                    <div className="text-white/80 text-sm">{selected.service.name}</div>
+                    <div className="text-white/30 text-xs mt-1">{selected.service.code}</div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1 bg-white/5 border border-white/15 rounded-lg">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 bg-white/5 border border-white/15 rounded-xl">
                       <button
                         type="button"
                         onClick={() => handleServiceQuantity(selected.service.id, -1)}
-                        className="p-1.5 hover:bg-white/10 text-white/60 rounded-l-lg"
+                        className="p-2 hover:bg-white/10 text-white/60 rounded-l-xl"
                       >
                         -
                       </button>
-                      <span className="px-2 text-white/80 text-[12px]">{selected.quantity}</span>
+                      <span className="px-3 text-white/80 text-sm">{selected.quantity}</span>
                       <button
                         type="button"
                         onClick={() => handleServiceQuantity(selected.service.id, 1)}
-                        className="p-1.5 hover:bg-white/10 text-white/60 rounded-r-lg"
+                        className="p-2 hover:bg-white/10 text-white/60 rounded-r-xl"
                       >
                         +
                       </button>
                     </div>
                     <div className="text-right min-w-[100px]">
-                      <div className="text-emerald-400 text-[12px]">
+                      <div className="text-emerald-400 text-sm">
                         ${formatPrice(safePriceToNumber(selected.service.price_usd) * selected.quantity)}
                       </div>
                       {selected.service.price_ves && (
-                        <div className="text-amber-400/60 text-[10px]">
+                        <div className="text-amber-400/60 text-xs mt-1">
                           Bs. {(selected.service.price_ves * selected.quantity).toFixed(2)}
                         </div>
                       )}
@@ -480,21 +488,21 @@ export default function AppointmentForm({ date, preselectedServiceId, onClose, o
                     <button
                       type="button"
                       onClick={() => handleRemoveService(selected.service.id)}
-                      className="text-red-400/60 hover:text-red-400 p-1.5 hover:bg-red-500/10 rounded-lg transition-all"
+                      className="text-red-400/60 hover:text-red-400 p-2 hover:bg-red-500/10 rounded-xl transition-all"
                     >
-                      <TrashIcon className="w-4 h-4" />
+                      <TrashIcon className="w-5 h-5" />
                     </button>
                   </div>
                 </div>
               ))}
-              <div className="flex justify-between items-center pt-3 border-t border-white/10">
-                <span className="text-white/50 text-[12px]">Total:</span>
+              <div className="flex justify-between items-center pt-4 border-t border-white/10">
+                <span className="text-white/50 text-sm">Total:</span>
                 <div className="text-right">
-                  <div className="text-emerald-400 font-semibold text-[16px]">
+                  <div className="text-emerald-400 font-semibold text-lg">
                     ${formatPrice(totalAmount)}
                   </div>
                   {bcvRate?.rate && (
-                    <div className="text-amber-400/60 text-[11px]">
+                    <div className="text-amber-400/60 text-sm mt-1">
                       Bs. {(totalAmount * bcvRate.rate).toFixed(2)}
                     </div>
                   )}
@@ -503,12 +511,12 @@ export default function AppointmentForm({ date, preselectedServiceId, onClose, o
             </div>
           )}
           {errors.services && (
-            <div className="mt-1 text-red-400 text-[10px]">{errors.services}</div>
+            <div className="mt-1 text-red-400 text-sm">{errors.services}</div>
           )}
         </div>
         
-        <div className="space-y-3">
-          <h3 className="text-[10px] font-medium text-white/50 uppercase tracking-wider">
+        <div className="space-y-4">
+          <h3 className="text-xs font-medium text-white/50 uppercase tracking-wider">
             Fecha y Hora
           </h3>
           
@@ -518,19 +526,18 @@ export default function AppointmentForm({ date, preselectedServiceId, onClose, o
             serviceSchedules={serviceSchedules}
           />
           
-          {/* Time slots */}
           {selectedDate && selectedServiceId && availableSlots.length > 0 && (
-            <div className="mt-4">
-              <h4 className="text-[10px] font-medium text-white/50 uppercase tracking-wider mb-2">
+            <div className="mt-5">
+              <h4 className="text-xs font-medium text-white/50 uppercase tracking-wider mb-3">
                 Horarios disponibles
               </h4>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 gap-3">
                 {availableSlots.map((slot) => (
                   <button
                     key={slot.time}
                     type="button"
                     onClick={() => setSelectedTime(slot.time)}
-                    className={`p-2 text-[11px] rounded-lg border transition-all ${
+                    className={`p-3 text-sm rounded-xl border transition-all ${
                       selectedTime === slot.time
                         ? 'bg-emerald-500/15 border-emerald-500/25 text-emerald-400'
                         : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10'
@@ -544,32 +551,33 @@ export default function AppointmentForm({ date, preselectedServiceId, onClose, o
           )}
           
           {errors.appointment_date && (
-            <div className="mt-1 text-red-400 text-[10px]">{errors.appointment_date}</div>
+            <div className="mt-1 text-red-400 text-sm">{errors.appointment_date}</div>
           )}
           {errors.appointment_time && (
-            <div className="mt-1 text-red-400 text-[10px]">{errors.appointment_time}</div>
+            <div classmt-1 text-red-400 text-sm>{errors.appointment_time}</div>
           )}
         </div>
       </div>
       
-      <div className="px-6 py-4 bg-white/5 border-t border-white/15 flex justify-between items-center gap-3 rounded-b-lg">
+      <div className="px-6 py-5 bg-white/5 border-t border-white/15 flex justify-between items-center gap-4 rounded-b-xl">
         <button
           type="button"
           onClick={onClose}
-          className="flex-1 py-2.5 bg-white/5 text-white/60 text-[11px] font-medium hover:bg-white/10 transition-all rounded-lg"
+          className="flex-1 py-3 bg-white/5 text-white/60 text-sm font-medium hover:bg-white/10 transition-all rounded-xl"
         >
           Cancelar
         </button>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex-1 py-2.5 bg-emerald-500/15 text-emerald-400 text-[11px] font-medium hover:bg-emerald-500/25 transition-all disabled:opacity-50 border border-emerald-500/25 rounded-lg"
+          className="flex-1 py-3 bg-emerald-500/15 text-emerald-400 text-sm font-medium hover:bg-emerald-500/25 transition-all disabled:opacity-50 border border-emerald-500/25 rounded-xl"
         >
           {isSubmitting ? "Guardando..." : "Crear Cita"}
         </button>
       </div>
+      
       {submitError && (
-        <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-[11px] rounded-lg mx-6">
+        <div className="p-5 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl mx-6">
           Error: {submitError}
         </div>
       )}

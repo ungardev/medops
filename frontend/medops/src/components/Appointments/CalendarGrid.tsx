@@ -12,6 +12,7 @@ import {
   EyeIcon,
   EyeSlashIcon
 } from '@heroicons/react/24/outline';
+
 interface CalendarGridProps {
   appointments?: Appointment[];
   operationalItems?: OperationalItem[];
@@ -26,6 +27,7 @@ interface CalendarGridProps {
   onPrevMonth?: () => void;
   onNextMonth?: () => void;
 }
+
 const CalendarGrid: React.FC<CalendarGridProps> = ({
   appointments = [],
   operationalItems = [],
@@ -53,7 +55,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
     completed: 'border-l-2 border-emerald-500/50',
     canceled: 'border-l-2 border-red-500/50',
   };
-  // Helper para formatear fecha local a YYYY-MM-DD
+  
   const formatDateLocal = (date: Date): string => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -107,7 +109,6 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
     setSelectedDay(null);
   };
   
-  // FIX: Comparar fechas usando formato local para evitar timezone shift
   const getItemsForDay = (day: number) => {
     const year = internalDate.getFullYear();
     const month = String(internalDate.getMonth() + 1).padStart(2, '0');
@@ -122,7 +123,6 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const emptyDays = Array.from({ length: startingDayOfWeek }, (_, i) => i);
   
-  // FIX: Comparar fechas usando formato local para evitar timezone shift
   const selectedDayItems = selectedDay 
     ? operationalItems.filter(item => {
         const selectedDateStr = formatDateLocal(selectedDay);
@@ -148,47 +148,47 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   };
   
   return (
-    <div className="flex gap-4 h-full">
-      <div className="flex-1 bg-white/5 border border-white/15 rounded-lg overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between p-3 bg-white/5 border-b border-white/15">
-          <div className="flex items-center gap-2">
-            <button onClick={handlePrevMonth} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors">
-              <ChevronLeftIcon className="w-4 h-4 text-white/50" />
+    <div className="flex gap-5 h-full">
+      <div className="flex-1 bg-white/5 border border-white/15 rounded-xl overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between p-4 bg-white/5 border-b border-white/15">
+          <div className="flex items-center gap-3">
+            <button onClick={handlePrevMonth} className="p-2 hover:bg-white/10 rounded-xl transition-colors">
+              <ChevronLeftIcon className="w-5 h-5 text-white/50" />
             </button>
-            <span className="text-[11px] font-medium text-white/70 capitalize">
+            <span className="text-sm font-medium text-white/70 capitalize">
               {internalDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
             </span>
-            <button onClick={handleNextMonth} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors">
-              <ChevronRightIcon className="w-4 h-4 text-white/50" />
+            <button onClick={handleNextMonth} className="p-2 hover:bg-white/10 rounded-xl transition-colors">
+              <ChevronRightIcon className="w-5 h-5 text-white/50" />
             </button>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setShowAvailability(!showAvailability)}
-              className={`p-1.5 rounded-lg transition-colors ${
+              className={`p-2 rounded-xl transition-colors ${
                 showAvailability ? 'bg-emerald-500/15 text-emerald-400' : 'text-white/30 hover:text-white/60'
               }`}
               title={showAvailability ? 'Ocultar disponibilidad' : 'Mostrar disponibilidad'}
             >
               {showAvailability ? (
-                <EyeIcon className="w-4 h-4" />
+                <EyeIcon className="w-5 h-5" />
               ) : (
-                <EyeSlashIcon className="w-4 h-4" />
+                <EyeSlashIcon className="w-5 h-5" />
               )}
             </button>
           </div>
           
-          <div className="grid grid-cols-7 gap-1 flex-1 mx-4">
+          <div className="grid grid-cols-7 gap-2 flex-1 mx-5">
             {['D', 'L', 'M', 'M', 'J', 'V', 'S'].map((day) => (
-              <div key={day} className="text-center text-[9px] font-medium text-white/30 py-1">
+              <div key={day} className="text-center text-xs font-medium text-white/30 py-2">
                 {day}
               </div>
             ))}
           </div>
         </div>
         
-        <div className="grid grid-cols-7 gap-[1px] p-1 bg-[#111] flex-1 overflow-y-auto">
+        <div className="grid grid-cols-7 gap-1 p-2 bg-[#111] flex-1 overflow-y-auto">
           {emptyDays.map((_, index) => (
             <div key={`empty-${index}`} className="min-h-[100px] bg-white/5" />
           ))}
@@ -203,7 +203,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
               <div
                 key={day}
                 onClick={() => handleDateClick(date)}
-                className={`min-h-[100px] bg-white/5 border cursor-pointer p-2 overflow-hidden transition-all ${
+                className={`min-h-[100px] bg-white/5 border cursor-pointer p-3 overflow-hidden transition-all ${
                   isSelected 
                     ? 'border-white/30 bg-white/10' 
                     : hasFilteredItems
@@ -211,17 +211,17 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                     : 'border-white/5 hover:border-white/15 hover:bg-white/10'
                 }`}
               >
-                <div className="flex justify-between items-center mb-1">
-                  <div className={`text-[10px] font-medium ${isSelected ? 'text-white' : 'text-white/50'}`}>
+                <div className="flex justify-between items-center mb-2">
+                  <div className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-white/50'}`}>
                     {day}
                   </div>
                   {dayItems.length > 0 && (
                     <div className="flex items-center gap-1">
-                      <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-white/40'}`} />
+                      <div className={`w-2 h-2 rounded-full ${isSelected ? 'bg-white' : 'bg-white/40'}`} />
                     </div>
                   )}
                 </div>
-                <div className="space-y-1 mt-1">
+                <div className="space-y-2 mt-2">
                   {dayItems.slice(0, 2).map((item) => {
                     const colorClass = item.type === 'availability' 
                       ? 'bg-emerald-500/10 border-l-2 border-emerald-500/30' 
@@ -238,7 +238,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                           e.stopPropagation();
                           handleOperationalItemClick(item);
                         }}
-                        className={`${colorClass} hover:bg-white/10 text-[9px] text-white/60 px-1 py-0.5 rounded cursor-pointer truncate ${
+                        className={`${colorClass} hover:bg-white/10 text-xs text-white/60 px-2 py-1.5 rounded-lg cursor-pointer truncate ${
                           item.type === 'availability' ? 'text-emerald-400/70' : ''
                         }`}
                       >
@@ -248,7 +248,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                   })}
                   
                   {dayItems.length > 2 && (
-                    <div className="text-[8px] text-white/30 text-center">
+                    <div className="text-xs text-white/30 text-center">
                       +{dayItems.length - 2} más
                     </div>
                   )}
@@ -261,4 +261,5 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
     </div>
   );
 };
+
 export default CalendarGrid;
