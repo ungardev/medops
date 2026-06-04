@@ -110,7 +110,7 @@ export default function ClinicalNotePanel({ appointmentId, readOnly = false }: P
   const sublabelStyles = "text-[10px] font-medium text-white/60 uppercase tracking-wider mb-1 block";
   const inputStyles = "w-full min-h-[100px] p-3 bg-white/5 border border-white/15 text-white text-[13px] placeholder:text-white/30 focus:outline-none focus:border-emerald-500/50 rounded-lg transition-all resize-none";
   
-  if (isLoading) {
+  if (isLoading && !clinicalNote) {
     return (
       <div className="flex items-center justify-center h-32">
         <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>

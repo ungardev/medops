@@ -75,7 +75,7 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
       </div>
       <div className="p-5 space-y-4">
         <div className="space-y-3">
-          {isLoading ? (
+          {tests.length === 0 && !data ? (
             <div className="text-[11px] text-white/50 animate-pulse">Cargando exámenes...</div>
           ) : tests.length === 0 ? (
             <div className="text-[11px] text-white/50 italic">No hay exámenes registrados</div>
