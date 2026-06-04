@@ -1,5 +1,6 @@
 // src/hooks/consultations/useCurrentConsultation.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData } from "@tanstack/react-query";
 import {
   updateAppointmentNotes,
   updateAppointmentStatus,
@@ -22,6 +23,7 @@ export function useCurrentConsultation() {
     },
     staleTime: 60_000,
     gcTime: 1000 * 60 * 60 * 24,
+    placeholderData: keepPreviousData,
   });
   
   // 2. MUTACIÓN: Actualizar Notas (con Invalidación Local)
