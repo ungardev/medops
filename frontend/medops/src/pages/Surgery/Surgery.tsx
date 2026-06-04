@@ -152,7 +152,7 @@ export default function Surgery() {
         actions={
           <button
             onClick={() => setPatientSearchOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-[11px] font-medium rounded-lg transition-all"
+            className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-sm font-medium rounded-lg transition-all"
           >
             <Plus className="w-4 h-4" />
             Nueva Cirugía
@@ -160,25 +160,25 @@ export default function Surgery() {
         }
       />
       
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
         {statsCards.map((stat) => (
-          <div key={stat.label} className="bg-white/5 border border-white/15 rounded-lg p-4">
+          <div key={stat.label} className="bg-white/5 border border-white/15 rounded-xl p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[11px] text-white/40 uppercase tracking-wider">{stat.label}</p>
-                <p className="text-2xl font-semibold text-white mt-1">{stat.value}</p>
+                <p className="text-sm text-white/40 uppercase tracking-wider">{stat.label}</p>
+                <p className="text-3xl font-semibold text-white mt-2">{stat.value}</p>
               </div>
-              <stat.icon className={`w-6 h-6 ${stat.color}`} />
+              <stat.icon className={`w-7 h-7 ${stat.color}`} />
             </div>
           </div>
         ))}
       </div>
-      <div className="flex gap-2 border-b border-white/10">
+      <div className="flex gap-3 border-b border-white/10">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2 text-[12px] font-medium transition-all border-b-2 ${
+            className={`px-5 py-3 text-sm font-medium transition-all border-b-2 ${
               activeTab === tab.key
                 ? "text-white border-white"
                 : "text-white/40 border-transparent hover:text-white/60"
@@ -188,89 +188,88 @@ export default function Surgery() {
           </button>
         ))}
       </div>
-      <div className="bg-white/5 border border-white/15 rounded-lg overflow-hidden">
+      <div className="bg-white/5 border border-white/15 rounded-xl overflow-hidden">
         {isLoading ? (
-          <div className="p-20 text-center">
-            <div className="w-6 h-6 border-2 border-white/20 border-t-white/60 rounded-full animate-spin mx-auto" />
-            <p className="text-[11px] text-white/30 mt-3">Cargando cirugías...</p>
+          <div className="p-24 text-center">
+            <div className="w-7 h-7 border-2 border-white/20 border-t-white/60 rounded-full animate-spin mx-auto" />
+            <p className="text-sm text-white/30 mt-4">Cargando cirugías...</p>
           </div>
         ) : !surgeries || surgeries.length === 0 ? (
-          <div className="p-20 text-center">
-            <Scissors className="w-10 h-10 text-white/10 mx-auto mb-3" />
-            <p className="text-[12px] text-white/30">No hay cirugías registradas</p>
+          <div className="p-24 text-center">
+            <Scissors className="w-12 h-12 text-white/10 mx-auto mb-4" />
+            <p className="text-sm text-white/30">No hay cirugías registradas</p>
           </div>
         ) : (
           <div className="divide-y divide-white/5">
             {surgeries.map((surgery: Surgery) => (
-              <div key={surgery.id} className="px-5 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hover:bg-white/5 transition-colors">
+              <div key={surgery.id} className="px-6 py-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-white/5 transition-colors">
                 <div className="flex items-start gap-4 flex-1 min-w-0">
                   <div className="mt-1">
                     <Scissors className="w-5 h-5 text-white/30" />
                   </div>
-                  <div className="flex flex-col gap-1 min-w-0">
-                    <p className="text-[13px] font-medium text-white/80 truncate">{surgery.name}</p>
-                    <div className="flex flex-wrap gap-3 text-[11px] text-white/40">
-                      <span className="flex items-center gap-1">
-                        <User className="w-3.5 h-3.5" />
+                  <div className="flex flex-col gap-2 min-w-0">
+                    <p className="text-base font-medium text-white/80 truncate">{surgery.name}</p>
+                    <div className="flex flex-wrap gap-4 text-sm text-white/40">
+                      <span className="flex items-center gap-1.5">
+                        <User className="w-4 h-4" />
                         {surgery.patient_name}
                       </span>
-                      <span className="flex items-center gap-1">
-                        <Stethoscope className="w-3.5 h-3.5" />
+                      <span className="flex items-center gap-1.5">
+                        <Stethoscope className="w-4 h-4" />
                         {surgery.surgeon_name}
                       </span>
                       {surgery.scheduled_date && (
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5" />
+                        <span className="flex items-center gap-1.5">
+                          <Calendar className="w-4 h-4" />
                           {new Date(surgery.scheduled_date).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}
                         </span>
                       )}
                     </div>
-                    <div className="flex flex-wrap gap-2 mt-1">
+                    <div className="flex flex-wrap gap-3 mt-2">
                       {surgery.status && (
-                        <span className={`inline-flex items-center px-2 py-0.5 text-[9px] font-medium rounded-md border ${statusColors[surgery.status] || "bg-white/5 text-white/40 border-white/10"}`}>
+                        <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-md border ${statusColors[surgery.status] || "bg-white/5 text-white/40 border-white/10"}`}>
                           {surgery.status_display}
                         </span>
                       )}
                       {surgery.risk_level && (
-                        <span className={`text-[9px] font-medium ${riskColors[surgery.risk_level] || "text-white/40"}`}>
+                        <span className={`text-sm font-medium ${riskColors[surgery.risk_level] || "text-white/40"}`}>
                           {surgery.risk_level_display}
                         </span>
                       )}
                       {surgery.asa_classification && (
-                        <span className="text-[9px] text-white/30">ASA: {surgery.asa_classification}</span>
+                        <span className="text-sm text-white/30">ASA: {surgery.asa_classification}</span>
                       )}
                       {surgery.specialty_name && (
-                        <span className="text-[9px] text-white/30">{surgery.specialty_name}</span>
+                        <span className="text-sm text-white/30">{surgery.specialty_name}</span>
                       )}
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {/* Botones según estado de la cirugía */}
+                <div className="flex items-center gap-3">
                   {surgery.status === "scheduled" && (
                     <>
                       <button 
                         onClick={() => startSurgeryMutation.mutate(surgery.id)}
                         disabled={startSurgeryMutation.isPending}
-                        className="px-3 py-1.5 text-[10px] font-medium bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded-lg hover:bg-purple-500/20 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                        className="px-4 py-2 text-sm font-medium bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded-lg hover:bg-purple-500/20 transition-all flex items-center gap-2 disabled:opacity-50"
                       >
-                        <Activity className="w-3.5 h-3.5" />
+                        <Activity className="w-4 h-4" />
                         Iniciar
                       </button>
                       <button 
                         onClick={() => { setSelectedSurgery(surgery); setDetailDrawerOpen(true); }}
-                        className="px-3 py-1.5 text-[10px] font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all flex items-center gap-1.5"
+                        className="px-4 py-2 text-sm font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all flex items-center gap-2"
                       >
-                        <Eye className="w-3.5 h-3.5" />
+                        <Eye className="w-4 h-4" />
                         Ver
                       </button>
                       <button 
                         onClick={() => cancelSurgeryMutation.mutate(surgery.id)}
                         disabled={cancelSurgeryMutation.isPending}
-                        className="px-3 py-1.5 text-[10px] font-medium bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg hover:bg-red-500/20 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                        className="px-4 py-2 text-sm font-medium bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg hover:bg-red-500/20 transition-all flex items-center gap-2 disabled:opacity-50"
                         title="Cancelar"
                       >
-                        <X className="w-3.5 h-3.5" />
+                        <X className="w-4 h-4" />
                       </button>
                     </>
                   )}
@@ -279,41 +278,41 @@ export default function Surgery() {
                       <button 
                         onClick={() => completeSurgeryMutation.mutate(surgery.id)}
                         disabled={completeSurgeryMutation.isPending}
-                        className="px-3 py-1.5 text-[10px] font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/20 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                        className="px-4 py-2 text-sm font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/20 transition-all flex items-center gap-2 disabled:opacity-50"
                       >
-                        <CheckCircle className="w-3.5 h-3.5" />
+                        <CheckCircle className="w-4 h-4" />
                         Completar
                       </button>
                       <button 
                         onClick={() => { setSelectedSurgery(surgery); setDetailDrawerOpen(true); }}
-                        className="px-3 py-1.5 text-[10px] font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all flex items-center gap-1.5"
+                        className="px-4 py-2 text-sm font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all flex items-center gap-2"
                       >
-                        <Eye className="w-3.5 h-3.5" />
+                        <Eye className="w-4 h-4" />
                         Ver
                       </button>
                       <button 
                         onClick={() => { setEditingSurgery(surgery); setModalOpen(true); }}
-                        className="px-3 py-1.5 text-[10px] font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all flex items-center gap-1.5"
+                        className="px-4 py-2 text-sm font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all flex items-center gap-2"
                       >
-                        <Pencil className="w-3.5 h-3.5" />
+                        <Pencil className="w-4 h-4" />
                         Editar
                       </button>
                       <button 
                         onClick={() => cancelSurgeryMutation.mutate(surgery.id)}
                         disabled={cancelSurgeryMutation.isPending}
-                        className="px-3 py-1.5 text-[10px] font-medium bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg hover:bg-red-500/20 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                        className="px-4 py-2 text-sm font-medium bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg hover:bg-red-500/20 transition-all flex items-center gap-2 disabled:opacity-50"
                         title="Cancelar"
                       >
-                        <X className="w-3.5 h-3.5" />
+                        <X className="w-4 h-4" />
                       </button>
                     </>
                   )}
                   {(surgery.status === "completed" || surgery.status === "canceled") && (
                     <button 
                       onClick={() => { setSelectedSurgery(surgery); setDetailDrawerOpen(true); }}
-                      className="px-3 py-1.5 text-[10px] font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all flex items-center gap-1.5"
+                      className="px-4 py-2 text-sm font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all flex items-center gap-2"
                     >
-                      <Eye className="w-3.5 h-3.5" />
+                      <Eye className="w-4 h-4" />
                       Ver Detalle
                     </button>
                   )}

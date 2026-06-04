@@ -28,7 +28,7 @@ import {
 import { useOperationalHub } from "@/hooks/waitingroom/useOperationalHub";
 import { useInstitutions } from "@/hooks/settings/useInstitutions"; 
 const renderStatusBadge = (status: string) => {
-  const base = "inline-flex items-center justify-center px-2.5 py-1 text-[9px] rounded-md font-medium border whitespace-nowrap transition-all duration-300";
+  const base = "inline-flex items-center justify-center px-3 py-1.5 text-xs rounded-md font-medium border whitespace-nowrap transition-all duration-300";
   
   switch (status) {
     case "waiting":
@@ -200,7 +200,7 @@ const filteredServices = useMemo(() =>
   };
   
   const FilterControls = () => (
-    <div className="flex gap-2">
+    <div className="flex gap-3">
       <EliteDropdown
         options={categories}
         value={selectedCategory}
@@ -231,20 +231,20 @@ const filteredServices = useMemo(() =>
           { label: "Finalizados", value: filteredLiveQueue.filter(e => e.status === 'completed').length, color: "text-emerald-400" }
         ]}
         actions={
-          <div className="flex flex-wrap gap-2 justify-end items-center">
+          <div className="flex flex-wrap gap-3 justify-end items-center">
             <FilterControls />
             <button
               onClick={() => setShowConfirmClose(true)}
-              className="px-3 py-2 text-[10px] font-medium border border-red-500/20 bg-red-500/5 text-red-400 rounded-lg hover:bg-red-500/10 flex items-center gap-2 transition-all"
+              className="px-4 py-2.5 text-sm font-medium border border-red-500/20 bg-red-500/5 text-red-400 rounded-lg hover:bg-red-500/10 flex items-center gap-2 transition-all"
             >
-              <PowerIcon className="w-3.5 h-3.5" />
+              <PowerIcon className="w-4 h-4" />
               Cerrar Jornada
             </button>
             <button
               onClick={handleOpenRegisterModal}
-              className="px-3 py-2 text-[10px] font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 rounded-lg hover:bg-emerald-500/25 flex items-center gap-2 transition-all"
+              className="px-4 py-2.5 text-sm font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 rounded-lg hover:bg-emerald-500/25 flex items-center gap-2 transition-all"
             >
-              <PlusIcon className="w-3.5 h-3.5" />
+              <PlusIcon className="w-4 h-4" />
               Registrar Llegada
             </button>
           </div>
@@ -253,19 +253,19 @@ const filteredServices = useMemo(() =>
       
       {showOverlay && (
         <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-10 animate-in fade-in duration-300">
-          <div className="flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/15 shadow-lg rounded-lg">
-            <div className="w-2 h-2 bg-white/50 rounded-full animate-pulse" />
-            <span className="text-[10px] text-white/50">Cargando datos...</span>
+          <div className="flex items-center gap-3 px-5 py-3 bg-white/5 border border-white/15 shadow-lg rounded-lg">
+            <div className="w-2.5 h-2.5 bg-white/50 rounded-full animate-pulse" />
+            <span className="text-sm text-white/50">Cargando datos...</span>
           </div>
         </div>
 )}
       
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-8 flex flex-col bg-white/5 border border-white/15 rounded-lg overflow-hidden">
-          <div className="px-5 py-3 border-b border-white/10 bg-white/5 flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <UserGroupIcon className="w-4 h-4 text-white/30" />
-              <h3 className="text-[11px] font-medium text-white/60">Cola de Atención</h3>
+        <div className="lg:col-span-8 flex flex-col bg-white/5 border border-white/15 rounded-xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-white/10 bg-white/5 flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <UserGroupIcon className="w-5 h-5 text-white/30" />
+              <h3 className="text-sm font-medium text-white/60">Cola de Atención</h3>
             </div>
             <InstitutionFilter
               selectedInstitutionId={selectedInstitutionId}
@@ -274,34 +274,34 @@ const filteredServices = useMemo(() =>
             />
           </div>
           
-          <div className="min-h-[400px]">
+          <div className="min-h-[450px]">
             {filteredLiveQueue.length === 0 ? (
-              <div className="h-full min-h-[400px] flex flex-col items-center justify-center p-20">
-                <p className="text-[11px] text-white/30">No hay pacientes en espera</p>
+              <div className="h-full min-h-[450px] flex flex-col items-center justify-center p-24">
+                <p className="text-sm text-white/30">No hay pacientes en espera</p>
               </div>
             ) : (
               <div className="divide-y divide-white/5">
                 {filteredLiveQueue.map((entry, index) => (
                   <div 
                     key={entry.id} 
-                    className="group flex flex-col sm:flex-row justify-between items-start sm:items-center px-5 py-4 transition-colors border-l-2 border-transparent hover:border-white/10 gap-2 sm:gap-0"
+                    className="group flex flex-col sm:flex-row justify-between items-start sm:items-center px-6 py-5 transition-colors border-l-2 border-transparent hover:border-white/10 gap-3 sm:gap-0"
                   >
                     <div className="flex items-start gap-4 flex-1 min-w-0">
-                      <span className="mt-1 text-xs font-medium text-white/30 opacity-50">
+                      <span className="mt-1 text-sm font-medium text-white/30 opacity-50">
                         {String(index + 1).padStart(2, '0')}.
                       </span>
-                      <div className="flex flex-col gap-0.5 min-w-0">
-                        <p className="text-[13px] font-medium text-white/80 truncate">
+                      <div className="flex flex-col gap-1 min-w-0">
+                        <p className="text-base font-medium text-white/80 truncate">
                           {entry.patient.full_name}
                         </p>
                         {entry.serviceId && (
-                          <span className="text-[9px] text-blue-400/60 truncate">
+                          <span className="text-xs text-blue-400/60 truncate">
                             {services.find(s => s.id === entry.serviceId)?.name || 'General'}
                           </span>
                         )}
                         {entry.institution_data && (
-                          <div className="flex items-center gap-1.5 text-[9px] text-white/30 mt-1">
-                            <BuildingOfficeIcon className="w-3.5 h-3.5 shrink-0" />
+                          <div className="flex items-center gap-2 text-xs text-white/30 mt-1">
+                            <BuildingOfficeIcon className="w-4 h-4 shrink-0" />
                             <span className="truncate">{entry.institution_data.name}</span>
                           </div>
                         )}
@@ -309,15 +309,15 @@ const filteredServices = useMemo(() =>
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-2 lg:gap-4 ml-auto sm:ml-0">
+                    <div className="flex items-center gap-3 lg:gap-4 ml-auto sm:ml-0">
                       {renderStatusBadge(entry.status)}
-                      <div className="flex items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                         {entry.status === 'waiting' && (
                           <button 
                             onClick={() => handleStartConsultation(entry)}
                             className="p-2 text-white/30 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
                           >
-                            <PlayIcon className="w-4 h-4" />
+                            <PlayIcon className="w-5 h-5" />
                           </button>
                         )}
                         {entry.status !== 'completed' && (
@@ -325,7 +325,7 @@ const filteredServices = useMemo(() =>
                             onClick={() => {setEntryToCancel(entry); setShowConfirmCancel(true);}}
                             className="p-2 text-white/30 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                           >
-                            <XMarkIcon className="w-4 h-4" />
+                            <XMarkIcon className="w-5 h-5" />
                           </button>
                         )}
                       </div>
@@ -336,11 +336,11 @@ const filteredServices = useMemo(() =>
             )}
           </div>
           
-          <div className="px-5 py-3 border-t border-white/10 bg-white/5">
-            <div className="text-[9px] text-white/30">
+          <div className="px-6 py-4 border-t border-white/10 bg-white/5">
+            <div className="text-sm text-white/30">
               Mostrando {filteredLiveQueue.length} de {liveQueue.length} registros
               {selectedInstitutionId && liveQueue.length > filteredLiveQueue.length && (
-                <span className="ml-2 text-emerald-400/50">
+                <span className="ml-3 text-emerald-400/50">
                   (filtrado por institución/categoría/servicio)
                 </span>
               )}
@@ -348,34 +348,34 @@ const filteredServices = useMemo(() =>
           </div>
         </div>
         
-        <div className="lg:col-span-4 flex flex-col bg-white/5 border border-white/15 rounded-lg overflow-hidden h-fit">
-          <div className="px-5 py-3 border-b border-white/10 bg-white/5">
-            <h3 className="text-[11px] font-medium text-white/60">Pendientes de Verificación</h3>
+        <div className="lg:col-span-4 flex flex-col bg-white/5 border border-white/15 rounded-xl overflow-hidden h-fit">
+          <div className="px-6 py-4 border-b border-white/10 bg-white/5">
+            <h3 className="text-sm font-medium text-white/60">Pendientes de Verificación</h3>
           </div>
           <div className="bg-black/20">
             {filteredPendingEntries.length === 0 ? (
-              <div className="p-10 text-center">
-                <p className="text-[10px] text-white/30 italic">Sin registros pendientes</p>
+              <div className="p-12 text-center">
+                <p className="text-sm text-white/30 italic">Sin registros pendientes</p>
               </div>
             ) : (
               <div className="divide-y divide-white/5">
                 {filteredPendingEntries.map((appt) => (
-                  <div key={appt.id} className="px-5 py-4 flex justify-between items-center group border-b border-white/5 hover:bg-white/5">
-                    <div className="flex flex-col min-w-0 space-y-1">
-                      <p className="text-sm font-medium text-white/80">{appt.patient_name || 'Paciente desconocido'}</p>
-                      <div className="flex flex-wrap gap-3 text-xs text-white/50">
-                        <span className="flex items-center gap-1">
-                          <BuildingOfficeIcon className="h-3.5 w-3.5 text-blue-400/50" />
+                  <div key={appt.id} className="px-6 py-5 flex justify-between items-center group border-b border-white/5 hover:bg-white/5">
+                    <div className="flex flex-col min-w-0 space-y-2">
+                      <p className="text-base font-medium text-white/80">{appt.patient_name || 'Paciente desconocido'}</p>
+                      <div className="flex flex-wrap gap-4 text-sm text-white/50">
+                        <span className="flex items-center gap-1.5">
+                          <BuildingOfficeIcon className="h-4 w-4 text-blue-400/50" />
                           <span>{services.find(s => s.id === appt.doctor_service)?.name || 'General'}</span>
                         </span>
                         {appt.tentative_time && (
-                          <span className="flex items-center gap-1">
-                            <ClockIcon className="h-3.5 w-3.5 text-blue-400/50" />
+                          <span className="flex items-center gap-1.5">
+                            <ClockIcon className="h-4 w-4 text-blue-400/50" />
                             <span>{appt.tentative_time}</span>
                           </span>
                         )}
                       </div>
-                      <div className="flex flex-wrap gap-2 mt-1 text-xs">
+                      <div className="flex flex-wrap gap-3 mt-2 text-sm">
                         <span className="flex items-center gap-1 text-white/30">
                           <span className="font-mono">REF:</span> 
                           <span className="font-mono text-white/60">{appt.id.toString().slice(-6)}</span>
@@ -383,12 +383,12 @@ const filteredServices = useMemo(() =>
                         {appt.charge_order && (
                           <>
                             {appt.charge_order?.balance_due === 0 && appt.charge_order?.total > 0 && (
-                              <span className="px-2 py-0.5 text-[9px] font-medium bg-emerald-500/10 text-emerald-400 rounded-md border border-emerald-500/20">
+                              <span className="px-3 py-1 text-xs font-medium bg-emerald-500/10 text-emerald-400 rounded-md border border-emerald-500/20">
                                 Pagado
                               </span>
                             )}
                             {appt.charge_order?.balance_due > 0 && (
-                              <span className="px-2 py-0.5 text-[9px] font-medium bg-amber-500/10 text-amber-400 rounded-md border border-amber-500/20">
+                              <span className="px-3 py-1 text-xs font-medium bg-amber-500/10 text-amber-400 rounded-md border border-amber-500/20">
                                 Pendiente
                               </span>
                             )}
@@ -396,13 +396,13 @@ const filteredServices = useMemo(() =>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <button 
                         onClick={() => handleCheckIn(appt)} 
-                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/15 transition-all"
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/15 transition-all"
                       >
-                        <PlayIcon className="h-4 w-4" />
-                        Registrar Llegada
+                        <PlayIcon className="h-5 w-5" />
+                        Registrar
                       </button>
                     </div>
                   </div>

@@ -164,7 +164,7 @@ export default function Hospitalization() {
         actions={
           <button
             onClick={() => setPatientSearchOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-[11px] font-medium rounded-lg transition-all"
+            className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-sm font-medium rounded-lg transition-all"
           >
             <Plus className="w-4 h-4" />
             Nueva Admisión
@@ -172,25 +172,25 @@ export default function Hospitalization() {
         }
       />
       
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
         {statsCards.map((stat) => (
-          <div key={stat.label} className="bg-white/5 border border-white/15 rounded-lg p-4">
+          <div key={stat.label} className="bg-white/5 border border-white/15 rounded-xl p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[11px] text-white/40 uppercase tracking-wider">{stat.label}</p>
-                <p className="text-2xl font-semibold text-white mt-1">{stat.value}</p>
+                <p className="text-sm text-white/40 uppercase tracking-wider">{stat.label}</p>
+                <p className="text-3xl font-semibold text-white mt-2">{stat.value}</p>
               </div>
-              <stat.icon className={`w-6 h-6 ${stat.color}`} />
+              <stat.icon className={`w-7 h-7 ${stat.color}`} />
             </div>
           </div>
         ))}
       </div>
-      <div className="flex gap-2 border-b border-white/10">
+      <div className="flex gap-3 border-b border-white/10">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2 text-[12px] font-medium transition-all border-b-2 ${
+            className={`px-5 py-3 text-sm font-medium transition-all border-b-2 ${
               activeTab === tab.key
                 ? "text-white border-white"
                 : "text-white/40 border-transparent hover:text-white/60"
@@ -200,84 +200,83 @@ export default function Hospitalization() {
           </button>
         ))}
       </div>
-      <div className="bg-white/5 border border-white/15 rounded-lg overflow-hidden">
+      <div className="bg-white/5 border border-white/15 rounded-xl overflow-hidden">
         {isLoading ? (
-          <div className="p-20 text-center">
-            <div className="w-6 h-6 border-2 border-white/20 border-t-white/60 rounded-full animate-spin mx-auto" />
-            <p className="text-[11px] text-white/30 mt-3">Cargando hospitalizaciones...</p>
+          <div className="p-24 text-center">
+            <div className="w-7 h-7 border-2 border-white/20 border-t-white/60 rounded-full animate-spin mx-auto" />
+            <p className="text-sm text-white/30 mt-4">Cargando hospitalizaciones...</p>
           </div>
         ) : !hospitalizations || hospitalizations.length === 0 ? (
-          <div className="p-20 text-center">
-            <Bed className="w-10 h-10 text-white/10 mx-auto mb-3" />
-            <p className="text-[12px] text-white/30">No hay hospitalizaciones activas</p>
+          <div className="p-24 text-center">
+            <Bed className="w-12 h-12 text-white/10 mx-auto mb-4" />
+            <p className="text-sm text-white/30">No hay hospitalizaciones activas</p>
           </div>
         ) : (
           <div className="divide-y divide-white/5">
             {hospitalizations.map((hosp: Hospitalization) => (
-              <div key={hosp.id} className="px-5 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hover:bg-white/5 transition-colors">
+              <div key={hosp.id} className="px-6 py-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-white/5 transition-colors">
                 <div className="flex items-start gap-4 flex-1 min-w-0">
                   <div className="mt-1">
                     <Bed className="w-5 h-5 text-white/30" />
                   </div>
-                  <div className="flex flex-col gap-1 min-w-0">
-                    <p className="text-[13px] font-medium text-white/80 truncate">{hosp.patient_name}</p>
-                    <div className="flex flex-wrap gap-3 text-[11px] text-white/40">
-                      <span className="flex items-center gap-1">
-                        <Stethoscope className="w-3.5 h-3.5" />
+                  <div className="flex flex-col gap-2 min-w-0">
+                    <p className="text-base font-medium text-white/80 truncate">{hosp.patient_name}</p>
+                    <div className="flex flex-wrap gap-4 text-sm text-white/40">
+                      <span className="flex items-center gap-1.5">
+                        <Stethoscope className="w-4 h-4" />
                         {hosp.attending_doctor_name}
                       </span>
-                      <span className="flex items-center gap-1">
-                        <Heart className="w-3.5 h-3.5" />
+                      <span className="flex items-center gap-1.5">
+                        <Heart className="w-4 h-4" />
                         {hosp.ward} - Cama {hosp.bed_number}
                         {hosp.room_number && ` / Hab. ${hosp.room_number}`}
                       </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5" />
+                      <span className="flex items-center gap-1.5">
+                        <Calendar className="w-4 h-4" />
                         Ingreso: {new Date(hosp.admission_date).toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}
                       </span>
                     </div>
-                    <div className="flex flex-wrap gap-2 mt-1">
+                    <div className="flex flex-wrap gap-3 mt-2">
                       {hosp.status && (
-                        <span className={`inline-flex items-center px-2 py-0.5 text-[9px] font-medium rounded-md border ${statusColors[hosp.status] || "bg-white/5 text-white/40 border-white/10"}`}>
+                        <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-md border ${statusColors[hosp.status] || "bg-white/5 text-white/40 border-white/10"}`}>
                           {hosp.status_display}
                         </span>
                       )}
                       {hosp.length_of_stay !== undefined && (
-                        <span className="text-[9px] text-white/30">
+                        <span className="text-sm text-white/30">
                           {hosp.length_of_stay} {hosp.length_of_stay === 1 ? "día" : "días"} de estancia
                         </span>
                       )}
                       {hosp.admission_diagnosis_title && (
-                        <span className="text-[9px] text-white/30">Dx: {hosp.admission_diagnosis_title}</span>
+                        <span className="text-sm text-white/30">Dx: {hosp.admission_diagnosis_title}</span>
                       )}
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {/* Botones según estado de la hospitalización */}
+                <div className="flex items-center gap-3">
                   {hosp.status === "admitted" && (
                     <>
                       <button 
                         onClick={() => criticalMutation.mutate(hosp.id)}
                         disabled={criticalMutation.isPending}
-                        className="px-3 py-1.5 text-[10px] font-medium bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg hover:bg-red-500/20 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                        className="px-4 py-2 text-sm font-medium bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg hover:bg-red-500/20 transition-all flex items-center gap-2 disabled:opacity-50"
                         title="Marcar como crítico"
                       >
-                        <AlertTriangle className="w-3.5 h-3.5" />
+                        <AlertTriangle className="w-4 h-4" />
                         Crítico
                       </button>
                       <button 
                         onClick={() => { setSelectedHospitalization(hosp); setDetailDrawerOpen(true); }}
-                        className="px-3 py-1.5 text-[10px] font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all flex items-center gap-1.5"
+                        className="px-4 py-2 text-sm font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all flex items-center gap-2"
                       >
-                        <Eye className="w-3.5 h-3.5" />
+                        <Eye className="w-4 h-4" />
                         Ver
                       </button>
                       <button 
                         onClick={() => { setEditingHosp(hosp); setModalOpen(true); }}
-                        className="px-3 py-1.5 text-[10px] font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all flex items-center gap-1.5"
+                        className="px-4 py-2 text-sm font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all flex items-center gap-2"
                       >
-                        <Pencil className="w-3.5 h-3.5" />
+                        <Pencil className="w-4 h-4" />
                         Editar
                       </button>
                     </>
@@ -287,17 +286,17 @@ export default function Hospitalization() {
                       <button 
                         onClick={() => stableMutation.mutate(hosp.id)}
                         disabled={stableMutation.isPending}
-                        className="px-3 py-1.5 text-[10px] font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/20 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                        className="px-4 py-2 text-sm font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/20 transition-all flex items-center gap-2 disabled:opacity-50"
                         title="Marcar como estable"
                       >
-                        <CheckCircle className="w-3.5 h-3.5" />
+                        <CheckCircle className="w-4 h-4" />
                         Estabilizar
                       </button>
                       <button 
                         onClick={() => { setSelectedHospitalization(hosp); setDetailDrawerOpen(true); }}
-                        className="px-3 py-1.5 text-[10px] font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all flex items-center gap-1.5"
+                        className="px-4 py-2 text-sm font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all flex items-center gap-2"
                       >
-                        <Eye className="w-3.5 h-3.5" />
+                        <Eye className="w-4 h-4" />
                         Ver
                       </button>
                     </>
@@ -307,24 +306,24 @@ export default function Hospitalization() {
                       <button 
                         onClick={() => dischargeMutation.mutate(hosp.id)}
                         disabled={dischargeMutation.isPending}
-                        className="px-3 py-1.5 text-[10px] font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/20 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                        className="px-4 py-2 text-sm font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/20 transition-all flex items-center gap-2 disabled:opacity-50"
                         title="Dar de alta"
                       >
-                        <LogOut className="w-3.5 h-3.5" />
+                        <LogOut className="w-4 h-4" />
                         Alta
                       </button>
                       <button 
                         onClick={() => { setSelectedHospitalization(hosp); setDetailDrawerOpen(true); }}
-                        className="px-3 py-1.5 text-[10px] font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all flex items-center gap-1.5"
+                        className="px-4 py-2 text-sm font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all flex items-center gap-2"
                       >
-                        <Eye className="w-3.5 h-3.5" />
+                        <Eye className="w-4 h-4" />
                         Ver
                       </button>
                       <button 
                         onClick={() => { setEditingHosp(hosp); setModalOpen(true); }}
-                        className="px-3 py-1.5 text-[10px] font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all flex items-center gap-1.5"
+                        className="px-4 py-2 text-sm font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all flex items-center gap-2"
                       >
-                        <Pencil className="w-3.5 h-3.5" />
+                        <Pencil className="w-4 h-4" />
                         Editar
                       </button>
                     </>
@@ -332,9 +331,9 @@ export default function Hospitalization() {
                   {hosp.status === "discharged" && (
                     <button 
                       onClick={() => { setSelectedHospitalization(hosp); setDetailDrawerOpen(true); }}
-                      className="px-3 py-1.5 text-[10px] font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all flex items-center gap-1.5"
+                      className="px-4 py-2 text-sm font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all flex items-center gap-2"
                     >
-                      <Eye className="w-3.5 h-3.5" />
+                      <Eye className="w-4 h-4" />
                       Ver Detalle
                     </button>
                   )}

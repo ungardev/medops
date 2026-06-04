@@ -239,53 +239,53 @@ export default function Appointments() {
           }
         ]}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <div className="flex bg-white/5 border border-white/15 p-1 rounded-lg">
               <button
                 onClick={() => setViewMode("calendar")}
-                className={`p-2 rounded-md transition-all ${
+                className={`p-2.5 rounded-md transition-all ${
                   viewMode === "calendar" 
                     ? "bg-white/10 text-white" 
                     : "text-white/40 hover:text-white/70"
                 }`}
               >
-                <CalendarDaysIcon className="w-4 h-4" />
+                <CalendarDaysIcon className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setViewMode("list")}
-                className={`p-2 rounded-md transition-all ${
+                className={`p-2.5 rounded-md transition-all ${
                   viewMode === "list" 
                     ? "bg-white/10 text-white" 
                     : "text-white/40 hover:text-white/70"
                 }`}
               >
-                <ListBulletIcon className="w-4 h-4" />
+                <ListBulletIcon className="w-5 h-5" />
               </button>
             </div>
             
             <button
               onClick={() => setShowCreateForm(true)}
-              className="flex items-center gap-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-[11px] font-medium px-4 py-2 rounded-lg transition-all"
+              className="flex items-center gap-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-sm font-medium px-5 py-2.5 rounded-lg transition-all"
             >
-              <PlusIcon className="w-4 h-4" />
+              <PlusIcon className="w-5 h-5" />
               Nueva Cita
             </button>
           </div>
         }
       />
       
-      <div className="grid grid-cols-12 gap-4 items-center bg-white/5 border border-white/15 p-3 rounded-lg">
+      <div className="grid grid-cols-12 gap-5 items-center bg-white/5 border border-white/15 p-4 rounded-xl">
         <div className="col-span-4 relative group">
-          <MagnifyingGlassIcon className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${isSearching ? 'text-emerald-400 animate-pulse' : 'text-white/30'}`} />
+          <MagnifyingGlassIcon className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${isSearching ? 'text-emerald-400 animate-pulse' : 'text-white/30'}`} />
           <input
             type="text"
             placeholder="Buscar paciente o ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-white/5 border border-white/15 pl-10 pr-10 py-2 text-[11px] focus:border-emerald-500/50 outline-none transition-all placeholder:text-white/30 text-white/80 rounded-lg"
+            className="w-full bg-white/5 border border-white/15 pl-12 pr-12 py-3 text-sm focus:border-emerald-500/50 outline-none transition-all placeholder:text-white/30 text-white/80 rounded-lg"
           />
           {(isSearching || isFetching) && (
-            <ArrowPathIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 animate-spin" />
+            <ArrowPathIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40 animate-spin" />
           )}
         </div>
         
@@ -299,13 +299,13 @@ export default function Appointments() {
         
         <div className="col-span-1">
           {selectedDate && (
-            <div className="flex items-center gap-2 bg-white/5 border border-white/15 px-3 py-1.5 rounded-lg">
-              <span className="text-[10px] text-white/60">
+            <div className="flex items-center gap-2 bg-white/5 border border-white/15 px-4 py-2 rounded-lg">
+              <span className="text-sm text-white/60">
                 {moment(selectedDate).format("DD MMM")}
               </span>
               <button 
                 onClick={() => setSelectedDate(null)}
-                className="text-[10px] text-red-400 hover:text-red-300"
+                className="text-sm text-red-400 hover:text-red-300"
               >
                 ×
               </button>
@@ -314,16 +314,16 @@ export default function Appointments() {
         </div>
       </div>
       
-      <div className="flex flex-col lg:flex-row h-full gap-4 flex-1 min-h-0">
-        <div className="lg:w-7/12 w-full bg-white/5 border border-white/15 rounded-lg p-4 flex flex-col">
-          <div className="flex items-center justify-between mb-4 border-b border-white/10 pb-3">
-            <div className="flex items-center gap-2">
+      <div className="flex flex-col lg:flex-row h-full gap-5 flex-1 min-h-0">
+        <div className="lg:w-7/12 w-full bg-white/5 border border-white/15 rounded-xl p-5 flex flex-col">
+          <div className="flex items-center justify-between mb-5 border-b border-white/10 pb-4">
+            <div className="flex items-center gap-3">
               <ChartBarIcon className="w-5 h-5 text-white/30" />
-              <h2 className="text-[11px] font-medium text-white/70">
+              <h2 className="text-sm font-medium text-white/70">
                 Calendario
               </h2>
             </div>
-            <div className="text-[9px] text-white/40">
+            <div className="text-sm text-white/40">
               {viewMode === "calendar" ? "Vista Calendario" : "Vista Lista"} | 
               Items: {operationalStats.total_items} | 
               Citas: {operationalStats.appointments_count}

@@ -71,9 +71,9 @@ export default function Consultation() {
 
   if (isLoading) return (
     <div className="min-h-screen flex items-center justify-center bg-black">
-      <div className="text-center space-y-4">
-        <div className="w-10 h-10 border-3 border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto" />
-        <p className="text-[12px] font-medium text-emerald-400 animate-pulse">
+      <div className="text-center space-y-5">
+        <div className="w-12 h-12 border-[3px] border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto" />
+        <p className="text-sm font-medium text-emerald-400 animate-pulse">
           Cargando consulta...
         </p>
       </div>

@@ -64,7 +64,7 @@ export default function Patients() {
       actions={
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-[11px] font-medium px-5 py-2.5 rounded-lg transition-all"
+          className="flex items-center gap-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-sm font-medium px-5 py-2.5 rounded-lg transition-all"
         >
           <UserPlusIcon className="w-4 h-4" />
           Nuevo Paciente
@@ -85,12 +85,12 @@ export default function Patients() {
           setCurrentPage(1);
         }}
         placeholder="Buscar por nombre, cédula o teléfono..."
-        className="w-full bg-white/5 border border-white/15 text-white text-[12px] py-3 pl-12 pr-4 rounded-lg focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30"
+        className="w-full bg-white/5 border border-white/15 text-white text-sm py-3.5 pl-12 pr-5 rounded-lg focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30"
       />
     </div>
   );
   const tableSection = (
-    <div className="border border-white/15 bg-white/5 backdrop-blur-md rounded-lg overflow-hidden">
+    <div className="border border-white/15 bg-white/5 backdrop-blur-md rounded-xl overflow-hidden">
       <div className="overflow-x-auto">
         <PatientsTable
           headers={["ID", "Nombre Completo", "Cédula", "Género", "Contacto", "Acciones"]}
@@ -100,7 +100,7 @@ export default function Patients() {
             <tr>
               <td colSpan={6}>
                 <EmptyState
-                  icon={React.createElement(EmptyStateRegistry.pacientes.icon, { className: "w-12 h-12 text-white/10" })}
+                  icon={React.createElement(EmptyStateRegistry.pacientes.icon, { className: "w-14 h-14 text-white/10" })}
                   title={EmptyStateRegistry.pacientes.title}
                   message={query.trim().length > 0 ? "No se encontraron resultados." : EmptyStateRegistry.pacientes.message}
                 />
@@ -113,33 +113,33 @@ export default function Patients() {
                 className="border-b border-white/5 hover:bg-white/5 transition-colors group cursor-pointer"
                 onClick={() => handleView(p.id)}
               >
-                <td className="px-4 py-3 text-[11px] font-medium text-white/50 w-[80px]">
+                <td className="px-5 py-4 text-sm font-medium text-white/50 w-[80px]">
                   #{String(p.id).padStart(4, '0')}
                 </td>
                 
-                <td className="px-4 py-3 min-w-[200px] lg:min-w-[280px]">
-                  <div className="text-[12px] font-medium text-white group-hover:text-emerald-400 transition-colors line-clamp-1 cursor-pointer">
+                <td className="px-5 py-4 min-w-[200px] lg:min-w-[280px]">
+                  <div className="text-sm font-medium text-white group-hover:text-emerald-400 transition-colors line-clamp-1 cursor-pointer">
                     {p.full_name}
                   </div>
                 </td>
                 
-                <td className="hidden md:table-cell px-4 py-3 text-[11px] font-medium text-white/60 w-[140px] lg:w-[160px]">
+                <td className="hidden md:table-cell px-5 py-4 text-sm font-medium text-white/60 w-[140px] lg:w-[160px]">
                   {p.national_id || "—"}
                 </td>
                 
-                <td className="hidden md:table-cell px-4 py-3 w-[100px] lg:w-[130px]">
-                  <span className="text-[10px] px-2.5 py-1 border border-white/10 text-white/60 bg-white/5 block text-center truncate rounded-md">
+                <td className="hidden md:table-cell px-5 py-4 w-[100px] lg:w-[130px]">
+                  <span className="text-sm px-3 py-1.5 border border-white/10 text-white/60 bg-white/5 block text-center truncate rounded-md">
                     {p.gender === 'M' ? 'Masculino' : p.gender === 'F' ? 'Femenino' : p.gender || '—'}
                   </span>
                 </td>
                 
-                <td className="hidden lg:table-cell px-4 py-3 text-[11px] text-white/60 max-w-[180px] lg:max-w-[220px]">
+                <td className="hidden lg:table-cell px-5 py-4 text-sm text-white/60 max-w-[180px] lg:max-w-[220px]">
                   <div className="truncate" title={p.contact_info || ""}>
                     {p.contact_info || "—"}
                   </div>
                 </td>
                 
-                <td className="px-4 py-3 w-[80px] lg:w-[110px]">
+                <td className="px-5 py-4 w-[80px] lg:w-[110px]">
                   <div 
                     className="flex items-center justify-end lg:justify-between"
                     onClick={(e) => e.stopPropagation()}
@@ -147,9 +147,9 @@ export default function Patients() {
                     <button 
                       disabled={isDeleting}
                       onClick={() => handleDelete(p)}
-                      className="text-white/40 hover:text-red-400 transition-colors p-1.5 hover:bg-red-500/10 rounded-lg"
+                      className="text-white/40 hover:text-red-400 transition-colors p-2 hover:bg-red-500/10 rounded-lg"
                     >
-                      <TrashIcon className="w-4 h-4" />
+                      <TrashIcon className="w-5 h-5" />
                     </button>
                   </div>
                 </td>
@@ -159,9 +159,9 @@ export default function Patients() {
         </PatientsTable>
       </div>
       
-      <div className="flex items-center justify-between p-4 border-t border-white/10 bg-white/5">
-        <div className="flex items-center gap-3">
-          <span className="text-[10px] text-white/50">
+      <div className="flex items-center justify-between p-5 border-t border-white/10 bg-white/5">
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-white/50">
             Mostrando {((currentPage - 1) * pageSize) + 1} — {Math.min(currentPage * pageSize, paged?.total ?? 0)} de {paged?.total ?? 0}
           </span>
         </div>
