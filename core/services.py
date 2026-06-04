@@ -2868,6 +2868,12 @@ def update_doctor_config(
         # No asignar strings vacíos a campos de fecha
         if key in date_fields and (value == "" or value is None):
             continue
+        # Convertir strings "true"/"false" a booleanos para BooleanFields
+        if isinstance(value, str):
+            if value.lower() == "true":
+                value = True
+            elif value.lower() == "false":
+                value = False
         if hasattr(doctor_obj, key) and key not in ["specialties", "institutions"]:
             try:
                 setattr(doctor_obj, key, value)
