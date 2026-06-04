@@ -134,7 +134,7 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
             placeholder="Buscar paciente... (Ctrl+K)"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full pl-10 sm:pl-11 pr-12 lg:pr-28 py-2.5 bg-white/5 border border-white/15 rounded-lg text-sm text-white/80 focus:outline-none focus:border-emerald-500/50 focus:bg-white/10 transition-all placeholder:text-white/30 min-w-0"
+            className="w-full pl-10 sm:pl-11 pr-12 lg:pr-28 py-2.5 bg-white/5 border border-white/15 rounded-lg text-sm text-white/80 focus:outline-none focus:border-emerald-500/50 focus:bg-white/10 transition-all placeholder:text-white/60 min-w-0"
           />
           
           <button 
