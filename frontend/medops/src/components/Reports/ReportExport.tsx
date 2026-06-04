@@ -7,12 +7,15 @@ import {
   ArrowPathIcon,
   DocumentTextIcon
 } from "@heroicons/react/24/outline";
+
 interface Props {
   filters: ReportFiltersInput | null;
   data: ReportRow[];
 }
+
 export default function ReportExport({ filters, data }: Props) {
   const [isExporting, setIsExporting] = useState<ExportFormat | null>(null);
+
   const handleExport = async (format: ExportFormat) => {
     setIsExporting(format);
     try {
@@ -62,6 +65,7 @@ export default function ReportExport({ filters, data }: Props) {
       setIsExporting(null);
     }
   };
+
   const handleExportCSV = () => {
     if (data.length === 0) {
       alert("No hay datos para exportar");
@@ -90,13 +94,15 @@ export default function ReportExport({ filters, data }: Props) {
     link.remove();
     window.URL.revokeObjectURL(url);
   };
+
   const buttonBase = `
-    relative flex items-center justify-center gap-2 px-4 py-2 
-    text-[10px] font-medium transition-all 
-    disabled:opacity-40 disabled:cursor-not-allowed border rounded-lg
+    relative flex items-center justify-center gap-2 px-5 py-3 
+    text-sm font-medium transition-all 
+    disabled:opacity-40 disabled:cursor-not-allowed border rounded-xl
   `;
+
   return (
-    <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+    <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
       
       <button
         disabled={!!isExporting || data.length === 0}
@@ -106,12 +112,13 @@ export default function ReportExport({ filters, data }: Props) {
           hover:bg-red-500/15 hover:border-red-500/25`}
       >
         {isExporting === ExportFormat.PDF ? (
-          <ArrowPathIcon className="w-4 h-4 animate-spin" />
+          <ArrowPathIcon className="w-5 h-5 animate-spin" />
         ) : (
-          <DocumentArrowDownIcon className="w-4 h-4" />
+          <DocumentArrowDownIcon className="w-5 h-5" />
         )}
         {isExporting === ExportFormat.PDF ? "Generando PDF..." : "Exportar PDF"}
       </button>
+
       <button
         disabled={!!isExporting || data.length === 0}
         onClick={() => handleExport(ExportFormat.EXCEL)}
@@ -120,12 +127,13 @@ export default function ReportExport({ filters, data }: Props) {
           hover:bg-emerald-500/15 hover:border-emerald-500/25`}
       >
         {isExporting === ExportFormat.EXCEL ? (
-          <ArrowPathIcon className="w-4 h-4 animate-spin" />
+          <ArrowPathIcon className="w-5 h-5 animate-spin" />
         ) : (
-          <TableCellsIcon className="w-4 h-4" />
+          <TableCellsIcon className="w-5 h-5" />
         )}
         {isExporting === ExportFormat.EXCEL ? "Generando Excel..." : "Exportar Excel"}
       </button>
+
       <button
         disabled={data.length === 0}
         onClick={handleExportCSV}
@@ -133,14 +141,15 @@ export default function ReportExport({ filters, data }: Props) {
           bg-blue-500/10 border-blue-500/20 text-blue-400
           hover:bg-blue-500/15 hover:border-blue-500/25`}
       >
-        <DocumentTextIcon className="w-4 h-4" />
+        <DocumentTextIcon className="w-5 h-5" />
         Exportar CSV
       </button>
-      <div className="hidden lg:block ml-2 pl-3 border-l border-white/10">
-        <span className="text-[8px] text-white/30 block">
+
+      <div className="hidden lg:flex items-center gap-2 ml-3 pl-4 border-l border-white/10">
+        <span className="text-xs text-white/30 block uppercase tracking-wider">
           Registros
         </span>
-        <span className="text-[10px] text-white/50">
+        <span className="text-sm text-white/50 font-medium">
           {data.length}
         </span>
       </div>
