@@ -75,6 +75,17 @@ export default function MedicalReferralsPanel({
     setEditingReferral(null);
   }, [appointmentId]);
   
+  useEffect(() => {
+    if (referrals.length > 0 && optimisticReferrals.length > 0) {
+      setOptimisticReferrals(prev => prev.filter(opt => {
+        return !referrals.some(r => 
+          r.referred_to_external === opt.referred_to_external && 
+          r.reason === opt.reason
+        );
+      }));
+    }
+  }, [referrals]);
+  
   const handleAdd = async () => {
     if (!referredToExternal || readOnly) return;
     
@@ -110,7 +121,6 @@ export default function MedicalReferralsPanel({
         urgency,
         status,
       });
-      setOptimisticReferrals(prev => prev.filter(r => r.id !== tempId));
     } catch (err: any) { 
       console.error("Error creating referral:", err); 
       setOptimisticReferrals(prev => prev.filter(r => r.id !== tempId));
