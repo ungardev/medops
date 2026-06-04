@@ -10,6 +10,7 @@ import {
   ChevronRightIcon
 } from "@heroicons/react/24/outline";
 import { apiFetch } from "@/api/client";
+import PageHeader from "@/components/Common/PageHeader";
 interface Patient {
   id: number;
   full_name: string;
