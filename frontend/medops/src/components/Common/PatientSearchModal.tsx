@@ -64,22 +64,22 @@ export default function PatientSearchModal({ open, onClose, onSelect }: Props) {
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div 
-        className="bg-[#1a1a1b] border border-white/15 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl rounded-lg"
+        className="bg-[#1a1a1b] border border-white/15 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl rounded-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/15 bg-white/5">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-white/10 bg-[#1a1a1b]">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+            <div className="p-2.5 bg-blue-500/10 border border-blue-500/20 rounded-xl">
               <Search className="h-4 w-4 text-blue-400" />
             </div>
             <div>
-              <h3 className="text-[12px] font-semibold text-white">
+              <h3 className="text-base font-semibold text-white">
                 Seleccionar Paciente
               </h3>
-              <p className="text-[10px] text-white/40 mt-0.5">Buscar en la base de datos</p>
+              <p className="text-sm text-white/40 mt-0.5">Buscar en la base de datos</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-white/40 hover:text-white p-1.5 hover:bg-white/10 rounded-lg transition-colors">
+          <button onClick={onClose} className="text-white/40 hover:text-white p-2 hover:bg-white/10 rounded-xl transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -88,10 +88,10 @@ export default function PatientSearchModal({ open, onClose, onSelect }: Props) {
           {!selectedPatient ? (
             <div className="space-y-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20" />
                 <input
                   autoFocus
-                  className="w-full bg-white/5 border border-white/15 rounded-lg px-4 py-2.5 pl-10 text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30"
+                  className="w-full bg-white/5 border border-white/15 rounded-xl px-5 py-3 pl-12 text-sm text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30"
                   placeholder="Buscar por nombre o cédula..."
                   value={query}
                   onChange={(e) => { setQuery(e.target.value); setSelectedPatient(null); }}
@@ -99,45 +99,45 @@ export default function PatientSearchModal({ open, onClose, onSelect }: Props) {
                 />
               </div>
               {results.length > 0 && (
-                <div className="border border-white/15 rounded-lg divide-y divide-white/5 max-h-48 overflow-y-auto bg-black/20">
+                <div className="border border-white/15 rounded-xl divide-y divide-white/5 max-h-48 overflow-y-auto bg-black/20">
                   {results.slice(0, 5).map((patient, index) => (
                     <div
                       key={patient.id}
-                      className={`px-4 py-3 cursor-pointer flex justify-between items-center transition-colors ${
+                      className={`px-5 py-4 cursor-pointer flex justify-between items-center transition-colors ${
                         index === highlightedIndex ? "bg-white/5" : "hover:bg-white/5"
                       }`}
                       onClick={() => handlePatientSelected(patient)}
                     >
                       <div className="flex items-center gap-3">
-                        <User className="w-4 h-4 text-white/30" />
-                        <span className="text-[11px] font-medium text-white/80">{patient.full_name}</span>
+                        <User className="w-5 h-5 text-white/30" />
+                        <span className="text-sm font-medium text-white/80">{patient.full_name}</span>
                       </div>
-                      <span className="text-[9px] text-white/30">{patient.national_id || "Sin ID"}</span>
+                      <span className="text-xs text-white/30">{patient.national_id || "Sin ID"}</span>
                     </div>
                   ))}
                 </div>
               )}
             </div>
           ) : (
-            <div className="border border-white/15 bg-white/5 rounded-lg p-5">
+            <div className="border border-white/15 bg-white/5 rounded-xl p-6">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-[9px] text-white/30 uppercase tracking-wider mb-1">Paciente Seleccionado</p>
+                  <p className="text-xs text-white/30 uppercase tracking-wider mb-2">Paciente Seleccionado</p>
                   <h3 className="text-lg font-medium text-white/90">{selectedPatient.full_name}</h3>
-                  <p className="text-xs font-mono text-white/40 mt-1">{selectedPatient.national_id || "Sin ID"}</p>
+                  <p className="text-sm font-mono text-white/40 mt-1">{selectedPatient.national_id || "Sin ID"}</p>
                 </div>
               </div>
               
               <div className="flex gap-2 mt-6">
                 <button 
                   onClick={handleProceed}
-                  className="flex-1 bg-emerald-500/15 text-emerald-400 text-[11px] font-medium py-2.5 rounded-lg hover:bg-emerald-500/25 transition-all border border-emerald-500/25"
+                  className="flex-1 bg-emerald-500/15 text-emerald-400 text-sm font-medium py-3 rounded-xl hover:bg-emerald-500/25 transition-all border border-emerald-500/25"
                 >
                   Continuar
                 </button>
                 <button 
                   onClick={() => { setSelectedPatient(null); setQuery(""); }}
-                  className="px-4 border border-white/15 text-white/40 text-[11px] font-medium rounded-lg hover:bg-white/5 transition-colors"
+                  className="px-5 border border-white/15 text-white/40 text-sm font-medium rounded-xl hover:bg-white/5 transition-colors"
                 >
                   Cambiar
                 </button>
