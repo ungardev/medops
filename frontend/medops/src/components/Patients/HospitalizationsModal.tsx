@@ -373,7 +373,7 @@ const selectDoctor = (doctor: any) => {
       >
         <div className="flex items-center justify-between px-6 py-5 border-b border-white/10 bg-[#1a1a1b] sticky top-0 rounded-t-xl shadow-md">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+            <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
               <Bed className="h-4 w-4 text-emerald-400" />
             </div>
             <div>
@@ -508,18 +508,18 @@ const selectDoctor = (doctor: any) => {
                     placeholder="Buscar médico por nombre o especialidad..."
                   />
                   {doctorSearchQuery.length >= 2 && doctorSearchResults.length > 0 && (
-                    <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg max-h-96 overflow-y-auto z-10 shadow-xl">
+                    <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-xl max-h-96 overflow-y-auto z-10 shadow-xl">
                       {doctorSearchResults.slice(0, 5).map((doctor: any) => (
                         <div
                           key={doctor.id}
-                          className="px-4 py-2.5 text-white/80 hover:bg-white/15 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0 transition-colors"
+                          className="px-5 py-3 text-white/80 hover:bg-white/15 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0 transition-colors"
                           onClick={() => {
                             selectDoctor(doctor);
                             setDoctorSearchQuery("");
                           }}
                         >
                           <div className="font-medium">{doctor.full_name || 'Sin nombre'}</div>
-                          <div className="text-[10px] text-white/50">
+                          <div className="text-xs text-white/50">
                             {doctor.specialties?.[0]?.name || 'Sin especialidad'}
                           </div>
                         </div>
@@ -528,7 +528,7 @@ const selectDoctor = (doctor: any) => {
                   )}
                   {doctorSearchQuery.length >= 2 && doctorSearchResults.length === 0 && !doctorSearchLoading && (
                     <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg p-3 z-10 shadow-xl flex flex-col gap-2">
-                      <span className="text-white/50 text-[11px]">
+                      <span className="text-xs text-white/50">
                         No se encontraron médicos.
                       </span>
                       <button
@@ -537,7 +537,7 @@ const selectDoctor = (doctor: any) => {
                           handleManualDoctorConfirm(doctorSearchQuery);
                           setDoctorSearchQuery("");
                         }}
-                        className="text-[10px] text-emerald-400 hover:text-emerald-300 text-left"
+                        className="text-xs text-emerald-400 hover:text-emerald-300 text-left"
                       >
                         + Usar "{doctorSearchQuery}" como nombre manual
                       </button>
@@ -606,7 +606,7 @@ const selectDoctor = (doctor: any) => {
                     placeholder="Buscar diagnóstico por código o descripción (ICD-11)..."
                   />
                   {diagnosisSearchQuery.length >= 2 && icdResults.length > 0 && (
-                    <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg max-h-96 overflow-y-auto z-10 shadow-xl">
+                    <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-xl max-h-96 overflow-y-auto z-10 shadow-xl">
                       {icdResults.map((diagnosis: any) => (
                         <div 
                           key={diagnosis.id}
@@ -632,7 +632,7 @@ const selectDoctor = (doctor: any) => {
               
               {/* Formulario de tipo y estado del diagnóstico */}
               {showDiagnosisForm && selectedDiagnosisResult && (
-                <div className="bg-emerald-500/10 border border-emerald-500/25 p-5 space-y-4 animate-in fade-in zoom-in-95 duration-200 rounded-lg">
+                <div className="bg-emerald-500/10 border border-emerald-500/25 p-6 space-y-5 animate-in fade-in zoom-in-95 duration-200 rounded-xl">
                   <div className="flex items-center justify-between pb-3 border-b border-emerald-500/20">
                     <div className="flex items-center gap-2">
                       <HashIcon className="w-5 h-5 text-emerald-400" />
@@ -685,14 +685,14 @@ const selectDoctor = (doctor: any) => {
                   <div className="flex gap-3">
                     <button
                       onClick={confirmDiagnosis}
-                      className="flex-1 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 py-2.5 flex items-center justify-center gap-2 transition-all rounded-lg"
+                      className="flex-1 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 py-3 flex items-center justify-center gap-2 transition-all rounded-xl"
                     >
                       <Plus className="w-4 h-4" />
                       <span className="text-sm font-medium">Confirmar</span>
                     </button>
                     <button
                       onClick={cancelDiagnosisSelection}
-                      className="flex-1 bg-white/5 hover:bg-white/10 border border-white/15 text-white/60 py-2.5 flex items-center justify-center gap-2 transition-all rounded-lg"
+                      className="flex-1 bg-white/5 hover:bg-white/10 border border-white/15 text-white/60 py-3 flex items-center justify-center gap-2 transition-all rounded-xl"
                     >
                       <X className="w-4 h-4" />
                       <span className="text-sm font-medium">Cancelar</span>

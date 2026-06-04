@@ -402,7 +402,7 @@ const handleSubmit = () => {
       >
         <div className="flex items-center justify-between px-6 py-5 border-b border-white/10 bg-[#1a1a1b] sticky top-0 rounded-t-xl shadow-md">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+            <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
               <ScissorsIcon className="h-4 w-4 text-emerald-400" />
             </div>
             <div>
@@ -469,7 +469,7 @@ const handleSubmit = () => {
             </div>
             
             {/* Cirujano */}
-            <div className="mb-4">
+            <div className="mb-5">
               <label className={labelClass}>Cirujano</label>
               <div className="relative">
                 <input
@@ -491,14 +491,14 @@ const handleSubmit = () => {
                     {surgeonResults.slice(0, 5).map((doctor) => (
                       <div
                         key={doctor.id}
-                        className="px-4 py-2.5 text-white/80 hover:bg-white/15 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0 transition-colors"
+                        className="px-5 py-3 text-white/80 hover:bg-white/15 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0 transition-colors"
                         onClick={() => {
                           selectDoctor(doctor, "surgeon");
                           setDoctorSearchQuery("");
                         }}
                       >
                         <div className="font-medium">{doctor.full_name || 'Sin nombre'}</div>
-                        <div className="text-[10px] text-white/50">
+                        <div className="text-xs text-white/50">
                           {doctor.specialties?.[0]?.name || 'Sin especialidad'}
                         </div>
                       </div>
@@ -532,11 +532,11 @@ const handleSubmit = () => {
                 )}
               </div>
               {form.surgeon_name && (
-                <div className="mt-2 flex items-center gap-2 px-4 py-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+                <div className="mt-3 flex items-center gap-2 px-5 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
                   <span className="text-xs text-emerald-300">{form.surgeon_name}</span>
                   <button
                     onClick={() => clearDoctorSelection("surgeon")}
-                    className="text-white/40 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"
+                    className="text-white/40 hover:text-white p-1.5 hover:bg-white/10 rounded-xl transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -545,7 +545,7 @@ const handleSubmit = () => {
             </div>
             
             {/* Anestesiólogo */}
-            <div className="mb-4">
+            <div className="mb-5">
               <label className={labelClass}>Anestesiólogo</label>
               <div className="relative">
                 <input
@@ -567,14 +567,14 @@ const handleSubmit = () => {
                     {anesthesiologistResults.slice(0, 5).map((doctor) => (
                       <div
                         key={doctor.id}
-                        className="px-4 py-2.5 text-white/80 hover:bg-white/15 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0 transition-colors"
+                        className="px-5 py-3 text-white/80 hover:bg-white/15 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0 transition-colors"
                         onClick={() => {
                           selectDoctor(doctor, "anesthesiologist");
                           setAnesthesiologistSearchQuery("");
                         }}
                       >
                         <div className="font-medium">{doctor.full_name || 'Sin nombre'}</div>
-                        <div className="text-[10px] text-white/50">
+                        <div className="text-xs text-white/50">
                           {doctor.specialties?.[0]?.name || 'Sin especialidad'}
                         </div>
                       </div>
@@ -612,7 +612,7 @@ const handleSubmit = () => {
                   <span className="text-xs text-red-300">{form.anesthesiologist_name}</span>
                   <button
                     onClick={() => clearDoctorSelection("anesthesiologist")}
-                    className="text-white/40 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"
+                    className="text-white/40 hover:text-white p-1.5 hover:bg-white/10 rounded-xl transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -643,14 +643,14 @@ const handleSubmit = () => {
                     {surgicalAssistantsResults.slice(0, 5).map((doctor) => (
                       <div
                         key={doctor.id}
-                        className="px-4 py-2.5 text-white/80 hover:bg-white/15 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0 transition-colors"
+                        className="px-5 py-3 text-white/80 hover:bg-white/15 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0 transition-colors"
                         onClick={() => {
                           selectDoctor(doctor, "surgical_assistants");
                           setSurgicalAssistantsSearchQuery("");
                         }}
                       >
                         <div className="font-medium">{doctor.full_name || 'Sin nombre'}</div>
-                        <div className="text-[10px] text-white/50">
+                        <div className="text-xs text-white/50">
                           {doctor.specialties?.[0]?.name || 'Sin especialidad'}
                         </div>
                       </div>
@@ -688,7 +688,7 @@ const handleSubmit = () => {
                   <span className="text-xs text-blue-300">{form.surgical_assistants_name}</span>
                   <button
                     onClick={() => clearDoctorSelection("surgical_assistants")}
-                    className="text-white/40 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"
+                    className="text-white/40 hover:text-white p-1.5 hover:bg-white/10 rounded-xl transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -761,7 +761,7 @@ const handleSubmit = () => {
             
             {/* Formulario de tipo y estado del diagnóstico */}
             {showDiagnosisForm && selectedDiagnosisResult && (
-              <div className="bg-emerald-500/10 border border-emerald-500/25 p-5 space-y-4 animate-in fade-in zoom-in-95 duration-200 rounded-lg">
+              <div className="bg-emerald-500/10 border border-emerald-500/25 p-6 space-y-5 animate-in fade-in zoom-in-95 duration-200 rounded-xl">
                 <div className="flex items-center justify-between pb-3 border-b border-emerald-500/20">
                   <div className="flex items-center gap-2">
                     <HashIcon className="w-5 h-5 text-emerald-400" />
@@ -814,14 +814,14 @@ const handleSubmit = () => {
                 <div className="flex gap-3">
                   <button
                     onClick={confirmDiagnosis}
-                    className="flex-1 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 py-2.5 flex items-center justify-center gap-2 transition-all rounded-lg"
+                    className="flex-1 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 py-3 flex items-center justify-center gap-2 transition-all rounded-xl"
                   >
                     <Plus className="w-4 h-4" />
                     <span className="text-sm font-medium">Confirmar</span>
                   </button>
                   <button
                     onClick={cancelDiagnosisSelection}
-                    className="flex-1 bg-white/5 hover:bg-white/10 border border-white/15 text-white/60 py-2.5 flex items-center justify-center gap-2 transition-all rounded-lg"
+                    className="flex-1 bg-white/5 hover:bg-white/10 border border-white/15 text-white/60 py-3 flex items-center justify-center gap-2 transition-all rounded-xl"
                   >
                     <X className="w-4 h-4" />
                     <span className="text-sm font-medium">Cancelar</span>
@@ -831,7 +831,7 @@ const handleSubmit = () => {
             )}
             
             {form.diagnoses.length === 0 && !showDiagnosisForm && (
-              <div className="mt-3 p-4 border border-dashed border-white/15 text-center rounded-lg">
+              <div className="mt-3 p-4 border border-dashed border-white/15 text-center rounded-xl">
                 <span className="text-xs text-white/40">No hay diagnósticos registrados</span>
               </div>
             )}
@@ -875,7 +875,7 @@ const handleSubmit = () => {
             <div>
               <label className={labelClass}>Clasificación ASA</label>
               <div className="flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-white/30" />
+                <AlertTriangle className="w-5 h-5 text-white/30" />
                 <select
                   className={inputClass}
                   value={form.asa_classification}

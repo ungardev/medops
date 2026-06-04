@@ -102,7 +102,7 @@ export default function PatientSearch() {
           placeholder="Buscar por servicio, doctor o institución..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full bg-white/5 border border-white/15 rounded-lg py-3 pl-12 pr-12 text-[12px] text-white/80 placeholder:text-white/20 focus:border-emerald-500/50 outline-none"
+          className="w-full bg-white/5 border border-white/15 rounded-xl py-4 pl-12 pr-12 text-sm text-white/80 placeholder:text-white/20 focus:border-emerald-500/50 outline-none transition-all"
         />
         {searchQuery && (
           <button
