@@ -11,6 +11,7 @@ import {
 } from "@heroicons/react/24/outline";
 import axios from "axios";
 import PageHeader from "@/components/Common/PageHeader";
+import { apiFetch } from "@/api/client";
 interface Patient {
   id: number;
   full_name: string;
@@ -57,7 +58,7 @@ export default function SearchPage() {
     }
     setLoading(true);
     setError(null);
-    axios.get("/search/", { params: { query: query.trim() } })
+    apiFetch<SearchResponse>(`search/?query=${encodeURIComponent(query.trim())}`)
       .then((res) => {
         const data = res.data as SearchResponse;
         setResults({
@@ -102,10 +103,10 @@ export default function SearchPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Buscar paciente, cita u orden..."
-            className="w-full bg-white/5 border border-white/15 rounded-lg py-3 pl-12 pr-24 text-[12px] text-white/80 placeholder:text-white/20 focus:outline-none focus:border-emerald-500/50 transition-all"
+            className="w-full bg-white/5 border border-white/15 rounded-xl py-4 pl-12 pr-24 text-sm text-white/80 placeholder:text-white/60 focus:outline-none focus:border-emerald-500/50 transition-all"
           />
           <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20 group-focus-within:text-emerald-400/60 transition-colors" />
-          <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 bg-emerald-500/15 text-emerald-400 text-[10px] font-medium px-4 py-1.5 rounded-md hover:bg-emerald-500/25 transition-colors">
+          <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 bg-emerald-500/15 text-emerald-400 text-sm font-medium px-5 py-2.5 rounded-xl hover:bg-emerald-500/25 transition-colors">
             Buscar
           </button>
         </form>
@@ -121,10 +122,10 @@ export default function SearchPage() {
         ) : loading ? (
           <div className="flex flex-col items-center justify-center py-20 space-y-4">
             <div className="w-8 h-8 border-2 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin" />
-            <span className="text-[11px] text-emerald-400/60">Buscando...</span>
+            <span className="text-sm text-emerald-400/60">Buscando...</span>
           </div>
         ) : error ? (
-          <div className="p-6 border border-red-500/20 bg-red-500/5 rounded-lg flex items-center gap-4">
+          <div className="p-6 border border-red-500/20 bg-red-500/5 rounded-xl flex items-center gap-4">
             <ExclamationTriangleIcon className="w-6 h-6 text-red-400" />
             <span className="text-xs text-red-400/80">{error}</span>
           </div>
@@ -192,9 +193,9 @@ function SectionLabel({ icon, text, count }: { icon: React.ReactNode, text: stri
     <div className="flex items-center justify-between border-b border-white/10 pb-2">
       <div className="flex items-center gap-2 text-white/50">
         {icon}
-        <span className="text-[11px] font-medium">{text}</span>
+        <span className="text-sm font-medium">{text}</span>
       </div>
-      <span className="text-[9px] bg-white/5 px-2 py-0.5 rounded-md text-white/30">{count} resultados</span>
+      <span className="text-xs bg-white/5 px-2.5 py-1 rounded-lg text-white/40">{count} resultados</span>
     </div>
   );
 }
@@ -207,26 +208,26 @@ function ResultCard({ to, title, subtitle, type }: { to: string, title: string, 
   const borderColor = colors[type] || "border-white/10 hover:border-white/20";
   
   return (
-    <Link to={to} className={`group block p-5 bg-white/5 border ${borderColor} rounded-lg transition-all hover:bg-white/10`}>
+    <Link to={to} className={`group block p-6 bg-white/5 border ${borderColor} rounded-xl transition-all hover:bg-white/10`}>
       <div className="flex justify-between items-start">
         <div className="space-y-1">
-          <p className="text-[12px] font-medium text-white/80">{title}</p>
-          <p className="text-[10px] text-white/30 leading-relaxed">{subtitle}</p>
+          <p className="text-sm font-medium text-white/80">{title}</p>
+          <p className="text-sm text-white/40 leading-relaxed">{subtitle}</p>
         </div>
-        <ChevronRightIcon className="w-4 h-4 text-white/20 group-hover:text-white/50 group-hover:translate-x-1 transition-all" />
+        <ChevronRightIcon className="w-5 h-5 text-white/20 group-hover:text-white/50 group-hover:translate-x-1 transition-all" />
       </div>
       <div className="mt-3 flex gap-2">
-        <span className="text-[9px] bg-white/5 px-1.5 py-0.5 rounded-md text-white/30">{type}</span>
+        <span className="text-xs bg-white/5 px-2.5 py-1 rounded-lg text-white/40">{type}</span>
       </div>
     </Link>
   );
 }
 function EmptyState({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
   return (
-    <div className="flex flex-col items-center justify-center py-32 text-center border border-dashed border-white/10 rounded-lg">
+    <div className="flex flex-col items-center justify-center py-32 text-center border border-dashed border-white/10 rounded-xl">
       <div className="mb-6">{icon}</div>
-      <h3 className="text-[13px] font-medium text-white/50">{title}</h3>
-      <p className="text-[11px] text-white/30 mt-3 max-w-xs">{description}</p>
+      <h3 className="text-base font-medium text-white/60">{title}</h3>
+      <p className="text-sm text-white/40 mt-3 max-w-xs">{description}</p>
     </div>
   );
 }
