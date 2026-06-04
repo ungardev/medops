@@ -112,21 +112,21 @@ export default function PatientInfoTab({ patientId, readOnly = false }: PatientI
         />
       </CollapsibleSection>
       
-      <div className="pt-4 border-t border-white/10 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1.5 text-[9px] text-emerald-400">
-            <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+      <div className="pt-5 border-t border-white/10 flex justify-between items-center">
+        <div className="flex items-center gap-4">
+          <span className="flex items-center gap-2 text-xs text-emerald-400">
+            <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
             Sincronizado
           </span>
-          <span className="text-[9px] text-white/40">
+          <span className="text-xs text-white/40">
             Última actualización: {new Date().toLocaleString("es-VE")}
           </span>
         </div>
         
         {readOnly && (
           <div className="flex items-center gap-2">
-            <span className="text-[9px] text-white/40">Solo lectura</span>
-            <div className="w-2 h-2 rounded-full bg-amber-400" />
+            <span className="text-xs text-white/40">Solo lectura</span>
+            <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
           </div>
         )}
       </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
 interface PatientsSearchProps {
   onQueryChange: (query: string) => void;
@@ -6,23 +6,15 @@ interface PatientsSearchProps {
 }
 
 export default function PatientsSearch({ onQueryChange, placeholder }: PatientsSearchProps) {
-  const [query, setQuery] = useState("");
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setQuery(value);
-    onQueryChange(value);
-  };
-
   return (
-    <input
-      type="text"
-      placeholder={placeholder || "Buscar paciente..."}
-      value={query}
-      onChange={handleChange}
-      className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md 
-                 text-xs sm:text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
-                 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-    />
+    <div className="relative">
+      <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
+      <input
+        type="text"
+        placeholder={placeholder || "Buscar paciente..."}
+        onChange={(e) => onQueryChange(e.target.value)}
+        className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/15 rounded-xl text-sm text-white/70 placeholder:text-white/30 focus:outline-none focus:border-emerald-500/50 focus:bg-white/5 transition-all"
+      />
+    </div>
   );
 }

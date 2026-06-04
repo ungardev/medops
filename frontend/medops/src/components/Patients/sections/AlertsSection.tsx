@@ -123,11 +123,11 @@ export default function AlertsSection({
     },
   };
   return (
-    <div className="bg-white/5 border border-white/15 rounded-lg overflow-hidden">
-      <div className="bg-white/5 px-5 py-3 flex justify-between items-center border-b border-white/15">
+    <div className="bg-white/5 border border-white/15 rounded-xl overflow-hidden">
+      <div className="bg-white/5 px-6 py-4 flex justify-between items-center border-b border-white/15">
         <div className="flex items-center gap-3">
           <ExclamationTriangleIcon className="w-5 h-5 text-amber-400" />
-          <span className="text-[11px] font-medium text-white/70">
+          <span className="text-sm font-medium text-white/70">
             Alertas Clínicas
           </span>
         </div>
@@ -135,17 +135,17 @@ export default function AlertsSection({
         {!readOnly && (
           <button
             onClick={() => { setEditing(null); setModalOpen(true); }}
-            className="p-2 hover:bg-white/5 rounded-lg transition-colors text-emerald-400"
+            className="p-2.5 hover:bg-white/5 rounded-xl transition-colors text-emerald-400"
           >
             <PlusIcon className="w-5 h-5" />
           </button>
         )}
       </div>
       
-      <div className="p-5">
+      <div className="p-6">
         {allAlerts.length === 0 ? (
-          <div className="py-8 text-center border border-dashed border-white/15 rounded-lg">
-            <span className="text-[11px] text-white/40">Sin alertas registradas</span>
+          <div className="py-10 text-center border border-dashed border-white/15 rounded-xl">
+            <span className="text-sm text-white/40">Sin alertas registradas</span>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -159,30 +159,30 @@ export default function AlertsSection({
               return (
                 <div 
                   key={key}
-                  className={`${style.bg} ${style.border} border p-4 rounded-lg flex items-start gap-4 transition-all`}
+                  className={`${style.bg} ${style.border} border p-5 rounded-xl flex items-start gap-4 transition-all`}
                 >
                   <Icon className={`w-5 h-5 mt-0.5 ${style.text}`} />
                   
                   <div className="flex-1">
-                    <div className={`text-[11px] leading-relaxed ${style.text}`}>
+                    <div className={`text-sm leading-relaxed ${style.text}`}>
                       {alert.message}
                     </div>                     
-                    <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-2">
-                      <span className="text-[8px] text-white/30">
+                    <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3">
+                      <span className="text-xs text-white/30">
                         {isManual ? 'Agregado por personal' : 'Generado automáticamente'}
                       </span>
                         
                       {!readOnly && isManual && (
-                        <div className="flex gap-3">
+                        <div className="flex gap-4">
                           <button 
                             onClick={() => { setEditing(alert as ManualAlert); setModalOpen(true); }}
-                            className="text-[9px] text-emerald-400 hover:underline"
+                            className="text-sm text-emerald-400 hover:underline"
                           >
                             Editar
                           </button>
                           <button 
                             onClick={() => remove.mutate((alert as ManualAlert).id)}
-                            className="text-[9px] text-red-400/60 hover:text-red-400"
+                            className="text-sm text-red-400/60 hover:text-red-400"
                           >
                             Eliminar
                           </button>

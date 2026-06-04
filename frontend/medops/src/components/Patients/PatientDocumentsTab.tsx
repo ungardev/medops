@@ -72,9 +72,9 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
   const documents = Array.isArray(data?.list) ? data.list : [];
   return (
     <div className="space-y-6">
-      <div className="bg-white/5 border border-white/15 rounded-lg overflow-hidden">
-        <div className="px-5 py-3 border-b border-white/15 bg-white/5 flex items-center justify-between gap-2">
-          <span className="text-[12px] font-medium text-blue-400 flex items-center gap-2">
+      <div className="bg-white/5 border border-white/15 rounded-xl overflow-hidden">
+        <div className="px-5 py-4 border-b border-white/15 bg-white/5 flex items-center justify-between gap-2">
+          <span className="text-sm font-medium text-blue-400 flex items-center gap-2">
             <CloudArrowUpIcon className="w-5 h-5" />
             Subir Documento
           </span>
@@ -88,8 +88,8 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
                 onChange={(e) => setFile(e.target.files?.[0] || null)}
                 className="absolute inset-0 opacity-0 cursor-pointer z-10"
               />
-              <div className={`h-11 flex items-center justify-center border border-dashed rounded-lg transition-all ${file ? 'border-blue-400/50 bg-blue-500/5' : 'border-white/15 group-hover:border-blue-400/30'}`}>
-                <span className="text-[11px] text-white/50 truncate px-3">
+              <div className={`h-12 flex items-center justify-center border border-dashed rounded-xl transition-all ${file ? 'border-blue-400/50 bg-blue-500/5' : 'border-white/15 group-hover:border-blue-400/30'}`}>
+                <span className="text-sm text-white/50 truncate px-3">
                   {file ? file.name : "Seleccionar archivo"}
                 </span>
               </div>
@@ -99,12 +99,12 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
               placeholder="Descripción"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="bg-white/5 border border-white/15 px-4 h-11 text-[11px] text-white/70 focus:outline-none focus:border-blue-400/50 rounded-lg"
+              className="bg-white/5 border border-white/15 px-4 h-12 text-sm text-white/70 focus:outline-none focus:border-blue-400/50 rounded-xl"
             />
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="bg-white/5 border border-white/15 px-4 h-11 text-[11px] text-white/70 focus:outline-none focus:border-blue-400/50 rounded-lg"
+              className="bg-white/5 border border-white/15 px-4 h-12 text-sm text-white/70 focus:outline-none focus:border-blue-400/50 rounded-xl"
             >
               <option value="">Categoría</option>
               {CATEGORY_OPTIONS.map((opt) => (
@@ -114,7 +114,7 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
             <button
               type="submit"
               disabled={uploadDocument.isPending}
-              className="h-11 bg-white/5 border border-white/15 text-[11px] font-medium text-white/60 hover:bg-blue-500/10 hover:text-blue-400 hover:border-blue-400/30 transition-all disabled:opacity-50 rounded-lg"
+              className="h-12 bg-white/5 border border-white/15 text-sm font-medium text-white/60 hover:bg-blue-500/10 hover:text-blue-400 hover:border-blue-400/30 transition-all disabled:opacity-50 rounded-xl"
             >
               {uploadDocument.isPending ? "Subiendo..." : "Subir"}
             </button>
@@ -123,26 +123,26 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {isLoading ? (
-          <div className="col-span-full py-12 text-center text-[11px] text-white/40 animate-pulse">
+          <div className="col-span-full py-12 text-center text-sm text-white/40 animate-pulse">
             Cargando documentos...
           </div>
         ) : documents.length === 0 ? (
-          <div className="col-span-full py-12 border border-dashed border-white/15 flex flex-col items-center opacity-50 rounded-lg">
+          <div className="col-span-full py-12 border border-dashed border-white/15 flex flex-col items-center opacity-50 rounded-xl">
             <DocumentIcon className="w-8 h-8 mb-2 text-white/30" />
-            <span className="text-[11px] text-white/40">No hay documentos registrados</span>
+            <span className="text-sm text-white/40">No hay documentos registrados</span>
           </div>
         ) : (
           documents.map((d: MedicalDocument) => (
             <div 
               key={d.id} 
-              className="group bg-white/5 border border-white/15 p-5 hover:border-white/25 transition-all flex items-start gap-4 rounded-lg"
+              className="group bg-white/5 border border-white/15 p-5 hover:border-white/25 transition-all flex items-start gap-4 rounded-xl"
             >
-              <div className="p-3 bg-white/5 border border-white/10 group-hover:text-blue-400 transition-colors rounded-lg">
+              <div className="p-3 bg-white/5 border border-white/10 group-hover:text-blue-400 transition-colors rounded-xl">
                 <DocumentIcon className="w-5 h-5" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-start">
-                  <h4 className="text-[12px] font-medium text-white truncate">
+                  <h4 className="text-sm font-medium text-white truncate">
                     {d.description || "Sin título"}
                   </h4>
                   <div className="flex gap-1">
@@ -151,24 +151,24 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
                         href={resolveFileURL(d.file_url)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-2 text-white/50 hover:text-blue-400 rounded-lg hover:bg-white/5 transition-colors"
+                        className="p-2 text-white/50 hover:text-blue-400 rounded-xl hover:bg-white/5 transition-colors"
                         title="Abrir archivo"
                       >
-                        <ArrowTopRightOnSquareIcon className="w-4 h-4" />
+                        <ArrowTopRightOnSquareIcon className="w-5 h-5" />
                       </a>
                     )}
                     <button
                       onClick={() => handleDeleteClick(d)}
                       disabled={deleteDocument.isPending}
-                      className="p-2 text-white/50 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                      className="p-2 text-white/50 hover:text-red-400 rounded-xl hover:bg-red-500/10 transition-colors disabled:opacity-50"
                     >
-                      <TrashIcon className="w-4 h-4" />
+                      <TrashIcon className="w-5 h-5" />
                     </button>
                   </div>
                 </div>
-                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-white/40">
-                  <span className="flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 bg-blue-400 rounded-full" />
+                <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-white/40">
+                  <span className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full" />
                     {CATEGORY_OPTIONS.find(o => o.value === d.category)?.label || "Otro"}
                   </span>
                   <span>{d.source === "system_generated" ? "Generado por sistema" : "Subido manualmente"}</span>
@@ -180,8 +180,8 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
         )}
       </div>
       <div className="pt-4 border-t border-white/10 flex items-center gap-2">
-        <ShieldCheckIcon className="w-4 h-4 text-emerald-400/50" />
-        <span className="text-[9px] text-white/40">
+        <ShieldCheckIcon className="w-5 h-5 text-emerald-400/50" />
+        <span className="text-xs text-white/40">
           El acceso a documentos es registrado y auditado por protocolos de seguridad institucional.
         </span>
       </div>

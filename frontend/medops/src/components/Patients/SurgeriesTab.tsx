@@ -73,19 +73,19 @@ export default function SurgeriesTab({ patientId, onRefresh, readOnly = false }:
   };
   if (query.isLoading) return (
     <div className="flex items-center justify-center p-8">
-      <div className="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+      <div className="w-10 h-10 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
     </div>
   );
   if (query.isError) return (
-    <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
-      <p className="text-[11px] text-red-400">Error al cargar el historial quirúrgico</p>
+    <div className="p-5 bg-red-500/10 border border-red-500/20 rounded-xl">
+      <p className="text-sm text-red-400">Error al cargar el historial quirúrgico</p>
     </div>
   );
   const surgeries = query.data || [];
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-[12px] font-semibold text-white">
+        <h2 className="text-sm font-semibold text-white">
           Historial Quirúrgico
         </h2>
         
@@ -93,50 +93,50 @@ export default function SurgeriesTab({ patientId, onRefresh, readOnly = false }:
           <button
             onClick={handleCreate}
             disabled={isSaving}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-[11px] font-medium rounded-lg disabled:opacity-50 transition-all"
+            className="flex items-center gap-2 px-5 py-3 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-sm font-medium rounded-xl disabled:opacity-50 transition-all"
           >
-            <PlusIcon className="w-4 h-4" />
+            <PlusIcon className="w-5 h-5" />
             Nueva Cirugía
           </button>
         )}
       </div>
       {localError && (
-        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
-          <p className="text-[11px] text-red-400">{localError}</p>
+        <div className="p-5 bg-red-500/10 border border-red-500/20 rounded-xl">
+          <p className="text-sm text-red-400">{localError}</p>
         </div>
       )}
       {surgeries.length === 0 ? (
-        <div className="text-center py-12 border border-dashed border-white/15 rounded-lg">
-          <ScissorsIcon className="w-12 h-12 mx-auto text-white/15 mb-4" />
-          <p className="text-[11px] text-white/40">No hay registros quirúrgicos</p>
-          <p className="text-[9px] text-white/30 mt-1">Agrega la primera cirugía para comenzar el registro</p>
+        <div className="text-center py-14 border border-dashed border-white/15 rounded-xl">
+          <ScissorsIcon className="w-14 h-14 mx-auto text-white/15 mb-4" />
+          <p className="text-sm text-white/40">No hay registros quirúrgicos</p>
+          <p className="text-xs text-white/30 mt-1">Agrega la primera cirugía para comenzar el registro</p>
         </div>
       ) : (
         <div className="grid gap-3">
           {surgeries.map((surgery: Surgery) => (
             <div
               key={surgery.id}
-              className="bg-white/5 border border-white/15 rounded-lg p-5 hover:border-white/25 transition-all"
+              className="bg-white/5 border border-white/15 rounded-xl p-6 hover:border-white/25 transition-all"
             >
               <div className="flex justify-between items-start">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-[12px] font-medium text-white">
+                  <div className="flex items-center gap-3 mb-3">
+                    <h3 className="text-sm font-medium text-white">
                       {surgery.name || "Procedimiento sin nombre"}
                     </h3>
                     {surgery.status && (
-                      <span className={`inline-flex items-center px-2 py-0.5 text-[9px] font-medium rounded-md border ${statusColors[surgery.status] || "bg-white/5 text-white/40 border-white/10"}`}>
+                      <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-lg border ${statusColors[surgery.status] || "bg-white/5 text-white/40 border-white/10"}`}>
                         {surgery.status_display || surgery.status}
                       </span>
                     )}
                     {surgery.risk_level && (
-                      <span className={`text-[9px] font-medium flex items-center gap-1 ${riskColors[surgery.risk_level] || "text-white/40"}`}>
-                        <ExclamationTriangleIcon className="w-3 h-3" />
+                      <span className={`text-xs font-medium flex items-center gap-1 ${riskColors[surgery.risk_level] || "text-white/40"}`}>
+                        <ExclamationTriangleIcon className="w-4 h-4" />
                         {surgery.risk_level_display || surgery.risk_level}
                       </span>
                     )}
                   </div>
-                  <div className="space-y-1.5 text-[10px] text-white/50">
+                  <div className="space-y-2 text-xs text-white/50">
                     {surgery.surgeon_name && (
                       <div className="flex items-center gap-2">
                         <UserCircleIcon className="w-4 h-4" />
@@ -169,13 +169,13 @@ export default function SurgeriesTab({ patientId, onRefresh, readOnly = false }:
                     )}
                   </div>
                   {surgery.procedure_description && (
-                    <p className="text-[11px] text-white/60 mt-3 leading-relaxed">
+                    <p className="text-sm text-white/60 mt-4 leading-relaxed">
                       {surgery.procedure_description}
                     </p>
                   )}
                   {surgery.complications && (
-                    <div className="mt-2 p-2 bg-red-500/5 border border-red-500/10 rounded">
-                      <p className="text-[10px] text-red-400/80">
+                    <div className="mt-3 p-3 bg-red-500/5 border border-red-500/10 rounded-xl">
+                      <p className="text-xs text-red-400/80">
                         <span className="font-medium">Complicaciones:</span> {surgery.complications}
                       </p>
                     </div>
@@ -187,18 +187,18 @@ export default function SurgeriesTab({ patientId, onRefresh, readOnly = false }:
                     <button
                       onClick={() => handleEdit(surgery)}
                       disabled={isSaving}
-                      className="p-2 text-white/50 hover:text-emerald-400 hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50"
+                      className="p-2.5 text-white/50 hover:text-emerald-400 hover:bg-white/5 rounded-xl transition-colors disabled:opacity-50"
                       title="Editar"
                     >
-                      <PencilSquareIcon className="w-4 h-4" />
+                      <PencilSquareIcon className="w-5 h-5" />
                     </button>
                     <button
                       onClick={() => handleDelete(surgery.id)}
                       disabled={isSaving}
-                      className="p-2 text-white/50 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50"
+                      className="p-2.5 text-white/50 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors disabled:opacity-50"
                       title="Eliminar"
                     >
-                      <TrashIcon className="w-4 h-4" />
+                      <TrashIcon className="w-5 h-5" />
                     </button>
                   </div>
                 )}

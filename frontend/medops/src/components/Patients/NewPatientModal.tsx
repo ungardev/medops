@@ -46,34 +46,34 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
       },
     });
   };
-  const inputClass = "w-full bg-white/5 border border-white/15 rounded-lg px-4 py-2.5 text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30";
-  const labelStyles = "text-[10px] font-medium text-white/60 uppercase tracking-wider mb-1.5 block";
-  const sectionStyles = "bg-white/5 border border-white/10 rounded-lg p-5 space-y-4";
+  const inputClass = "w-full bg-white/5 border border-white/15 rounded-xl px-4 py-3 text-sm text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30";
+  const labelStyles = "text-xs font-medium text-white/60 uppercase tracking-wider mb-2 block";
+  const sectionStyles = "bg-white/5 border border-white/10 rounded-xl p-5 space-y-4";
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div 
-        className="bg-[#1a1a1b] border border-white/15 w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl rounded-lg"
+        className="bg-[#1a1a1b] border border-white/15 w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl rounded-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/15 bg-white/5 sticky top-0 rounded-t-lg">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-white/15 bg-white/5 sticky top-0 rounded-t-xl">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-500/15 border border-emerald-500/25 rounded-lg">
-              <Save className="h-4 w-4 text-emerald-400" />
+            <div className="p-2.5 bg-emerald-500/15 border border-emerald-500/25 rounded-xl">
+              <Save className="h-5 w-5 text-emerald-400" />
             </div>
             <div>
-              <h3 className="text-[12px] font-semibold text-white">
+              <h3 className="text-base font-semibold text-white">
                 Registrar Nuevo Paciente
               </h3>
-              <p className="text-[10px] text-white/50 mt-0.5">Complete los datos del paciente</p>
+              <p className="text-sm text-white/50 mt-0.5">Complete los datos del paciente</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-white/50 hover:text-white p-1.5 hover:bg-white/10 rounded-lg transition-colors">
+          <button onClick={onClose} className="text-white/50 hover:text-white p-2 hover:bg-white/10 rounded-xl transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-5">
           <div className={sectionStyles}>
-            <h4 className="text-[11px] font-medium text-white/70 uppercase tracking-wider mb-3">Nombre Completo</h4>
+            <h4 className="text-sm font-medium text-white/70 uppercase tracking-wider mb-4">Nombre Completo</h4>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={labelStyles}>Nombre *</label>
@@ -102,14 +102,14 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
             </div>
           </div>
           <div className={sectionStyles}>
-            <h4 className="text-[11px] font-medium text-white/70 uppercase tracking-wider mb-3">Identificación</h4>
+            <h4 className="text-sm font-medium text-white/70 uppercase tracking-wider mb-4">Identificación</h4>
             <div>
               <label className={labelStyles}>Cédula de Identidad *</label>
               <input {...register("national_id", { required: true })} className={inputClass} placeholder="Ej: V-12345678" />
             </div>
           </div>
           <div className={sectionStyles}>
-            <h4 className="text-[11px] font-medium text-white/70 uppercase tracking-wider mb-3">Contacto</h4>
+            <h4 className="text-sm font-medium text-white/70 uppercase tracking-wider mb-4">Contacto</h4>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={labelStyles}>Teléfono</label>
@@ -122,7 +122,7 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
             </div>
           </div>
           <div className={sectionStyles}>
-            <h4 className="text-[11px] font-medium text-white/70 uppercase tracking-wider mb-3">Información Adicional</h4>
+            <h4 className="text-sm font-medium text-white/70 uppercase tracking-wider mb-4">Información Adicional</h4>
             <div>
               <label className={labelStyles}>Género</label>
               <select {...register("gender")} className={inputClass}>
@@ -135,27 +135,27 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
             </div>
           </div>
           
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
+          <div className="flex items-center justify-end gap-3 pt-5 border-t border-white/10">
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 text-[11px] font-medium text-white/60 hover:text-white transition-colors rounded-lg hover:bg-white/5"
+              className="px-5 py-3 text-sm font-medium text-white/60 hover:text-white transition-colors rounded-xl hover:bg-white/5"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={createPatient.isPending}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-[11px] font-medium text-white bg-emerald-500/15 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all disabled:opacity-50"
+              className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium text-white bg-emerald-500/15 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all disabled:opacity-50"
             >
               {createPatient.isPending ? (
                 <>
-                  <Loader2 size={16} className="animate-spin" />
+                  <Loader2 size={18} className="animate-spin" />
                   Guardando...
                 </>
               ) : (
                 <>
-                  <Save size={16} />
+                  <Save size={18} />
                   Guardar Paciente
                 </>
               )}

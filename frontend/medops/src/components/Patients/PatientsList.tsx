@@ -8,7 +8,7 @@ import Pagination from "../Common/Pagination";
 import { usePatients } from "../../hooks/patients/usePatients";
 import EmptyState from "../Common/EmptyState";
 import { EmptyStateRegistry } from "../Common/EmptyStateRegistry";
-import { FaUser, FaTimes } from "react-icons/fa";
+import { UserIcon, PencilSquareIcon, TrashIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface PatientsListProps {
@@ -35,9 +35,8 @@ export default function PatientsList({ onEdit }: PatientsListProps) {
   const { data, isLoading, isError } = usePatients(currentPage, pageSize);
 
   const emptyConfig = EmptyStateRegistry.pacientes;
-  const emptyIcon = React.createElement(emptyConfig.icon, emptyConfig.iconProps);
 
-    return (
+  return (
     <>
       <div className="hidden sm:block overflow-x-auto">
         <PatientsTable
@@ -48,65 +47,55 @@ export default function PatientsList({ onEdit }: PatientsListProps) {
           {(!data || data.results.length === 0) ? (
             <td colSpan={6}>
               <EmptyState
-                icon={emptyIcon}
+                icon={<UserIcon className="w-12 h-12" />}
                 title={emptyConfig.title}
                 message={emptyConfig.message}
               />
             </td>
           ) : (
             data.results.map((p) => (
-              <React.Fragment key={p.id}>
-                <td className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100 truncate">
-                  {p.id}
+              <tr key={p.id} className="hover:bg-white/5 transition-colors">
+                <td className="px-5 py-4 text-sm text-white/70">{p.id}</td>
+                <td className="px-5 py-4 text-sm text-white font-medium">{p.full_name}</td>
+                <td className="px-5 py-4 text-sm text-white/60">{calculateAge(p.birthdate)}</td>
+                <td className="px-5 py-4 text-sm text-white/60">{p.gender}</td>
+                <td className="px-5 py-4 text-sm text-white/50 truncate">{p.contact_info || "—"}</td>
+                <td className="px-5 py-4">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => onEdit(p)}
+                      className="p-2 text-white/50 hover:text-emerald-400 hover:bg-white/5 rounded-xl transition-colors"
+                      title="Editar"
+                    >
+                      <PencilSquareIcon className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        deletePatient(p.id, {
+                          onSuccess: () => {
+                            queryClient.invalidateQueries({ queryKey: ["patients"], exact: false });
+                          },
+                          onError: (e: any) => {
+                            alert(e?.message || "Error eliminando paciente");
+                          },
+                        });
+                      }}
+                      disabled={isPending}
+                      className="p-2 text-white/50 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors disabled:opacity-50"
+                      title="Eliminar"
+                    >
+                      <TrashIcon className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => navigate(`/patients/${p.id}`)}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 rounded-xl text-sm font-medium transition-all"
+                    >
+                      Ver
+                      <ArrowRightIcon className="w-4 h-4" />
+                    </button>
+                  </div>
                 </td>
-                <td className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100 truncate">
-                  {p.full_name}
-                </td>
-                <td className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100">
-                  {calculateAge(p.birthdate)}
-                </td>
-                <td className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100">
-                  {p.gender}
-                </td>
-                <td className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100 truncate">
-                  {p.contact_info || "—"}
-                </td>
-                <td className="px-3 sm:px-4 py-1.5 sm:py-2 flex gap-2">
-                  <button
-                    className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-xs sm:text-sm 
-                               text-[#0d2c53] dark:text-gray-200 hover:bg-[#0d2c53]/10 dark:hover:bg-gray-700"
-                    onClick={() => onEdit(p)}
-                  >
-                    Editar
-                  </button>
-                  <button
-                    className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-xs sm:text-sm 
-                               text-red-600 dark:text-red-400 hover:bg-[#0d2c53]/10 dark:hover:bg-gray-700"
-                    onClick={() => {
-                      console.log("[ACTION] clic directo en eliminar para paciente", p.id);
-                      deletePatient(p.id, {
-                        onSuccess: () => {
-                          console.log("[HOOK] éxito al eliminar", p.id);
-                          queryClient.invalidateQueries({ queryKey: ["patients"], exact: false });
-                        },
-                        onError: (e: any) => {
-                          console.error("[HOOK] error eliminando paciente:", e);
-                          alert(e?.message || "Error eliminando paciente");
-                        },
-                      });
-                    }}
-                    disabled={isPending}
-                  >
-                    {isPending ? "Eliminando..." : "Eliminar"}
-                  </button>
-                  <button
-                    className="px-3 py-1 rounded-md bg-[#0d2c53] text-white text-xs sm:text-sm border border-[#0d2c53] hover:bg-[#0b2444] transition-colors"
-                    onClick={() => navigate(`/patients/${p.id}`)}
-                  >
-                    Ver ficha
-                  </button>
-                </td>
-              </React.Fragment>
+              </tr>
             ))
           )}
         </PatientsTable>
@@ -115,7 +104,7 @@ export default function PatientsList({ onEdit }: PatientsListProps) {
       <div className="sm:hidden space-y-3">
         {(!data || data.results.length === 0) ? (
           <EmptyState
-            icon={emptyIcon}
+            icon={<UserIcon className="w-12 h-12" />}
             title={emptyConfig.title}
             message={emptyConfig.message}
           />
@@ -123,50 +112,46 @@ export default function PatientsList({ onEdit }: PatientsListProps) {
           data.results.map((p) => (
             <div
               key={p.id}
-              className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3"
+              className="rounded-xl border border-white/15 bg-white/5 p-5"
             >
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-semibold text-[#0d2c53] dark:text-gray-100">
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-base font-semibold text-white">
                   {p.full_name}
                 </span>
                 <div className="flex gap-2">
                   <button
-                    className="p-2 rounded-md hover:bg-[#0d2c53]/10 dark:hover:bg-gray-700 text-[#0d2c53] dark:text-gray-200"
+                    className="p-2.5 text-white/50 hover:text-emerald-400 hover:bg-white/5 rounded-xl transition-colors"
                     onClick={() => navigate(`/patients/${p.id}`)}
                   >
-                    <FaUser />
+                    <ArrowRightIcon className="w-5 h-5" />
                   </button>
                   <button
-                    className="p-2 rounded-md hover:bg-[#0d2c53]/10 dark:hover:bg-gray-700 text-red-600 dark:text-red-400"
                     onClick={() => {
-                      console.log("[ACTION] clic directo en eliminar para paciente", p.id);
                       deletePatient(p.id, {
                         onSuccess: () => {
-                          console.log("[HOOK] éxito al eliminar", p.id);
                           queryClient.invalidateQueries({ queryKey: ["patients"], exact: false });
                         },
                         onError: (e: any) => {
-                          console.error("[HOOK] error eliminando paciente:", e);
                           alert(e?.message || "Error eliminando paciente");
                         },
                       });
                     }}
                     disabled={isPending}
+                    className="p-2.5 text-white/50 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors disabled:opacity-50"
                   >
-                    {isPending ? "…" : <FaTimes />}
+                    <TrashIcon className="w-5 h-5" />
                   </button>
                 </div>
               </div>
-              <div className="text-xs text-[#0d2c53] dark:text-gray-300 space-y-1">
-                <div><strong>Folio:</strong> {p.id}</div>
-                <div><strong>Edad:</strong> {calculateAge(p.birthdate)}</div>
-                <div><strong>Género:</strong> {p.gender}</div>
-                <div><strong>Contacto:</strong> {p.contact_info || "—"}</div>
+              <div className="text-sm text-white/40 space-y-1.5">
+                <div><span className="text-white/30">Folio:</span> {p.id}</div>
+                <div><span className="text-white/30">Edad:</span> {calculateAge(p.birthdate)}</div>
+                <div><span className="text-white/30">Género:</span> {p.gender}</div>
+                <div><span className="text-white/30">Contacto:</span> {p.contact_info || "—"}</div>
               </div>
-              <div className="flex gap-2 mt-2">
+              <div className="flex gap-2 mt-4">
                 <button
-                  className="px-2 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-xs 
-                             text-[#0d2c53] dark:text-gray-200 hover:bg-[#0d2c53]/10 dark:hover:bg-gray-700"
+                  className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/15 text-white/60 rounded-xl text-sm transition-all"
                   onClick={() => onEdit(p)}
                 >
                   Editar

@@ -201,50 +201,50 @@ export default function DemographicsSection({ patient, onRefresh, readOnly = fal
   
   const isDisabled = !editing || readOnly;
   
-  const inputClass = "w-full bg-white/5 border border-white/15 rounded-lg px-3 py-2.5 text-[12px] text-white/80 disabled:opacity-40 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30";
-  const labelClass = "block text-[10px] font-medium text-white/50 uppercase tracking-wider mb-1.5";
+  const inputClass = "w-full bg-white/5 border border-white/15 rounded-xl px-4 py-3 text-sm text-white/80 disabled:opacity-40 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30";
+  const labelClass = "block text-xs font-medium text-white/50 uppercase tracking-wider mb-2";
   
   return (
-    <div className="bg-white/5 border border-white/15 rounded-lg overflow-hidden">
-      <div className="bg-white/5 px-5 py-3 flex justify-between items-center border-b border-white/15">
+    <div className="bg-white/5 border border-white/15 rounded-xl overflow-hidden">
+      <div className="bg-white/5 px-6 py-4 flex justify-between items-center border-b border-white/15">
         <div className="flex items-center gap-3">
           <UserCircleIcon className="w-5 h-5 text-white/40" />
-          <span className="text-[11px] font-medium text-white/70">Datos Personales</span>
+          <span className="text-sm font-medium text-white/70">Datos Personales</span>
         </div>
         
         {readOnly ? (
-          <div className="text-[10px] text-white/30">Solo lectura</div>
+          <div className="text-xs text-white/30">Solo lectura</div>
         ) : editing ? (
           <div className="flex gap-2">
-            <button onClick={() => setEditing(false)} className="px-3 py-1.5 text-[10px] text-white/50 hover:text-white transition-colors rounded-lg hover:bg-white/5">Cancelar</button>
-            <button onClick={handleSave} disabled={isLoadingAny} className="flex items-center gap-1.5 px-4 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-[10px] font-medium rounded-lg disabled:opacity-50 transition-all">
-              <CheckIcon className="w-3.5 h-3.5" /> 
+            <button onClick={() => setEditing(false)} className="px-4 py-2 text-sm text-white/50 hover:text-white transition-colors rounded-xl hover:bg-white/5">Cancelar</button>
+            <button onClick={handleSave} disabled={isLoadingAny} className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-sm font-medium rounded-xl disabled:opacity-50 transition-all">
+              <CheckIcon className="w-4 h-4" /> 
               {isLoadingAny ? 'Guardando...' : 'Guardar'}
             </button>
           </div>
         ) : (
-          <button onClick={() => setEditing(true)} disabled={isLoadingAny} className="flex items-center gap-1.5 px-4 py-1.5 bg-white/5 border border-white/15 text-[10px] text-white/60 hover:text-white hover:bg-white/10 disabled:opacity-50 rounded-lg transition-all">
-            <PencilSquareIcon className="w-3.5 h-3.5" /> 
+          <button onClick={() => setEditing(true)} disabled={isLoadingAny} className="flex items-center gap-2 px-5 py-2.5 bg-white/5 border border-white/15 text-sm text-white/60 hover:text-white hover:bg-white/10 disabled:opacity-50 rounded-xl transition-all">
+            <PencilSquareIcon className="w-4 h-4" /> 
             Editar
           </button>
         )}
       </div>
       
       {errors.general && (
-        <div className="px-5 py-3 bg-red-500/10 border-b border-red-500/20 flex items-center gap-2">
-          <ExclamationCircleIcon className="w-4 h-4 text-red-400" />
-          <span className="text-[11px] text-red-400">{errors.general}</span>
+        <div className="px-6 py-4 bg-red-500/10 border-b border-red-500/20 flex items-center gap-2">
+          <ExclamationCircleIcon className="w-5 h-5 text-red-400" />
+          <span className="text-sm text-red-400">{errors.general}</span>
         </div>
       )}
       
       {isLoadingAny && (
-        <div className="px-5 py-3 bg-blue-500/10 border-b border-blue-500/20 flex items-center gap-2">
-          <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-[11px] text-blue-400">Cargando datos de ubicación...</span>
+        <div className="px-6 py-4 bg-blue-500/10 border-b border-blue-500/20 flex items-center gap-2">
+          <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-sm text-blue-400">Cargando datos de ubicación...</span>
         </div>
       )}
       
-      <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="p-5 grid grid-cols-12 gap-x-4 gap-y-5">
+      <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="p-6 grid grid-cols-12 gap-x-5 gap-y-5">
         <div className="col-span-12 md:col-span-3">
           <label className={labelClass}>Cédula</label>
           <input type="text" value={form.national_id} onChange={(e) => setForm({...form, national_id: e.target.value})} disabled={isDisabled} className={inputClass} />
@@ -342,9 +342,9 @@ export default function DemographicsSection({ patient, onRefresh, readOnly = fal
           </select>
         </div>
         
-        <div className="col-span-12 flex items-center gap-3 pt-4 opacity-50">
-          <MapPinIcon className="w-4 h-4" />
-          <span className="text-[9px] font-medium uppercase tracking-wider">Ubicación Geográfica</span>
+        <div className="col-span-12 flex items-center gap-3 pt-5 opacity-50">
+          <MapPinIcon className="w-5 h-5" />
+          <span className="text-xs font-medium uppercase tracking-wider">Ubicación Geográfica</span>
           <div className="flex-1 h-[1px] bg-white/10" />
         </div>
         
@@ -365,10 +365,10 @@ export default function DemographicsSection({ patient, onRefresh, readOnly = fal
         </div>
         
         <div className="col-span-12 md:col-span-4">
-          <div className={`flex flex-col gap-1.5 ${(!form.parish_id || neighborhoodsResult.isLoading) ? 'opacity-40' : ''}`}>
-            <label className="text-[10px] font-medium text-white/50 uppercase tracking-wider flex justify-between px-1">
+          <div className={`flex flex-col gap-2 ${(!form.parish_id || neighborhoodsResult.isLoading) ? 'opacity-40' : ''}`}>
+            <label className="text-xs font-medium text-white/50 uppercase tracking-wider flex justify-between px-1">
               <span>Urbanización / Sector</span>
-              {neighborhoodsResult.isLoading && <CpuChipIcon className="w-3 h-3 animate-spin" />}
+              {neighborhoodsResult.isLoading && <CpuChipIcon className="w-4 h-4 animate-spin" />}
             </label>
             <div className="relative">
               <input list="neighborhood-options" value={form.neighborhood_name} disabled={!form.parish_id || isDisabled} onChange={(e) => handleNeighborhoodChange(e.target.value)} placeholder={!form.parish_id ? "Seleccione una parroquia" : "Escriba o seleccione..."} className={inputClass} />
@@ -377,7 +377,7 @@ export default function DemographicsSection({ patient, onRefresh, readOnly = fal
               </datalist>
               {form.neighborhood_name && !form.neighborhood_id && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <span className="text-[8px] font-medium text-emerald-400 animate-pulse">Nuevo</span>
+                  <span className="text-xs font-medium text-emerald-400 animate-pulse">Nuevo</span>
                 </div>
               )}
             </div>

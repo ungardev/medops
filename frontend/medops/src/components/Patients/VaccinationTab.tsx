@@ -75,16 +75,16 @@ export default function VaccinationTab({ patientId, onRefresh, readOnly = false 
   };
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/5 p-5 border border-white/15 rounded-lg">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/5 p-6 border border-white/15 rounded-xl">
         <div className="flex items-center gap-4">
-          <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+          <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
             <BeakerIcon className="w-6 h-6 text-emerald-400" />
           </div>
           <div>
-            <h2 className="text-[12px] font-semibold text-white">
+            <h2 className="text-sm font-semibold text-white">
               Esquema de Vacunación
             </h2>
-            <p className="text-[10px] text-white/40 mt-0.5">
+            <p className="text-xs text-white/40 mt-0.5">
               {applied.length >= schema.length ? "Esquema completo" : `${applied.length} de ${schema.length} dosis aplicadas`}
             </p>
           </div>
@@ -92,20 +92,20 @@ export default function VaccinationTab({ patientId, onRefresh, readOnly = false 
         
         <div className="flex gap-4">
           <div className="flex flex-col items-end">
-            <span className="text-[16px] font-semibold text-white">{applied.length}</span>
-            <span className="text-[9px] text-white/40">Dosis aplicadas</span>
+            <span className="text-xl font-semibold text-white">{applied.length}</span>
+            <span className="text-xs text-white/40">Dosis aplicadas</span>
           </div>
         </div>
       </div>
       {localError && (
-        <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-[11px] rounded-lg">
+        <div className="p-5 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl">
           {localError}
         </div>
       )}
-      <div className="relative bg-white/5 border border-white/15 rounded-lg overflow-hidden">
+      <div className="relative bg-white/5 border border-white/15 rounded-xl overflow-hidden">
         {isSaving && (
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-            <span className="text-[11px] text-white/60 animate-pulse">Guardando...</span>
+            <span className="text-sm text-white/60 animate-pulse">Guardando...</span>
           </div>
         )}
         
@@ -115,15 +115,15 @@ export default function VaccinationTab({ patientId, onRefresh, readOnly = false 
           onRegisterDose={readOnly ? undefined : handleRegisterDose}
         />
       </div>
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 px-2">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 px-3">
         <div className="flex flex-wrap gap-6">
           <LegendItem color="bg-yellow-400/20 border-yellow-400/40" label="Dosis recomendada" />
           <LegendItem color="bg-emerald-500/30 border-emerald-500/50" label="Inmunidad validada" />
           <LegendItem color="bg-white/5 border-white/15" label="No aplica" />
         </div>
         
-        <div className="flex items-center gap-2 text-[9px] text-white/40">
-          <InformationCircleIcon className="w-4 h-4" />
+        <div className="flex items-center gap-2 text-xs text-white/40">
+          <InformationCircleIcon className="w-5 h-5" />
           Basado en la Sociedad Venezolana de Puericultura y Pediatría (SVPP)
         </div>
       </div>
@@ -146,8 +146,8 @@ export default function VaccinationTab({ patientId, onRefresh, readOnly = false 
 function LegendItem({ color, label }: { color: string, label: string }) {
   return (
     <div className="flex items-center gap-2">
-      <div className={`w-3 h-3 rounded-full ${color} border`} />
-      <span className="text-[9px] text-white/40">{label}</span>
+      <div className={`w-3.5 h-3.5 rounded-full ${color} border`} />
+      <span className="text-xs text-white/40">{label}</span>
     </div>
   );
 }
