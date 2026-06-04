@@ -138,7 +138,7 @@ export default function Sidebar({
                     mb-0.5 overflow-hidden rounded-lg
                     transition-all duration-200
                     ${isActive 
-                      ? "bg-emerald-500/15 text-white border-l-2 border-emerald-400" 
+                      ? "bg-white/10 text-white" 
                       : "text-white/70 hover:text-white hover:bg-emerald-500/10"
                     }
                   `}
@@ -168,19 +168,6 @@ export default function Sidebar({
         </ul>
       </nav>
 
-      {/* Footer - Doctor Indicator */}
-      <div className="pt-4 border-t border-white/10">
-        {effectiveCollapsed ? (
-          <div className="flex justify-center py-4">
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
-          </div>
-        ) : (
-          <div className="flex items-center gap-3 px-4 pb-4">
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
-            <span className="text-xs font-semibold text-white/60 uppercase tracking-wider">Doctor</span>
-          </div>
-        )}
       </div>
-    </div>
   );
 }
