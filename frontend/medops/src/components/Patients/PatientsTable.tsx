@@ -32,7 +32,7 @@ export default function PatientsTable({
               {headers.map((h, idx) => (
                 <th
                   key={idx}
-                  className={`px-4 py-3 text-[10px] font-medium text-white/50 uppercase tracking-wider ${getHeaderWidth(h)}`}
+                  className={`px-5 py-4 text-sm font-medium text-white/50 uppercase tracking-wider ${getHeaderWidth(h)}`}
                 >
                   {h}
                 </th>

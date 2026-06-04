@@ -72,84 +72,84 @@ const RegisterWalkinModal: React.FC<Props> = ({
   const alreadyInWaitingRoom = selectedPatient
     ? existingEntries.some((e) => e.patient.id === selectedPatient.id && !["completed", "canceled"].includes(e.status))
     : false;
-  const inputStyles = "w-full bg-white/5 border border-white/15 rounded-lg px-4 py-2.5 text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30";
-  const labelStyles = "text-[10px] font-medium text-white/50 uppercase tracking-wider mb-1.5 block";
+  const inputStyles = "w-full bg-white/5 border border-white/15 rounded-xl px-5 py-3.5 text-sm text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30";
+  const labelStyles = "text-sm font-medium text-white/50 uppercase tracking-wider mb-2 block";
   return (
     <>
-      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-5" onClick={onClose}>
         <div 
-          className="bg-[#1a1a1b] border border-white/15 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl rounded-lg"
+          className="bg-[#1a1a1b] border border-white/15 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl rounded-xl"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between px-6 py-4 border-b border-white/15 bg-white/5">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                <Search className="h-4 w-4 text-blue-400" />
+          <div className="flex items-center justify-between px-6 py-5 border-b border-white/15 bg-white/5">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                <Search className="h-5 w-5 text-blue-400" />
               </div>
               <div>
-                <h3 className="text-[12px] font-semibold text-white">
+                <h3 className="text-base font-semibold text-white">
                   Identificar Paciente
                 </h3>
-                <p className="text-[10px] text-white/40 mt-0.5">Buscar en la base de datos</p>
+                <p className="text-sm text-white/40 mt-1">Buscar en la base de datos</p>
               </div>
             </div>
-            <button onClick={onClose} className="text-white/40 hover:text-white p-1.5 hover:bg-white/10 rounded-lg transition-colors">
+            <button onClick={onClose} className="text-white/40 hover:text-white p-2 hover:bg-white/10 rounded-lg transition-colors">
               <X className="w-5 h-5" />
             </button>
           </div>
           
-          <div className="p-6 space-y-5">
-            <div className="bg-white/5 border border-white/15 rounded-lg p-5 space-y-4">
+          <div className="p-6 space-y-6">
+            <div className="bg-white/5 border border-white/15 rounded-xl p-6 space-y-5">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20" />
                 <input
                   autoFocus
-                  className={`${inputStyles} pl-10`}
+                  className={`${inputStyles} pl-12`}
                   placeholder="Buscar por nombre o cédula..."
                   value={query}
                   onChange={(e) => { setQuery(e.target.value); setSelectedPatient(null); }}
                 />
               </div>
               {results.length > 0 && !selectedPatient && (
-                <div className="border border-white/15 rounded-lg divide-y divide-white/5 max-h-48 overflow-y-auto bg-black/20">
+                <div className="border border-white/15 rounded-xl divide-y divide-white/5 max-h-56 overflow-y-auto bg-black/20">
                   {results.map((p, index) => (
                     <div
                       key={p.id}
-                      className={`px-4 py-3 cursor-pointer flex justify-between items-center transition-colors ${index === highlightedIndex ? "bg-white/5" : "hover:bg-white/5"}`}
+                      className={`px-5 py-4 cursor-pointer flex justify-between items-center transition-colors ${index === highlightedIndex ? "bg-white/5" : "hover:bg-white/5"}`}
                       onClick={() => handlePatientSelected(p)}
                     >
-                      <span className="text-[11px] font-medium text-white/80">{p.full_name}</span>
-                      <span className="text-[9px] text-white/30">{p.national_id || "Sin ID"}</span>
+                      <span className="text-sm font-medium text-white/80">{p.full_name}</span>
+                      <span className="text-sm text-white/30">{p.national_id || "Sin ID"}</span>
                     </div>
                   ))}
                 </div>
               )}
               {selectedPatient && (
-                <div className={`p-5 border rounded-lg transition-all ${alreadyInWaitingRoom ? "border-red-500/20 bg-red-500/5" : "border-white/15 bg-white/5"}`}>
+                <div className={`p-6 border rounded-xl transition-all ${alreadyInWaitingRoom ? "border-red-500/20 bg-red-500/5" : "border-white/15 bg-white/5"}`}>
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="text-[9px] text-white/30 uppercase tracking-wider mb-1">Paciente Identificado</p>
-                      <h3 className="text-lg font-medium text-white/90">{selectedPatient.full_name}</h3>
-                      <p className="text-xs font-mono text-white/40 mt-1">{selectedPatient.national_id}</p>
+                      <p className="text-sm text-white/30 uppercase tracking-wider mb-2">Paciente Identificado</p>
+                      <h3 className="text-xl font-medium text-white/90">{selectedPatient.full_name}</h3>
+                      <p className="text-sm font-mono text-white/40 mt-2">{selectedPatient.national_id}</p>
                     </div>
-                    {!alreadyInWaitingRoom && <CheckIcon className="w-6 h-6 text-emerald-400" />}
+                    {!alreadyInWaitingRoom && <CheckIcon className="w-7 h-7 text-emerald-400" />}
                   </div>
                   
                   {alreadyInWaitingRoom ? (
-                    <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-medium text-center rounded-lg">
+                    <div className="mt-5 p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-medium text-center rounded-xl">
                       ⚠ El paciente ya tiene un registro activo
                     </div>
                   ) : (
-                    <div className="flex gap-2 mt-6">
+                    <div className="flex gap-3 mt-6">
                       <button 
                         onClick={handleProceedWithPatient}
-                        className="flex-1 bg-emerald-500/15 text-emerald-400 text-[11px] font-medium py-2.5 rounded-lg hover:bg-emerald-500/25 transition-all border border-emerald-500/25"
+                        className="flex-1 bg-emerald-500/15 text-emerald-400 text-sm font-medium py-3 rounded-xl hover:bg-emerald-500/25 transition-all border border-emerald-500/25"
                       >
                         Continuar
                       </button>
                       <button 
                         onClick={() => setSelectedPatient(null)}
-                        className="px-4 border border-white/15 text-white/40 text-[11px] font-medium rounded-lg hover:bg-white/5 transition-colors"
+                        className="px-5 border border-white/15 text-white/40 text-sm font-medium rounded-xl hover:bg-white/5 transition-colors"
                       >
                         Cancelar
                       </button>
@@ -158,7 +158,7 @@ const RegisterWalkinModal: React.FC<Props> = ({
                 </div>
               )}
 
-              <div className="mt-4">
+              <div className="mt-5">
                 <label className={labelStyles}>Tipo de Servicio</label>
                 <select
                   value={selectedServiceId ?? ''}
@@ -176,9 +176,9 @@ const RegisterWalkinModal: React.FC<Props> = ({
 
               <button 
                 onClick={() => setShowNewPatientModal(true)}
-                className="w-full py-3 border border-dashed border-white/15 text-white/30 hover:text-white/50 hover:border-white/25 hover:bg-white/5 transition-all flex items-center justify-center gap-2 text-[10px] font-medium"
+                className="w-full py-4 border border-dashed border-white/15 text-white/30 hover:text-white/50 hover:border-white/25 hover:bg-white/5 transition-all flex items-center justify-center gap-3 text-sm font-medium rounded-xl"
               >
-                <UserPlusIcon className="w-4 h-4" />
+                <UserPlusIcon className="w-5 h-5" />
                 Registrar Nuevo Paciente
               </button>
             </div>

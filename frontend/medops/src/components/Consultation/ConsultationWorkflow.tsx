@@ -204,7 +204,7 @@ export default function ConsultationWorkflow({
             key={tabId}
             id={tabId} 
             label={
-              <span className="flex items-center gap-2 text-[12px] font-medium">
+              <span className="flex items-center gap-2 text-sm font-medium">
                 {tabIcons[tabId]} {tabConfig[tabId].label}
               </span>
             }
