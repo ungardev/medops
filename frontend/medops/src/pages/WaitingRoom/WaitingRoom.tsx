@@ -48,16 +48,16 @@ const renderWaitTime = (entry: WaitingRoomEntry) => {
   
   if (entry.status === 'completed') {
     return (
-      <div className="flex items-center gap-1 text-[9px] text-emerald-400/60">
-        <CheckCircleIcon className="w-3.5 h-3.5" />
-        <span>Finalizado</span>
+      <div className="flex items-center gap-1 text-emerald-400">
+        <CheckCircleIcon className="w-4 h-4" />
+        <span className="text-sm font-medium">Finalizado</span>
       </div>
     );
   }
   const minutes = Math.floor((Date.now() - new Date(entry.arrival_time).getTime()) / 60000);
   return (
-    <div className="flex items-center gap-1 text-[10px] text-white/40">
-      <ClockIcon className="w-3.5 h-3.5 text-amber-400/50" />
+    <div className="flex items-center gap-1.5 text-sm text-white/60">
+      <ClockIcon className="w-4 h-4 text-amber-400" />
       <span>{minutes < 60 ? `${minutes}m` : `${Math.floor(minutes/60)}h ${minutes%60}m`}</span>
     </div>
   );
@@ -261,8 +261,8 @@ const filteredServices = useMemo(() =>
         <div className="lg:col-span-8 flex flex-col bg-white/5 border border-white/15 rounded-xl overflow-hidden">
           <div className="px-6 py-4 border-b border-white/10 bg-white/5 flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <UserGroupIcon className="w-5 h-5 text-white/30" />
-              <h3 className="text-sm font-medium text-white/60">Cola de Atención</h3>
+              <UserGroupIcon className="w-5 h-5 text-white/50" />
+              <h3 className="text-sm font-semibold text-white/70">Cola de Atenci\u00f3n</h3>
             </div>
             <InstitutionFilter
               selectedInstitutionId={selectedInstitutionId}
@@ -284,7 +284,7 @@ const filteredServices = useMemo(() =>
                     className="group flex flex-col sm:flex-row justify-between items-start sm:items-center px-6 py-5 transition-colors border-l-2 border-transparent hover:border-white/10 gap-3 sm:gap-0"
                   >
                     <div className="flex items-start gap-4 flex-1 min-w-0">
-                      <span className="mt-1 text-sm font-medium text-white/30 opacity-50">
+                      <span className="mt-1 text-sm font-medium text-white/50">
                         {String(index + 1).padStart(2, '0')}.
                       </span>
                       <div className="flex flex-col gap-1 min-w-0">
@@ -292,12 +292,12 @@ const filteredServices = useMemo(() =>
                           {entry.patient.full_name}
                         </p>
                         {entry.serviceId && (
-                          <span className="text-xs text-blue-400/60 truncate">
+                          <span className="text-sm text-blue-400 truncate">
                             {services.find(s => s.id === entry.serviceId)?.name || 'General'}
                           </span>
                         )}
                         {entry.institution_data && (
-                          <div className="flex items-center gap-2 text-xs text-white/30 mt-1">
+                          <div className="flex items-center gap-2 text-sm text-white/50 mt-1">
                             <BuildingOfficeIcon className="w-4 h-4 shrink-0" />
                             <span className="truncate">{entry.institution_data.name}</span>
                           </div>
@@ -334,7 +334,7 @@ const filteredServices = useMemo(() =>
           </div>
           
           <div className="px-6 py-4 border-t border-white/10 bg-white/5">
-            <div className="text-sm text-white/30">
+            <div className="text-sm text-white/50">
               Mostrando {filteredLiveQueue.length} de {liveQueue.length} registros
               {selectedInstitutionId && liveQueue.length > filteredLiveQueue.length && (
                 <span className="ml-3 text-emerald-400/50">
@@ -352,17 +352,17 @@ const filteredServices = useMemo(() =>
           <div className="bg-black/20">
             {filteredPendingEntries.length === 0 ? (
               <div className="p-12 text-center">
-                <p className="text-sm text-white/30 italic">Sin registros pendientes</p>
+                <p className="text-sm text-white/50 italic">Sin registros pendientes</p>
               </div>
             ) : (
               <div className="divide-y divide-white/5">
                 {filteredPendingEntries.map((appt) => (
                   <div key={appt.id} className="px-6 py-5 flex justify-between items-center group border-b border-white/5 hover:bg-white/5">
                     <div className="flex flex-col min-w-0 space-y-2">
-                      <p className="text-base font-medium text-white/80">{appt.patient_name || 'Paciente desconocido'}</p>
-                      <div className="flex flex-wrap gap-4 text-sm text-white/50">
+                      <p className="text-base font-semibold text-white/80">{appt.patient_name || 'Paciente desconocido'}</p>
+                      <div className="flex flex-wrap gap-4 text-sm text-white/60">
                         <span className="flex items-center gap-1.5">
-                          <BuildingOfficeIcon className="h-4 w-4 text-blue-400/50" />
+                          <BuildingOfficeIcon className="h-4 w-4 text-blue-400/60" />
                           <span>{services.find(s => s.id === appt.doctor_service)?.name || 'General'}</span>
                         </span>
                         {appt.tentative_time && (
@@ -373,9 +373,9 @@ const filteredServices = useMemo(() =>
                         )}
                       </div>
                       <div className="flex flex-wrap gap-3 mt-2 text-sm">
-                        <span className="flex items-center gap-1 text-white/30">
+                        <span className="flex items-center gap-1 text-sm text-white/50">
                           <span className="font-mono">REF:</span> 
-                          <span className="font-mono text-white/60">{appt.id.toString().slice(-6)}</span>
+                          <span className="font-mono text-white/70">{appt.id.toString().slice(-6)}</span>
                         </span>
                         {appt.charge_order && (
                           <>

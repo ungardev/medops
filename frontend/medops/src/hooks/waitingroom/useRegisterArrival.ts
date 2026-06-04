@@ -19,9 +19,7 @@ export function useRegisterArrival() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["waitingRoomEntriesToday"] });
-      // Opcional: Invalidar también el query del hub operativo si se usa
-      // queryClient.invalidateQueries({ queryKey: ["operationalHub"] });
+      queryClient.invalidateQueries({ queryKey: ["operationalHub"] });
     },
   });
 }
