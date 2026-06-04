@@ -237,19 +237,11 @@ export default function ServiceCatalogPage() {
         </button>
       </div>
       
-      {loadingServices ? (
-        <div className="relative">
-          <div className="flex items-center justify-center py-6">
-            <div className="flex items-center gap-3 text-white/40">
-              <div className="w-5 h-5 border-2 border-emerald-400/50 border-t-transparent rounded-full animate-spin" />
-              <span className="text-sm">Cargando servicios...</span>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="h-36 bg-white/5 animate-pulse border border-white/15 rounded-xl" />
-            ))}
-          </div>
+      {loadingServices || loadingDoctor ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="h-36 bg-white/5 animate-pulse border border-white/15 rounded-xl" />
+          ))}
         </div>
       ) : filteredServices.length === 0 ? (
         <div className="py-20 text-center border border-dashed border-white/15 rounded-xl">
