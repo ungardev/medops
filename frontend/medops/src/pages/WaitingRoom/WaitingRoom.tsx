@@ -262,7 +262,7 @@ const filteredServices = useMemo(() =>
           <div className="px-6 py-4 border-b border-white/10 bg-white/5 flex justify-between items-center">
             <div className="flex items-center gap-3">
               <UserGroupIcon className="w-5 h-5 text-white/50" />
-              <h3 className="text-sm font-semibold text-white/70">Cola de Atenci\u00f3n</h3>
+              <h3 className="text-sm font-semibold text-white/70">Cola de Atención</h3>
             </div>
             <InstitutionFilter
               selectedInstitutionId={selectedInstitutionId}
@@ -272,7 +272,12 @@ const filteredServices = useMemo(() =>
           </div>
           
           <div className="min-h-[450px]">
-            {filteredLiveQueue.length === 0 ? (
+            {isLoading ? (
+              <div className="h-full min-h-[450px] flex flex-col items-center justify-center p-24">
+                <div className="w-10 h-10 border-2 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin" />
+                <span className="text-sm text-white/50 mt-5">Cargando sala de espera...</span>
+              </div>
+            ) : filteredLiveQueue.length === 0 ? (
               <div className="h-full min-h-[450px] flex flex-col items-center justify-center p-24">
                 <p className="text-sm text-white/30">No hay pacientes en espera</p>
               </div>
