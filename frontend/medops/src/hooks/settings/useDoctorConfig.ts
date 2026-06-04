@@ -73,6 +73,7 @@ export function useDoctorConfig() {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(["config", "doctor"], data);
+      queryClient.invalidateQueries(["config", "doctor"]);
     },
   });
   return {

@@ -44,6 +44,7 @@ export default function ConfigPage() {
   const [showInstitutionModal, setShowInstitutionModal] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingModal, setIsLoadingModal] = useState(false);
   
   const [doctorForm, setDoctorForm] = useState({
     full_name: "",
@@ -117,10 +118,32 @@ export default function ConfigPage() {
         whatsapp_access_token: doc.whatsapp_access_token || '',
         reminder_hours_before: doc.reminder_hours_before || 24,
       });
+      setInitialized(true);
     }
-    
-    setInitialized(true);
   }, [doc, specialties, initialized]);
+
+  useEffect(() => {
+    if (showDoctorModal) {
+      setIsLoadingModal(true);
+      setInitialized(false);
+      if (doc?.signature && typeof doc.signature === 'string') {
+        const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/api\/?$/, '');
+        const sigUrl = doc.signature.startsWith('http') ? doc.signature : `${baseUrl}${doc.signature.startsWith('/') ? '' : '/'}${doc.signature}`;
+        setSignaturePreview(sigUrl);
+      } else {
+        setSignaturePreview(null);
+      }
+      const docPhoto = (doc as any)?.photo;
+      if (docPhoto && typeof docPhoto === 'string') {
+        const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/api\/?$/, '');
+        const photoUrl = docPhoto.startsWith('http') ? docPhoto : `${baseUrl}${docPhoto.startsWith('/') ? '' : '/'}${docPhoto}`;
+        setPhotoPreview(photoUrl);
+      } else {
+        setPhotoPreview(null);
+      }
+      setTimeout(() => setIsLoadingModal(false), 300);
+    }
+  }, [showDoctorModal, doc]);
   
   const handleSaveBankData = async (bankData: any) => {
     await updateDoctor(bankData as any);
@@ -133,7 +156,7 @@ export default function ConfigPage() {
   const handleSaveDoctor = async () => {
     setIsSaving(true);
     try {
-      await updateDoctor({
+      const result = await updateDoctor({
         full_name: doctorForm.full_name,
         national_id: doctorForm.national_id,
         birthdate: doctorForm.birthdate,
@@ -154,6 +177,16 @@ export default function ConfigPage() {
         whatsapp_access_token: whatsAppConfig.whatsapp_access_token,
         reminder_hours_before: whatsAppConfig.reminder_hours_before,
       } as any);
+      if (result?.signature) {
+        const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/api\/?$/, '');
+        const sigUrl = result.signature.startsWith('http') ? result.signature : `${baseUrl}${result.signature.startsWith('/') ? '' : '/'}${result.signature}`;
+        setSignaturePreview(sigUrl);
+      }
+      if (result?.photo) {
+        const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/api\/?$/, '');
+        const photoUrl = result.photo.startsWith('http') ? result.photo : `${baseUrl}${result.photo.startsWith('/') ? '' : '/'}${result.photo}`;
+        setPhotoPreview(photoUrl);
+      }
     } finally {
       setIsSaving(false);
     }
@@ -396,6 +429,12 @@ export default function ConfigPage() {
             </div>
             <form onSubmit={async (e) => { e.preventDefault(); await handleSaveDoctor(); }} className="p-6 space-y-5">
               
+              {isLoadingModal ? (
+                <div className="flex items-center justify-center h-40">
+                  <div className="w-8 h-8 border-2 border-emerald-400/50 border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : (
+                <>
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className={labelStyles}>Foto de Perfil</label>
@@ -475,6 +514,8 @@ export default function ConfigPage() {
                   Cancelar
                 </button>
               </div>
+                </>
+              )}
             </form>
           </div>
         </div>
