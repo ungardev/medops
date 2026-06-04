@@ -18,12 +18,12 @@ export function DashboardButtonGroup() {
   const handleRangeSelect = (val: string) => setRange(val as RangeOption);
   const handleCurrencySelect = (val: string) => setCurrency(val as CurrencyOption);
   return (
-    <div className="flex flex-col sm:flex-row items-end sm:items-center justify-between gap-4 mb-4 px-1">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 mb-5">
       
       <div className="flex flex-col gap-2 w-full sm:w-auto">
         <div className="flex items-center gap-2">
-          <div className="w-1 h-3 bg-white/20 rounded-full" />
-          <span className="text-[10px] font-medium uppercase tracking-wider text-white/50">
+          <div className="w-1 h-4 bg-emerald-500/40 rounded-full" />
+          <span className="text-xs font-semibold uppercase tracking-wider text-white/60">
             Período
           </span>
         </div>
@@ -34,12 +34,13 @@ export function DashboardButtonGroup() {
           onSelect={handleRangeSelect}
         />
       </div>
+      
       <div className="flex flex-col gap-2 items-end w-full sm:w-auto">
         <div className="flex items-center gap-2 justify-end w-full">
-          <span className="text-[10px] font-medium uppercase tracking-wider text-white/50 text-right">
+          <span className="text-xs font-semibold uppercase tracking-wider text-white/60 text-right">
             Moneda
           </span>
-          <div className="w-1 h-3 bg-emerald-400/40 rounded-full" />
+          <div className="w-1 h-4 bg-emerald-500/40 rounded-full" />
         </div>
         <ButtonGroup
           items={currencyItems}

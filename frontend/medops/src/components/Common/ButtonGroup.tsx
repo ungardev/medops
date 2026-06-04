@@ -11,7 +11,7 @@ interface ButtonGroupProps {
 }
 export default function ButtonGroup({ items, selected, onSelect }: ButtonGroupProps) {
   return (
-    <div className="inline-flex bg-white/5 p-1 rounded-lg border border-white/15">
+    <div className="inline-flex bg-white/5 p-1.5 rounded-xl border border-white/15">
       {items.map((item) => {
         const isActive = selected === item.value;
         return (
@@ -19,10 +19,10 @@ export default function ButtonGroup({ items, selected, onSelect }: ButtonGroupPr
             key={item.value}
             onClick={() => onSelect(item.value)}
             className={`
-              relative px-4 py-1.5 text-[11px] font-medium transition-all duration-200 rounded-md
+              relative px-5 py-2 text-sm font-semibold transition-all duration-200 rounded-lg
               ${isActive
-                ? "bg-white/15 text-white shadow-sm"
-                : "text-white/50 hover:text-white/80 hover:bg-white/5"}
+                ? "bg-emerald-500/20 text-white border border-emerald-500/30 shadow-sm"
+                : "text-white/70 hover:text-white hover:bg-white/10"}
             `}
           >
             {item.label}
