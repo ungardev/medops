@@ -60,7 +60,7 @@ export default function SearchPage() {
     setError(null);
     apiFetch<SearchResponse>(`search/?query=${encodeURIComponent(query.trim())}`)
       .then((res) => {
-        const data = res.data as SearchResponse;
+        const data = res;
         setResults({
           patients: data.patients ?? [],
           appointments: data.appointments ?? [],
