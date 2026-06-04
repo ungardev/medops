@@ -104,7 +104,7 @@ export default function InstitutionalLayout() {
             collapsed ? "lg:ml-[72px]" : "lg:ml-64"
           }`}
         >
-          <header className="h-14 border-b border-white/10 bg-black sticky top-0 z-30 flex items-center transition-colors duration-300">
+          <header className="h-16 border-b border-white/10 bg-black sticky top-0 z-30 flex items-center transition-colors duration-300">
             <InstitutionalHeader
               setCollapsed={setCollapsed}
               setMobileOpen={setMobileSidebarOpen}

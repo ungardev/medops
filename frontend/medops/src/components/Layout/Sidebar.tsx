@@ -18,12 +18,14 @@ import {
   X,
   Briefcase,
 } from "lucide-react";
+
 interface SidebarProps {
   collapsed: boolean;
   setCollapsed: (value: boolean) => void;
   mobileOpen: boolean;
   setMobileOpen: (value: boolean) => void;
 }
+
 const navItems = [
   { path: "/doctor", label: "Dashboard", icon: LayoutDashboard },
   { path: "/waitingroom", label: "Sala de Espera", icon: Clock },
@@ -38,6 +40,7 @@ const navItems = [
   { path: "/reports", label: "Reportes", icon: BarChart2 },
   { path: "/settings/config", label: "Configuración", icon: Settings },
 ];
+
 export default function Sidebar({
   collapsed,
   setCollapsed,
@@ -47,6 +50,7 @@ export default function Sidebar({
   const location = useLocation();
   const [isDarkMode, setIsDarkMode] = useState(true);
   const effectiveCollapsed = mobileOpen ? false : collapsed;
+
   useEffect(() => {
     const checkTheme = () => {
       setIsDarkMode(document.documentElement.classList.contains("dark"));
@@ -61,37 +65,37 @@ export default function Sidebar({
     <div className="flex flex-col h-full">
       {/* Header - Desktop & Mobile share same layout, compact styling */}
       <div className={`
-        flex items-center h-14 px-3 border-b border-white/10
+        flex items-center h-16 px-4 border-b border-white/10
         ${effectiveCollapsed ? "justify-center" : "justify-between"}
         ${mobileOpen ? "lg:justify-between" : ""}
       `}>
         {/* Logo Area */}
-        <div className={`flex items-center gap-2 ${mobileOpen ? "flex-row" : ""}`}>
+        <div className={`flex items-center gap-3 ${mobileOpen ? "flex-row" : ""}`}>
           {mobileOpen && (
             <button
               onClick={() => setMobileOpen(false)}
-              className="p-1.5 -ml-2 text-white/40 hover:text-white transition-colors duration-200"
+              className="p-2 -ml-2 text-white/50 hover:text-white transition-colors duration-200"
             >
-              <X size={18} />
+              <X size={20} />
             </button>
           )}
           <Link 
             to="/doctor" 
             className={`
-              flex items-center gap-2 hover:opacity-100 
-              ${location.pathname === "/doctor" ? "opacity-100" : "opacity-70 hover:opacity-100"}
+              flex items-center gap-3 hover:opacity-100 
+              ${location.pathname === "/doctor" ? "opacity-100" : "opacity-80 hover:opacity-100"}
             `}
           >
             <img
               src="/medopz_logo_blanco_solo.svg"
               alt="Logo"
-              className="h-8 w-8 object-contain"
+              className="h-12 w-12 object-contain"
             />
             {!effectiveCollapsed && (
               <img
                 src="/medopz_fuente_blanco.svg"
                 alt="Medopz"
-                className="h-3.5 w-auto object-contain"
+                className="h-4 w-auto object-contain"
               />
             )}
           </Link>
@@ -101,9 +105,9 @@ export default function Sidebar({
         {!effectiveCollapsed && !mobileOpen && (
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="p-1.5 text-white/30 hover:text-white rounded-lg border border-transparent hover:border-white/10 hover:bg-white/5 transition-colors duration-200"
+            className="p-2 text-white/40 hover:text-white rounded-lg border border-transparent hover:border-white/15 hover:bg-white/5 transition-all duration-200"
           >
-            <ChevronLeft size={16} />
+            <ChevronLeft size={18} />
           </button>
         )}
       </div>
@@ -112,15 +116,15 @@ export default function Sidebar({
       {effectiveCollapsed && (
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="mx-auto mt-2 p-2 text-white/30 hover:text-white rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-colors duration-200"
+          className="mx-auto mt-3 p-2.5 text-white/40 hover:text-white rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 transition-all duration-200"
         >
-          <ChevronRight size={16} />
+          <ChevronRight size={18} />
         </button>
       )}
 
       {/* Nav Items */}
-      <nav className="flex-1 overflow-y-auto px-1">
-        <ul className={`flex flex-col ${effectiveCollapsed ? "pt-2" : ""} space-y-0.5`}>
+      <nav className="flex-1 overflow-y-auto px-2 py-2">
+        <ul className={`flex flex-col ${effectiveCollapsed ? "pt-2" : ""} space-y-1`}>
           {navItems.map(({ path, label, icon: Icon }) => {
             const isActive = location.pathname === path;
             return (
@@ -130,28 +134,28 @@ export default function Sidebar({
                   onClick={() => mobileOpen && setMobileOpen(false)}
                   className={`
                     group relative flex items-center
-                    ${effectiveCollapsed ? "justify-center px-3 py-3" : "px-3 py-3"}
+                    ${effectiveCollapsed ? "justify-center px-3 py-3.5" : "px-4 py-3.5"}
                     mb-0.5 overflow-hidden rounded-lg
-                    transition-colors duration-200
+                    transition-all duration-200
                     ${isActive 
-                      ? "bg-white/10 text-white" 
-                      : "text-white/60 hover:text-white hover:bg-white/5"
+                      ? "bg-emerald-500/15 text-white border-l-2 border-emerald-400" 
+                      : "text-white/70 hover:text-white hover:bg-emerald-500/10"
                     }
                   `}
                 >
                   <Icon 
-                    size={20} 
-                    className={`shrink-0 ${isActive ? "text-white" : "group-hover:text-white/80"}`} 
+                    size={22} 
+                    className={`shrink-0 ${isActive ? "text-emerald-400" : "text-white/60 group-hover:text-white/90"}`} 
                     strokeWidth={isActive ? 2 : 1.5} 
                   />
                   
                   {!effectiveCollapsed && (
                     <span 
                       className={`
-                        ml-3 text-[13px] tracking-wide font-medium
+                        ml-3 text-sm font-medium tracking-wide
                         overflow-hidden whitespace-nowrap
-                        transition-opacity duration-200
-                        ${isActive ? "text-white" : "text-white/60 group-hover:text-white/80"}
+                        transition-all duration-200
+                        ${isActive ? "text-white" : "text-white/70 group-hover:text-white/90"}
                       `}
                     >
                       {label}
@@ -165,15 +169,15 @@ export default function Sidebar({
       </nav>
 
       {/* Footer - Doctor Indicator */}
-      <div className="pt-3 border-t border-white/10">
+      <div className="pt-4 border-t border-white/10">
         {effectiveCollapsed ? (
-          <div className="flex justify-center py-3">
-            <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+          <div className="flex justify-center py-4">
+            <div className="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
           </div>
         ) : (
-          <div className="flex items-center gap-2 px-3 pb-3">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
-            <span className="text-[9px] font-medium text-white/40 uppercase tracking-wider">Doctor</span>
+          <div className="flex items-center gap-3 px-4 pb-4">
+            <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
+            <span className="text-xs font-semibold text-white/60 uppercase tracking-wider">Doctor</span>
           </div>
         )}
       </div>
