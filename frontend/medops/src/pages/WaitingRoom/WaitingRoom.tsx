@@ -192,10 +192,7 @@ const filteredServices = useMemo(() =>
     }
   };
   
-  const handleOpenRegisterModal = async () => {
-    if (!services || services.length === 0) {
-      await refetch();
-    }
+  const handleOpenRegisterModal = () => {
     setShowModal(true);
   };
   
