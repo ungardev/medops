@@ -427,7 +427,8 @@ const filteredServices = useMemo(() =>
           }}
           existingEntries={liveQueue} 
           institutionId={selectedInstitutionId || activeInstitution?.id}
-          services={services} 
+          services={services}
+          isServicesLoading={isLoading}
         />
       )}
       

@@ -17,13 +17,15 @@ interface Props {
   existingEntries: WaitingRoomEntry[];
   institutionId?: number | null;
   services: ServiceOption[];
+  isServicesLoading?: boolean;
 }
 const RegisterWalkinModal: React.FC<Props> = ({ 
   onClose, 
   onSuccess, 
   existingEntries,
   institutionId,
-  services 
+  services,
+  isServicesLoading = false 
 }) => {
   const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
@@ -176,19 +178,37 @@ const RegisterWalkinModal: React.FC<Props> = ({
               )}
 
               <div className="mt-5">
-                <label className={labelStyles}>Tipo de Servicio</label>
-                <select
-                  value={selectedServiceId ?? ''}
-                  onChange={(e) => setSelectedServiceId(e.target.value ? Number(e.target.value) : null)}
-                  className={inputStyles}
-                >
-                  <option value="">Seleccionar Servicio</option>
-                  {services.map(service => (
-                    <option key={service.id} value={service.id}>
-                      {service.name}
-                    </option>
-                  ))}
-                </select>
+                {isServicesLoading ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <label className={labelStyles}>Tipo de Servicio</label>
+                      <Loader2 className="w-4 h-4 text-emerald-400 animate-spin" />
+                      <span className="text-xs text-white/40">Cargando...</span>
+                    </div>
+                    <select
+                      disabled
+                      className={`${inputStyles} opacity-50 cursor-not-allowed`}
+                    >
+                      <option value="">Cargando servicios...</option>
+                    </select>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <label className={labelStyles}>Tipo de Servicio</label>
+                    <select
+                      value={selectedServiceId ?? ''}
+                      onChange={(e) => setSelectedServiceId(e.target.value ? Number(e.target.value) : null)}
+                      className={inputStyles}
+                    >
+                      <option value="">{services.length === 0 ? "No hay servicios disponibles" : "Seleccionar Servicio"}</option>
+                      {services.map(service => (
+                        <option key={service.id} value={service.id}>
+                          {service.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
 
               <button 
