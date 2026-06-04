@@ -1,7 +1,5 @@
 // src/pages/Doctor/DoctorDashboard.tsx
 import React, { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import AuditLog from "@/components/Dashboard/AuditLog";
 import { useAuth } from "@/context/AuthContext";
 import { queryClient } from "@/lib/reactQuery";
 import { DashboardFiltersProvider } from "@/context/DashboardFiltersContext";
@@ -10,9 +8,8 @@ import { useInstitutions } from "@/hooks/settings/useInstitutions";
 import { getInstitutionLogoUrl } from "@/utils/institutionLogo";
 import type { InstitutionSettings } from "@/types/config";
 export default function DoctorDashboard() {
-  const { tokens, user } = useAuth();
+  const { tokens } = useAuth();
   const token = tokens.access;
-  const navigate = useNavigate();
   
   const { 
     institutions, 
@@ -130,14 +127,6 @@ export default function DoctorDashboard() {
       <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
         <section className="animate-in slide-in-from-bottom-1 duration-500">
           <ActiveInstitutionCard />
-        </section>
-        
-        <section className="pt-6 border-t border-white/10">
-          <div className="flex items-center gap-2 mb-4">
-             <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-             <span className="text-[11px] font-medium text-white/50 uppercase tracking-wider">Auditoría Operacional</span>
-          </div>
-          <AuditLog />
         </section>
       </div>
     </DashboardFiltersProvider>

@@ -177,14 +177,15 @@ export default function ConfigPage() {
         whatsapp_access_token: whatsAppConfig.whatsapp_access_token,
         reminder_hours_before: whatsAppConfig.reminder_hours_before,
       } as any);
-      if (result?.signature) {
+      const res = result as any;
+      if (res?.signature) {
         const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/api\/?$/, '');
-        const sigUrl = result.signature.startsWith('http') ? result.signature : `${baseUrl}${result.signature.startsWith('/') ? '' : '/'}${result.signature}`;
+        const sigUrl = res.signature.startsWith('http') ? res.signature : `${baseUrl}${res.signature.startsWith('/') ? '' : '/'}${res.signature}`;
         setSignaturePreview(sigUrl);
       }
-      if (result?.photo) {
+      if (res?.photo) {
         const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/api\/?$/, '');
-        const photoUrl = result.photo.startsWith('http') ? result.photo : `${baseUrl}${result.photo.startsWith('/') ? '' : '/'}${result.photo}`;
+        const photoUrl = res.photo.startsWith('http') ? res.photo : `${baseUrl}${res.photo.startsWith('/') ? '' : '/'}${res.photo}`;
         setPhotoPreview(photoUrl);
       }
     } finally {
