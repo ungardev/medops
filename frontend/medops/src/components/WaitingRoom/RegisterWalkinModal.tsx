@@ -200,7 +200,7 @@ const RegisterWalkinModal: React.FC<Props> = ({
                       onChange={(e) => setSelectedServiceId(e.target.value ? Number(e.target.value) : null)}
                       className={inputStyles}
                     >
-                      <option value="">{services.length === 0 ? "No hay servicios disponibles" : "Seleccionar Servicio"}</option>
+                      <option value="">Seleccionar Servicio</option>
                       {services.map(service => (
                         <option key={service.id} value={service.id}>
                           {service.name}
