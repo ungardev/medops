@@ -24,15 +24,15 @@ export default function InstitutionSelector() {
       <button
         ref={buttonRef}
         onClick={toggleMenu}
-        className={`flex items-center gap-2 px-3 py-2 bg-white/5 border rounded-lg transition-all ${
+        className={`flex items-center gap-2 px-4 py-3 bg-white/5 border rounded-xl transition-all ${
           isOpen ? 'border-white/25' : 'border-white/15 hover:border-white/25'
         }`}
       >
-        <BuildingOfficeIcon className="w-4 h-4 text-white/40" />
-        <span className="text-[10px] font-medium text-white/70 truncate max-w-[150px]">
+        <BuildingOfficeIcon className="w-5 h-5 text-white/40" />
+        <span className="text-sm font-medium text-white/70 truncate max-w-[150px]">
           {activeInstitution?.name || "Seleccionar Institución"}
         </span>
-        <ChevronDownIcon className={`w-3 h-3 text-white/30 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDownIcon className={`w-5 h-5 text-white/30 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
       {isOpen && createPortal(
         <>
@@ -45,11 +45,11 @@ export default function InstitutionSelector() {
               left: `${coords.left + coords.width - 280}px`,
               width: '280px' 
             }}
-            className="z-[10001] bg-[#1a1a1b] border border-white/15 rounded-lg shadow-2xl overflow-hidden"
+            className="z-[10001] bg-[#1a1a1b] border border-white/15 rounded-xl shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-2 space-y-1">
-              <div className="px-3 py-2 text-[9px] text-white/30 border-b border-white/10 mb-1">
+            <div className="p-4 space-y-2">
+              <div className="px-4 py-3 text-sm text-white/30 border-b border-white/10 mb-2">
                 Seleccionar Institución
               </div>
               <div className="max-h-[300px] overflow-y-auto">
@@ -57,15 +57,15 @@ export default function InstitutionSelector() {
                   <button
                     key={inst.id}
                     onClick={() => { setActiveInstitution(inst.id); setIsOpen(false); }}
-                    className="flex items-center justify-between w-full px-3 py-2.5 hover:bg-white/5 rounded-lg transition-colors group"
+                    className="flex items-center justify-between w-full px-4 py-3 hover:bg-white/5 rounded-xl transition-colors group"
                   >
                     <div className="text-left">
-                      <div className="text-[10px] text-white/70 group-hover:text-white/90">
+                      <div className="text-sm text-white/70 group-hover:text-white/90">
                         {inst.name}
                       </div>
-                      <div className="text-[8px] text-white/30">{inst.tax_id}</div>
+                      <div className="text-xs text-white/30">{inst.tax_id}</div>
                     </div>
-                    {activeInstitution?.id === inst.id && <CheckIcon className="w-4 h-4 text-emerald-400" />}
+                    {activeInstitution?.id === inst.id && <CheckIcon className="w-5 h-5 text-emerald-400" />}
                   </button>
                 ))}
               </div>
