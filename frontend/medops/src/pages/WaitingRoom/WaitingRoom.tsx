@@ -272,7 +272,7 @@ const filteredServices = useMemo(() =>
           </div>
           
           <div className="min-h-[450px]">
-            {!hubData ? (
+            {isLoading && !hubData ? (
               <div className="h-full min-h-[450px] flex flex-col items-center justify-center p-24">
                 <div className="w-10 h-10 border-2 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin" />
                 <span className="text-sm text-white/50 mt-5">Cargando sala de espera...</span>

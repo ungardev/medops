@@ -50,12 +50,13 @@ const MemoizedPrescriptionPanel = memo(PrescriptionPanel);
 const MemoizedMedicalTestsPanel = memo(MedicalTestsPanel);
 const MemoizedMedicalReferralsPanel = memo(MedicalReferralsPanel);
 
-export default function ConsultationWorkflow({
+const ConsultationWorkflow = function ConsultationWorkflow({
   diagnoses,
   appointmentId,
   treatments,
   readOnly,
 }: ConsultationWorkflowProps) {
+  const stableAppointmentId = useMemo(() => appointmentId, [appointmentId]);
   const createTreatment = useCreateTreatment();
   const createPrescription = useCreatePrescription();
   const [activeTab, setActiveTab] = useState<TabId>("vital-signs");
@@ -111,7 +112,7 @@ export default function ConsultationWorkflow({
         return (
           <MemoizedVitalSignsPanel 
             key={tabId}
-            appointmentId={appointmentId} 
+            appointmentId={stableAppointmentId} 
             readOnly={readOnly} 
           />
         );
@@ -119,7 +120,7 @@ export default function ConsultationWorkflow({
         return (
           <MemoizedClinicalNotePanel 
             key={tabId}
-            appointmentId={appointmentId} 
+            appointmentId={stableAppointmentId} 
             readOnly={readOnly} 
           />
         );
@@ -129,7 +130,7 @@ export default function ConsultationWorkflow({
             key={tabId}
             diagnoses={diagnoses} 
             readOnly={readOnly} 
-            appointmentId={appointmentId}
+            appointmentId={stableAppointmentId}
           />
         );
       case "treatment":
@@ -137,7 +138,7 @@ export default function ConsultationWorkflow({
           <MemoizedTreatmentPanel 
             key={tabId}
             diagnoses={diagnoses}
-            appointmentId={appointmentId} 
+            appointmentId={stableAppointmentId} 
             treatments={treatments}
             readOnly={readOnly}
             onAdd={handleCreateTreatment}
@@ -148,7 +149,7 @@ export default function ConsultationWorkflow({
           <MemoizedPrescriptionPanel 
             key={tabId}
             diagnoses={diagnoses}
-            appointmentId={appointmentId} 
+            appointmentId={stableAppointmentId} 
             readOnly={readOnly}
             onAdd={(data: CreatePrescriptionInput) => createPrescription.mutateAsync(data)}
           />
@@ -157,7 +158,7 @@ export default function ConsultationWorkflow({
         return (
           <MemoizedMedicalTestsPanel 
             key={tabId}
-            appointmentId={appointmentId} 
+            appointmentId={stableAppointmentId} 
             readOnly={readOnly} 
           />
         );
@@ -165,7 +166,7 @@ export default function ConsultationWorkflow({
         return (
           <MemoizedMedicalReferralsPanel 
             key={tabId}
-            appointmentId={appointmentId} 
+            appointmentId={stableAppointmentId} 
             diagnoses={diagnoses}
             readOnly={readOnly} 
           />
@@ -173,7 +174,7 @@ export default function ConsultationWorkflow({
       default:
         return null;
     }
-  }, [appointmentId, readOnly, diagnoses, treatments, handleCreateTreatment, createPrescription]);
+  }, [stableAppointmentId, readOnly, diagnoses, treatments, handleCreateTreatment, createPrescription]);
 
   return (
     <div className="w-full space-y-6">
@@ -216,3 +217,5 @@ export default function ConsultationWorkflow({
     </div>
   );
 }
+
+export default memo(ConsultationWorkflow);

@@ -1,5 +1,6 @@
 // src/hooks/consultations/useChargeOrder.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData } from "@tanstack/react-query";
 import { apiFetchOptional, apiFetch } from "../../api/client";
 import { ChargeOrder, Payment } from "../../types/payments";
 // -----------------------------
@@ -36,6 +37,8 @@ export function useChargeOrder(appointmentId: number) {
     queryFn: () => fetchChargeOrder(appointmentId),
     enabled: !!appointmentId && !isNaN(appointmentId),
     staleTime: 30_000,
+    gcTime: Infinity,
+    placeholderData: keepPreviousData,
   });
 }
 export function useCreatePayment(orderId?: number, appointmentId?: number) {

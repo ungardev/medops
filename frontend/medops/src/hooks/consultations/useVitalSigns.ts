@@ -9,7 +9,7 @@ export function useVitalSigns(appointmentId: number) {
     queryKey: ["vital-signs", appointmentId],
     queryFn: async () => getVitalSigns(appointmentId),
     staleTime: 1000 * 60 * 10,
-    gcTime: 1000 * 60 * 60 * 24,
+    gcTime: Infinity,
     placeholderData: keepPreviousData,
     enabled: !!appointmentId,
   });
