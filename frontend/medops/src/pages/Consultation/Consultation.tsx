@@ -62,12 +62,16 @@ export default function Consultation() {
   const [exportErrors, setExportErrors] = useState<{ category: string; error: string }[] | null>(null);
   const [exportSuccess, setExportSuccess] = useState<{ documents: GeneratedDocument[]; skipped: string[] } | null>(null);
   const [showCommitModal, setShowCommitModal] = useState(false);
+  const [initialized, setInitialized] = useState(false);
   
   useEffect(() => {
-    if (!isLoading && !isFetching && !appointment) {
+    if (!isLoading && !isFetching) {
+      setInitialized(true);
+    }
+    if (initialized && !isLoading && !isFetching && !appointment) {
       navigate("/waitingroom");
     }
-  }, [appointment, isLoading, isFetching, navigate]);
+  }, [initialized, appointment, isLoading, isFetching, navigate]);
 
   if (isLoading || isFetching) return (
     <div className="min-h-screen flex items-center justify-center bg-black">

@@ -21,6 +21,7 @@ export function useCurrentConsultation() {
       return mapAppointment(clinical);
     },
     staleTime: 60_000,
+    gcTime: 1000 * 60 * 60 * 24,
   });
   
   // 2. MUTACIÓN: Actualizar Notas (con Invalidación Local)

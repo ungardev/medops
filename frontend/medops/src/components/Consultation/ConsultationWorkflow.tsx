@@ -106,13 +106,11 @@ export default function ConsultationWorkflow({
   }, [createTreatment, diagnoses, appointmentId]);
 
   const renderTabContent = useCallback((tabId: TabId) => {
-    const key = `panel-${tabId}`;
-    
     switch (tabId) {
       case "vital-signs":
         return (
           <MemoizedVitalSignsPanel 
-            key={key}
+            key={tabId}
             appointmentId={appointmentId} 
             readOnly={readOnly} 
           />
@@ -120,7 +118,7 @@ export default function ConsultationWorkflow({
       case "clinical-note":
         return (
           <MemoizedClinicalNotePanel 
-            key={key}
+            key={tabId}
             appointmentId={appointmentId} 
             readOnly={readOnly} 
           />
@@ -128,7 +126,7 @@ export default function ConsultationWorkflow({
       case "diagnosis":
         return (
           <MemoizedDiagnosisPanel 
-            key={key}
+            key={tabId}
             diagnoses={diagnoses} 
             readOnly={readOnly} 
             appointmentId={appointmentId}
@@ -137,7 +135,7 @@ export default function ConsultationWorkflow({
       case "treatment":
         return (
           <MemoizedTreatmentPanel 
-            key={key}
+            key={tabId}
             diagnoses={diagnoses}
             appointmentId={appointmentId} 
             treatments={treatments}
@@ -148,7 +146,7 @@ export default function ConsultationWorkflow({
       case "prescription":
         return (
           <MemoizedPrescriptionPanel 
-            key={key}
+            key={tabId}
             diagnoses={diagnoses}
             appointmentId={appointmentId} 
             readOnly={readOnly}
@@ -158,7 +156,7 @@ export default function ConsultationWorkflow({
       case "tests":
         return (
           <MemoizedMedicalTestsPanel 
-            key={key}
+            key={tabId}
             appointmentId={appointmentId} 
             readOnly={readOnly} 
           />
@@ -166,7 +164,7 @@ export default function ConsultationWorkflow({
       case "referrals":
         return (
           <MemoizedMedicalReferralsPanel 
-            key={key}
+            key={tabId}
             appointmentId={appointmentId} 
             diagnoses={diagnoses}
             readOnly={readOnly} 

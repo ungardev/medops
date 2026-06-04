@@ -59,7 +59,6 @@ const DoctorDashboard = lazy(() => import("./pages/Doctor/DoctorDashboard"));
 const Patients = lazy(() => import("./pages/Patients/Patients"));
 const PatientDetail = lazy(() => import("./pages/Patients/PatientDetail"));
 const Appointments = lazy(() => import("./pages/Appointments/Appointments"));
-const Consultation = lazy(() => import("./pages/Consultation/Consultation"));
 const WaitingRoom = lazy(() => import("./pages/WaitingRoom/WaitingRoom"));
 
 // Lazy-loaded pages (Priority 2 - secondary routes)
@@ -102,6 +101,7 @@ import PatientHospitalization from "./pages/PatientPortal/PatientHospitalization
 
 // Doctor Portal Imports
 import DoctorActivate from "./pages/DoctorPortal/DoctorActivate";
+import Consultation from "./pages/Consultation/Consultation";
 
 // Admin Portal Imports
 import AdminLayout from "./pages/Admin/AdminLayout";
@@ -211,7 +211,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                     />
                     <Route
                       path="consultation"
-                      element={<LazyRoute><Consultation /></LazyRoute>}
+                      element={<Consultation />}
                     />
 
                     {/* Priority 2 routes - Lazy loaded */}
