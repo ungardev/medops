@@ -390,29 +390,29 @@ const handleSubmit = () => {
     setIsSaving(false);
     onClose();
   };
-  const inputClass = "w-full bg-white/5 border border-white/15 rounded-lg px-4 py-2.5 text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30";
-  const labelClass = "text-[10px] font-medium text-white/50 uppercase tracking-wider mb-1.5 block";
-  const sectionClass = "bg-white/5 border border-white/10 rounded-lg p-5 space-y-4";
+  const inputClass = "w-full bg-white/5 border border-white/15 rounded-xl px-5 py-3 text-sm text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30";
+  const labelClass = "text-xs font-medium text-white/50 uppercase tracking-wider mb-2 block";
+  const sectionClass = "bg-white/5 border border-white/10 rounded-xl p-6 space-y-5";
   if (!open) return null;
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div 
-        className="bg-[#1a1a1b] border border-white/15 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl rounded-lg"
+        className="bg-[#1a1a1b] border border-white/15 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl rounded-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[#1f1f1f] sticky top-0 rounded-t-lg shadow-md">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-white/10 bg-[#1a1a1b] sticky top-0 rounded-t-xl shadow-md">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
               <ScissorsIcon className="h-4 w-4 text-emerald-400" />
             </div>
             <div>
-              <h3 className="text-[12px] font-semibold text-white">
+              <h3 className="text-base font-semibold text-white">
                 {initial?.id ? "Editar Cirugía" : "Nueva Cirugía"}
               </h3>
-              <p className="text-[10px] text-white/40 mt-0.5">Procedimiento quirúrgico</p>
+              <p className="text-sm text-white/40 mt-0.5">Procedimiento quirúrgico</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-white/40 hover:text-white p-1.5 hover:bg-white/10 rounded-lg transition-colors">
+          <button onClick={onClose} className="text-white/40 hover:text-white p-2 hover:bg-white/10 rounded-xl transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -463,9 +463,9 @@ const handleSubmit = () => {
           
           {/* Equipo Quirúrgico */}
           <div className={sectionClass}>
-            <div className="flex items-center gap-2 mb-4">
-              <Heart className="w-4 h-4 text-red-400" />
-              <span className="text-[11px] font-medium text-red-400 uppercase">Equipo Quirúrgico</span>
+            <div className="flex items-center gap-2 mb-5">
+              <Heart className="w-5 h-5 text-red-400" />
+              <span className="text-sm font-medium text-red-400 uppercase">Equipo Quirúrgico</span>
             </div>
             
             {/* Cirujano */}
@@ -487,7 +487,7 @@ const handleSubmit = () => {
                   placeholder="Buscar cirujano..."
                 />
                 {doctorSearchQuery.length >= 2 && surgeonResults.length > 0 && (
-                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg max-h-96 overflow-y-auto z-10 shadow-xl">
+                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-xl max-h-96 overflow-y-auto z-10 shadow-xl">
                     {surgeonResults.slice(0, 5).map((doctor) => (
                       <div
                         key={doctor.id}
@@ -506,7 +506,7 @@ const handleSubmit = () => {
                   </div>
                 )}
                 {doctorSearchQuery.length >= 2 && surgeonResults.length === 0 && !surgeonLoading && (
-                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg p-3 z-10 shadow-xl flex flex-col gap-2">
+                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-xl p-3 z-10 shadow-xl flex flex-col gap-2">
                     <span className="text-white/50 text-[11px]">
                       No se encontraron doctores.
                     </span>
@@ -523,7 +523,7 @@ const handleSubmit = () => {
                   </div>
                 )}
                 {doctorSearchQuery.length >= 2 && surgeonLoading && (
-                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg p-3 z-10 shadow-xl">
+                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-xl p-3 z-10 shadow-xl">
                     <span className="text-white/50 text-[10px] flex items-center gap-2">
                       <div className="w-3 h-3 border border-white/20 border-t-emerald-400 rounded-full animate-spin" />
                       Buscando...
@@ -533,7 +533,7 @@ const handleSubmit = () => {
               </div>
               {form.surgeon_name && (
                 <div className="mt-2 flex items-center gap-2 px-4 py-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
-                  <span className="text-emerald-300 text-[11px]">{form.surgeon_name}</span>
+                  <span className="text-xs text-emerald-300">{form.surgeon_name}</span>
                   <button
                     onClick={() => clearDoctorSelection("surgeon")}
                     className="text-white/40 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"
@@ -563,7 +563,7 @@ const handleSubmit = () => {
                   placeholder="Buscar anestesia..."
                 />
                 {anesthesiologistSearchQuery.length >= 2 && anesthesiologistResults.length > 0 && (
-                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg max-h-96 overflow-y-auto z-10 shadow-xl">
+                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-xl max-h-96 overflow-y-auto z-10 shadow-xl">
                     {anesthesiologistResults.slice(0, 5).map((doctor) => (
                       <div
                         key={doctor.id}
@@ -582,7 +582,7 @@ const handleSubmit = () => {
                   </div>
                 )}
                 {anesthesiologistSearchQuery.length >= 2 && anesthesiologistResults.length === 0 && !anesthesiologistLoading && (
-                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg p-3 z-10 shadow-xl flex flex-col gap-2">
+                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-xl p-3 z-10 shadow-xl flex flex-col gap-2">
                     <span className="text-white/50 text-[11px]">
                       No se encontraron doctores.
                     </span>
@@ -599,7 +599,7 @@ const handleSubmit = () => {
                   </div>
                 )}
                 {anesthesiologistSearchQuery.length >= 2 && anesthesiologistLoading && (
-                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg p-3 z-10 shadow-xl">
+                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-xl p-3 z-10 shadow-xl">
                     <span className="text-white/50 text-[10px] flex items-center gap-2">
                       <div className="w-3 h-3 border border-white/20 border-t-emerald-400 rounded-full animate-spin" />
                       Buscando...
@@ -609,7 +609,7 @@ const handleSubmit = () => {
               </div>
               {form.anesthesiologist_name && (
                 <div className="mt-2 flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border border-red-500/20 rounded-lg">
-                  <span className="text-red-300 text-[11px]">{form.anesthesiologist_name}</span>
+                  <span className="text-xs text-red-300">{form.anesthesiologist_name}</span>
                   <button
                     onClick={() => clearDoctorSelection("anesthesiologist")}
                     className="text-white/40 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"
@@ -639,7 +639,7 @@ const handleSubmit = () => {
                   placeholder="Buscar asistentes..."
                 />
                 {surgicalAssistantsSearchQuery.length >= 2 && surgicalAssistantsResults.length > 0 && (
-                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg max-h-96 overflow-y-auto z-10 shadow-xl">
+                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-xl max-h-96 overflow-y-auto z-10 shadow-xl">
                     {surgicalAssistantsResults.slice(0, 5).map((doctor) => (
                       <div
                         key={doctor.id}
@@ -658,7 +658,7 @@ const handleSubmit = () => {
                   </div>
                 )}
                 {surgicalAssistantsSearchQuery.length >= 2 && surgicalAssistantsResults.length === 0 && !surgicalAssistantsLoading && (
-                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg p-3 z-10 shadow-xl flex flex-col gap-2">
+                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-xl p-3 z-10 shadow-xl flex flex-col gap-2">
                     <span className="text-white/50 text-[11px]">
                       No se encontraron doctores.
                     </span>
@@ -675,7 +675,7 @@ const handleSubmit = () => {
                   </div>
                 )}
                 {surgicalAssistantsSearchQuery.length >= 2 && surgicalAssistantsLoading && (
-                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg p-3 z-10 shadow-xl">
+                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-xl p-3 z-10 shadow-xl">
                     <span className="text-white/50 text-[10px] flex items-center gap-2">
                       <div className="w-3 h-3 border border-white/20 border-t-emerald-400 rounded-full animate-spin" />
                       Buscando...
@@ -685,7 +685,7 @@ const handleSubmit = () => {
               </div>
               {form.surgical_assistants_name && (
                 <div className="mt-2 flex items-center gap-2 px-4 py-2.5 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                  <span className="text-blue-300 text-[11px]">{form.surgical_assistants_name}</span>
+                  <span className="text-xs text-blue-300">{form.surgical_assistants_name}</span>
                   <button
                     onClick={() => clearDoctorSelection("surgical_assistants")}
                     className="text-white/40 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"
@@ -701,10 +701,10 @@ const handleSubmit = () => {
           <div className={sectionClass}>
             <div className="flex items-center justify-between gap-2 mb-4">
               <div className="flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-yellow-400" />
-                <span className="text-[11px] font-medium text-yellow-400 uppercase">Diagnósticos (ICD-11)</span>
+                <AlertTriangle className="w-5 h-5 text-yellow-400" />
+                <span className="text-sm font-medium text-yellow-400 uppercase">Diagnósticos (ICD-11)</span>
               </div>
-              <span className="text-[9px] text-white/40">{form.diagnoses.length} registrado{form.diagnoses.length !== 1 ? 's' : ''}</span>
+              <span className="text-xs text-white/40">{form.diagnoses.length} registrado{form.diagnoses.length !== 1 ? 's' : ''}</span>
             </div>
             
             {/* Lista de diagnósticos */}
@@ -735,21 +735,21 @@ const handleSubmit = () => {
                   placeholder="Buscar diagnóstico por código o descripción..."
                 />
                 {diagnosisSearchQuery.length >= 2 && icdResults.length > 0 && (
-                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg max-h-96 overflow-y-auto z-10 shadow-xl">
+                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-xl max-h-96 overflow-y-auto z-10 shadow-xl">
                     {icdResults.map((diagnosis: any) => (
                       <div 
                         key={diagnosis.id}
                         className="px-4 py-2.5 hover:bg-white/15 cursor-pointer border-b border-white/10 last:border-b-0 transition-colors flex items-start gap-3"
                         onClick={() => selectDiagnosisResult(diagnosis)}
                       >
-                        <span className="text-[11px] font-bold text-emerald-400 shrink-0">{diagnosis.icd_code}</span>
-                        <span className="text-[11px] text-white/80 leading-tight">{diagnosis.title}</span>
+                        <span className="text-xs font-bold text-emerald-400 shrink-0">{diagnosis.icd_code}</span>
+                        <span className="text-xs text-white/80 leading-tight">{diagnosis.title}</span>
                       </div>
                     ))}
                   </div>
                 )}
                 {diagnosisSearchQuery.length >= 2 && icdResults.length === 0 && icdLoading && (
-                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg p-2 z-10 shadow-xl">
+                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-xl p-2 z-10 shadow-xl">
                     <span className="text-white/50 text-[10px] flex items-center gap-2">
                       <div className="w-3 h-3 border border-white/20 border-t-emerald-400 rounded-full animate-spin" />
                       Buscando diagnósticos...
@@ -765,25 +765,25 @@ const handleSubmit = () => {
                 <div className="flex items-center justify-between pb-3 border-b border-emerald-500/20">
                   <div className="flex items-center gap-2">
                     <HashIcon className="w-5 h-5 text-emerald-400" />
-                    <span className="text-[12px] font-bold uppercase tracking-wider text-emerald-400">
+                    <span className="text-sm font-bold uppercase tracking-wider text-emerald-400">
                       {selectedDiagnosisResult.icd_code}
                     </span>
                   </div>
-                  <span className="text-[10px] text-white/60">
+                  <span className="text-xs text-white/60">
                     {selectedDiagnosisResult.title}
                   </span>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider flex items-center gap-1">
-                      <ClipboardListIcon className="w-4 h-4" />
+                    <label className="text-xs font-medium text-white/60 uppercase tracking-wider flex items-center gap-2">
+                      <ClipboardListIcon className="w-5 h-5" />
                       Tipo de Diagnóstico
                     </label>
                     <select
                       value={selectedDiagnosisType}
                       onChange={(e) => setSelectedDiagnosisType(e.target.value as DiagnosisType)}
-                      className="w-full bg-white/5 border border-white/15 p-2.5 text-[11px] focus:border-emerald-500/50 outline-none rounded-lg"
+                      className="w-full bg-white/5 border border-white/15 p-3 text-sm focus:border-emerald-500/50 outline-none rounded-xl"
                     >
                       {TYPE_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value}>
@@ -793,14 +793,14 @@ const handleSubmit = () => {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider flex items-center gap-1">
-                      <CheckCircleIcon className="w-4 h-4" />
+                    <label className="text-xs font-medium text-white/60 uppercase tracking-wider flex items-center gap-2">
+                      <CheckCircleIcon className="w-5 h-5" />
                       Estado
                     </label>
                     <select
                       value={selectedDiagnosisStatus}
                       onChange={(e) => setSelectedDiagnosisStatus(e.target.value as DiagnosisStatus)}
-                      className="w-full bg-white/5 border border-white/15 p-2.5 text-[11px] focus:border-emerald-500/50 outline-none rounded-lg"
+                      className="w-full bg-white/5 border border-white/15 p-3 text-sm focus:border-emerald-500/50 outline-none rounded-xl"
                     >
                       {STATUS_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value}>
@@ -817,14 +817,14 @@ const handleSubmit = () => {
                     className="flex-1 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 py-2.5 flex items-center justify-center gap-2 transition-all rounded-lg"
                   >
                     <Plus className="w-4 h-4" />
-                    <span className="text-[11px] font-medium">Confirmar</span>
+                    <span className="text-sm font-medium">Confirmar</span>
                   </button>
                   <button
                     onClick={cancelDiagnosisSelection}
                     className="flex-1 bg-white/5 hover:bg-white/10 border border-white/15 text-white/60 py-2.5 flex items-center justify-center gap-2 transition-all rounded-lg"
                   >
                     <X className="w-4 h-4" />
-                    <span className="text-[11px] font-medium">Cancelar</span>
+                    <span className="text-sm font-medium">Cancelar</span>
                   </button>
                 </div>
               </div>
@@ -832,15 +832,15 @@ const handleSubmit = () => {
             
             {form.diagnoses.length === 0 && !showDiagnosisForm && (
               <div className="mt-3 p-4 border border-dashed border-white/15 text-center rounded-lg">
-                <span className="text-[10px] text-white/40">No hay diagnósticos registrados</span>
+                <span className="text-xs text-white/40">No hay diagnósticos registrados</span>
               </div>
             )}
           </div>
           {/* Clasificación */}
           <div className={sectionClass}>
             <div className="flex items-center gap-2 mb-2">
-              <ShieldCheckIcon className="w-4 h-4 text-white/40" />
-              <span className="text-[11px] font-medium text-white/60">Clasificación de Riesgo</span>
+              <ShieldCheckIcon className="w-5 h-5 text-white/40" />
+              <span className="text-sm font-medium text-white/60">Clasificación de Riesgo</span>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -980,17 +980,17 @@ const handleSubmit = () => {
             </div>
           </div>
         </div>
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/15 bg-white/5 rounded-b-lg">
+        <div className="flex items-center justify-end gap-3 px-6 py-5 border-t border-white/15 bg-white/5 rounded-b-xl">
           <button 
             onClick={onClose} 
-            className="px-5 py-2.5 text-[11px] font-medium text-white/50 hover:text-white transition-colors rounded-lg hover:bg-white/5"
+            className="px-5 py-3 text-sm font-medium text-white/50 hover:text-white transition-colors rounded-xl hover:bg-white/5"
           >
             Cancelar
           </button>
           <button 
             onClick={handleSubmit}
             disabled={isSaving}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-[11px] font-medium text-white bg-emerald-500/15 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all disabled:opacity-50"
+            className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium text-white bg-emerald-500/15 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all disabled:opacity-50"
           >
             {isSaving ? (
               <>

@@ -361,29 +361,29 @@ const selectDoctor = (doctor: any) => {
     setIsSaving(false);
     onClose();
   };
-  const inputClass = "w-full bg-white/5 border border-white/15 rounded-lg px-4 py-2.5 text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30";
-  const labelClass = "text-[10px] font-medium text-white/50 uppercase tracking-wider mb-1.5 block";
-  const sectionClass = "bg-white/5 border border-white/10 rounded-lg p-5 space-y-4";
+  const inputClass = "w-full bg-white/5 border border-white/15 rounded-xl px-5 py-3 text-sm text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30";
+  const labelClass = "text-xs font-medium text-white/50 uppercase tracking-wider mb-2 block";
+  const sectionClass = "bg-white/5 border border-white/10 rounded-xl p-6 space-y-5";
   if (!open) return null;
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div 
-        className="bg-[#1a1a1b] border border-white/15 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl rounded-lg"
+        className="bg-[#1a1a1b] border border-white/15 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl rounded-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[#1f1f1f] sticky top-0 rounded-t-lg shadow-md">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-white/10 bg-[#1a1a1b] sticky top-0 rounded-t-xl shadow-md">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
               <Bed className="h-4 w-4 text-emerald-400" />
             </div>
             <div>
-              <h3 className="text-[12px] font-semibold text-white">
+              <h3 className="text-base font-semibold text-white">
                 {initial?.id ? "Editar Hospitalización" : "Nueva Admisión"}
               </h3>
-              <p className="text-[10px] text-white/40 mt-0.5">Registro de hospitalización</p>
+              <p className="text-sm text-white/40 mt-0.5">Registro de hospitalización</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-white/40 hover:text-white p-1.5 hover:bg-white/10 rounded-lg transition-colors">
+          <button onClick={onClose} className="text-white/40 hover:text-white p-2 hover:bg-white/10 rounded-xl transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -555,7 +555,7 @@ const selectDoctor = (doctor: any) => {
                 {form.attending_doctor_name && (
                   <div className="mt-3 flex items-center gap-2 px-4 py-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
                     <div className="flex items-center gap-2">
-                      <span className="text-emerald-300 text-[11px]">{form.attending_doctor_name}</span>
+                      <span className="text-xs text-emerald-300">{form.attending_doctor_name}</span>
                       <button
                         onClick={clearDoctorSelection}
                         className="text-white/40 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"
@@ -572,10 +572,10 @@ const selectDoctor = (doctor: any) => {
             <div className={sectionClass}>
               <div className="flex items-center justify-between gap-2 mb-4">
                 <div className="flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-yellow-400" />
-                  <span className="text-[11px] font-medium text-yellow-400 uppercase">Diagnósticos de Ingreso (ICD-11)</span>
+                  <AlertTriangle className="w-5 h-5 text-yellow-400" />
+                  <span className="text-sm font-medium text-yellow-400 uppercase">Diagnósticos de Ingreso (ICD-11)</span>
                 </div>
-                <span className="text-[9px] text-white/40">{form.admission_diagnoses.length} registrado{form.admission_diagnoses.length !== 1 ? 's' : ''}</span>
+                <span className="text-xs text-white/40">{form.admission_diagnoses.length} registrado{form.admission_diagnoses.length !== 1 ? 's' : ''}</span>
               </div>
               
               {/* Lista de diagnósticos */}
@@ -613,8 +613,8 @@ const selectDoctor = (doctor: any) => {
                           className="px-4 py-2.5 hover:bg-white/15 cursor-pointer border-b border-white/10 last:border-b-0 transition-colors flex items-start gap-3"
                           onClick={() => selectDiagnosisResult(diagnosis)}
                         >
-                          <span className="text-[11px] font-bold text-emerald-400 shrink-0">{diagnosis.icd_code}</span>
-                          <span className="text-[11px] text-white/80 leading-tight">{diagnosis.title}</span>
+                          <span className="text-xs font-bold text-emerald-400 shrink-0">{diagnosis.icd_code}</span>
+                          <span className="text-xs text-white/80 leading-tight">{diagnosis.title}</span>
                         </div>
                       ))}
                     </div>
@@ -636,25 +636,25 @@ const selectDoctor = (doctor: any) => {
                   <div className="flex items-center justify-between pb-3 border-b border-emerald-500/20">
                     <div className="flex items-center gap-2">
                       <HashIcon className="w-5 h-5 text-emerald-400" />
-                      <span className="text-[12px] font-bold uppercase tracking-wider text-emerald-400">
+                      <span className="text-sm font-bold uppercase tracking-wider text-emerald-400">
                         {selectedDiagnosisResult.icd_code}
                       </span>
                     </div>
-                    <span className="text-[10px] text-white/60">
+                    <span className="text-xs text-white/60">
                       {selectedDiagnosisResult.title}
                     </span>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider flex items-center gap-1">
-                        <ClipboardListIcon className="w-4 h-4" />
+                      <label className="text-xs font-medium text-white/60 uppercase tracking-wider flex items-center gap-2">
+                        <ClipboardListIcon className="w-5 h-5" />
                         Tipo de Diagnóstico
                       </label>
                       <select
                         value={selectedDiagnosisType}
                         onChange={(e) => setSelectedDiagnosisType(e.target.value as DiagnosisType)}
-                        className="w-full bg-white/5 border border-white/15 p-2.5 text-[11px] focus:border-emerald-500/50 outline-none rounded-lg"
+                        className="w-full bg-white/5 border border-white/15 p-3 text-sm focus:border-emerald-500/50 outline-none rounded-xl"
                       >
                         {TYPE_OPTIONS.map((opt) => (
                           <option key={opt.value} value={opt.value}>
@@ -664,14 +664,14 @@ const selectDoctor = (doctor: any) => {
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider flex items-center gap-1">
-                        <CheckCircleIcon className="w-4 h-4" />
+                      <label className="text-xs font-medium text-white/60 uppercase tracking-wider flex items-center gap-2">
+                        <CheckCircleIcon className="w-5 h-5" />
                         Estado
                       </label>
                       <select
                         value={selectedDiagnosisStatus}
                         onChange={(e) => setSelectedDiagnosisStatus(e.target.value as DiagnosisStatus)}
-                        className="w-full bg-white/5 border border-white/15 p-2.5 text-[11px] focus:border-emerald-500/50 outline-none rounded-lg"
+                        className="w-full bg-white/5 border border-white/15 p-3 text-sm focus:border-emerald-500/50 outline-none rounded-xl"
                       >
                         {STATUS_OPTIONS.map((opt) => (
                           <option key={opt.value} value={opt.value}>
@@ -688,14 +688,14 @@ const selectDoctor = (doctor: any) => {
                       className="flex-1 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 py-2.5 flex items-center justify-center gap-2 transition-all rounded-lg"
                     >
                       <Plus className="w-4 h-4" />
-                      <span className="text-[11px] font-medium">Confirmar</span>
+                      <span className="text-sm font-medium">Confirmar</span>
                     </button>
                     <button
                       onClick={cancelDiagnosisSelection}
                       className="flex-1 bg-white/5 hover:bg-white/10 border border-white/15 text-white/60 py-2.5 flex items-center justify-center gap-2 transition-all rounded-lg"
                     >
                       <X className="w-4 h-4" />
-                      <span className="text-[11px] font-medium">Cancelar</span>
+                      <span className="text-sm font-medium">Cancelar</span>
                     </button>
                   </div>
                 </div>
@@ -703,7 +703,7 @@ const selectDoctor = (doctor: any) => {
               
               {form.admission_diagnoses.length === 0 && !showDiagnosisForm && (
                 <div className="mt-3 p-4 border border-dashed border-white/15 text-center rounded-lg">
-                  <span className="text-[10px] text-white/40">No hay diagnósticos de ingreso registrados</span>
+                  <span className="text-xs text-white/40">No hay diagnósticos de ingreso registrados</span>
                 </div>
               )}
             </div>
@@ -752,10 +752,10 @@ const selectDoctor = (doctor: any) => {
            
            {/* Signos Vitales */}
            <div className={sectionClass}>
-             <div className="flex items-center gap-2 mb-4">
-               <Heart className="w-4 h-4 text-red-400" />
-               <span className="text-[11px] font-medium text-red-400 uppercase">Signos Vitales</span>
-             </div>
+<div className="flex items-center gap-2 mb-5">
+                <Heart className="w-5 h-5 text-red-400" />
+                <span className="text-sm font-medium text-red-400 uppercase">Signos Vitales</span>
+              </div>
              <div className="grid grid-cols-3 gap-4">
                <div>
                  <label className={labelClass}>Peso (kg)</label>
@@ -848,8 +848,8 @@ const selectDoctor = (doctor: any) => {
              </div>
              {calculateBMI() && (
                <div className="mt-4 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                 <span className="text-[10px] text-blue-400 uppercase">IMC: </span>
-                 <span className="text-[12px] text-blue-300 font-mono">{calculateBMI()?.toFixed(1)}</span>
+<span className="text-xs text-blue-400 uppercase">IMC: </span>
+                  <span className="text-sm text-blue-300 font-mono">{calculateBMI()?.toFixed(1)}</span>
                </div>
              )}
            </div>
@@ -869,9 +869,9 @@ const selectDoctor = (doctor: any) => {
            
            {/* Planificación del Alta */}
            <div className={sectionClass}>
-              <div className="flex items-center gap-2 mb-4">
-                <CheckCircle className="w-4 h-4 text-emerald-400" />
-                <span className="text-[11px] font-medium text-emerald-400 uppercase">Planificación del Alta</span>
+              <div className="flex items-center gap-2 mb-5">
+                <CheckCircle className="w-5 h-5 text-emerald-400" />
+                <span className="text-sm font-medium text-emerald-400 uppercase">Planificación del Alta</span>
               </div>
              <div className="grid grid-cols-2 gap-4">
                <div>
@@ -929,17 +929,17 @@ const selectDoctor = (doctor: any) => {
              </div>
            </div>
         </div>
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/15 bg-white/5 rounded-b-lg">
+        <div className="flex items-center justify-end gap-3 px-6 py-5 border-t border-white/15 bg-white/5 rounded-b-xl">
           <button 
             onClick={onClose} 
-            className="px-5 py-2.5 text-[11px] font-medium text-white/50 hover:text-white transition-colors rounded-lg hover:bg-white/5"
+            className="px-5 py-3 text-sm font-medium text-white/50 hover:text-white transition-colors rounded-xl hover:bg-white/5"
           >
             Cancelar
           </button>
           <button 
             onClick={handleSubmit}
             disabled={isSaving}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-[11px] font-medium text-white bg-emerald-500/15 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all disabled:opacity-50"
+            className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium text-white bg-emerald-500/15 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all disabled:opacity-50"
           >
             {isSaving ? (
               <>
