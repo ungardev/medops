@@ -62,12 +62,13 @@ const RegisterWalkinModal: React.FC<Props> = ({
     setSelectedServiceId(null);
   };
   const handleProceedWithPatient = () => {
-    if (selectedPatient) {
+    if (selectedPatient && selectedServiceId) {
       onSuccess(selectedPatient.id, institutionId || null, selectedServiceId);
       onClose();
     }
   };
   const handleNewPatientCreated = (patientId: number) => {
+    if (!selectedServiceId) return;
     setShowNewPatientModal(false);
     queryClient.invalidateQueries({ queryKey: ["notifications"] });
     onSuccess(patientId, institutionId || null, selectedServiceId);
@@ -149,19 +150,27 @@ const RegisterWalkinModal: React.FC<Props> = ({
                       </div>
                   ) : (
                     <div className="flex gap-3 mt-6">
-                      <button 
-                        onClick={handleProceedWithPatient}
-                        className="flex-1 bg-emerald-500/15 text-emerald-400 text-sm font-medium py-3 rounded-xl hover:bg-emerald-500/25 transition-all border border-emerald-500/25"
-                      >
-                        Continuar
-                      </button>
-                      <button 
-                        onClick={() => setSelectedPatient(null)}
-                        className="px-5 border border-white/15 text-white/40 text-sm font-medium rounded-xl hover:bg-white/5 transition-colors"
-                      >
-                        Cancelar
-                      </button>
-                    </div>
+                        {!selectedServiceId && (
+                          <div className="w-full p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs text-center rounded-xl flex items-center justify-center gap-2">
+                            <AlertTriangle className="w-4 h-4 shrink-0" />
+                            Selecciona un servicio para continuar
+                          </div>
+                        )}
+                        {selectedServiceId && (
+                          <button 
+                            onClick={handleProceedWithPatient}
+                            className="flex-1 bg-emerald-500/15 text-emerald-400 text-sm font-medium py-3 rounded-xl hover:bg-emerald-500/25 transition-all border border-emerald-500/25"
+                          >
+                            Continuar
+                          </button>
+                        )}
+                        <button 
+                          onClick={() => setSelectedPatient(null)}
+                          className="px-5 border border-white/15 text-white/40 text-sm font-medium rounded-xl hover:bg-white/5 transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
                   )}
                 </div>
               )}
