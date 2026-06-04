@@ -52,7 +52,7 @@ export default function Consultation() {
   const queryClient = useQueryClient();
   
   const { consultationQuery, updateStatus } = useCurrentConsultation();
-  const { data: appointment, isLoading } = consultationQuery;
+  const { data: appointment, isLoading, isFetching } = consultationQuery;
   
   const { activeInstitution } = useInstitutions();
   
@@ -64,12 +64,12 @@ export default function Consultation() {
   const [showCommitModal, setShowCommitModal] = useState(false);
   
   useEffect(() => {
-    if (!isLoading && !appointment) {
+    if (!isLoading && !isFetching && !appointment) {
       navigate("/waitingroom");
     }
-  }, [appointment, isLoading, navigate]);
+  }, [appointment, isLoading, isFetching, navigate]);
 
-  if (isLoading) return (
+  if (isLoading || isFetching) return (
     <div className="min-h-screen flex items-center justify-center bg-black">
       <div className="text-center space-y-5">
         <div className="w-12 h-12 border-[3px] border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto" />
@@ -148,15 +148,15 @@ export default function Consultation() {
       />
       
       {isCrossInstitution && (
-        <div className="bg-amber-500/10 border border-amber-500/25 rounded-lg p-3 mx-4">
+        <div className="bg-amber-500/10 border border-amber-500/25 rounded-xl p-4 mx-4">
           <div className="flex items-center justify-center gap-2">
-            <ExclamationTriangleIcon className="w-4 h-4 text-amber-400" />
+            <ExclamationTriangleIcon className="w-5 h-5 text-amber-400" />
             <div className="text-center">
-              <h3 className="text-[11px] font-medium text-amber-300">
+              <h3 className="text-sm font-medium text-amber-300">
                 Acceso interinstitucional
               </h3>
-              <p className="text-[9px] text-amber-400/70 mt-0.5">
-                {appointment.institution_name || "Institución desconocida"} • Solo lectura
+              <p className="text-xs text-amber-400/70 mt-1">
+                {appointment.institution_name || "Instituci\u00f3n desconocida"} \u2022 Solo lectura
               </p>
             </div>
           </div>
@@ -165,8 +165,8 @@ export default function Consultation() {
       
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <main className="lg:col-span-9 space-y-4">
-          <div className="bg-white/5 border border-white/15 p-1 relative min-h-[500px] flex flex-col rounded-lg">
-            <div className="flex-1 bg-black/10 p-5 rounded-lg">
+          <div className="bg-white/5 border border-white/15 p-1 relative min-h-[500px] flex flex-col rounded-xl">
+            <div className="flex-1 bg-black/10 p-6 rounded-xl">
               <ConsultationWorkflow
                 diagnoses={appointment.diagnoses}
                 appointmentId={appointment.id}
@@ -175,20 +175,20 @@ export default function Consultation() {
               />
             </div>
             
-            <footer className="border-t border-white/10 bg-white/5 p-4 flex flex-wrap items-center justify-between gap-3 rounded-b-lg">
+            <footer className="border-t border-white/10 bg-white/5 p-5 flex flex-wrap items-center justify-between gap-3 rounded-b-xl">
               <div className="flex gap-2">
                 <button
                   onClick={async () => {
-                    if(confirm("¿Cancelar y descartar la sesión?")) {
+                    if(confirm("\u00bfCancelar y descartar la sesi\u00f3n?")) {
                       queryClient.setQueryData(["appointment", "current"], null);
                       await updateStatus.mutateAsync({ id: appointment.id, status: "canceled" });
                       navigate("/waitingroom");
                     }
                   }}
                   disabled={updateStatus.isPending || !isInstitutionMatch}
-                  className="flex items-center gap-2 px-4 py-2.5 text-[11px] font-medium text-red-400 hover:bg-red-500/10 border border-red-500/25 transition-all disabled:opacity-50 rounded-lg"
+                  className="flex items-center gap-2 px-5 py-3 text-sm font-medium text-red-400 hover:bg-red-500/10 border border-red-500/25 transition-all disabled:opacity-50 rounded-xl"
                 >
-                  <ExclamationTriangleIcon className="w-4 h-4" /> Cancelar Sesión
+                  <ExclamationTriangleIcon className="w-5 h-5" /> Cancelar Sesi\u00f3n
                 </button>
               </div>
               
@@ -198,7 +198,7 @@ export default function Consultation() {
                     <button
                       disabled={generateDocuments.isPending}
                       onClick={handleGenerateDocuments}
-                      className="flex items-center gap-2 px-4 py-2.5 text-[11px] font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all rounded-lg disabled:opacity-70"
+                      className="flex items-center gap-2 px-5 py-3 text-sm font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all rounded-xl disabled:opacity-70"
                     >
                       {generateDocuments.isPending ? (
                         <>
@@ -214,7 +214,7 @@ export default function Consultation() {
                     <button
                       disabled={generateReport.isPending}
                       onClick={handleGenerateReport}
-                      className="flex items-center gap-2 px-4 py-2.5 text-[11px] font-medium bg-blue-500/15 text-blue-400 border border-blue-500/25 hover:bg-blue-500/25 transition-all rounded-lg disabled:opacity-70"
+                      className="flex items-center gap-2 px-5 py-3 text-sm font-medium bg-blue-500/15 text-blue-400 border border-blue-500/25 hover:bg-blue-500/25 transition-all rounded-xl disabled:opacity-70"
                     >
                       {generateReport.isPending ? (
                         <>
@@ -232,19 +232,19 @@ export default function Consultation() {
                 <button
                   onClick={() => setShowCommitModal(true)}
                   disabled={updateStatus.isPending || !isInstitutionMatch}
-                  className="group flex items-center gap-2 px-5 py-2.5 bg-blue-500 text-white hover:bg-blue-400 transition-all rounded-lg disabled:opacity-50"
+                  className="group flex items-center gap-2 px-6 py-3 bg-blue-500 text-white hover:bg-blue-400 transition-all rounded-xl disabled:opacity-50"
                 >
                   {updateStatus.isPending ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span className="text-[11px] font-semibold">Completando...</span>
+                      <span className="text-sm font-semibold">Completando...</span>
                     </>
                   ) : (
                     <>
-                      <span className="text-[11px] font-semibold">
-                        Completar Sesión
+                      <span className="text-sm font-semibold">
+                        Completar Sesi\u00f3n
                       </span>
-                      <ChevronRightIcon className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                      <ChevronRightIcon className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
                     </>
                   )}
                 </button>
