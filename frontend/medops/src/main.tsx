@@ -6,13 +6,16 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import App from "./App";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { queryClient } from "@/lib/reactQuery";
+import { queryClient, initQueryPersistence } from "@/lib/reactQuery";
 import { NotifyProvider } from "./context/NotifyContext";
 import { AuthProvider } from "./context/AuthContext";
 import { AdminAuthProvider } from "./context/AdminAuthContext";
 import axios from "axios";
 import * as Sentry from "@sentry/react";
 import { getCurrentPortal, getPortalConfig } from "@/lib/subdomain";
+
+// Initialize query cache persistence
+initQueryPersistence();
 
 // Axios config
 axios.defaults.baseURL = import.meta.env.VITE_API_URL ?? "/api";

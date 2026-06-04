@@ -115,8 +115,8 @@ export default function Consultation() {
   };
   
   const handleCommitSession = async () => {
-    queryClient.setQueryData(["appointment", "current"], null);
     await updateStatus.mutateAsync({ id: appointment.id, status: "completed" });
+    queryClient.invalidateQueries({ queryKey: ["appointment", "current"] });
     setToast({ message: "Sesión completada exitosamente", type: "success" });
     setShowCommitModal(false);
     navigate("/waitingroom");
@@ -180,8 +180,8 @@ export default function Consultation() {
                 <button
                   onClick={async () => {
                     if(confirm("\u00bfCancelar y descartar la sesi\u00f3n?")) {
-                      queryClient.setQueryData(["appointment", "current"], null);
                       await updateStatus.mutateAsync({ id: appointment.id, status: "canceled" });
+                      queryClient.invalidateQueries({ queryKey: ["appointment", "current"] });
                       navigate("/waitingroom");
                     }
                   }}
