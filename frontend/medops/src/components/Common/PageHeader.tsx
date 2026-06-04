@@ -108,7 +108,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
                 key={i}
                 className="flex flex-col px-5 py-3 min-w-[140px] hover:bg-white/5 rounded-xl transition-colors"
               >
-                <span className="text-xs font-medium text-white/50 uppercase tracking-wider">
+                <span className="text-xs font-medium text-white/60 uppercase tracking-wider">
                   {stat.label}
                 </span>
                 <div className={`text-xl font-semibold mt-1 ${stat.color || "text-white"}`}>

@@ -9,8 +9,6 @@ import {
   ExclamationTriangleIcon,
   ChevronRightIcon
 } from "@heroicons/react/24/outline";
-import axios from "axios";
-import PageHeader from "@/components/Common/PageHeader";
 import { apiFetch } from "@/api/client";
 interface Patient {
   id: number;
@@ -91,8 +89,8 @@ export default function SearchPage() {
           { label: "Búsqueda", active: true }
         ]}
         stats={[
-          { label: "Término", value: query || "—", color: "text-white/50" },
-          { label: "Resultados", value: totalResults.toString(), color: "text-white/50" }
+          { label: "Término", value: query || "—", color: "text-white/80" },
+          { label: "Resultados", value: totalResults.toString(), color: "text-white/80" }
         ]}
       />
       
@@ -105,7 +103,7 @@ export default function SearchPage() {
             placeholder="Buscar paciente, cita u orden..."
             className="w-full bg-white/5 border border-white/15 rounded-xl py-4 pl-12 pr-24 text-sm text-white/80 placeholder:text-white/60 focus:outline-none focus:border-emerald-500/50 transition-all"
           />
-          <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20 group-focus-within:text-emerald-400/60 transition-colors" />
+          <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40 group-focus-within:text-emerald-400/60 transition-colors" />
           <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 bg-emerald-500/15 text-emerald-400 text-sm font-medium px-5 py-2.5 rounded-xl hover:bg-emerald-500/25 transition-colors">
             Buscar
           </button>
@@ -191,11 +189,11 @@ export default function SearchPage() {
 function SectionLabel({ icon, text, count }: { icon: React.ReactNode, text: string, count: number }) {
   return (
     <div className="flex items-center justify-between border-b border-white/10 pb-2">
-      <div className="flex items-center gap-2 text-white/50">
+      <div className="flex items-center gap-2 text-white/70">
         {icon}
         <span className="text-sm font-medium">{text}</span>
       </div>
-      <span className="text-xs bg-white/5 px-2.5 py-1 rounded-lg text-white/40">{count} resultados</span>
+      <span className="text-xs bg-white/5 px-2.5 py-1 rounded-lg text-white/60">{count} resultados</span>
     </div>
   );
 }
@@ -212,12 +210,12 @@ function ResultCard({ to, title, subtitle, type }: { to: string, title: string, 
       <div className="flex justify-between items-start">
         <div className="space-y-1">
           <p className="text-sm font-medium text-white/80">{title}</p>
-          <p className="text-sm text-white/40 leading-relaxed">{subtitle}</p>
+          <p className="text-sm text-white/70 leading-relaxed">{subtitle}</p>
         </div>
         <ChevronRightIcon className="w-5 h-5 text-white/20 group-hover:text-white/50 group-hover:translate-x-1 transition-all" />
       </div>
       <div className="mt-3 flex gap-2">
-        <span className="text-xs bg-white/5 px-2.5 py-1 rounded-lg text-white/40">{type}</span>
+        <span className="text-xs bg-white/5 px-2.5 py-1 rounded-lg text-white/60">{type}</span>
       </div>
     </Link>
   );
@@ -227,7 +225,7 @@ function EmptyState({ icon, title, description }: { icon: React.ReactNode, title
     <div className="flex flex-col items-center justify-center py-32 text-center border border-dashed border-white/10 rounded-xl">
       <div className="mb-6">{icon}</div>
       <h3 className="text-base font-medium text-white/60">{title}</h3>
-      <p className="text-sm text-white/40 mt-3 max-w-xs">{description}</p>
+      <p className="text-sm text-white/60 mt-3 max-w-xs">{description}</p>
     </div>
   );
 }
