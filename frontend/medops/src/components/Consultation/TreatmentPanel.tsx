@@ -86,14 +86,14 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-4">
         <ClipboardDocumentListIcon className="w-5 h-5 text-emerald-400" />
-        <span className="text-[12px] font-bold uppercase tracking-wider text-white">
+        <span className="text-sm font-bold uppercase tracking-wider text-white">
           Matriz de Intervención Clínica
         </span>
       </div>
       <div className="space-y-6">
         {diagnoses.length === 0 ? (
-          <div className="p-8 border border-dashed border-white/15 text-center opacity-50 rounded-lg">
-            <span className="text-[11px] text-white/60">Esperando diagnóstico...</span>
+          <div className="p-8 border border-dashed border-white/15 text-center opacity-50 rounded-xl">
+            <span className="text-xs text-white/70">Esperando diagnóstico...</span>
           </div>
         ) : (
           diagnoses.map((d) => {
@@ -101,24 +101,24 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
             return (
               <div key={d.id} className="space-y-3">
                 <div className="flex items-start gap-3 pb-3 border-b border-white/15">
-                  <div className="flex-shrink-0 w-9 h-9 bg-emerald-500/10 border border-emerald-500/25 rounded-lg flex items-center justify-center">
+                  <div className="flex-shrink-0 w-9 h-9 bg-emerald-500/20 border border-emerald-500/50 rounded-xl flex items-center justify-center">
                     <TagIcon className="w-5 h-5 text-emerald-400" />
                   </div>
                   <div className="flex-grow">
-                    <p className="text-[12px] font-bold uppercase tracking-wider text-white">
+                    <p className="text-sm font-bold uppercase tracking-wider text-white">
                       {d.icd_code} {d.title}
                     </p>
-                    <p className="text-[10px] text-white/50 mt-0.5">
+                    <p className="text-xs text-white/70 mt-0.5">
                       {d.type} • {d.status}
                     </p>
                   </div>
-                  <span className="text-[10px] text-white/50">
+                  <span className="text-xs text-white/70">
                     {diagnosisTreatments.length} tratamiento{diagnosisTreatments.length !== 1 ? 's' : ''}
                   </span>
                 </div>
                 {diagnosisTreatments.length === 0 ? (
                   <div className="pl-11 opacity-40">
-                    <span className="text-[10px] text-white/50 italic">Sin tratamientos asignados</span>
+                    <span className="text-xs text-white/70 italic">Sin tratamientos asignados</span>
                   </div>
                 ) : (
                   <div className="pl-11 grid grid-cols-1 gap-3">
@@ -143,20 +143,20 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
         <div className="mt-8 pt-6 border-t border-white/15">
           <div className="flex items-center gap-2 mb-4">
             <PlusIcon className="w-5 h-5 text-emerald-400" />
-            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
               Asignar Nuevo Tratamiento
             </span>
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
-                <label className="block text-[10px] font-medium text-white/60 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-medium text-white/70 uppercase tracking-wider mb-1">
                   Diagnóstico Objetivo
                 </label>
                 <select
                   value={diagnosisId}
                   onChange={(e) => setDiagnosisId(Number(e.target.value))}
-                  className="w-full bg-white/5 border border-white/15 p-2.5 text-[12px] outline-none focus:border-emerald-500/50 rounded-lg"
+                  className="w-full bg-white/5 border border-white/15 p-2.5 text-sm outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 rounded-xl"
                   required
                 >
                   <option value="">Seleccionar diagnóstico</option>
@@ -168,13 +168,13 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] font-medium text-white/60 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-medium text-white/70 uppercase tracking-wider mb-1">
                   Tipo de Tratamiento
                 </label>
                 <select
                   value={treatmentType}
                   onChange={(e) => setTreatmentType(e.target.value as any)}
-                  className="w-full bg-white/5 border border-white/15 p-2.5 text-[12px] outline-none focus:border-emerald-500/50 rounded-lg"
+                  className="w-full bg-white/5 border border-white/15 p-2.5 text-sm outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 rounded-xl"
                 >
                   <option value="pharmacological">Farmacológico</option>
                   <option value="surgical">Quirúrgico</option>
@@ -184,13 +184,13 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] font-medium text-white/60 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-medium text-white/70 uppercase tracking-wider mb-1">
                   Estado
                 </label>
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value as any)}
-                  className="w-full bg-white/5 border border-white/15 p-2.5 text-[12px] outline-none focus:border-emerald-500/50 rounded-lg"
+                  className="w-full bg-white/5 border border-white/15 p-2.5 text-sm outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 rounded-xl"
                 >
                   <option value="active">Activo</option>
                   <option value="completed">Completado</option>
@@ -198,7 +198,7 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] font-medium text-white/60 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-medium text-white/70 uppercase tracking-wider mb-1">
                   Fecha de Inicio
                 </label>
                 <div className="relative">
@@ -206,12 +206,12 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full bg-white/5 border border-white/15 p-2.5 text-[12px] outline-none focus:border-emerald-500/50 rounded-lg [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
+                    className="w-full bg-white/5 border border-white/15 p-2.5 text-sm outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 rounded-xl [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-medium text-white/60 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-medium text-white/70 uppercase tracking-wider mb-1">
                   Fecha de Fin
                 </label>
                 <div className="relative">
@@ -219,26 +219,26 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full bg-white/5 border border-white/15 p-2.5 text-[12px] outline-none focus:border-emerald-500/50 rounded-lg [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
+                    className="w-full bg-white/5 border border-white/15 p-2.5 text-sm outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 rounded-xl [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
                   />
                 </div>
               </div>
               <div className="col-span-2">
-                <label className="block text-[10px] font-medium text-white/60 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-medium text-white/70 uppercase tracking-wider mb-1">
                   Protocolo de Tratamiento
                 </label>
                 <textarea
                   value={plan}
                   onChange={(e) => setPlan(e.target.value)}
                   placeholder="Describir el protocolo de tratamiento..."
-                  className="w-full bg-white/5 border border-white/15 p-3 text-[12px] outline-none focus:border-emerald-500/50 min-h-[80px] rounded-lg"
+                  className="w-full bg-white/5 border border-white/15 p-3 text-sm outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 min-h-[80px] rounded-xl"
                   required
                 />
               </div>
             </div>
             <button
               type="submit"
-              className="w-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 py-3 text-[11px] font-bold uppercase tracking-wider hover:bg-emerald-500/20 transition-all rounded-lg"
+              className="w-full bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 py-3 text-xs font-bold uppercase tracking-wider hover:bg-emerald-500/30 transition-all rounded-xl"
             >
               Iniciar Tratamiento
             </button>

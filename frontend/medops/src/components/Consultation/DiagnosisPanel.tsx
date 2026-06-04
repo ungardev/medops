@@ -125,18 +125,18 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
       <div className="space-y-3">
         <div className="flex items-center gap-3 mb-4">
           <BeakerIcon className="w-5 h-5 text-red-400" />
-          <span className="text-[12px] font-bold uppercase tracking-wider text-white">
+          <span className="text-sm font-bold uppercase tracking-wider text-white">
             Diagnósticos Activos
           </span>
-          <span className="ml-auto text-[10px] text-white/50">
+          <span className="ml-auto text-xs text-white/70">
             {diagnoses.length} registrado{diagnoses.length !== 1 ? 's' : ''}
           </span>
         </div>
         
         <div className="grid gap-3">
           {diagnoses.length === 0 ? (
-            <div className="p-8 border border-dashed border-white/15 text-center opacity-50 rounded-lg">
-              <span className="text-[11px] text-white/60">No hay diagnósticos registrados</span>
+            <div className="p-8 border border-dashed border-white/15 text-center opacity-50 rounded-xl">
+              <span className="text-xs text-white/70">No hay diagnósticos registrados</span>
             </div>
           ) : (
             diagnoses.map((d) => (
@@ -164,7 +164,7 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
           {/* Selector de Catálogo */}
           <div className="flex items-center gap-2">
             <GlobeAltIcon className="w-4 h-4 text-white/40" />
-            <span className="text-[10px] font-medium text-white/50 uppercase tracking-wider">Catálogo:</span>
+            <span className="text-xs font-medium text-white/70 uppercase tracking-wider">Catálogo:</span>
             <div className="flex gap-1 ml-2">
               {CATALOG_OPTIONS.map((opt) => (
                 <button
@@ -175,10 +175,10 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
                     setShowResults(false);
                     setSelectedDiagnosis(null);
                   }}
-                  className={`px-3 py-1.5 text-[10px] font-medium rounded-md transition-all ${
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
                     catalog === opt.value
-                      ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/25"
-                      : "bg-white/5 text-white/40 border border-white/10 hover:text-white/60"
+                      ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/50"
+                      : "bg-white/5 text-white/70 border border-white/10 hover:text-white/90"
                   }`}
                 >
                   {opt.icon} {opt.label}
@@ -208,27 +208,27 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
                 else if (e.key === "Enter" && highlightIndex >= 0) { e.preventDefault(); handleSelect(results[highlightIndex]); }
               }}
               onFocus={() => query.length > 0 && setShowResults(true)}
-              className="w-full bg-white/5 border border-white/15 pl-12 pr-4 py-3 text-[12px] focus:border-emerald-500/50 outline-none transition-all rounded-lg placeholder:text-white/30"
+              className="w-full bg-white/5 border border-white/15 pl-12 pr-4 py-3 text-sm focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all rounded-xl placeholder:text-white/30"
             />
           </div>
           {/* Loading indicator */}
           {showResults && isLoading && query.length > 0 && (
-            <div className="border border-white/15 bg-[#0a0a0b] p-4 text-center rounded-lg">
-              <span className="text-[11px] text-emerald-400 animate-pulse">Buscando...</span>
+            <div className="border border-white/15 bg-[#0a0a0b] p-4 text-center rounded-xl">
+              <span className="text-xs text-emerald-400 animate-pulse">Buscando...</span>
             </div>
           )}
           
           {/* No results */}
           {!isLoading && showResults && query.length > 0 && results.length === 0 && (
-            <div className="border border-white/15 bg-[#0a0a0b] p-4 text-center rounded-lg">
-              <span className="text-[11px] text-white/50">Sin resultados para "{query}"</span>
+            <div className="border border-white/15 bg-[#0a0a0b] p-4 text-center rounded-xl">
+              <span className="text-xs text-white/70">Sin resultados para "{query}"</span>
             </div>
           )}
           
           {/* Results dropdown */}
           {showResults && results.length > 0 && (
             <div 
-              className="border border-white/15 bg-[#0a0a0b] shadow-2xl max-h-64 overflow-y-auto rounded-lg"
+              className="border border-white/15 bg-[#0a0a0b] shadow-2xl max-h-64 overflow-y-auto rounded-xl"
               onMouseDown={(e) => e.preventDefault()}
             >
               {results.map((r, idx) => (
@@ -241,37 +241,37 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
                   onMouseEnter={() => setHighlightIndex(idx)}
                   onClick={() => handleSelect(r)}
                 >
-                  <span className="text-[11px] font-bold text-emerald-400 shrink-0">{getDisplayCode(r)}</span>
-                  <span className="text-[11px] text-white/80 leading-tight">{getDisplayTitle(r)}</span>
+                  <span className="text-xs font-bold text-emerald-400 shrink-0">{getDisplayCode(r)}</span>
+                  <span className="text-xs text-white/80 leading-tight">{getDisplayTitle(r)}</span>
                 </div>
               ))}
             </div>
           )}
           {/* Diagnóstico seleccionado */}
           {selectedDiagnosis && !showResults && (
-            <div className="bg-emerald-500/10 border border-emerald-500/25 p-5 space-y-4 animate-in fade-in zoom-in-95 duration-200 rounded-lg">
+            <div className="bg-emerald-500/10 border border-emerald-500/25 p-5 space-y-4 animate-in fade-in zoom-in-95 duration-200 rounded-xl">
               <div className="flex items-center justify-between pb-3 border-b border-emerald-500/20">
                 <div className="flex items-center gap-2">
                   <HashtagIcon className="w-5 h-5 text-emerald-400" />
-                  <span className="text-[12px] font-bold uppercase tracking-wider text-emerald-400">
+                  <span className="text-sm font-bold uppercase tracking-wider text-emerald-400">
                     {getDisplayCode(selectedDiagnosis)}
                   </span>
                 </div>
-                <span className="text-[10px] text-white/60">
+                <span className="text-xs text-white/80">
                   {getDisplayTitle(selectedDiagnosis)}
                 </span>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider flex items-center gap-1">
+                  <label className="text-xs font-medium text-white/70 uppercase tracking-wider flex items-center gap-1">
                     <ClipboardDocumentListIcon className="w-4 h-4" />
                     Tipo de Diagnóstico
                   </label>
                   <select
                     value={type}
                     onChange={(e) => setType(e.target.value as DiagnosisType)}
-                    className="w-full bg-white/5 border border-white/15 p-2.5 text-[11px] focus:border-emerald-500/50 outline-none rounded-lg"
+                    className="w-full bg-white/5 border border-white/15 p-2.5 text-sm focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 outline-none rounded-xl"
                   >
                     {TYPE_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>
@@ -281,14 +281,14 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider flex items-center gap-1">
+                  <label className="text-xs font-medium text-white/70 uppercase tracking-wider flex items-center gap-1">
                     <CheckCircleIcon className="w-4 h-4" />
                     Estado
                   </label>
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value as DiagnosisStatus)}
-                    className="w-full bg-white/5 border border-white/15 p-2.5 text-[11px] focus:border-emerald-500/50 outline-none rounded-lg"
+                    className="w-full bg-white/5 border border-white/15 p-2.5 text-sm focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 outline-none rounded-xl"
                   >
                     {STATUS_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>
@@ -304,16 +304,16 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
                   placeholder="Especificaciones clínicas, justificación o notas..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full bg-white/5 border border-white/15 pl-12 p-3 text-[12px] focus:border-emerald-500/50 outline-none min-h-[80px] rounded-lg placeholder:text-white/30"
+                  className="w-full bg-white/5 border border-white/15 pl-12 p-3 text-sm focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 outline-none min-h-[80px] rounded-xl placeholder:text-white/30"
                 />
               </div>
               <button
                 onClick={handleSave}
                 disabled={isCreating}
-                className="w-full bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 py-3 flex items-center justify-center gap-2 transition-all disabled:opacity-30 disabled:cursor-not-allowed rounded-lg"
+                className="w-full bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 text-emerald-400 py-3 flex items-center justify-center gap-2 transition-all disabled:opacity-30 disabled:cursor-not-allowed rounded-xl"
               >
                 <PlusCircleIcon className="w-5 h-5" />
-                <span className="text-[11px] font-bold uppercase tracking-wider">
+                <span className="text-xs font-bold uppercase tracking-wider">
                   {isCreating ? "Registrando..." : "Confirmar Diagnóstico"}
                 </span>
               </button>

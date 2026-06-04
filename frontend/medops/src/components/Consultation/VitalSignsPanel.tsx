@@ -91,18 +91,18 @@ export default function VitalSignsPanel({ appointmentId, readOnly = false }: Pro
     <div className="space-y-6">
       <div className="flex items-center gap-3 px-1">
         <HeartIcon className="w-5 h-5 text-red-400" />
-        <h3 className="text-[12px] font-bold uppercase tracking-wider text-red-400">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-red-400">
           Vital Signs Monitoring
         </h3>
         {vitalSigns?.updated_at && (
-          <span className="text-[10px] text-white/50 ml-auto">
+          <span className="text-xs text-white/70 ml-auto">
             Última actualización: {new Date(vitalSigns.updated_at).toLocaleTimeString()}
           </span>
         )}
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white/5 border border-white/15 rounded-lg p-4 hover:bg-white/10 transition-colors">
-          <label className="text-[11px] font-medium text-white/80 uppercase flex justify-between mb-2">
+        <div className="bg-white/5 border border-white/15 rounded-xl p-4 hover:bg-white/10 transition-colors">
+          <label className="text-xs font-medium text-white/80 uppercase flex justify-between mb-2">
             <span>Peso (kg)</span>
             <span className="opacity-0 group-hover:opacity-100 transition-opacity">●</span>
           </label>
@@ -112,13 +112,13 @@ export default function VitalSignsPanel({ appointmentId, readOnly = false }: Pro
             value={form.weight || ""}
             onChange={(e) => handleChange("weight", e.target.value)}
             disabled={readOnly}
-            className="w-full bg-transparent text-white text-[15px] font-mono outline-none placeholder:text-white/30"
+            className="w-full bg-transparent text-white text-sm font-mono outline-none placeholder:text-white/30 focus:ring-2 focus:ring-emerald-500/20 rounded-lg"
             placeholder="0.0"
           />
         </div>
         
-        <div className="bg-white/5 border border-white/15 rounded-lg p-4 hover:bg-white/10 transition-colors">
-          <label className="text-[11px] font-medium text-white/80 uppercase flex justify-between mb-2">
+        <div className="bg-white/5 border border-white/15 rounded-xl p-4 hover:bg-white/10 transition-colors">
+          <label className="text-xs font-medium text-white/80 uppercase flex justify-between mb-2">
             <span>Talla (cm)</span>
             <span className="opacity-0 group-hover:opacity-100 transition-opacity">●</span>
           </label>
@@ -127,13 +127,13 @@ export default function VitalSignsPanel({ appointmentId, readOnly = false }: Pro
             value={form.height || ""}
             onChange={(e) => handleChange("height", e.target.value)}
             disabled={readOnly}
-            className="w-full bg-transparent text-white text-[15px] font-mono outline-none placeholder:text-white/30"
+            className="w-full bg-transparent text-white text-sm font-mono outline-none placeholder:text-white/30 focus:ring-2 focus:ring-emerald-500/20 rounded-lg"
             placeholder="0"
           />
         </div>
         
-        <div className="bg-blue-500/10 border border-blue-500/25 rounded-lg p-4">
-          <label className="text-[11px] font-medium text-blue-300 uppercase flex justify-between mb-2">
+        <div className="bg-blue-500/10 border border-blue-500/25 rounded-xl p-4">
+          <label className="text-xs font-medium text-blue-300 uppercase flex justify-between mb-2">
             <span>IMC</span>
             <div className="flex items-center gap-1">
               <CalculatorIcon className="w-4 h-4 text-blue-400/60" />
@@ -144,19 +144,19 @@ export default function VitalSignsPanel({ appointmentId, readOnly = false }: Pro
             {bmi?.toFixed(1) || "--"}
           </div>
           {bmi && (
-            <div className="text-[10px] font-medium text-blue-300/80 mt-1">
+            <div className="text-xs font-medium text-blue-300/80 mt-1">
               {bmi < 18.5 ? "BAJO PESO" : bmi < 25 ? "NORMAL" : bmi < 30 ? "SOBREPESO" : "OBESIDAD"}
             </div>
           )}
         </div>
         
-        <div className={`border rounded-lg p-4 transition-colors ${
+        <div className={`border rounded-xl p-4 transition-colors ${
           tempStatus === 'critical' ? 'bg-red-500/10 border-red-500/30' :
           tempStatus === 'fever' ? 'bg-yellow-500/10 border-yellow-500/30' :
           tempStatus === 'hypothermia' ? 'bg-cyan-500/10 border-cyan-500/30' :
           'bg-white/5 border-white/15'
         }`}>
-          <label className="text-[11px] font-medium uppercase flex justify-between mb-2">
+          <label className="text-xs font-medium uppercase flex justify-between mb-2">
             <span className={
               tempStatus === 'critical' ? 'text-red-400' :
               tempStatus === 'fever' ? 'text-yellow-400' :
@@ -178,7 +178,7 @@ export default function VitalSignsPanel({ appointmentId, readOnly = false }: Pro
             value={form.temperature || ""}
             onChange={(e) => handleChange("temperature", e.target.value)}
             disabled={readOnly}
-            className={`w-full bg-transparent text-[15px] font-mono outline-none placeholder:text-white/30 ${
+            className={`w-full bg-transparent text-sm font-mono outline-none placeholder:text-white/30 focus:ring-2 focus:ring-emerald-500/20 rounded-lg ${
               tempStatus === 'critical' ? 'text-red-400' :
               tempStatus === 'fever' ? 'text-yellow-400' :
               tempStatus === 'hypothermia' ? 'text-cyan-400' :
@@ -187,18 +187,18 @@ export default function VitalSignsPanel({ appointmentId, readOnly = false }: Pro
             placeholder="36.5"
           />
           {tempStatus === 'hypothermia' && (
-            <div className="text-[10px] font-medium text-cyan-400 mt-1 uppercase">
+            <div className="text-xs font-medium text-cyan-400 mt-1 uppercase">
               HIPOTERMIA
             </div>
           )}
         </div>
       </div>
-      <div className={`border rounded-lg p-5 transition-colors ${
+      <div className={`border rounded-xl p-5 transition-colors ${
         bpStatus === 'critical' ? 'bg-red-500/10 border-red-500/30' :
         bpStatus === 'warning' ? 'bg-yellow-500/10 border-yellow-500/30' :
         'bg-white/5 border-white/15'
       }`}>
-        <label className="text-[11px] font-medium uppercase flex justify-between mb-3">
+        <label className="text-xs font-medium uppercase flex justify-between mb-3">
           <span className={
             bpStatus === 'critical' ? 'text-red-400' :
             bpStatus === 'warning' ? 'text-yellow-400' :
@@ -210,40 +210,40 @@ export default function VitalSignsPanel({ appointmentId, readOnly = false }: Pro
             {bpStatus === 'critical' && <ExclamationTriangleIcon className="w-4 h-4 text-red-400" />}
             {bpStatus === 'warning' && <ExclamationTriangleIcon className="w-4 h-4 text-yellow-400" />}
             {bpStatus === 'normal' && <CheckCircleIcon className="w-4 h-4 text-emerald-400" />}
-            <span className="text-[10px] font-medium text-white/60 uppercase">
+            <span className="text-xs font-medium text-white/80 uppercase">
               {bpStatus === 'normal' ? 'NORMAL' : bpStatus === 'warning' ? 'ELEVADA' : 'CRÍTICA'}
             </span>
           </div>
         </label>
         <div className="flex gap-4 items-center">
           <div className="flex-1">
-            <label className="text-[10px] font-medium text-white/60 uppercase mb-1">Sistólica</label>
+            <label className="text-xs font-medium text-white/70 uppercase mb-1">Sistólica</label>
             <input
               type="number"
               value={form.bp_systolic || ""}
               onChange={(e) => handleChange("bp_systolic", e.target.value)}
               disabled={readOnly}
-              className="w-full bg-transparent text-white text-[18px] font-mono outline-none placeholder:text-white/30"
+              className="w-full bg-transparent text-white text-lg font-mono outline-none placeholder:text-white/30 focus:ring-2 focus:ring-emerald-500/20 rounded-lg"
               placeholder="120"
             />
           </div>
           <span className="text-white/50 text-2xl font-mono self-center">/</span>
           <div className="flex-1">
-            <label className="text-[10px] font-medium text-white/60 uppercase mb-1">Diastólica</label>
+            <label className="text-xs font-medium text-white/70 uppercase mb-1">Diastólica</label>
             <input
               type="number"
               value={form.bp_diastolic || ""}
               onChange={(e) => handleChange("bp_diastolic", e.target.value)}
               disabled={readOnly}
-              className="w-full bg-transparent text-white text-[18px] font-mono outline-none placeholder:text-white/30"
+              className="w-full bg-transparent text-white text-lg font-mono outline-none placeholder:text-white/30 focus:ring-2 focus:ring-emerald-500/20 rounded-lg"
               placeholder="80"
             />
           </div>
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white/5 border border-white/15 rounded-lg p-4">
-          <label className="text-[11px] font-medium text-white/80 uppercase flex justify-between mb-2">
+        <div className="bg-white/5 border border-white/15 rounded-xl p-4">
+          <label className="text-xs font-medium text-white/80 uppercase flex justify-between mb-2">
             <span>Frec. Cardíaca (bpm)</span>
           </label>
           <input
@@ -251,12 +251,12 @@ export default function VitalSignsPanel({ appointmentId, readOnly = false }: Pro
             value={form.heart_rate || ""}
             onChange={(e) => handleChange("heart_rate", e.target.value)}
             disabled={readOnly}
-            className="w-full bg-transparent text-white text-[15px] font-mono outline-none placeholder:text-white/30"
+            className="w-full bg-transparent text-white text-sm font-mono outline-none placeholder:text-white/30 focus:ring-2 focus:ring-emerald-500/20 rounded-lg"
             placeholder="72"
           />
         </div>
-        <div className="bg-white/5 border border-white/15 rounded-lg p-4">
-          <label className="text-[11px] font-medium text-white/80 uppercase flex justify-between mb-2">
+        <div className="bg-white/5 border border-white/15 rounded-xl p-4">
+          <label className="text-xs font-medium text-white/80 uppercase flex justify-between mb-2">
             <span>Frec. Respiratoria (/min)</span>
           </label>
           <input
@@ -264,16 +264,16 @@ export default function VitalSignsPanel({ appointmentId, readOnly = false }: Pro
             value={form.respiratory_rate || ""}
             onChange={(e) => handleChange("respiratory_rate", e.target.value)}
             disabled={readOnly}
-            className="w-full bg-transparent text-white text-[15px] font-mono outline-none placeholder:text-white/30"
+            className="w-full bg-transparent text-white text-sm font-mono outline-none placeholder:text-white/30 focus:ring-2 focus:ring-emerald-500/20 rounded-lg"
             placeholder="16"
           />
         </div>
-        <div className={`border rounded-lg p-4 transition-colors ${
+        <div className={`border rounded-xl p-4 transition-colors ${
           oxygenStatus === 'critical' ? 'bg-red-500/10 border-red-500/30' :
           oxygenStatus === 'warning' ? 'bg-yellow-500/10 border-yellow-500/30' :
           'bg-white/5 border-white/15'
         }`}>
-          <label className="text-[11px] font-medium uppercase flex justify-between mb-2">
+          <label className="text-xs font-medium uppercase flex justify-between mb-2">
             <span className={
               oxygenStatus === 'critical' ? 'text-red-400' :
               oxygenStatus === 'warning' ? 'text-yellow-400' :
@@ -292,7 +292,7 @@ export default function VitalSignsPanel({ appointmentId, readOnly = false }: Pro
             value={form.oxygen_saturation || ""}
             onChange={(e) => handleChange("oxygen_saturation", e.target.value)}
             disabled={readOnly}
-            className={`w-full bg-transparent text-[15px] font-mono outline-none placeholder:text-white/30 ${
+            className={`w-full bg-transparent text-sm font-mono outline-none placeholder:text-white/30 focus:ring-2 focus:ring-emerald-500/20 rounded-lg ${
               oxygenStatus === 'critical' ? 'text-red-400' :
               oxygenStatus === 'warning' ? 'text-yellow-400' :
               'text-white'
@@ -307,7 +307,7 @@ export default function VitalSignsPanel({ appointmentId, readOnly = false }: Pro
             <button
               onClick={handleSave}
               disabled={createVitalSigns.isPending || updateVitalSigns.isPending}
-              className="flex items-center gap-2 px-5 py-2.5 bg-red-500/10 border border-red-500/25 text-red-400 text-[11px] font-bold uppercase tracking-wider hover:bg-red-500/20 transition-all disabled:opacity-50 rounded-lg"
+              className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 text-xs font-bold uppercase tracking-wider hover:bg-emerald-500/30 transition-all disabled:opacity-50 rounded-xl"
             >
               <HeartIcon className="w-4 h-4" />
               {vitalSigns?.id ? "Actualizar" : "Registrar"}
@@ -317,14 +317,14 @@ export default function VitalSignsPanel({ appointmentId, readOnly = false }: Pro
               <button
                 onClick={handleDelete}
                 disabled={deleteVitalSigns.isPending}
-                className="flex items-center gap-2 px-5 py-2.5 bg-white/5 border border-white/15 text-white/70 text-[11px] font-medium uppercase tracking-wider hover:bg-white/10 transition-all disabled:opacity-50 rounded-lg"
+                className="flex items-center gap-2 px-5 py-2.5 bg-white/5 border border-white/15 text-white/80 text-xs font-medium uppercase tracking-wider hover:bg-white/10 transition-all disabled:opacity-50 rounded-xl"
               >
                 <ExclamationTriangleIcon className="w-4 h-4" />
                 Eliminar
               </button>
             )}
           </div>
-          <div className="text-[10px] text-white/50">
+          <div className="text-xs text-white/70">
             {vitalSigns?.id ? `ID: ${vitalSigns.id}` : "Nuevo registro"}
           </div>
         </div>

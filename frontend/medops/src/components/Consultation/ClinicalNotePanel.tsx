@@ -106,9 +106,9 @@ export default function ClinicalNotePanel({ appointmentId, readOnly = false }: P
   
   const isSaving = updateNote.isPending || createNote.isPending;
   
-  const labelStyles = "text-[12px] font-bold text-white/80 uppercase tracking-wider mb-2 block";
-  const sublabelStyles = "text-[10px] font-medium text-white/60 uppercase tracking-wider mb-1 block";
-  const inputStyles = "w-full min-h-[100px] p-3 bg-white/5 border border-white/15 text-white text-[13px] placeholder:text-white/30 focus:outline-none focus:border-emerald-500/50 rounded-lg transition-all resize-none";
+  const labelStyles = "text-xs font-bold text-white/80 uppercase tracking-wider mb-2 block";
+  const sublabelStyles = "text-xs font-medium text-white/70 uppercase tracking-wider mb-1 block";
+  const inputStyles = "w-full min-h-[100px] p-3 bg-white/5 border border-white/15 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 rounded-xl transition-all resize-none";
   
   if (isLoading && !clinicalNote) {
     return (
@@ -119,18 +119,18 @@ export default function ClinicalNotePanel({ appointmentId, readOnly = false }: P
   }
   
   return (
-    <div className="border border-white/15 rounded-lg">
+    <div className="border border-white/15 rounded-xl">
       <div className="flex items-center justify-between px-5 py-3 bg-white/5 border-b border-white/15">
         <div className="flex items-center gap-3">
           <DocumentTextIcon className="w-5 h-5 text-emerald-400" />
-          <h3 className="text-[12px] font-bold uppercase tracking-wider text-white">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-white">
             Nota Clínica
           </h3>
           {clinicalNote?.is_locked && (
             <LockClosedIcon className="w-4 h-4 text-red-400 animate-pulse" />
           )}
           {saveSuccess && (
-            <span className="text-[11px] text-emerald-400 font-bold">✓ Guardado</span>
+            <span className="text-xs text-emerald-400 font-bold">✓ Guardado</span>
           )}
         </div>
         
@@ -202,7 +202,7 @@ export default function ClinicalNotePanel({ appointmentId, readOnly = false }: P
       
       {saveError && (
         <div className="px-5 py-3 bg-red-500/15 border-b border-red-500/30">
-          <span className="text-[11px] text-red-400">{saveError}</span>
+          <span className="text-xs text-red-400">{saveError}</span>
         </div>
       )}
       
@@ -259,28 +259,28 @@ export default function ClinicalNotePanel({ appointmentId, readOnly = false }: P
         ) : (
           <div className="space-y-5">
             <div>
-              <span className="text-[12px] font-bold text-emerald-400 uppercase tracking-wider">Exploración</span>
+              <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Exploración</span>
               <div className="mt-2 grid grid-cols-2 gap-4">
-                <div className="bg-white/5 border border-white/10 rounded-lg p-3">
+                <div className="bg-white/5 border border-white/10 rounded-xl p-3">
                   <span className={sublabelStyles}>Subjetivo</span>
-                  <p className="text-[13px] text-white leading-relaxed">{subjective || '—'}</p>
+                  <p className="text-sm text-white leading-relaxed">{subjective || '—'}</p>
                 </div>
-                <div className="bg-white/5 border border-white/10 rounded-lg p-3">
+                <div className="bg-white/5 border border-white/10 rounded-xl p-3">
                   <span className={sublabelStyles}>Objetivo</span>
-                  <p className="text-[13px] text-white leading-relaxed">{objective || '—'}</p>
+                  <p className="text-sm text-white leading-relaxed">{objective || '—'}</p>
                 </div>
               </div>
             </div>
             <div>
-              <span className="text-[12px] font-bold text-blue-400 uppercase tracking-wider">Evaluación</span>
+              <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">Evaluación</span>
               <div className="mt-2 grid grid-cols-2 gap-4">
-                <div className="bg-white/5 border border-white/10 rounded-lg p-3">
+                <div className="bg-white/5 border border-white/10 rounded-xl p-3">
                   <span className={sublabelStyles}>Análisis</span>
-                  <p className="text-[13px] text-white leading-relaxed">{analysis || '—'}</p>
+                  <p className="text-sm text-white leading-relaxed">{analysis || '—'}</p>
                 </div>
-                <div className="bg-white/5 border border-white/10 rounded-lg p-3">
+                <div className="bg-white/5 border border-white/10 rounded-xl p-3">
                   <span className={sublabelStyles}>Plan</span>
-                  <p className="text-[13px] text-white leading-relaxed">{plan || '—'}</p>
+                  <p className="text-sm text-white leading-relaxed">{plan || '—'}</p>
                 </div>
               </div>
             </div>
@@ -289,7 +289,7 @@ export default function ClinicalNotePanel({ appointmentId, readOnly = false }: P
       </div>
       
       {clinicalNote && (
-        <div className="flex items-center justify-between px-5 py-3 border-t border-white/10 text-[10px] text-white/60">
+        <div className="flex items-center justify-between px-5 py-3 border-t border-white/10 text-xs text-white/70">
           <div className="flex items-center gap-2">
             <ClockIcon className="w-4 h-4" />
             <span>{clinicalNote.updated_at ? new Date(clinicalNote.updated_at).toLocaleString('es-VE') : 'Nunca'}</span>

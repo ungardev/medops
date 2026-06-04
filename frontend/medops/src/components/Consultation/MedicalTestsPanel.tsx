@@ -61,29 +61,29 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
     }
   };
   return (
-    <div className="border border-white/15 bg-white/5 rounded-lg overflow-hidden">
+    <div className="border border-white/15 bg-white/5 rounded-xl overflow-hidden">
       <div className="bg-white/5 px-5 py-3 border-b border-white/15 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <BeakerIcon className="w-5 h-5 text-emerald-400" />
-          <span className="text-[12px] font-bold uppercase tracking-wider text-white">
+          <span className="text-sm font-bold uppercase tracking-wider text-white">
             Órdenes de Exámenes Diagnósticos
           </span>
         </div>
-        <span className="text-[10px] text-white/50">
+        <span className="text-xs text-white/70">
           Total: {tests.length}
         </span>
       </div>
       <div className="p-5 space-y-4">
         <div className="space-y-3">
           {tests.length === 0 && !data ? (
-            <div className="text-[11px] text-white/50 animate-pulse">Cargando exámenes...</div>
+            <div className="text-xs text-white/70 animate-pulse">Cargando exámenes...</div>
           ) : tests.length === 0 ? (
-            <div className="text-[11px] text-white/50 italic">No hay exámenes registrados</div>
+            <div className="text-xs text-white/70 italic">No hay exámenes registrados</div>
           ) : (
             tests.map((t: any) => (
-              <div key={t.id} className={`group relative flex items-center justify-between p-4 border bg-white/5 hover:border-white/25 transition-all rounded-lg ${(t as any).isOptimistic ? "animate-pulse opacity-80 border-emerald-500/30" : "border-white/15"}`}>
+              <div key={t.id} className={`group relative flex items-center justify-between p-4 border bg-white/5 hover:border-white/25 transition-all rounded-xl ${(t as any).isOptimistic ? "animate-pulse opacity-80 border-emerald-500/30" : "border-white/15"}`}>
                 {(t as any).isOptimistic && (
-                  <div className="absolute -top-2 -right-2 flex items-center gap-1 bg-emerald-500/20 text-emerald-400 text-[9px] font-medium px-2 py-1 rounded-full border border-emerald-500/30 z-10">
+                  <div className="absolute -top-2 -right-2 flex items-center gap-1 bg-emerald-500/20 text-emerald-400 text-xs font-medium px-2 py-1 rounded-full border border-emerald-500/30 z-10">
                     <CloudIcon className="w-3 h-3 animate-bounce" />
                     <span>Guardando...</span>
                   </div>
@@ -91,14 +91,14 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${getUrgencyColor(t.urgency)}`} />
-                    <span className={`text-[12px] font-medium uppercase ${(t as any).isOptimistic ? "text-white/70" : "text-white"}`}>
+                    <span className={`text-sm font-medium uppercase ${(t as any).isOptimistic ? "text-white/70" : "text-white"}`}>
                       {t.test_type_display || t.test_type}
                     </span>
-                    <span className="text-[9px] font-medium px-2 py-0.5 bg-white/10 text-white/60 rounded">
+                    <span className="text-xs font-medium px-2 py-0.5 bg-white/10 text-white/70 rounded-lg">
                       {t.status.toUpperCase()}
                     </span>
                   </div>
-                  <div className="text-[10px] text-white/50 pl-4">
+                  <div className="text-xs text-white/70 pl-4">
                     {t.description || "Sin descripción"}
                   </div>
                 </div>
@@ -118,11 +118,11 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
           <div className="mt-6 pt-6 border-t border-white/15 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider">Tipo de Examen</label>
+                <label className="text-xs font-medium text-white/70 uppercase tracking-wider">Tipo de Examen</label>
                 <select
                   value={testType}
                   onChange={(e) => setTestType(e.target.value)}
-                  className="w-full bg-white/5 border border-white/15 p-2.5 text-[12px] text-white/80 focus:border-emerald-500/50 outline-none rounded-lg"
+                  className="w-full bg-white/5 border border-white/15 p-2.5 text-sm text-white/80 focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 outline-none rounded-xl"
                 >
                   <option value="">-- Seleccionar examen --</option>
                   
@@ -399,11 +399,11 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider">Nivel de Prioridad</label>
+                <label className="text-xs font-medium text-white/70 uppercase tracking-wider">Nivel de Prioridad</label>
                 <select
                   value={urgency}
                   onChange={(e) => setUrgency(e.target.value as any)}
-                  className="w-full bg-white/5 border border-white/15 p-2.5 text-[12px] text-white/80 focus:border-emerald-500/50 outline-none rounded-lg"
+                  className="w-full bg-white/5 border border-white/15 p-2.5 text-sm text-white/80 focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 outline-none rounded-xl"
                 >
                   <option value="routine">Rutina</option>
                   <option value="priority">Prioridad</option>
@@ -413,18 +413,18 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider">Instrucciones del Procedimiento</label>
+              <label className="text-xs font-medium text-white/70 uppercase tracking-wider">Instrucciones del Procedimiento</label>
               <textarea
                 placeholder="Agregar instrucciones específicas para el personal de laboratorio..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full bg-white/5 border border-white/15 p-3 text-[12px] text-white/80 focus:border-emerald-500/50 outline-none min-h-[60px] resize-none rounded-lg"
+                className="w-full bg-white/5 border border-white/15 p-3 text-sm text-white/80 focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 outline-none min-h-[60px] resize-none rounded-xl"
               />
             </div>
             <button
               onClick={handleAdd}
               disabled={!testType}
-              className="flex items-center gap-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-5 py-2.5 text-[11px] font-bold uppercase tracking-wider hover:bg-emerald-500/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed rounded-lg"
+              className="flex items-center gap-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 px-5 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-emerald-500/30 transition-all disabled:opacity-30 disabled:cursor-not-allowed rounded-xl"
             >
               <PlusIcon className="w-5 h-5" />
               Iniciar Orden
@@ -435,7 +435,7 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
       <div className="bg-black/20 px-5 py-3 border-t border-white/10 flex justify-between">
         <div className="flex items-center gap-2">
           <ExclamationTriangleIcon className="w-4 h-4 text-amber-400" />
-          <span className="text-[9px] text-white/50 uppercase">
+          <span className="text-xs text-white/70 uppercase">
             Las órdenes se sincronizan con el sistema de información del laboratorio (LIS)
           </span>
         </div>

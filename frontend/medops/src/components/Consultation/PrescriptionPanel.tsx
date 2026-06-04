@@ -179,12 +179,12 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
       <div className="flex items-center justify-between mb-4 border-b border-white/15 pb-4">
         <div className="flex items-center gap-3">
           <BeakerIcon className="w-5 h-5 text-emerald-400" />
-          <span className="text-[12px] font-bold uppercase tracking-wider text-white">
+          <span className="text-sm font-bold uppercase tracking-wider text-white">
             Órdenes Farmacológicas
           </span>
         </div>
         {selectedMedication?.source === 'INHRR' && (
-          <span className="text-[9px] font-bold bg-emerald-500/15 text-emerald-400 px-3 py-1 rounded-lg border border-emerald-500/25 flex items-center gap-1">
+          <span className="text-xs font-bold bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-xl border border-emerald-500/50 flex items-center gap-1">
             <FlaskIcon className="w-4 h-4" />
             CATÁLOGO INHRR
           </span>
@@ -192,17 +192,17 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
       </div>
       <div className="space-y-6">
         {diagnoses.length === 0 ? (
-          <div className="p-8 border border-dashed border-white/15 text-center opacity-50 rounded-lg">
-            <span className="text-[11px] text-white/60">Esperando datos de prescripción...</span>
+          <div className="p-8 border border-dashed border-white/15 text-center opacity-50 rounded-xl">
+            <span className="text-xs text-white/70">Esperando datos de prescripción...</span>
           </div>
         ) : (
           diagnoses.map((d) => (
             <div key={d.id} className="border-l-2 border-white/15 pl-4 space-y-3">
               <div className="flex items-center gap-3">
-                <span className="bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded text-[10px] font-bold border border-emerald-500/25">
+                <span className="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-lg text-xs font-bold border border-emerald-500/50">
                   {d.icd_code}
                 </span>
-                <h4 className="text-[12px] font-medium text-white/80">
+                <h4 className="text-sm font-medium text-white/80">
                   {d.title || d.description || "Sin título"}
                 </h4>
               </div>
@@ -244,7 +244,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                     />
                   ))
                 ) : (
-                  <span className="text-[10px] text-white/50 italic pl-2">
+                  <span className="text-xs text-white/70 italic pl-2">
                     Sin prescripciones activas
                   </span>
                 )}
@@ -256,7 +256,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
           <div className="border-t border-white/10 pt-6 mt-6">
             <div className="flex items-center gap-2 mb-4">
               <BeakerIcon className="w-5 h-5 text-emerald-400" />
-              <span className="text-[11px] font-bold uppercase tracking-wider text-white">
+              <span className="text-xs font-bold uppercase tracking-wider text-white">
                 Todas las Prescripciones
               </span>
             </div>
@@ -302,18 +302,18 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
       </div>
       {!readOnly && diagnoses.length > 0 && appointmentId && (
         <div className="mt-8 pt-6 border-t border-white/15">
-          <form onSubmit={handleSubmit} className="bg-white/5 border border-white/15 p-5 space-y-5 rounded-lg">
+          <form onSubmit={handleSubmit} className="bg-white/5 border border-white/15 p-5 space-y-5 rounded-xl">
             
             <div className="flex items-center justify-between mb-2 border-b border-white/10 pb-3">
               <div className="flex items-center gap-2">
                 <ClipboardDocumentCheckIcon className="w-5 h-5 text-emerald-400" />
-                <span className="text-[11px] font-bold uppercase tracking-wider">Nueva Prescripción</span>
+                <span className="text-xs font-bold uppercase tracking-wider">Nueva Prescripción</span>
               </div>
               
               <button
                 type="button"
                 onClick={() => setIsAdvancedMode(!isAdvancedMode)}
-                className="flex items-center gap-1 text-[10px] font-medium text-white/60 hover:text-emerald-400 uppercase transition-all"
+                className="flex items-center gap-1 text-xs font-medium text-white/70 hover:text-emerald-400 uppercase transition-all"
               >
                 {isAdvancedMode ? (
                   <>
@@ -328,14 +328,14 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider ml-1">
+                <label className="text-xs font-medium text-white/70 uppercase tracking-wider ml-1">
                   Diagnóstico
                 </label>
                 <select
                   value={diagnosisId}
                   onChange={(e) => setDiagnosisId(Number(e.target.value))}
                   required
-                  className="w-full bg-white/5 border border-white/15 px-4 py-2.5 text-[12px] focus:border-emerald-500/50 outline-none appearance-none rounded-lg"
+                  className="w-full bg-white/5 border border-white/15 px-4 py-2.5 text-sm focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 outline-none appearance-none rounded-xl"
                 >
                   <option value="">Seleccionar diagnóstico</option>
                   {diagnoses.map((d) => (
@@ -347,10 +347,10 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
               </div>
               
               <div className="space-y-2">
-                <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider ml-1 flex items-center gap-1">
+                <label className="text-xs font-medium text-white/70 uppercase tracking-wider ml-1 flex items-center gap-1">
                   Medicamento
                   {isAutofilled && (
-                    <span className="text-[9px] text-emerald-400 animate-pulse flex items-center gap-0.5">
+                    <span className="text-xs text-emerald-400 animate-pulse flex items-center gap-0.5">
                       <SparklesIcon className="w-3 h-3" /> Auto-completado
                     </span>
                   )}
@@ -363,56 +363,56 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
               </div>
             </div>
             {selectedMedication && (
-              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
+                  <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
                     Información del Catálogo
                   </span>
                   <div className="flex gap-1">
                     {selectedMedication.is_controlled && (
-                      <span className="text-[8px] font-bold bg-red-500/15 text-red-400 px-2 py-0.5 rounded border border-red-500/25">
+                      <span className="text-xs font-bold bg-red-500/20 text-red-400 px-2 py-0.5 rounded-lg border border-red-500/50">
                         CONTROLADO
                       </span>
                     )}
                     {selectedMedication.source === 'INHRR' && (
-                      <span className="text-[8px] font-bold bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/25">
+                      <span className="text-xs font-bold bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-lg border border-emerald-500/50">
                         INHRR
                       </span>
                     )}
                   </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[11px]">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                   {selectedMedication.generic_name && (
                     <div>
-                      <span className="text-white/50">Principio activo:</span>
+                      <span className="text-white/70">Principio activo:</span>
                       <span className="text-white ml-1">{selectedMedication.generic_name}</span>
                     </div>
                   )}
                   {selectedMedication.concentration && (
                     <div>
-                      <span className="text-white/50">Concentración:</span>
+                      <span className="text-white/70">Concentración:</span>
                       <span className="text-white ml-1">{selectedMedication.concentration}</span>
                     </div>
                   )}
                   <div>
-                    <span className="text-white/50">Presentación:</span>
+                    <span className="text-white/70">Presentación:</span>
                     <span className="text-white ml-1">{selectedMedication.presentation_display}</span>
                   </div>
                   <div>
-                    <span className="text-white/50">Vía:</span>
+                    <span className="text-white/70">Vía:</span>
                     <span className="text-white ml-1">{selectedMedication.route_display}</span>
                   </div>
                 </div>
               </div>
             )}
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-medium text-white/60">Duración rápida:</span>
+              <span className="text-xs font-medium text-white/70">Duración rápida:</span>
               {[7, 10, 14, 30].map(days => (
                 <button
                   key={days}
                   type="button"
                   onClick={() => getQuickDuration(days)}
-                  className="px-3 py-1.5 text-[10px] bg-white/5 hover:bg-emerald-500/15 border border-white/15 hover:border-emerald-500/30 rounded-lg transition-colors"
+                  className="px-3 py-1.5 text-xs bg-white/5 hover:bg-emerald-500/20 border border-white/15 hover:border-emerald-500/30 rounded-lg transition-colors"
                 >
                   {days} días
                 </button>
@@ -420,7 +420,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider ml-1 flex items-center gap-1">
+                <label className="text-xs font-medium text-white/70 uppercase tracking-wider ml-1 flex items-center gap-1">
                   <DocumentTextIcon className="w-4 h-4" /> Duración
                 </label>
                 <input
@@ -428,17 +428,17 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                   placeholder="Ej: 7 días"
                   value={duration}
                   onChange={(e) => setDuration(e.target.value)}
-                  className="w-full bg-white/5 border border-white/15 px-4 py-2.5 text-[12px] outline-none focus:border-emerald-500/50 rounded-lg"
+                  className="w-full bg-white/5 border border-white/15 px-4 py-2.5 text-sm outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 rounded-xl"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider ml-1 flex items-center gap-1">
+                <label className="text-xs font-medium text-white/70 uppercase tracking-wider ml-1 flex items-center gap-1">
                   <ClockIcon className="w-4 h-4" /> Frecuencia
                 </label>
                 <select
                   value={frequency}
                   onChange={(e) => setFrequency(e.target.value as any)}
-                  className="w-full bg-white/5 border border-white/15 px-4 py-2.5 text-[12px] focus:border-emerald-500/50 outline-none rounded-lg"
+                  className="w-full bg-white/5 border border-white/15 px-4 py-2.5 text-sm focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 outline-none rounded-xl"
                 >
                   {frequencyOptions.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -448,13 +448,13 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider ml-1 flex items-center gap-1">
+                <label className="text-xs font-medium text-white/70 uppercase tracking-wider ml-1 flex items-center gap-1">
                   <ArrowsRightLeftIcon className="w-4 h-4" /> Vía
                 </label>
                 <select
                   value={route}
                   onChange={(e) => setRoute(e.target.value as any)}
-                  className="w-full bg-white/5 border border-white/15 px-4 py-2.5 text-[12px] focus:border-emerald-500/50 outline-none rounded-lg"
+                  className="w-full bg-white/5 border border-white/15 px-4 py-2.5 text-sm focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 outline-none rounded-xl"
                 >
                   {routeOptions.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -468,13 +468,13 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
               <div className="space-y-4 border-t border-white/10 pt-4 animate-in slide-in-from-top-2 duration-300">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider ml-1">
+                    <label className="text-xs font-medium text-white/70 uppercase tracking-wider ml-1">
                       Componentes
                     </label>
                     <button
                       type="button"
                       onClick={() => setComponents([...components, { substance: "", dosage: "", unit: "mg" }])}
-                      className="flex items-center gap-1 text-[10px] font-medium text-emerald-400 hover:opacity-80 uppercase transition-all"
+                      className="flex items-center gap-1 text-xs font-medium text-emerald-400 hover:opacity-80 uppercase transition-all"
                     >
                       <PlusIcon className="w-4 h-4" /> Agregar componente
                     </button>
@@ -482,12 +482,12 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                   
                   <div className="space-y-2">
                     {components.length === 0 && (
-                      <div className="text-center py-4 bg-white/5 border border-dashed border-white/10 rounded-lg">
-                        <span className="text-[10px] text-white/50">Sin componentes definidos</span>
+                      <div className="text-center py-4 bg-white/5 border border-dashed border-white/10 rounded-xl">
+                        <span className="text-xs text-white/70">Sin componentes definidos</span>
                       </div>
                     )}
                     {components.map((comp, index) => (
-                      <div key={index} className="flex gap-2 items-center bg-white/5 p-3 border border-white/10 rounded-lg animate-in slide-in-from-left-2 duration-200">
+                      <div key={index} className="flex gap-2 items-center bg-white/5 p-3 border border-white/10 rounded-xl animate-in slide-in-from-left-2 duration-200">
                         <input
                           type="text"
                           placeholder="Sustancia"
@@ -497,7 +497,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                             newComps[index].substance = e.target.value;
                             setComponents(newComps);
                           }}
-                          className="flex-1 bg-transparent border-b border-white/15 px-2 py-1.5 text-[11px] outline-none focus:border-emerald-500/50"
+                          className="flex-1 bg-transparent border-b border-white/15 px-2 py-1.5 text-sm outline-none focus:border-emerald-500/50"
                         />
                         <input
                           type="text"
@@ -508,7 +508,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                             newComps[index].dosage = e.target.value;
                             setComponents(newComps);
                           }}
-                          className="w-16 bg-transparent border-b border-white/15 px-2 py-1.5 text-[11px] outline-none focus:border-emerald-500/50 text-center"
+                          className="w-16 bg-transparent border-b border-white/15 px-2 py-1.5 text-sm outline-none focus:border-emerald-500/50 text-center"
                         />
                         <select
                           value={comp.unit}
@@ -517,7 +517,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                             newComps[index].unit = e.target.value as any;
                             setComponents(newComps);
                           }}
-                          className="bg-transparent border-b border-white/15 px-2 py-1.5 text-[11px] outline-none"
+                          className="bg-transparent border-b border-white/15 px-2 py-1.5 text-sm outline-none"
                         >
                           <option value="mg">mg</option>
                           <option value="ml">ml</option>
@@ -539,7 +539,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider ml-1">
+                  <label className="text-xs font-medium text-white/70 uppercase tracking-wider ml-1">
                     Indicaciones / Notas
                   </label>
                   <textarea
@@ -547,17 +547,17 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                     onChange={(e) => setIndications(e.target.value)}
                     placeholder="Indicaciones específicas para el paciente..."
                     rows={2}
-                    className="w-full bg-white/5 border border-white/15 px-4 py-2.5 text-[12px] outline-none focus:border-emerald-500/50 resize-none rounded-lg"
+                    className="w-full bg-white/5 border border-white/15 px-4 py-2.5 text-sm outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 resize-none rounded-xl"
                   />
                 </div>
               </div>
             )}
             <button
               type="submit"
-              className="w-full bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 py-3 flex items-center justify-center gap-2 transition-all active:scale-[0.98] rounded-lg"
+              className="w-full bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 text-emerald-400 py-3 flex items-center justify-center gap-2 transition-all active:scale-[0.98] rounded-xl"
             >
               <PlusIcon className="w-5 h-5" />
-              <span className="text-[11px] font-bold uppercase tracking-wider">
+              <span className="text-xs font-bold uppercase tracking-wider">
                 Generar Prescripción Médica
               </span>
             </button>

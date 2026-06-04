@@ -113,21 +113,21 @@ export default function MedicalReferralsPanel({
     return r.referred_to || r.referred_to_external || "Sin destino especificado";
   };
   return (
-    <div className="border border-white/15 bg-white/5 rounded-lg overflow-hidden">
+    <div className="border border-white/15 bg-white/5 rounded-xl overflow-hidden">
       <div className="bg-white/5 px-5 py-3 border-b border-white/15 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <ArrowTopRightOnSquareIcon className="w-5 h-5 text-emerald-400" />
-          <span className="text-[12px] font-bold uppercase tracking-wider text-white">
+          <span className="text-sm font-bold uppercase tracking-wider text-white">
             Protocolo de Referencia Externa
           </span>
         </div>
-        {isLoading && <span className="text-[9px] animate-pulse text-emerald-400">Sincronizando...</span>}
+        {isLoading && <span className="text-xs animate-pulse text-emerald-400">Sincronizando...</span>}
       </div>
       
       <div className="p-5 space-y-4">
         <div className="space-y-3">
           {referrals.length === 0 ? (
-            <div className="text-[11px] text-white/50 italic py-2">
+            <div className="text-xs text-white/70 italic py-2">
               No hay referencias registradas
             </div>
           ) : (
@@ -136,9 +136,9 @@ export default function MedicalReferralsPanel({
               const statusConfig = STATUS_CONFIG[r.status] || STATUS_CONFIG.issued;
               
               return (
-                <div key={r.id} className={`relative border bg-white/5 p-4 rounded-lg space-y-3 ${(r as any).isOptimistic ? "animate-pulse opacity-80 border-emerald-500/30" : "border-white/15"}`}>
+                <div key={r.id} className={`relative border bg-white/5 p-4 rounded-xl space-y-3 ${(r as any).isOptimistic ? "animate-pulse opacity-80 border-emerald-500/30" : "border-white/15"}`}>
                   {(r as any).isOptimistic && (
-                    <div className="absolute -top-2 -right-2 flex items-center gap-1 bg-emerald-500/20 text-emerald-400 text-[9px] font-medium px-2 py-1 rounded-full border border-emerald-500/30 z-10">
+                    <div className="absolute -top-2 -right-2 flex items-center gap-1 bg-emerald-500/20 text-emerald-400 text-xs font-medium px-2 py-1 rounded-full border border-emerald-500/30 z-10">
                       <CloudIcon className="w-3 h-3 animate-bounce" />
                       <span>Guardando...</span>
                     </div>
@@ -149,20 +149,20 @@ export default function MedicalReferralsPanel({
                         type="text"
                         value={editingReferral.referred_to_external || ""}
                         onChange={(e) => setEditingReferral({ ...editingReferral, referred_to_external: e.target.value })}
-                        className="w-full bg-white/5 border border-emerald-500/30 p-3 text-[12px] text-white outline-none focus:border-emerald-500/50 rounded-lg"
+                        className="w-full bg-white/5 border border-emerald-500/30 p-3 text-sm text-white outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 rounded-xl"
                         placeholder="Destino de la referencia..."
                       />
                       <textarea
                         value={editingReferral.reason || ""}
                         onChange={(e) => setEditingReferral({ ...editingReferral, reason: e.target.value })}
-                        className="w-full bg-white/5 border border-emerald-500/30 p-3 text-[12px] text-white min-h-[60px] outline-none focus:border-emerald-500/50 rounded-lg"
+                        className="w-full bg-white/5 border border-emerald-500/30 p-3 text-sm text-white min-h-[60px] outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 rounded-xl"
                         placeholder="Motivo clínico..."
                       />
                       <div className="flex gap-2">
-                        <button onClick={handleUpdate} className="flex items-center gap-1.5 bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 px-4 py-2 text-[10px] font-bold uppercase rounded-lg">
+                        <button onClick={handleUpdate} className="flex items-center gap-1.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 px-4 py-2 text-xs font-bold uppercase rounded-xl">
                           <CheckIcon className="w-4 h-4" /> Guardar
                         </button>
-                        <button onClick={() => setEditingReferral(null)} className="flex items-center gap-1.5 bg-white/5 text-white/60 px-4 py-2 text-[10px] font-bold uppercase rounded-lg hover:bg-white/10">
+                        <button onClick={() => setEditingReferral(null)} className="flex items-center gap-1.5 bg-white/5 text-white/80 px-4 py-2 text-xs font-bold uppercase rounded-xl hover:bg-white/10">
                           <XMarkIcon className="w-4 h-4" /> Cancelar
                         </button>
                       </div>
@@ -171,16 +171,16 @@ export default function MedicalReferralsPanel({
                     <>
                       <div className="flex justify-between items-start">
                         <div className="flex flex-col">
-                          <span className="text-[12px] font-medium text-white uppercase">
+                          <span className="text-sm font-medium text-white uppercase">
                             → {getReferredToDisplay(r)}
                           </span>
                           {r.reason && (
-                            <span className="text-[11px] text-white/60 leading-relaxed mt-1">
+                            <span className="text-xs text-white/80 leading-relaxed mt-1">
                               {r.reason}
                             </span>
                           )}
                           {r.clinical_summary && (
-                            <span className="text-[10px] text-white/40 leading-relaxed mt-1 italic">
+                            <span className="text-xs text-white/70 leading-relaxed mt-1 italic">
                               {r.clinical_summary}
                             </span>
                           )}
@@ -198,7 +198,7 @@ export default function MedicalReferralsPanel({
                       </div>
                       
                       {(r.doctor || r.institution) && (
-                        <div className="flex items-center gap-3 text-[10px] text-white/60 mt-1 border-t border-white/10 pt-2">
+                        <div className="flex items-center gap-3 text-xs text-white/70 mt-1 border-t border-white/10 pt-2">
                           {r.doctor && (
                             <div className="flex items-center gap-1">
                               <UserGroupIcon className="w-4 h-4" />
@@ -220,23 +220,23 @@ export default function MedicalReferralsPanel({
                       
                       <div className="flex flex-wrap gap-2 pt-2 border-t border-white/10 items-center">
                         {r.specialties?.map(s => (
-                          <span key={s.id} className="flex items-center gap-1 text-[9px] font-medium bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/25 uppercase">
+                          <span key={s.id} className="flex items-center gap-1 text-xs font-medium bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-lg border border-emerald-500/50 uppercase">
                             <TagIcon className="w-3 h-3" /> {s.name}
                           </span>
                         ))}
                         
-                        <span className={`flex items-center gap-1 text-[9px] font-medium ${urgencyConfig.bgColor} ${urgencyConfig.color} ${urgencyConfig.borderColor} border px-2 py-0.5 rounded uppercase`}>
+                        <span className={`flex items-center gap-1 text-xs font-medium ${urgencyConfig.bgColor} ${urgencyConfig.color} ${urgencyConfig.borderColor} border px-2 py-0.5 rounded-lg uppercase`}>
                           {r.urgency === "stat" && <ExclamationTriangleIcon className="w-3.5 h-3.5" />}
                           {r.urgency === "urgent" && <ClockIcon className="w-3.5 h-3.5" />}
                           {urgencyConfig.label}
                         </span>
                         
-                        <span className={`text-[9px] font-medium ${statusConfig.bgColor} ${statusConfig.color} ${statusConfig.borderColor} border px-2 py-0.5 rounded uppercase`}>
+                        <span className={`text-xs font-medium ${statusConfig.bgColor} ${statusConfig.color} ${statusConfig.borderColor} border px-2 py-0.5 rounded-lg uppercase`}>
                           {statusConfig.label}
                         </span>
                         
                         {r.is_internal && (
-                          <span className="text-[9px] font-medium text-purple-400 bg-purple-500/15 border border-purple-500/25 px-2 py-0.5 rounded uppercase">
+                          <span className="text-xs font-medium text-purple-400 bg-purple-500/20 border border-purple-500/50 px-2 py-0.5 rounded-lg uppercase">
                             INTERNA
                           </span>
                         )}
@@ -253,13 +253,13 @@ export default function MedicalReferralsPanel({
           <div className="mt-6 pt-6 border-t border-white/15 space-y-4">
             {diagnoses.length > 0 && (
               <div className="space-y-2">
-                <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider">
+                <label className="text-xs font-medium text-white/70 uppercase tracking-wider">
                   Diagnóstico Relacionado (Recomendado)
                 </label>
                 <select 
                   value={selectedDiagnosisId || ""} 
                   onChange={(e) => setSelectedDiagnosisId(Number(e.target.value) || null)}
-                  className="w-full bg-white/5 border border-white/15 p-2.5 text-[12px] text-white/80 outline-none focus:border-emerald-500/50 rounded-lg"
+                  className="w-full bg-white/5 border border-white/15 p-2.5 text-sm text-white/80 outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 rounded-xl"
                 >
                   <option value="">Sin diagnóstico específico</option>
                   {diagnoses.map((d) => (
@@ -273,17 +273,17 @@ export default function MedicalReferralsPanel({
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider">Especialista o Centro Destino</label>
+                <label className="text-xs font-medium text-white/70 uppercase tracking-wider">Especialista o Centro Destino</label>
                 <input
                   type="text"
                   placeholder="Ej: Unidad de Oncología Clínica"
                   value={referredToExternal}
                   onChange={(e) => setReferredToExternal(e.target.value)}
-                  className="w-full bg-white/5 border border-white/15 p-2.5 text-[12px] text-white/80 focus:border-emerald-500/50 outline-none rounded-lg"
+                  className="w-full bg-white/5 border border-white/15 p-2.5 text-sm text-white/80 focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 outline-none rounded-xl"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider">Especialidades</label>
+                <label className="text-xs font-medium text-white/70 uppercase tracking-wider">Especialidades</label>
                 <SpecialtyComboboxElegante
                   value={selectedSpecialties}
                   onChange={setSelectedSpecialties}
@@ -293,22 +293,22 @@ export default function MedicalReferralsPanel({
             </div>
             
             <div className="space-y-2">
-              <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider">Justificación Clínica</label>
+              <label className="text-xs font-medium text-white/70 uppercase tracking-wider">Justificación Clínica</label>
               <textarea
                 placeholder="Describir la motivación para la interconsulta..."
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                className="w-full bg-white/5 border border-white/15 p-3 text-[12px] text-white/80 focus:border-emerald-500/50 outline-none min-h-[70px] resize-none rounded-lg"
+                className="w-full bg-white/5 border border-white/15 p-3 text-sm text-white/80 focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 outline-none min-h-[70px] resize-none rounded-xl"
               />
             </div>
             
             <div className="flex flex-wrap gap-4 items-end justify-between">
               <div className="space-y-2">
-                <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider">Nivel de Urgencia</label>
+                <label className="text-xs font-medium text-white/70 uppercase tracking-wider">Nivel de Urgencia</label>
                 <select 
                   value={urgency} 
                   onChange={(e) => setUrgency(e.target.value as any)} 
-                  className="bg-white/5 border border-white/15 p-2.5 text-[12px] text-white/80 outline-none focus:border-emerald-500/50 rounded-lg"
+                  className="bg-white/5 border border-white/15 p-2.5 text-sm text-white/80 outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 rounded-xl"
                 >
                   <option value="routine">Rutina</option>
                   <option value="urgent">Urgente</option>
@@ -319,7 +319,7 @@ export default function MedicalReferralsPanel({
               <button
                 onClick={handleAdd}
                 disabled={!referredToExternal}
-                className="flex items-center gap-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 px-5 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all disabled:opacity-30 disabled:cursor-not-allowed rounded-lg"
+                className="flex items-center gap-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 text-emerald-400 px-5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-30 disabled:cursor-not-allowed rounded-xl"
               >
                 <PlusIcon className="w-5 h-5" />
                 Iniciar Referencia
@@ -331,7 +331,7 @@ export default function MedicalReferralsPanel({
       
       <div className="bg-black/20 px-5 py-3 border-t border-white/10 flex items-center gap-2">
         <ShieldCheckIcon className="w-4 h-4 text-emerald-400" />
-        <span className="text-[9px] text-white/50 uppercase">
+        <span className="text-xs text-white/70 uppercase">
           Referencia encriptada y registrada para transferencia interinstitucional
         </span>
       </div>
