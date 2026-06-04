@@ -43,6 +43,7 @@ export default function ConfigPage() {
   const [showDoctorModal, setShowDoctorModal] = useState(false);
   const [showInstitutionModal, setShowInstitutionModal] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   
   const [doctorForm, setDoctorForm] = useState({
     full_name: "",
@@ -130,27 +131,32 @@ export default function ConfigPage() {
   };
   
   const handleSaveDoctor = async () => {
-    await updateDoctor({
-      full_name: doctorForm.full_name,
-      national_id: doctorForm.national_id,
-      birthdate: doctorForm.birthdate,
-      birth_country: doctorForm.birth_country,
-      gender: doctorForm.gender,
-      colegiado_id: doctorForm.colegiado_id,
-      license: doctorForm.license,
-      license_expiry_date: doctorForm.license_expiry_date,
-      email: doctorForm.email || '',
-      phone: doctorForm.phone || '',
-      bio: doctorForm.bio || '',
-      specialty_ids: doctorForm.specialties.map(s => s.id),
-      signature: doctorForm.signature instanceof File ? doctorForm.signature : undefined,
-      photo: doctorForm.photo instanceof File ? doctorForm.photo : undefined,
-      whatsapp_enabled: whatsAppConfig.whatsapp_enabled,
-      whatsapp_business_number: whatsAppConfig.whatsapp_business_number,
-      whatsapp_business_id: whatsAppConfig.whatsapp_business_id,
-      whatsapp_access_token: whatsAppConfig.whatsapp_access_token,
-      reminder_hours_before: whatsAppConfig.reminder_hours_before,
-    } as any);
+    setIsSaving(true);
+    try {
+      await updateDoctor({
+        full_name: doctorForm.full_name,
+        national_id: doctorForm.national_id,
+        birthdate: doctorForm.birthdate,
+        birth_country: doctorForm.birth_country,
+        gender: doctorForm.gender,
+        colegiado_id: doctorForm.colegiado_id,
+        license: doctorForm.license,
+        license_expiry_date: doctorForm.license_expiry_date,
+        email: doctorForm.email || '',
+        phone: doctorForm.phone || '',
+        bio: doctorForm.bio || '',
+        specialty_ids: doctorForm.specialties.map(s => s.id),
+        signature: doctorForm.signature instanceof File ? doctorForm.signature : undefined,
+        photo: doctorForm.photo instanceof File ? doctorForm.photo : undefined,
+        whatsapp_enabled: whatsAppConfig.whatsapp_enabled,
+        whatsapp_business_number: whatsAppConfig.whatsapp_business_number,
+        whatsapp_business_id: whatsAppConfig.whatsapp_business_id,
+        whatsapp_access_token: whatsAppConfig.whatsapp_access_token,
+        reminder_hours_before: whatsAppConfig.reminder_hours_before,
+      } as any);
+    } finally {
+      setIsSaving(false);
+    }
     setShowDoctorModal(false);
   };
   
@@ -441,10 +447,33 @@ export default function ConfigPage() {
               </div>
               
               <div className="flex gap-3 pt-4">
-                <button type="submit" className="flex-1 bg-emerald-500/15 text-emerald-400 text-[12px] font-medium px-6 py-2.5 hover:bg-emerald-500/25 transition-all rounded-lg border border-emerald-500/25">
-                  <KeyIcon className="w-4 h-4 inline mr-2" /> Guardar Cambios
+                <button 
+                  type="submit" 
+                  disabled={isSaving}
+                  className="flex-1 bg-emerald-500/15 text-emerald-400 text-[12px] font-medium px-6 py-2.5 hover:bg-emerald-500/25 transition-all rounded-lg border border-emerald-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isSaving ? (
+                    <>
+                      <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                      </svg>
+                      Guardando...
+                    </>
+                  ) : (
+                    <>
+                      <KeyIcon className="w-4 h-4" /> Guardar Cambios
+                    </>
+                  )}
                 </button>
-                <button type="button" onClick={() => setShowDoctorModal(false)} className="px-6 text-[11px] font-medium text-white/40 hover:text-white/70 transition-colors">Cancelar</button>
+                <button 
+                  type="button" 
+                  onClick={() => setShowDoctorModal(false)} 
+                  disabled={isSaving}
+                  className="px-6 text-[11px] font-medium text-white/40 hover:text-white/70 transition-colors disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
               </div>
             </form>
           </div>
