@@ -134,9 +134,9 @@ export default function PrescriptionBadge({
   };
   
   return (
-    <div className={`group relative border border-white/15 bg-white/5 rounded-lg overflow-hidden transition-all hover:border-white/25 ${isOptimistic ? "animate-pulse opacity-80 border-emerald-500/30" : ""}`}>
+    <div className={`group relative border border-white/15 bg-white/5 rounded-xl overflow-hidden transition-all hover:border-white/25 ${isOptimistic ? "animate-pulse opacity-80 border-emerald-500/30" : ""}`}>
       {isOptimistic && (
-        <div className="absolute -top-2 -right-2 flex items-center gap-1 bg-emerald-500/20 text-emerald-400 text-[9px] font-medium px-2 py-1 rounded-full border border-emerald-500/30 z-10">
+        <div className="absolute -top-2 -right-2 flex items-center gap-1 bg-emerald-500/20 text-emerald-400 text-xs font-medium px-2 py-1 rounded-full border border-emerald-500/30 z-10">
           <CloudIcon className="w-3 h-3 animate-bounce" />
           <span>Guardando...</span>
         </div>
@@ -144,15 +144,15 @@ export default function PrescriptionBadge({
       <div className="flex items-center justify-between bg-white/5 px-4 py-3 border-b border-white/15">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <BeakerIcon className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-          <span className={`text-[12px] font-medium truncate ${isOptimistic ? "text-white/70" : "text-white"}`}>
+          <span className={`text-sm font-medium truncate ${isOptimistic ? "text-white/70" : "text-white"}`}>
             {isEditing ? "Editando..." : medication}
           </span>
           {isFromCatalog ? (
-            <span className="flex-shrink-0 text-[9px] font-bold bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/25">
+            <span className="flex-shrink-0 text-xs font-bold bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-lg border border-emerald-500/50">
               CATÁLOGO
             </span>
           ) : (
-            <span className="flex-shrink-0 text-[9px] font-bold bg-orange-500/15 text-orange-400 px-2 py-0.5 rounded border border-orange-500/25">
+            <span className="flex-shrink-0 text-xs font-bold bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded-lg border border-orange-500/50">
               MANUAL
             </span>
           )}
@@ -171,7 +171,7 @@ export default function PrescriptionBadge({
       </div>
       {!isEditing && medicationCatalog && (
         <div className="px-4 py-2 bg-black/20 border-b border-white/10">
-          <div className="flex items-center gap-2 text-[10px] text-white/60">
+          <div className="flex items-center gap-2 text-xs text-white/70">
             <CircleStackIcon className="w-4 h-4 text-emerald-400" />
             <span>
               {medicationCatalog.presentation && `${medicationCatalog.presentation}`}
@@ -182,7 +182,7 @@ export default function PrescriptionBadge({
         </div>
       )}
       {!isEditing && (doctor || institution || issuedAt) && (
-        <div className="flex flex-wrap items-center gap-3 text-[10px] text-white/60 px-4 py-2 border-b border-white/10">
+        <div className="flex flex-wrap items-center gap-3 text-xs text-white/70 px-4 py-2 border-b border-white/10">
           {doctor && (
             <div className="flex items-center gap-1">
               <UserGroupIcon className="w-4 h-4" />
@@ -213,12 +213,12 @@ export default function PrescriptionBadge({
               type="text"
               value={editedMedication}
               onChange={(e) => setEditedMedication(e.target.value)}
-              className="w-full bg-white/5 border border-white/15 px-3 py-2 text-[11px] outline-none focus:border-emerald-500/50 rounded-lg"
+              className="w-full bg-white/5 border border-white/15 px-3 py-2 text-sm outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 rounded-xl"
             />
             <div className="space-y-2">
-              <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider">Composición</label>
+              <label className="text-xs font-medium text-white/70 uppercase tracking-wider">Composición</label>
               {editedComponents.length === 0 ? (
-                <div className="text-[10px] text-white/50 italic">
+                <div className="text-xs text-white/70 italic">
                   Sin componentes definidos
                 </div>
               ) : (
@@ -232,7 +232,7 @@ export default function PrescriptionBadge({
                         newComps[index].substance = e.target.value;
                         setEditedComponents(newComps);
                       }}
-                      className="flex-1 bg-white/5 border border-white/10 px-3 py-1.5 text-[10px] outline-none rounded-lg"
+                      className="flex-1 bg-white/5 border border-white/10 px-3 py-1.5 text-sm outline-none rounded-lg"
                       placeholder="Sustancia"
                     />
                     <input
@@ -243,7 +243,7 @@ export default function PrescriptionBadge({
                         newComps[index].dosage = e.target.value;
                         setEditedComponents(newComps);
                       }}
-                      className="w-16 bg-white/5 border border-white/10 px-3 py-1.5 text-center text-[10px] outline-none rounded-lg"
+                      className="w-16 bg-white/5 border border-white/10 px-3 py-1.5 text-center text-sm outline-none rounded-lg"
                       placeholder="Dosis"
                     />
                     <button 
@@ -258,16 +258,16 @@ export default function PrescriptionBadge({
               <button
                 type="button"
                 onClick={() => setEditedComponents([...editedComponents, { substance: "", dosage: "", unit: "mg" }])}
-                className="text-[10px] font-medium text-emerald-400 hover:opacity-80 uppercase"
+                className="text-xs font-medium text-emerald-400 hover:opacity-80 uppercase"
               >
                 + Agregar sustancia
               </button>
             </div>
             <div className="flex justify-end gap-2 pt-3 border-t border-white/10">
-              <button onClick={() => setIsEditing(false)} className="text-[10px] font-medium text-white/60 hover:text-white transition-colors px-3 py-1.5">
+              <button onClick={() => setIsEditing(false)} className="text-xs font-medium text-white/70 hover:text-white transition-colors px-3 py-1.5">
                 Cancelar
               </button>
-              <button onClick={handleSave} className="bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 px-4 py-1.5 text-[10px] font-bold uppercase hover:bg-emerald-500/25 transition-all rounded-lg">
+              <button onClick={handleSave} className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 px-4 py-1.5 text-xs font-bold uppercase hover:bg-emerald-500/30 transition-all rounded-xl">
                 Guardar Cambios
               </button>
             </div>
@@ -278,10 +278,10 @@ export default function PrescriptionBadge({
               <div className={`${components.length > 0 ? 'col-span-2' : 'col-span-4'}`}>
                 {components.length > 0 ? (
                   <>
-                    <span className="text-[10px] font-medium text-white/60 uppercase tracking-wider block mb-2">Componentes</span>
+                    <span className="text-xs font-medium text-white/70 uppercase tracking-wider block mb-2">Componentes</span>
                     <div className="space-y-1">
                       {components.map((c, i) => (
-                        <div key={i} className="flex items-center gap-2 text-[11px]">
+                        <div key={i} className="flex items-center gap-2 text-sm">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/50" />
                           <span className="text-white/80">{c.substance}</span>
                           <span className="text-emerald-400 font-medium">{c.dosage}{c.unit}</span>
@@ -290,25 +290,25 @@ export default function PrescriptionBadge({
                     </div>
                   </>
                 ) : (
-                  <span className="text-[10px] text-white/50 italic">
+                  <span className="text-xs text-white/70 italic">
                     Sin detalles de composición
                   </span>
                 )}
               </div>
               
               <div className="space-y-1">
-                <span className="text-[10px] font-medium text-white/60 flex items-center gap-1">
+                <span className="text-xs font-medium text-white/70 flex items-center gap-1">
                   <ClockIcon className="w-3.5 h-3.5" /> Frecuencia
                 </span>
-                <span className="text-[11px] text-white/80">
+                <span className="text-sm text-white/80">
                   {FREQUENCY_LABELS[frequency] || frequency}
                 </span>
               </div>
               <div className="space-y-1">
-                <span className="text-[10px] font-medium text-white/60 flex items-center gap-1">
+                <span className="text-xs font-medium text-white/70 flex items-center gap-1">
                   <ArrowsRightLeftIcon className="w-3.5 h-3.5" /> Vía
                 </span>
-                <span className="text-[11px] text-white/80">
+                <span className="text-sm text-white/80">
                   {ROUTE_LABELS[route] || route}
                 </span>
               </div>
@@ -318,8 +318,8 @@ export default function PrescriptionBadge({
                 <div className="flex items-start gap-2">
                   <DocumentTextIcon className="w-4 h-4 text-white/50 mt-0.5 flex-shrink-0" />
                   <div>
-                    <span className="text-[10px] font-medium text-white/60 block mb-1">Indicaciones</span>
-                    <span className="text-[11px] text-white/80">{indications}</span>
+                    <span className="text-xs font-medium text-white/70 block mb-1">Indicaciones</span>
+                    <span className="text-sm text-white/80">{indications}</span>
                   </div>
                 </div>
               </div>
@@ -327,7 +327,7 @@ export default function PrescriptionBadge({
             {duration && (
               <div className="pt-3 border-t border-white/10 flex items-center gap-2">
                 <CalendarIcon className="w-4 h-4 text-white/50" />
-                <span className="text-[10px] text-white/60 uppercase tracking-wider">
+                <span className="text-xs text-white/70 uppercase tracking-wider">
                   Duración: <span className="text-white font-medium">{duration}</span>
                 </span>
               </div>

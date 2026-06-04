@@ -74,10 +74,10 @@ export default function TreatmentBadge({
     setIsEditing(false);
   };
   return (
-    <div className={`group relative border border-white/15 bg-white/5 p-4 transition-all hover:border-white/25 rounded-lg ${isEditing ? 'border-emerald-500/30 bg-emerald-500/5' : ''} ${isOptimistic ? "animate-pulse opacity-80 border-emerald-500/30" : ""}`}>
+    <div className={`group relative border border-white/15 bg-white/5 p-4 transition-all hover:border-white/25 rounded-xl ${isEditing ? 'border-emerald-500/30 bg-emerald-500/5' : ''} ${isOptimistic ? "animate-pulse opacity-80 border-emerald-500/30" : ""}`}>
       
       {isOptimistic && (
-        <div className="absolute -top-2 -right-2 flex items-center gap-1 bg-emerald-500/20 text-emerald-400 text-[9px] font-medium px-2 py-1 rounded-full border border-emerald-500/30">
+        <div className="absolute -top-2 -right-2 flex items-center gap-1 bg-emerald-500/20 text-emerald-400 text-xs font-medium px-2 py-1 rounded-full border border-emerald-500/30">
           <CloudIcon className="w-3 h-3 animate-bounce" />
           <span>Guardando...</span>
         </div>
@@ -85,10 +85,10 @@ export default function TreatmentBadge({
       
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
-          <span className="text-[10px] font-medium text-white/60 uppercase tracking-wider">
+          <span className="text-xs font-medium text-white/70 uppercase tracking-wider">
             {typeConfig[treatment.treatment_type] || treatment.treatment_type}
           </span>
-          <div className={`flex items-center gap-1.5 text-[10px] font-medium px-2.5 py-1 rounded-lg border ${statusConfig[treatment.status]?.bg || "bg-white/10"} ${statusConfig[treatment.status]?.border || "border-white/15"} ${statusConfig[treatment.status]?.color || "text-gray-400"}`}>
+          <div className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border ${statusConfig[treatment.status]?.bg || "bg-white/10"} ${statusConfig[treatment.status]?.border || "border-white/15"} ${statusConfig[treatment.status]?.color || "text-gray-400"}`}>
             {statusConfig[treatment.status]?.icon || <ClockIcon className="w-4 h-4" />}
             {statusConfig[treatment.status]?.label || treatment.status}
           </div>
@@ -113,18 +113,18 @@ export default function TreatmentBadge({
           <textarea
             value={editedPlan}
             onChange={(e) => setEditedPlan(e.target.value)}
-            className="w-full bg-white/5 border border-white/15 p-3 text-[12px] focus:border-emerald-500/50 outline-none min-h-[80px] rounded-lg"
+            className="w-full bg-white/5 border border-white/15 p-3 text-sm focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 outline-none min-h-[80px] rounded-xl"
           />
           <div className="grid grid-cols-2 gap-3">
-            <input type="date" value={editedStart} onChange={(e) => setEditedStart(e.target.value)} className="bg-white/5 border border-white/15 p-2.5 text-[11px] outline-none rounded-lg [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert" />
-            <input type="date" value={editedEnd} onChange={(e) => setEditedEnd(e.target.value)} className="bg-white/5 border border-white/15 p-2.5 text-[11px] outline-none rounded-lg [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert" />
-            <select value={editedStatus} onChange={(e) => setEditedStatus(e.target.value as any)} className="bg-white/5 border border-white/15 p-2.5 text-[11px] outline-none rounded-lg">
+            <input type="date" value={editedStart} onChange={(e) => setEditedStart(e.target.value)} className="bg-white/5 border border-white/15 p-2.5 text-sm outline-none rounded-xl [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert" />
+            <input type="date" value={editedEnd} onChange={(e) => setEditedEnd(e.target.value)} className="bg-white/5 border border-white/15 p-2.5 text-sm outline-none rounded-xl [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert" />
+            <select value={editedStatus} onChange={(e) => setEditedStatus(e.target.value as any)} className="bg-white/5 border border-white/15 p-2.5 text-sm outline-none rounded-xl">
               <option value="active">Activo</option>
               <option value="completed">Completado</option>
               <option value="cancelled">Cancelado</option>
               <option value="suspended">Suspendido</option>
             </select>
-            <select value={editedType} onChange={(e) => setEditedType(e.target.value as any)} className="bg-white/5 border border-white/15 p-2.5 text-[11px] outline-none rounded-lg">
+            <select value={editedType} onChange={(e) => setEditedType(e.target.value as any)} className="bg-white/5 border border-white/15 p-2.5 text-sm outline-none rounded-xl">
               <option value="pharmacological">Farmacológico</option>
               <option value="surgical">Quirúrgico</option>
               <option value="rehabilitation">Rehabilitación</option>
@@ -134,26 +134,26 @@ export default function TreatmentBadge({
             </select>
           </div>
           <div className="flex gap-2">
-            <button onClick={handleSave} className="flex-1 bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 py-2.5 text-[10px] font-bold uppercase tracking-wider hover:bg-emerald-500/25 transition-colors rounded-lg">
+            <button onClick={handleSave} className="flex-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-emerald-500/30 transition-colors rounded-xl">
               Actualizar
             </button>
-            <button onClick={() => setIsEditing(false)} className="px-4 border border-white/15 text-white/60 text-[10px] font-bold uppercase hover:bg-white/5 transition-colors rounded-lg">
+            <button onClick={() => setIsEditing(false)} className="px-4 border border-white/15 text-white/80 text-xs font-bold uppercase hover:bg-white/5 transition-colors rounded-xl">
               Cancelar
             </button>
           </div>
         </div>
       ) : (
         <div className="space-y-4">
-          <h3 className="font-medium text-[12px] text-white leading-relaxed">
+          <h3 className="font-medium text-sm text-white leading-relaxed">
             {getDisplayTitle()}
           </h3>
           
-          <p className="text-[12px] text-white/80 leading-relaxed">
+          <p className="text-sm text-white/80 leading-relaxed">
             {treatment.plan}
           </p>
           
           {showMetadata && (treatment.doctor || treatment.institution) && (
-            <div className="flex items-center gap-3 text-[10px] text-white/60 mb-2 border-t border-white/10 pt-2">
+            <div className="flex items-center gap-3 text-xs text-white/70 mb-2 border-t border-white/10 pt-2">
               {treatment.doctor && (
                 <div className="flex items-center gap-1">
                   <UserGroupIcon className="w-4 h-4" />
@@ -177,17 +177,17 @@ export default function TreatmentBadge({
             {treatment.start_date && (
               <div className="flex items-center gap-2">
                 <CalendarDaysIcon className="w-4 h-4 text-white/50" />
-                <span className="text-[10px] text-white/60">Inicio: {treatment.start_date}</span>
+                <span className="text-xs text-white/70">Inicio: {treatment.start_date}</span>
               </div>
             )}
             {treatment.end_date && (
               <div className="flex items-center gap-2">
                 <ArrowPathIcon className="w-4 h-4 text-white/50" />
-                <span className="text-[10px] text-white/60">Fin: {treatment.end_date}</span>
+                <span className="text-xs text-white/70">Fin: {treatment.end_date}</span>
               </div>
             )}
             {!treatment.start_date && !treatment.end_date && treatment.is_permanent && (
-              <span className="text-[10px] text-white/60">
+              <span className="text-xs text-white/70">
                 Tratamiento Indefinido
               </span>
             )}

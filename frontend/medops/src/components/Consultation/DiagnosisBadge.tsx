@@ -59,12 +59,12 @@ export default function DiagnosisBadge({
   
   return (
     <div 
-      className={`group relative bg-white/5 border border-white/15 p-4 hover:border-white/25 transition-all rounded-lg ${
+      className={`group relative bg-white/5 border border-white/15 p-4 hover:border-white/25 transition-all rounded-xl ${
         isOptimistic ? "animate-pulse opacity-80 border-emerald-500/30" : ""
       }`}
     >
       {isOptimistic && (
-        <div className="absolute -top-2 -right-2 flex items-center gap-1 bg-emerald-500/20 text-emerald-400 text-[9px] font-medium px-2 py-1 rounded-full border border-emerald-500/30">
+        <div className="absolute -top-2 -right-2 flex items-center gap-1 bg-emerald-500/20 text-emerald-400 text-xs font-medium px-2 py-1 rounded-full border border-emerald-500/30">
           <CloudIcon className="w-3 h-3 animate-bounce" />
           <span>Guardando...</span>
         </div>
@@ -73,34 +73,34 @@ export default function DiagnosisBadge({
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className={`text-[12px] font-bold bg-emerald-500/10 px-2 py-0.5 rounded border ${
+            <span className={`text-sm font-bold bg-emerald-500/20 px-2 py-0.5 rounded-lg border ${
               isOptimistic ? "border-emerald-500/40 text-emerald-300" : "border-emerald-500/20 text-emerald-400"
             }`}>
               {icd_code}
             </span>
-            <span className={`text-[12px] font-medium ${isOptimistic ? "text-white/70" : "text-white"}`}>
+            <span className={`text-sm font-medium ${isOptimistic ? "text-white/70" : "text-white"}`}>
               {title}
             </span>
             {catalog === "snomed" && (
-              <span className="text-[8px] font-medium px-1.5 py-0.5 rounded border bg-purple-500/10 text-purple-400 border-purple-500/20 uppercase tracking-wider">
+              <span className="text-xs font-medium px-1.5 py-0.5 rounded border bg-purple-500/20 text-purple-400 border-purple-500/50 uppercase tracking-wider">
                 SNOMED
               </span>
             )}
-            <span className={`text-[9px] font-medium px-2 py-0.5 rounded border uppercase ${
+            <span className={`text-xs font-medium px-2 py-0.5 rounded border uppercase ${
               type === "definitive" 
                 ? isOptimistic 
                   ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40" 
-                  : "bg-emerald-500/15 text-emerald-400 border-emerald-500/25" 
-                : "bg-white/10 text-white/60 border-white/15"
+                  : "bg-emerald-500/20 text-emerald-400 border-emerald-500/50" 
+                : "bg-white/10 text-white/80 border-white/15"
             }`}>
               {typeLabel}
             </span>
-            <span className={`text-[9px] font-medium px-2 py-0.5 rounded border uppercase ${isOptimistic ? "bg-white/10 text-white/60 border-white/20" : statusColor}`}>
+            <span className={`text-xs font-medium px-2 py-0.5 rounded border uppercase ${isOptimistic ? "bg-white/10 text-white/60 border-white/20" : statusColor}`}>
               {statusLabel}
             </span>
           </div>
           {description && (
-            <p className={`text-[11px] mt-2 pl-3 border-l-2 ${
+            <p className={`text-sm mt-2 pl-3 border-l-2 ${
               isOptimistic ? "text-white/40 border-white/10" : "text-white/60 border-white/15"
             }`}>
               {description}
@@ -131,7 +131,7 @@ export default function DiagnosisBadge({
           <textarea
             value={editDesc}
             onChange={(e) => setEditDesc(e.target.value)}
-            className="w-full bg-white/5 border border-emerald-500/30 p-3 text-[11px] outline-none focus:border-emerald-500/50 min-h-[60px] rounded-lg"
+            className="w-full bg-white/5 border border-emerald-500/30 p-3 text-sm outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 min-h-[60px] rounded-xl"
             placeholder="Editar descripción..."
           />
           <div className="flex gap-2 mt-3">
@@ -140,7 +140,7 @@ export default function DiagnosisBadge({
                 onEdit?.(Number(id), editDesc);
                 setIsEditing(false);
               }}
-              className="flex-1 bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 py-2 text-[10px] font-bold uppercase tracking-wider hover:bg-emerald-500/25 transition-colors rounded-lg"
+              className="flex-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 py-2 text-xs font-bold uppercase tracking-wider hover:bg-emerald-500/30 transition-colors rounded-xl"
             >
               Guardar
             </button>
@@ -149,7 +149,7 @@ export default function DiagnosisBadge({
                 setEditDesc(description || "");
                 setIsEditing(false);
               }}
-              className="flex-1 bg-white/5 text-white/60 py-2 text-[10px] font-bold uppercase tracking-wider hover:bg-white/10 transition-colors rounded-lg"
+              className="flex-1 bg-white/5 text-white/80 py-2 text-xs font-bold uppercase tracking-wider hover:bg-white/10 transition-colors rounded-xl"
             >
               Cancelar
             </button>
