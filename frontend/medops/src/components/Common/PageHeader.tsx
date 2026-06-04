@@ -119,7 +119,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
           </div>
         ) : (
           <div className="flex-1" />
-        )
+        )}
         
         {(actions || children) && (
           <div className="flex items-center gap-4 self-start lg:self-center">
