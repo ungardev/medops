@@ -94,7 +94,7 @@ export default function ChargeOrderDetail() {
   const pending = Number(total) - paid;
   
   return (
-    <div className="p-4 sm:p-8 space-y-8 max-w-7xl mx-auto">
+    <div className="space-y-6">
       
       <PageHeader
         breadcrumbs={[
@@ -125,14 +125,14 @@ export default function ChargeOrderDetail() {
         ]}
         actions={
           <div className="flex gap-2">
-            <button onClick={() => navigate(-1)} className="flex items-center gap-2 px-4 py-2 border border-white/15 bg-white/5 text-[11px] font-medium hover:bg-white/10 transition-all rounded-lg">
-              <ArrowLeftIcon className="w-4 h-4" /> Volver
+            <button onClick={() => navigate(-1)} className="flex items-center gap-2 px-5 py-3 border border-white/15 bg-white/5 text-sm font-medium hover:bg-white/10 transition-all rounded-xl">
+              <ArrowLeftIcon className="w-5 h-5" /> Volver
             </button>
             
             {order!.institution && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/15 rounded-lg">
-                <BuildingOfficeIcon className="w-4 h-4 text-white/30" />
-                <span className="text-[10px] text-white/50">
+              <div className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-white/15 rounded-xl">
+                <BuildingOfficeIcon className="w-5 h-5 text-white/30" />
+                <span className="text-xs text-white/50">
                   {order!.institution.tax_id}
                 </span>
               </div>
@@ -142,23 +142,23 @@ export default function ChargeOrderDetail() {
       />
       
       {order!.institution && (
-        <div className="bg-white/5 border border-white/15 rounded-lg p-5">
+        <div className="bg-white/5 border border-white/15 rounded-xl p-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <BuildingOfficeIcon className="w-5 h-5 text-white/30" />
               <div>
-                <h3 className="text-[12px] font-medium text-white/80">
+                <h3 className="text-sm font-medium text-white/80">
                   {order!.institution.name}
                 </h3>
-                <p className="text-[9px] text-white/30">
+                <p className="text-xs text-white/30">
                   RIF: {order!.institution.tax_id}
                 </p>
               </div>
             </div>
             
             {activeInstitution && activeInstitution.id !== order!.institution.id && (
-              <div className="bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-lg">
-                <span className="text-[9px] text-amber-400">
+              <div className="bg-amber-500/10 border border-amber-500/20 px-4 py-2 rounded-xl">
+                <span className="text-xs text-amber-400">
                   Institución diferente a la activa
                 </span>
               </div>
@@ -173,8 +173,8 @@ export default function ChargeOrderDetail() {
           { label: "Pagado", val: paid, color: "text-emerald-400" },
           { label: "Pendiente", val: pending, color: pending > 0 ? "text-red-400" : "text-emerald-400" }
         ].map((s, i) => (
-          <div key={i} className="bg-white/5 border border-white/15 rounded-lg p-5 hover:border-white/25 transition-colors">
-            <p className="text-[9px] font-medium tracking-wider text-white/40 uppercase mb-2">
+          <div key={i} className="bg-white/5 border border-white/15 rounded-xl p-6 hover:border-white/25 transition-colors">
+            <p className="text-xs font-medium tracking-wider text-white/40 uppercase mb-2">
               {s.label}
             </p>
             <p className={`text-2xl font-semibold ${s.color}`}>${Number(s.val).toFixed(2)}</p>
@@ -187,27 +187,27 @@ export default function ChargeOrderDetail() {
           <section className="space-y-4">
             <div className="flex items-center gap-2">
               <HashtagIcon className="w-5 h-5 text-white/30" />
-              <h3 className="text-[11px] font-medium uppercase tracking-wider text-white/60">Servicios</h3>
+              <h3 className="text-sm font-medium uppercase tracking-wider text-white/60">Servicios</h3>
             </div>
-            <div className="border border-white/15 bg-white/5 overflow-hidden rounded-lg">
+            <div className="border border-white/15 bg-white/5 overflow-hidden rounded-xl">
               <table className="w-full text-left">
-                <thead className="bg-white/5 text-[9px] text-white/40 uppercase tracking-wider">
+                <thead className="bg-white/5 text-xs text-white/40 uppercase tracking-wider">
                   <tr>
-                    <th className="p-4 font-medium">Código</th>
-                    <th className="p-4 font-medium">Descripción</th>
-                    <th className="p-4 text-right font-medium">Cant</th>
-                    <th className="p-4 text-right font-medium">Unit</th>
-                    <th className="p-4 text-right font-medium">Subtotal</th>
+                    <th className="p-5 font-medium">Código</th>
+                    <th className="p-5 font-medium">Descripción</th>
+                    <th className="p-5 text-right font-medium">Cant</th>
+                    <th className="p-5 text-right font-medium">Unit</th>
+                    <th className="p-5 text-right font-medium">Subtotal</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5 text-[11px]">
+                <tbody className="divide-y divide-white/5 text-sm">
                   {order!.items?.map((item) => (
                     <tr key={item.id} className="hover:bg-white/5 transition-colors">
-                      <td className="p-4 text-blue-400 font-medium">{item.code}</td>
-                      <td className="p-4 text-white/60">{item.description}</td>
-                      <td className="p-4 text-right text-white/40">{item.qty}</td>
-                      <td className="p-4 text-right text-white/40">${Number(item.unit_price).toFixed(2)}</td>
-                      <td className="p-4 text-right font-medium text-white/80">${Number(item.subtotal).toFixed(2)}</td>
+                      <td className="p-5 text-blue-400 font-medium">{item.code}</td>
+                      <td className="p-5 text-white/60">{item.description}</td>
+                      <td className="p-5 text-right text-white/40">{item.qty}</td>
+                      <td className="p-5 text-right text-white/40">${Number(item.unit_price).toFixed(2)}</td>
+                      <td className="p-5 text-right font-medium text-white/80">${Number(item.subtotal).toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -218,39 +218,39 @@ export default function ChargeOrderDetail() {
           <section className="space-y-4">
             <div className="flex items-center gap-2">
               <ClockIcon className="w-5 h-5 text-emerald-400" />
-              <h3 className="text-[11px] font-medium uppercase tracking-wider text-white/60">Historial de Pagos</h3>
+              <h3 className="text-sm font-medium uppercase tracking-wider text-white/60">Historial de Pagos</h3>
             </div>
             <PaymentList payments={order!.payments || []} />
           </section>
         </div>
         
         <div className="lg:col-span-4 space-y-8">
-          <section className="p-5 bg-white/5 border border-white/15 space-y-4 rounded-lg">
-            <h3 className="text-[10px] font-medium uppercase tracking-wider text-white/40">Operaciones</h3>
-            <div className="grid grid-cols-1 gap-2">
+          <section className="p-6 bg-white/5 border border-white/15 space-y-4 rounded-xl">
+            <h3 className="text-xs font-medium uppercase tracking-wider text-white/40">Operaciones</h3>
+            <div className="grid grid-cols-1 gap-3">
               
-              <button onClick={() => setShowPaymentSelector(true)} className="flex items-center justify-between p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-medium hover:bg-emerald-500/15 transition-all group rounded-lg">
-                Registrar Pago <PlusIcon className="w-4 h-4 group-hover:rotate-90 transition-transform" />
+              <button onClick={() => setShowPaymentSelector(true)} className="flex items-center justify-between p-5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium hover:bg-emerald-500/15 transition-all group rounded-xl">
+                Registrar Pago <PlusIcon className="w-5 h-5 group-hover:rotate-90 transition-transform" />
               </button>
               
-              <button onClick={handleExport} className="flex items-center justify-between p-4 bg-white/5 border border-white/15 text-white/70 text-[11px] font-medium hover:bg-white/10 transition-all rounded-lg">
-                Exportar Comprobante <DocumentArrowDownIcon className="w-4 h-4" />
+              <button onClick={handleExport} className="flex items-center justify-between p-5 bg-white/5 border border-white/15 text-white/70 text-sm font-medium hover:bg-white/10 transition-all rounded-xl">
+                Exportar Comprobante <DocumentArrowDownIcon className="w-5 h-5" />
               </button>
               
-              <div className="grid grid-cols-2 gap-2 pt-2">
+              <div className="grid grid-cols-2 gap-3 pt-2">
                 <button 
                   onClick={() => voidMutation.mutate()} 
                   disabled={voidMutation.isPending} 
-                  className="flex flex-col items-center justify-center p-4 bg-red-500/5 border border-red-500/15 text-red-400/60 text-[9px] font-medium hover:bg-red-500/10 hover:text-red-400 transition-all disabled:opacity-30 rounded-lg"
+                  className="flex flex-col items-center justify-center p-5 bg-red-500/5 border border-red-500/15 text-red-400/60 text-xs font-medium hover:bg-red-500/10 hover:text-red-400 transition-all disabled:opacity-30 rounded-xl"
                 >
-                  <NoSymbolIcon className="w-4 h-4 mb-1" /> Anular Orden
+                  <NoSymbolIcon className="w-5 h-5 mb-2" /> Anular Orden
                 </button>
                 <button 
                   onClick={() => waiveMutation.mutate()} 
                   disabled={waiveMutation.isPending} 
-                  className="flex flex-col items-center justify-center p-4 bg-amber-500/5 border border-amber-500/15 text-amber-400/60 text-[9px] font-medium hover:bg-amber-500/10 hover:text-amber-400 transition-all disabled:opacity-30 rounded-lg"
+                  className="flex flex-col items-center justify-center p-5 bg-amber-500/5 border border-amber-500/15 text-amber-400/60 text-xs font-medium hover:bg-amber-500/10 hover:text-amber-400 transition-all disabled:opacity-30 rounded-xl"
                 >
-                  <GiftIcon className="w-4 h-4 mb-1" /> Exonerar Orden
+                  <GiftIcon className="w-5 h-5 mb-2" /> Exonerar Orden
                 </button>
               </div>
             </div>
@@ -296,14 +296,14 @@ export default function ChargeOrderDetail() {
       
       {toast && (
         <div className="fixed bottom-4 right-4 z-50">
-          <div className={`flex items-center gap-3 px-4 py-3 border rounded-lg ${
+          <div className={`flex items-center gap-3 px-5 py-4 border rounded-xl ${
             toast.type === "success" 
               ? 'bg-emerald-500/10 border-emerald-500/20' :
             toast.type === "error" 
               ? 'bg-red-500/10 border-red-500/20' 
               : 'bg-blue-500/10 border-blue-500/20'
           }`}>
-            <span className={`text-[11px] font-medium ${
+            <span className={`text-sm font-medium ${
               toast.type === "success" 
                 ? 'text-emerald-400' :
               toast.type === "error" 
@@ -314,7 +314,7 @@ export default function ChargeOrderDetail() {
             </span>
             <button 
               onClick={() => setToast(null)}
-              className="text-white/40 hover:text-white transition-colors"
+              className="text-white/40 hover:text-white transition-colors text-lg"
             >
               ×
             </button>

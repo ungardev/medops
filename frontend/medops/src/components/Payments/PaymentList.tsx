@@ -15,8 +15,8 @@ interface Props {
 export default function PaymentList({ payments, hideSummaryBadges = false }: Props) {
   if (!payments || payments.length === 0) {
     return (
-      <div className="p-6 text-center border border-dashed border-white/15 rounded-lg">
-        <span className="text-[11px] text-white/30">
+      <div className="p-8 text-center border border-dashed border-white/15 rounded-xl">
+        <span className="text-sm text-white/30">
           Sin transacciones registradas
         </span>
       </div>
@@ -39,17 +39,77 @@ export default function PaymentList({ payments, hideSummaryBadges = false }: Pro
   return (
     <div className="space-y-4">
       {!hideSummaryBadges && (
-        <div className="flex flex-wrap gap-2">
+<div className="flex flex-wrap gap-3">
           {[
             { label: "Total", val: totals.total, color: "text-white bg-white/5" },
             { label: "Confirmado", val: totals.confirmed, color: "text-emerald-400 bg-emerald-500/10" },
             { label: "Pendiente", val: totals.pending, color: "text-amber-400 bg-amber-500/10" },
             { label: "Fallido", val: totals.failed, color: "text-red-400 bg-red-500/10" }
           ].map((stat, i) => (
-            <div key={i} className={`px-3 py-1.5 border border-white/10 rounded-lg flex items-center gap-2 ${stat.color.replace('text-', 'bg-').split(' ')[1] || 'bg-white/5'}`}>
-              <span className="text-[8px] font-medium uppercase tracking-wider text-white/40">{stat.label}:</span>
-              <span className="text-[10px] font-semibold">{formatCurrency(stat.val, undefined)}</span>
+            <div key={i} className={`px-4 py-2.5 border border-white/10 rounded-xl flex items-center gap-3 ${stat.color.replace('text-', 'bg-').split(' ')[1] || 'bg-white/5'}`}>
+              <span className="text-xs font-medium uppercase tracking-wider text-white/40">{stat.label}:</span>
+              <span className="text-sm font-semibold">{formatCurrency(stat.val, undefined)}</span>
             </div>
+          ))}
+        </div>
+      </div>
+      <div className="overflow-x-auto border border-white/15 bg-white/5 rounded-xl">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="border-b border-white/10 bg-white/5">
+              <th className="px-5 py-4 text-xs font-medium uppercase tracking-wider text-white/40">Monto</th>
+              <th className="px-5 py-4 text-xs font-medium uppercase tracking-wider text-white/40">Método</th>
+              <th className="px-5 py-4 text-xs font-medium uppercase tracking-wider text-white/40">Estado</th>
+              <th className="px-5 py-4 text-xs font-medium uppercase tracking-wider text-white/40">Referencia</th>
+              <th className="px-5 py-4 text-xs font-medium uppercase tracking-wider text-white/40">Fecha</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/5">
+            {payments.map((p) => {
+              const amount = parseFloat(String(p.amount) || "0");
+              const dateStr = p.received_at ?? p.appointment_date;
+              const date = dateStr ? new Date(dateStr).toLocaleDateString('es-VE') : "—";
+              
+              const statusMap = {
+                [PaymentStatus.CONFIRMED]: { label: "Confirmado", icon: CheckCircleIcon, color: "text-emerald-400" },
+                [PaymentStatus.PENDING]: { label: "Pendiente", icon: ClockIcon, color: "text-amber-400" },
+                [PaymentStatus.REJECTED]: { label: "Rechazado", icon: XCircleIcon, color: "text-red-400" },
+                [PaymentStatus.VOID]: { label: "Anulado", icon: NoSymbolIcon, color: "text-white/30" },
+              };
+              const config = statusMap[p.status as keyof typeof statusMap] || statusMap[PaymentStatus.PENDING];
+              const StatusIcon = config.icon;
+              const methodLabels: Record<string, string> = {
+                [PaymentMethod.CASH]: "Efectivo",
+                [PaymentMethod.CARD]: "Tarjeta",
+                [PaymentMethod.TRANSFER]: "Transferencia",
+              };
+              
+              return (
+                <tr key={p.id} className="hover:bg-white/5 transition-colors">
+                  <td className="px-5 py-4 font-medium text-sm text-white/80">
+                    {formatCurrency(p.amount, p.currency)}
+                  </td>
+                  <td className="px-5 py-4 text-sm text-white/50">
+                    {methodLabels[p.method] || p.method}
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-2">
+                      <StatusIcon className="w-4 h-4" />
+                      <span className="text-xs font-medium tracking-wider uppercase">{config.label}</span>
+                    </div>
+                  </td>
+                  <td className="px-5 py-4 text-sm text-white/40">
+                    {p.reference_number || "—"}
+                  </td>
+                  <td className="px-5 py-4 text-sm text-white/30">
+                    {date}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
           ))}
         </div>
       )}

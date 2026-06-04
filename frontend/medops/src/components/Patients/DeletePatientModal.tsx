@@ -8,7 +8,7 @@ interface Props {
   onConfirm: () => Promise<void>;
   onClose: () => void;
 }
-export default function DeletePatientModal({ open, patientName, onClose }: Props) {
+export default function DeletePatientModal({ open, patientName, onConfirm, onClose }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const handleDelete = async () => {
     if (submitting) return;
