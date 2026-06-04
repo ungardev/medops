@@ -73,7 +73,7 @@ export default function Consultation() {
     }
   }, [initialized, appointment, isLoading, isFetching, navigate]);
 
-  if (isLoading || isFetching) return (
+  if (isLoading && !appointment) return (
     <div className="min-h-screen flex items-center justify-center bg-black">
       <div className="text-center space-y-5">
         <div className="w-12 h-12 border-[3px] border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto" />
