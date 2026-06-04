@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { searchPatients } from "../../api/patients";
 import { PatientRef } from "../../types/patients";
 import type { WaitingRoomEntry } from "../../types/waitingRoom";
-import { UserPlusIcon, Search, CheckIcon, X } from "lucide-react";
+import { UserPlusIcon, Search, CheckIcon, X, Loader2, AlertTriangle } from "lucide-react";
 import NewPatientModal from "../Patients/NewPatientModal";
 interface ServiceOption {
   id: number;
@@ -32,6 +32,7 @@ const RegisterWalkinModal: React.FC<Props> = ({
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
   const [showNewPatientModal, setShowNewPatientModal] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
   useEffect(() => {
     const fetchResults = async () => {
       if (!query || query.length < 1) {
@@ -39,6 +40,7 @@ const RegisterWalkinModal: React.FC<Props> = ({
         setHighlightedIndex(-1);
         return;
       }
+      setIsSearching(true);
       try {
         const response = await searchPatients(query);
         const safeResults: PatientRef[] = Array.isArray(response?.results) ? response.results : [];
@@ -46,6 +48,8 @@ const RegisterWalkinModal: React.FC<Props> = ({
         setHighlightedIndex(safeResults.length > 0 ? 0 : -1);
       } catch (e) {
         setResults([]);
+      } finally {
+        setIsSearching(false);
       }
     };
     const timer = setTimeout(fetchResults, 300);
@@ -72,7 +76,7 @@ const RegisterWalkinModal: React.FC<Props> = ({
   const alreadyInWaitingRoom = selectedPatient
     ? existingEntries.some((e) => e.patient.id === selectedPatient.id && !["completed", "canceled"].includes(e.status))
     : false;
-  const inputStyles = "w-full bg-white/5 border border-white/15 rounded-xl px-5 py-3.5 text-sm text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30";
+  const inputStyles = "w-full bg-white/5 border border-white/15 rounded-xl px-5 py-3.5 text-sm text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/60";
   const labelStyles = "text-sm font-medium text-white/50 uppercase tracking-wider mb-2 block";
   return (
     <>
@@ -101,7 +105,7 @@ const RegisterWalkinModal: React.FC<Props> = ({
           <div className="p-6 space-y-6">
             <div className="bg-white/5 border border-white/15 rounded-xl p-6 space-y-5">
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
                 <input
                   autoFocus
                   className={`${inputStyles} pl-12`}
@@ -109,6 +113,9 @@ const RegisterWalkinModal: React.FC<Props> = ({
                   value={query}
                   onChange={(e) => { setQuery(e.target.value); setSelectedPatient(null); }}
                 />
+                {isSearching && (
+                  <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-400 animate-spin" />
+                )}
               </div>
               {results.length > 0 && !selectedPatient && (
                 <div className="border border-white/15 rounded-xl divide-y divide-white/5 max-h-56 overflow-y-auto bg-black/20">
@@ -119,7 +126,7 @@ const RegisterWalkinModal: React.FC<Props> = ({
                       onClick={() => handlePatientSelected(p)}
                     >
                       <span className="text-sm font-medium text-white/80">{p.full_name}</span>
-                      <span className="text-sm text-white/30">{p.national_id || "Sin ID"}</span>
+                      <span className="text-sm text-white/50">{p.national_id || "Sin ID"}</span>
                     </div>
                   ))}
                 </div>
@@ -128,7 +135,7 @@ const RegisterWalkinModal: React.FC<Props> = ({
                 <div className={`p-6 border rounded-xl transition-all ${alreadyInWaitingRoom ? "border-red-500/20 bg-red-500/5" : "border-white/15 bg-white/5"}`}>
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="text-sm text-white/30 uppercase tracking-wider mb-2">Paciente Identificado</p>
+                      <p className="text-sm text-white/50 uppercase tracking-wider mb-2">Paciente Identificado</p>
                       <h3 className="text-xl font-medium text-white/90">{selectedPatient.full_name}</h3>
                       <p className="text-sm font-mono text-white/40 mt-2">{selectedPatient.national_id}</p>
                     </div>
@@ -136,9 +143,10 @@ const RegisterWalkinModal: React.FC<Props> = ({
                   </div>
                   
                   {alreadyInWaitingRoom ? (
-                    <div className="mt-5 p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-medium text-center rounded-xl">
-                      ⚠ El paciente ya tiene un registro activo
-                    </div>
+<div className="mt-5 p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-medium text-center rounded-xl flex items-center justify-center gap-2">
+                        <AlertTriangle className="w-4 h-4" />
+                        El paciente ya tiene un registro activo
+                      </div>
                   ) : (
                     <div className="flex gap-3 mt-6">
                       <button 
