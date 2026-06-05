@@ -296,10 +296,10 @@ export const ActiveInstitutionCard: React.FC = () => {
     <div className="bg-white/5 sm:border sm:border-white/15 p-4 sm:p-6 lg:p-8 sm:rounded-xl">
       
       {/* Header: Logo + Info + Clock */}
-      <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6 mb-4 sm:mb-6">
+      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 mb-4 sm:mb-6">
         
         {/* Logo */}
-        <div className="w-20 h-20 sm:w-24 sm:h-24 bg-white border border-gray-200 flex items-center justify-center p-3 shrink-0 overflow-hidden rounded-xl shadow-inner">
+        <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto sm:mx-0 bg-white border border-gray-200 flex items-center justify-center p-3 shrink-0 overflow-hidden rounded-xl shadow-inner">
           {institution.logo && typeof institution.logo === 'string' ? (
             <img 
               src={getInstitutionLogoUrl(institution.logo)} 
@@ -451,11 +451,11 @@ export const ActiveInstitutionCard: React.FC = () => {
                   ${cfg.borderColor} ${cfg.hoverBorderColor}
                 `}
               >
-                <div className="flex items-center gap-3 mb-3">
-                  <div className={`p-2.5 rounded-lg ${cfg.bgColor}`}>
-                    <Icon className={`h-5 w-5 ${cfg.color}`} />
+                <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                  <div className={`p-1.5 sm:p-2.5 rounded-lg ${cfg.bgColor}`}>
+                    <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${cfg.color}`} />
                   </div>
-                  <span className="text-xs font-semibold text-white/70 uppercase tracking-wider">
+                  <span className="text-[10px] sm:text-xs font-semibold text-white/70 uppercase tracking-wider truncate">
                     {getMetricLabel(key)}
                   </span>
                 </div>
