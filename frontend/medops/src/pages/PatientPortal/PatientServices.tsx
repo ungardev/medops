@@ -18,9 +18,9 @@ import {
   UserIcon,
   CurrencyDollarIcon,
   MagnifyingGlassIcon,
-  XMarkIcon
+  XMarkIcon,
+  HeartIcon
 } from "@heroicons/react/24/outline";
-import { StethoscopeIcon as StethoscopeIconSolid } from "@heroicons/react/24/solid";
 import { DoctorService, RecommendedService } from "@/api/patient/client";
 import { ServicePurchaseFlow } from "@/components/Doctor/ServicePurchaseFlow";
 import { ServiceDetail } from "@/components/Common/ServiceDetail";
@@ -322,7 +322,7 @@ export default function PatientServices() {
             ))}
           </div>
         </Tab>
-        <Tab id="recommended" label={<><StethoscopeIconSolid className="w-4 h-4" /> Recomendados</>}>
+        <Tab id="recommended" label={<><HeartIcon className="w-4 h-4" /> Recomendados</>}>
           <div className="space-y-6 mt-6">
             <div className="bg-white/10 border border-white/20 rounded-xl p-5">
               <p className="text-xs font-medium text-white/50 mb-4 flex items-center gap-2">
