@@ -123,7 +123,7 @@ export default function Sidebar({
       )}
 
       {/* Nav Items */}
-      <nav className="flex-1 overflow-y-auto px-2 py-2">
+      <nav className="flex-1 min-h-0 overflow-y-auto px-2 py-2">
         <ul className={`flex flex-col ${effectiveCollapsed ? "pt-2" : ""} space-y-1`}>
           {navItems.map(({ path, label, icon: Icon }) => {
             const isActive = location.pathname === path;
