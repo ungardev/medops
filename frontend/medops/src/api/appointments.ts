@@ -96,8 +96,8 @@ export const getCompletedAppointmentsByPatient = async (patientId: number): Prom
   const response = await patientApi.get<any[]>(`patients/${patientId}/completed_appointments/`);
   return response.data.map(mapAppointmentList);
 };
-// ✅ MODIFICADO: Usar Axios para autenticación del paciente
+// ✅ FIX: Usar apiFetch (token de doctor/admin) para evitar 401 en portal del doctor
 export const getPendingAppointmentsByPatient = async (patientId: number): Promise<Appointment[]> => {
-  const response = await patientApi.get<any[]>(`patients/${patientId}/pending_appointments/`);
-  return response.data.map(mapAppointmentList);
+  const response = await apiFetch<{ results: any[] }>(`patients/${patientId}/pending_appointments/`);
+  return response.results.map(mapAppointmentList);
 };
