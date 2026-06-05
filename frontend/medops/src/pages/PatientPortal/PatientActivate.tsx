@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
-import { CheckCircleIcon, LockIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 import { apiFetch } from '../../api/client';
 
 export default function PatientActivate() {
@@ -104,7 +104,7 @@ export default function PatientActivate() {
               Nueva Contraseña
             </label>
             <div className="relative">
-              <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
+              <LockClosedIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
               <input
                 type="password"
                 value={password}
@@ -120,7 +120,7 @@ export default function PatientActivate() {
               Confirmar Contraseña
             </label>
             <div className="relative">
-              <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
+              <LockClosedIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
               <input
                 type="password"
                 value={confirmPassword}

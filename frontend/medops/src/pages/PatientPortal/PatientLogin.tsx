@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { usePatientAuth } from '@/hooks/patient/usePatientAuth'; 
 import { Loader2 } from 'lucide-react';
-import { LockIcon, UserIcon } from '@heroicons/react/24/outline';
+import { LockClosedIcon, UserIcon } from '@heroicons/react/24/outline';
 
 export default function PatientLogin() {
   const navigate = useNavigate();
@@ -61,7 +61,7 @@ export default function PatientLogin() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/50 group-focus-within:text-emerald-400 transition-colors">
-                <UserIcon size={18} />
+                <UserIcon className="w-4.5 h-4.5" />
               </div>
               <input
                 type="email"
@@ -76,7 +76,7 @@ export default function PatientLogin() {
             
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/50 group-focus-within:text-emerald-400 transition-colors">
-                <LockIcon size={18} />
+                <LockClosedIcon className="w-4.5 h-4.5" />
               </div>
               <input
                 type="password"
@@ -107,7 +107,7 @@ export default function PatientLogin() {
                 </>
               ) : (
                 <>
-                  <LockIcon size={16} />
+                  <LockClosedIcon className="w-4 h-4" />
                   Iniciar Sesión
                 </>
               )}
