@@ -26,7 +26,7 @@ const PatientAppointments: React.FC = () => {
     return (
       <div className="p-8">
         <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl">
-          <p className="text-xs text-red-400">{error}</p>
+          <p className="text-xs text-red-400">{error instanceof Error ? error.message : String(error)}</p>
         </div>
       </div>
     );

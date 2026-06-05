@@ -1,5 +1,5 @@
 // src/pages/PatientPortal/PatientSettings.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PageHeader from "@/components/Common/PageHeader";
 import { useUpdatePatientProfile } from "@/hooks/patient/useUpdatePatientProfile";
 import { usePatientProfile } from "@/hooks/patient/usePatientProfile";
@@ -194,17 +194,19 @@ export default function PatientSettings() {
   ];
   
   // Update form data when profile loads
-  if (profileData && formData.email === "" && formData.phone === "") {
-    setFormData({
-      email: profileData.user.email || "",
-      phone: profileData.user.phone || profileData.patient.phone || "",
-    });
-    setNotifications({
-      email: profileData.user.notifications_email ?? true,
-      sms: profileData.user.notifications_sms ?? true,
-      whatsapp: profileData.user.notifications_whatsapp ?? true,
-    });
-  }
+  useEffect(() => {
+    if (profileData && formData.email === "" && formData.phone === "") {
+      setFormData({
+        email: profileData.user.email || "",
+        phone: profileData.user.phone || profileData.patient.phone || "",
+      });
+      setNotifications({
+        email: profileData.user.notifications_email ?? true,
+        sms: profileData.user.notifications_sms ?? true,
+        whatsapp: profileData.user.notifications_whatsapp ?? true,
+      });
+    }
+  }, [profileData]);
   
   const handleSaveProfile = async () => {
     setPasswordError("");

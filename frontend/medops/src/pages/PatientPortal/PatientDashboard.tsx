@@ -1,5 +1,5 @@
 // src/pages/PatientPortal/PatientDashboard.tsx
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import moment from 'moment';
 import { 
@@ -50,7 +50,7 @@ export function PatientDashboard() {
   
   const [now, setNow] = useState(moment());
   
-  useState(() => {
+  useEffect(() => {
     const timer = setInterval(() => setNow(moment()), 1000);
     return () => clearInterval(timer);
   }, []);
