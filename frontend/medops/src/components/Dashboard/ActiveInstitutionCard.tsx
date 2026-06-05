@@ -245,21 +245,21 @@ export const ActiveInstitutionCard: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="bg-white/5 border border-white/15 p-4 sm:p-6 lg:p-8 rounded-xl">
-        <div className="flex gap-4 sm:gap-6 mb-6 sm:mb-8">
-          <div className="w-20 h-20 sm:w-24 sm:h-24 bg-white/5 border border-white/15 flex items-center justify-center shrink-0 rounded-xl">
+      <div className="bg-white/5 border border-white/15 p-8 rounded-xl">
+        <div className="flex gap-6 mb-8">
+          <div className="w-24 h-24 bg-white/5 border border-white/15 flex items-center justify-center shrink-0 rounded-xl">
             <div className="w-12 h-12 bg-white/10 animate-pulse rounded" />
           </div>
           <div className="flex-1">
-            <div className="h-8 bg-white/10 rounded w-48 sm:w-64 mb-3 animate-pulse" />
-            <div className="h-5 bg-white/5 rounded w-32 sm:w-48 animate-pulse" />
+            <div className="h-8 bg-white/10 rounded w-64 mb-3 animate-pulse" />
+            <div className="h-5 bg-white/5 rounded w-48 animate-pulse" />
           </div>
         </div>
-        <div className="grid grid-cols-3 xs:grid-cols-4 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-            <div key={i} className="bg-white/5 border border-white/10 rounded-xl p-4 animate-pulse">
-              <div className="h-4 bg-white/10 rounded w-16 sm:w-20 mb-3" />
-              <div className="h-8 bg-white/5 rounded w-12 sm:w-16" />
+            <div key={i} className="bg-white/5 border border-white/10 rounded-xl p-5 animate-pulse">
+              <div className="h-4 bg-white/10 rounded w-20 mb-3" />
+              <div className="h-8 bg-white/5 rounded w-16" />
             </div>
           ))}
         </div>
@@ -269,7 +269,7 @@ export const ActiveInstitutionCard: React.FC = () => {
   
   if (!institution) {
     return (
-      <div className="bg-white/5 border border-white/15 p-4 sm:p-6 lg:p-8 rounded-xl">
+      <div className="bg-white/5 border border-white/15 p-8 rounded-xl">
         <div className="flex items-center justify-center h-40">
           <div className="text-center">
             <BuildingOfficeIcon className="w-16 h-16 text-white/20 mx-auto mb-4" />
@@ -293,13 +293,13 @@ export const ActiveInstitutionCard: React.FC = () => {
   const resumenParts = buildResumen();
   
   return (
-    <div className="bg-white/5 border border-white/15 p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl">
+    <div className="bg-white/5 border border-white/15 p-8 rounded-xl">
       
       {/* Header: Logo + Info + Clock */}
-      <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6 mb-4 sm:mb-6">
+      <div className="flex flex-col md:flex-row items-start gap-6 mb-6">
         
         {/* Logo - 96x96px */}
-        <div className="w-20 h-20 sm:w-24 sm:h-24 bg-white border border-gray-200 flex items-center justify-center p-3 shrink-0 overflow-hidden rounded-xl shadow-inner">
+        <div className="w-24 h-24 bg-white border border-gray-200 flex items-center justify-center p-3 shrink-0 overflow-hidden mx-auto md:mx-0 rounded-xl shadow-inner">
           {institution.logo && typeof institution.logo === 'string' ? (
             <img 
               src={getInstitutionLogoUrl(institution.logo)} 
@@ -360,44 +360,53 @@ export const ActiveInstitutionCard: React.FC = () => {
           </div>
         </div>
         
-        {/* BCV Rate + Mobile Time */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-end gap-3 sm:gap-4 shrink-0 w-full sm:w-auto">
-          <div className="flex flex-col order-2 sm:order-1">
-            <span className="text-[10px] font-semibold text-amber-400/70 uppercase tracking-wider mb-1 sm:hidden">BCV</span>
-            <div className="flex items-center gap-3">
-              <div className="flex flex-col">
-                <span className="hidden sm:block text-[10px] font-semibold text-amber-400/70 uppercase tracking-wider">BCV</span>
-                <span className="text-lg font-bold text-amber-400">{bcvDisplay}</span>
-              </div>
-              <button 
-                onClick={handleUpdateBCVRate}
-                className="p-2 hover:bg-amber-500/20 rounded-lg transition-colors"
-                title="Actualizar tasa"
-              >
-                <ArrowPathIcon className={`w-5 h-5 text-amber-400/70 ${isUpdating ? 'animate-spin' : ''}`} />
-              </button>
+        {/* BCV Rate - Prominente */}
+        <div className="flex flex-col items-start md:items-end gap-3 shrink-0 w-full md:w-auto">
+          <div className="flex items-center gap-3 px-5 py-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-semibold text-amber-400/70 uppercase tracking-wider">BCV</span>
+              <span className="text-lg font-bold text-amber-400">{bcvDisplay}</span>
             </div>
-            {bcvLastUpdated && (
-              <span className="text-xs text-amber-400/50 mt-1">
-                {moment(bcvLastUpdated).fromNow()}
-              </span>
-            )}
+            <button 
+              onClick={handleUpdateBCVRate}
+              className="ml-2 p-2 hover:bg-amber-500/20 rounded-lg transition-colors"
+              title="Actualizar tasa"
+            >
+              <ArrowPathIcon className={`w-5 h-5 text-amber-400/70 ${isUpdating ? 'animate-spin' : ''}`} />
+            </button>
           </div>
-          <div className="sm:hidden flex items-center gap-2 order-1 sm:order-2">
-            <span className="text-xl font-bold text-white leading-none">
-              {now.format("HH:mm")}
+          {bcvLastUpdated && (
+            <span className="text-xs text-amber-400/50">
+              Actualizado hace {moment(bcvLastUpdated).fromNow()}
             </span>
-            <span className="text-sm text-white/60">
-              {now.format("DD MMM")}
-            </span>
+          )}
+        </div>
+      </div>
+      
+      {/* Mobile Clock */}
+      <div className="md:hidden flex items-center justify-between border-t border-white/10 pt-4 mb-4">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl font-bold text-white leading-none">
+            {now.format("HH:mm:ss")}
+          </span>
+        </div>
+        <div className="text-right">
+          <div className="text-sm font-medium text-white/70">
+            {now.format("dddd, DD MMMM YYYY")}
           </div>
+          {locationInfo.full && locationInfo.full !== "Sin ubicación" && (
+            <div className="flex items-center justify-end gap-1.5 mt-1">
+              <MapPinIcon className="w-4 h-4 text-white/50" />
+              <span className="text-xs font-medium text-white/60">{locationInfo.full}</span>
+            </div>
+          )}
         </div>
       </div>
       
       {/* Resumen Ejecutivo */}
       {resumenParts && (
-        <div className="flex items-center gap-3 px-4 py-3 bg-emerald-500/5 border border-emerald-500/15 rounded-xl mb-4 sm:mb-6">
-          <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mr-2">Estado:</span>
+        <div className="flex items-center gap-3 px-5 py-4 bg-emerald-500/5 border border-emerald-500/15 rounded-xl mb-6">
+          <span className="text-sm font-semibold text-emerald-400 uppercase tracking-wider mr-2">Estado:</span>
           <div className="flex items-center gap-2 flex-wrap">
             {resumenParts}
           </div>
@@ -405,7 +414,7 @@ export const ActiveInstitutionCard: React.FC = () => {
       )}
       
       {/* Selectors */}
-      <div className="flex flex-col xs:flex-row items-start xs:items-center gap-3 mb-4 pb-4 border-b border-white/10">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6 pb-6 border-b border-white/10">
         <ButtonGroup
           items={[
             { label: "Dia", value: "day" },
@@ -426,7 +435,7 @@ export const ActiveInstitutionCard: React.FC = () => {
       </div>
       
       {/* Metrics Grid */}
-      <div className="grid grid-cols-3 xs:grid-cols-4 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {metrics &&
           Object.entries(metricsConfig).map(([key, cfg]) => {
             const Icon = cfg.icon;
@@ -437,7 +446,7 @@ export const ActiveInstitutionCard: React.FC = () => {
                 key={key}
                 onClick={() => handleMetricClick(cfg.href)}
                 className={`
-                  group relative bg-white/5 border rounded-xl p-4 
+                  group relative bg-white/5 border rounded-xl p-5 
                   hover:bg-white/10 cursor-pointer transition-all duration-300
                   hover:scale-[1.02] hover:shadow-xl
                   ${cfg.borderColor} ${cfg.hoverBorderColor}
