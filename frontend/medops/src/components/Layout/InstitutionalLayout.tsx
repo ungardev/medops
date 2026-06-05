@@ -82,7 +82,7 @@ export default function InstitutionalLayout() {
       
       <div className="relative flex flex-1 overflow-hidden">
         <aside
-          className={`fixed top-0 left-0 h-screen z-[300] transition-all duration-300 ease-in-out border-white/10 bg-[#0a0a0b] overflow-hidden
+          className={`fixed top-0 left-0 h-screen z-[300] transition-all duration-300 ease-in-out border-white/10 bg-[#0a0a0b] overflow-y-auto overflow-x-hidden
             ${mobileSidebarOpen 
               ? "translate-x-0 w-64 border-r" 
               : "-translate-x-full w-0 lg:translate-x-0 lg:border-r"

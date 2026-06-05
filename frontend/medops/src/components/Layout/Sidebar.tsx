@@ -70,7 +70,7 @@ export default function Sidebar({
         ${mobileOpen ? "lg:justify-between" : ""}
       `}>
         {/* Logo Area */}
-        <div className={`flex items-center gap-3 ${mobileOpen ? "flex-row-reverse justify-between w-full" : ""}`}>
+        <div className={`flex items-center justify-between w-full ${mobileOpen ? "flex-row" : ""}`}>
           <Link 
             to="/doctor" 
             className={`
@@ -94,7 +94,7 @@ export default function Sidebar({
           {mobileOpen && (
             <button
               onClick={() => setMobileOpen(false)}
-              className="p-2 -mr-2 text-white/50 hover:text-white transition-colors duration-200"
+              className="p-2 text-white/50 hover:text-white transition-colors duration-200 ml-auto"
             >
               <X size={20} />
             </button>
