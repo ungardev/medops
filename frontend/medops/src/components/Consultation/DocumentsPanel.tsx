@@ -76,11 +76,11 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, readOnly }) 
   return (
     <div className="space-y-6">
       {!readOnly && (
-        <div className="bg-white/5 border border-white/15 rounded-lg overflow-hidden">
+        <div className="bg-white/5 border border-white/20 rounded-xl overflow-hidden">
           <div className="px-5 py-3 border-b border-white/15 bg-white/5 flex items-center justify-between">
-            <span className="text-[12px] font-semibold text-blue-400 flex items-center gap-2">
+            <span className="text-sm font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-2">
               <CloudArrowUpIcon className="w-5 h-5" />
-              Subir Documento
+              Subir
             </span>
           </div>
           <form onSubmit={handleUpload} className="p-5">
@@ -92,9 +92,9 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, readOnly }) 
                   onChange={(e) => setFile(e.target.files?.[0] || null)}
                   className="absolute inset-0 opacity-0 cursor-pointer z-10"
                 />
-                <div className={`h-11 flex items-center justify-center border border-dashed rounded-lg transition-all ${file ? 'border-blue-400/50 bg-blue-500/5' : 'border-white/15 group-hover:border-blue-400/30'}`}>
-                  <span className="text-[11px] text-white/60 truncate px-3">
-                    {file ? file.name : "Seleccionar archivo"}
+                <div className={`h-12 flex items-center justify-center border border-dashed rounded-xl transition-all ${file ? 'border-emerald-400/50 bg-emerald-500/5' : 'border-white/20 group-hover:border-emerald-400/30'}`}>
+                  <span className="text-sm text-white/60 truncate px-3">
+                    {file ? file.name : "Seleccionar"}
                   </span>
                 </div>
               </div>
@@ -103,12 +103,12 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, readOnly }) 
                 placeholder="Descripción"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="bg-white/5 border border-white/15 px-4 h-11 text-[12px] text-white/80 focus:outline-none focus:border-blue-400/50 rounded-lg"
+                className="bg-white/5 border border-white/20 px-4 h-12 text-sm text-white/80 focus:outline-none focus:border-emerald-500/50 rounded-xl"
               />
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="bg-white/5 border border-white/15 px-4 h-11 text-[12px] text-white/80 focus:outline-none focus:border-blue-400/50 rounded-lg"
+                className="bg-white/5 border border-white/20 px-4 h-12 text-sm text-white/80 focus:outline-none focus:border-emerald-500/50 rounded-xl"
               >
                 <option value="">Categoría</option>
                 {CATEGORY_OPTIONS.map((opt) => (
@@ -118,9 +118,9 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, readOnly }) 
               <button
                 type="submit"
                 disabled={uploadDocument.isPending}
-                className="h-11 bg-white/5 border border-white/15 text-[11px] font-semibold text-white/80 hover:bg-blue-500/10 hover:text-blue-400 hover:border-blue-400/30 transition-all disabled:opacity-50 rounded-lg"
+                className="h-12 bg-white/5 border border-white/20 text-sm font-semibold text-white/80 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-400/30 transition-all disabled:opacity-50 rounded-xl"
               >
-                {uploadDocument.isPending ? "Subiendo..." : "Subir Documento"}
+                {uploadDocument.isPending ? "Subiendo..." : "Subir"}
               </button>
             </div>
           </form>
@@ -128,35 +128,35 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, readOnly }) 
       )}
       <div className="space-y-3">
         <div className="flex items-center justify-between border-b border-white/15 pb-3">
-          <span className="text-[12px] font-semibold text-white/60">
+          <span className="text-sm font-bold uppercase tracking-wider text-white/60">
             Documentos
           </span>
-          <span className="text-[10px] text-white/50">
+          <span className="text-xs text-white/50">
             {documents.length} documento{documents.length !== 1 ? 's' : ''}
           </span>
         </div>
         {isLoading ? (
-          <div className="py-8 text-center text-[11px] text-white/50 animate-pulse">
+          <div className="py-8 text-center text-sm text-white/50 animate-pulse">
             Cargando documentos...
           </div>
         ) : documents.length === 0 ? (
-          <div className="py-8 border border-dashed border-white/15 flex flex-col items-center opacity-50 rounded-lg">
+          <div className="py-8 border border-dashed border-white/15 flex flex-col items-center opacity-50 rounded-xl">
             <DocumentIcon className="w-8 h-8 mb-2 text-white/40" />
-            <span className="text-[11px] text-white/50">No hay documentos registrados</span>
+            <span className="text-sm text-white/50">No hay documentos registrados</span>
           </div>
         ) : (
           <div className="max-h-[400px] overflow-y-auto space-y-3 pr-1">
             {documents.map((d: MedicalDocument) => (
               <div 
                 key={d.id} 
-                className="group bg-white/5 border border-white/15 p-4 hover:border-white/25 transition-all flex items-start gap-3 rounded-lg"
+                className="group bg-white/5 border border-white/20 p-4 hover:border-white/30 transition-all flex items-start gap-3 rounded-xl"
               >
-                <div className="p-2.5 bg-white/5 border border-white/10 group-hover:text-blue-400 transition-colors rounded-lg">
+                <div className="p-2.5 bg-white/5 border border-white/10 group-hover:border-emerald-500/30 group-hover:text-emerald-400 transition-colors rounded-xl">
                   <DocumentIcon className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-start">
-                    <h4 className="text-[12px] font-medium text-white truncate">
+                    <h4 className="text-sm font-medium text-white truncate">
                       {d.description || "Sin título"}
                     </h4>
                     <div className="flex gap-1 ml-2">
@@ -165,10 +165,10 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, readOnly }) 
                           href={resolveFileURL(d.file_url)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="p-2 text-white/50 hover:text-blue-400 rounded-lg hover:bg-white/5 transition-colors"
+                          className="p-2 text-white/50 hover:text-emerald-400 rounded-lg hover:bg-white/5 transition-colors"
                           title="Abrir archivo"
                         >
-                          <ArrowTopRightOnSquareIcon className="w-4 h-4" />
+                          <ArrowTopRightOnSquareIcon className="w-5 h-5" />
                         </a>
                       )}
                       {!readOnly && (
@@ -177,17 +177,17 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, readOnly }) 
                           disabled={deleteDocument.isPending}
                           className="p-2 text-white/50 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition-colors disabled:opacity-50"
                         >
-                          <TrashIcon className="w-4 h-4" />
+                          <TrashIcon className="w-5 h-5" />
                         </button>
                       )}
                     </div>
                   </div>
-                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-white/50">
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-white/50">
                     <span className="flex items-center gap-1.5">
-                      <div className="w-1.5 h-1.5 bg-blue-400 rounded-full" />
+                      <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />
                       {CATEGORY_OPTIONS.find(o => o.value === d.category)?.label || "Otro"}
                     </span>
-                    <span>{d.source === "system_generated" ? "Generado por el sistema" : "Subido manualmente"}</span>
+                    <span>{d.source === "system_generated" ? "Sistema" : "Manual"}</span>
                     <span>{d.uploaded_at ? new Date(d.uploaded_at).toLocaleDateString("es-VE") : "---"}</span>
                   </div>
                 </div>
@@ -211,14 +211,14 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, readOnly }) 
           <div className="flex gap-3 pt-2">
             <button
               onClick={() => setShowDeleteConfirm(false)}
-              className="flex-1 px-4 py-2.5 bg-white/5 border border-white/15 text-[12px] font-medium text-white/60 hover:bg-white/10 hover:text-white/80 rounded-lg transition-all"
+              className="flex-1 px-4 py-2.5 bg-white/5 border border-white/20 text-sm font-medium text-white/60 hover:bg-white/10 hover:text-white/80 rounded-xl transition-all"
             >
               Cancelar
             </button>
             <button
               onClick={handleConfirmDelete}
               disabled={deleteDocument.isPending}
-              className="flex-1 px-4 py-2.5 bg-red-500/20 border border-red-500/30 text-[12px] font-medium text-red-400 hover:bg-red-500/30 rounded-lg transition-all disabled:opacity-50"
+              className="flex-1 px-4 py-2.5 bg-red-500/20 border border-red-500/30 text-sm font-medium text-red-400 hover:bg-red-500/30 rounded-xl transition-all disabled:opacity-50"
             >
               {deleteDocument.isPending ? "Eliminando..." : "Eliminar"}
             </button>
