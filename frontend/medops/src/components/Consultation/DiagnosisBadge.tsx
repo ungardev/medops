@@ -12,6 +12,7 @@ interface DiagnosisBadgeProps {
   status: DiagnosisStatus;
   catalog?: "icd11" | "snomed";
   isOptimistic?: boolean;
+  isDeleting?: boolean;
   onEdit?: (id: number, desc: string) => void;
   onDelete?: (id: number) => void;
 }
@@ -48,6 +49,7 @@ export default function DiagnosisBadge({
   status = "under_investigation",
   catalog = "icd11",
   isOptimistic = false,
+  isDeleting = false,
   onEdit,
   onDelete,
 }: DiagnosisBadgeProps) {
@@ -61,12 +63,14 @@ export default function DiagnosisBadge({
     <div 
       className={`group relative bg-white/5 border border-white/15 p-4 hover:border-white/25 transition-all rounded-xl ${
         isOptimistic ? "animate-pulse opacity-80 border-emerald-500/30" : ""
-      }`}
+      } ${isDeleting ? "animate-pulse opacity-50 border-red-500/30" : ""}`}
     >
-      {isOptimistic && (
-        <div className="absolute -top-2 -right-2 flex items-center gap-1 bg-emerald-500/20 text-emerald-400 text-xs font-medium px-2 py-1 rounded-full border border-emerald-500/30">
+      {(isOptimistic || isDeleting) && (
+        <div className={`absolute -top-2 -right-2 flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full border z-10 ${
+          isDeleting ? "bg-red-500/20 text-red-400 border-red-500/30" : "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+        }`}>
           <CloudIcon className="w-3 h-3 animate-bounce" />
-          <span>Guardando...</span>
+          <span>{isDeleting ? "Eliminando..." : "Guardando..."}</span>
         </div>
       )}
       
@@ -107,7 +111,7 @@ export default function DiagnosisBadge({
             </p>
           )}
         </div>
-        {!isOptimistic && onEdit && onDelete && (
+        {!isOptimistic && !isDeleting && onEdit && onDelete && (
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
               onClick={() => setIsEditing(!isEditing)}

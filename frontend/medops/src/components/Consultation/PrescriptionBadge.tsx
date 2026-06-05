@@ -84,6 +84,7 @@ export interface PrescriptionBadgeProps {
   doctor?: Prescription['doctor'];
   institution?: Prescription['institution'];
   isOptimistic?: boolean;
+  isDeleting?: boolean;
   onEdit?: (
     id: number,
     medication: string,
@@ -108,6 +109,7 @@ export default function PrescriptionBadge({
   doctor,
   institution,
   isOptimistic = false,
+  isDeleting = false,
   onEdit,
   onDelete,
 }: PrescriptionBadgeProps) {
@@ -134,11 +136,13 @@ export default function PrescriptionBadge({
   };
   
   return (
-    <div className={`group relative border border-white/15 bg-white/5 rounded-xl overflow-hidden transition-all hover:border-white/25 ${isOptimistic ? "animate-pulse opacity-80 border-emerald-500/30" : ""}`}>
-      {isOptimistic && (
-        <div className="absolute -top-2 -right-2 flex items-center gap-1 bg-emerald-500/20 text-emerald-400 text-xs font-medium px-2 py-1 rounded-full border border-emerald-500/30 z-10">
+    <div className={`group relative border border-white/15 bg-white/5 rounded-xl overflow-hidden transition-all hover:border-white/25 ${isOptimistic ? "animate-pulse opacity-80 border-emerald-500/30" : ""} ${isDeleting ? "animate-pulse opacity-50 border-red-500/30" : ""}`}>
+      {(isOptimistic || isDeleting) && (
+        <div className={`absolute -top-2 -right-2 flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full border z-10 ${
+          isDeleting ? "bg-red-500/20 text-red-400 border-red-500/30" : "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+        }`}>
           <CloudIcon className="w-3 h-3 animate-bounce" />
-          <span>Guardando...</span>
+          <span>{isDeleting ? "Eliminando..." : "Guardando..."}</span>
         </div>
       )}
       <div className="flex items-center justify-between bg-white/5 px-4 py-3 border-b border-white/15">
@@ -158,7 +162,7 @@ export default function PrescriptionBadge({
           )}
         </div>
         
-        {!isEditing && !isOptimistic && (
+        {!isEditing && !isOptimistic && !isDeleting && (
           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button onClick={() => setIsEditing(true)} className="p-2 text-white/50 hover:text-emerald-400 rounded-lg hover:bg-white/5 transition-colors">
               <PencilSquareIcon className="w-4 h-4" />

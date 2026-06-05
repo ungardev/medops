@@ -51,6 +51,7 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
   const [highlightIndex, setHighlightIndex] = useState<number>(-1);
   const [selectedDiagnosis, setSelectedDiagnosis] = useState<IcdResult | SnomedResult | null>(null);
   const [showResults, setShowResults] = useState(false);
+  const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set());
   
   const { data: icdResults = [], isLoading: icdLoading } = useIcdSearch(catalog === "icd11" ? query : "");
   const { data: snomedResults = [], isLoading: snomedLoading } = useSnomedSearch(catalog === "snomed" ? query : "");
@@ -152,7 +153,17 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
                 isOptimistic={(d as any).isOptimistic}
                 {...(!readOnly && {
                   onEdit: (id, desc) => updateDiagnosis({ id, description: desc }),
-                  onDelete: (id) => deleteDiagnosis(id),
+                  onDelete: (id) => {
+                    setDeletingIds(prev => new Set(prev).add(id));
+                    Promise.resolve(deleteDiagnosis(id)).finally(() => {
+                      setDeletingIds(prev => {
+                        const next = new Set(prev);
+                        next.delete(id);
+                        return next;
+                      });
+                    });
+                  },
+                  isDeleting: deletingIds.has(d.id),
                 })}
               />
             ))

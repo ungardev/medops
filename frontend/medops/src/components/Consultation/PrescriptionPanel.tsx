@@ -85,6 +85,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
   
   const [isAdvancedMode, setIsAdvancedMode] = useState(false);
   const [isAutofilled, setIsAutofilled] = useState(false);
+  const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set());
   
   const { mutate: updatePrescription } = useUpdatePrescription();
   const { mutate: deletePrescription } = useDeletePrescription();
@@ -229,6 +230,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                       doctor={p.doctor}
                       institution={p.institution}
                       isOptimistic={(p as any).isOptimistic}
+                      isDeleting={deletingIds.has(p.id)}
                       {...(!readOnly && {
                         onEdit: (id, med, dur, freq, rt, comps) =>
                           updatePrescription({
@@ -239,7 +241,16 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                             route: rt,
                             components: comps || [],
                           } as UpdatePrescriptionInput),
-                        onDelete: (id) => deletePrescription(id),
+                        onDelete: (id) => {
+                          setDeletingIds(prev => new Set(prev).add(id));
+                          Promise.resolve(deletePrescription(id)).finally(() => {
+                            setDeletingIds(prev => {
+                              const next = new Set(prev);
+                              next.delete(id);
+                              return next;
+                            });
+                          });
+                        },
                       })}
                     />
                   ))
@@ -282,6 +293,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                   doctor={p.doctor}
                   institution={p.institution}
                   isOptimistic={(p as any).isOptimistic}
+                  isDeleting={deletingIds.has(p.id)}
                   {...(!readOnly && {
                     onEdit: (id, med, dur, freq, rt, comps) =>
                       updatePrescription({
@@ -292,7 +304,16 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                         route: rt,
                         components: comps || [],
                       } as UpdatePrescriptionInput),
-                    onDelete: (id) => deletePrescription(id),
+                    onDelete: (id) => {
+                      setDeletingIds(prev => new Set(prev).add(id));
+                      Promise.resolve(deletePrescription(id)).finally(() => {
+                        setDeletingIds(prev => {
+                          const next = new Set(prev);
+                          next.delete(id);
+                          return next;
+                        });
+                      });
+                    },
                   })}
                 />
               ))}

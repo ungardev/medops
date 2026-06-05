@@ -50,6 +50,7 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
   const [treatmentType, setTreatmentType] = useState<
     "pharmacological" | "surgical" | "rehabilitation" | "lifestyle" | "other"
   >("pharmacological");
+  const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set());
   
   const { mutate: updateTreatment } = useUpdateTreatment();
   const { mutate: deleteTreatment } = useDeleteTreatment();
@@ -79,7 +80,14 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
   const handleDelete = (id: number) => {
     if (!deleteTreatment) return;
     if (window.confirm("¿Confirmar eliminación del tratamiento?")) {
-      deleteTreatment(id);
+      setDeletingIds(prev => new Set(prev).add(id));
+      Promise.resolve(deleteTreatment(id)).finally(() => {
+        setDeletingIds(prev => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      });
     }
   };
   return (
@@ -130,6 +138,7 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
                         onDelete={handleDelete}
                         showMetadata={true}
                         isOptimistic={(t as any).isOptimistic}
+                        isDeleting={deletingIds.has(t.id)}
                       />
                     ))}
                   </div>

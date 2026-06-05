@@ -26,6 +26,7 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
   const [description, setDescription] = useState("");
   const [urgency, setUrgency] = useState<"routine" | "priority" | "urgent" | "stat">("routine");
   const [status, setStatus] = useState<"pending" | "collected" | "in_process" | "completed" | "cancelled">("pending");
+  const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set());
   useEffect(() => {
     setTestType("");
     setDescription("");
@@ -80,38 +81,56 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
           ) : tests.length === 0 ? (
             <div className="text-xs text-white/70 italic">No hay exámenes registrados</div>
           ) : (
-            tests.map((t: any) => (
-              <div key={t.id} className={`group relative flex items-center justify-between p-4 border bg-white/5 hover:border-white/25 transition-all rounded-xl ${(t as any).isOptimistic ? "animate-pulse opacity-80 border-emerald-500/30" : "border-white/15"}`}>
-                {(t as any).isOptimistic && (
-                  <div className="absolute -top-2 -right-2 flex items-center gap-1 bg-emerald-500/20 text-emerald-400 text-xs font-medium px-2 py-1 rounded-full border border-emerald-500/30 z-10">
-                    <CloudIcon className="w-3 h-3 animate-bounce" />
-                    <span>Guardando...</span>
+            tests.map((t: any) => {
+              const isDeleting = deletingIds.has(t.id);
+              return (
+                <div key={t.id} className={`group relative flex items-center justify-between p-4 border bg-white/5 hover:border-white/25 transition-all rounded-xl ${(t as any).isOptimistic ? "animate-pulse opacity-80 border-emerald-500/30" : "border-white/15"}`}>
+                  {(t as any).isOptimistic && (
+                    <div className="absolute -top-2 -right-2 flex items-center gap-1 bg-emerald-500/20 text-emerald-400 text-xs font-medium px-2 py-1 rounded-full border border-emerald-500/30 z-10">
+                      <CloudIcon className="w-3 h-3 animate-bounce" />
+                      <span>Guardando...</span>
+                    </div>
+                  )}
+                  {isDeleting && (
+                    <div className="absolute -top-2 -right-2 flex items-center gap-1 bg-red-500/20 text-red-400 text-xs font-medium px-2 py-1 rounded-full border border-red-500/30 z-10">
+                      <TrashIcon className="w-3 h-3 animate-pulse" />
+                      <span>Eliminando...</span>
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${getUrgencyColor(t.urgency)}`} />
+                      <span className={`text-sm font-medium uppercase ${(t as any).isOptimistic ? "text-white/70" : "text-white"}`}>
+                        {t.test_type_display || t.test_type}
+                      </span>
+                      <span className="text-xs font-medium px-2 py-0.5 bg-white/10 text-white/70 rounded-lg">
+                        {t.status.toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="text-xs text-white/70 pl-4">
+                      {t.description || "Sin descripción"}
+                    </div>
                   </div>
-                )}
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${getUrgencyColor(t.urgency)}`} />
-                    <span className={`text-sm font-medium uppercase ${(t as any).isOptimistic ? "text-white/70" : "text-white"}`}>
-                      {t.test_type_display || t.test_type}
-                    </span>
-                    <span className="text-xs font-medium px-2 py-0.5 bg-white/10 text-white/70 rounded-lg">
-                      {t.status.toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="text-xs text-white/70 pl-4">
-                    {t.description || "Sin descripción"}
-                  </div>
+                  {!readOnly && !isDeleting && !(t as any).isOptimistic && (
+                    <button
+                      onClick={() => {
+                        setDeletingIds(prev => new Set(prev).add(t.id));
+                        deleteTest({ id: t.id, appointment: appointmentId }).finally(() => {
+                          setDeletingIds(prev => {
+                            const next = new Set(prev);
+                            next.delete(t.id);
+                            return next;
+                          });
+                        });
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-2 text-white/50 hover:text-red-400 transition-all rounded-lg hover:bg-red-500/10"
+                    >
+                      <TrashIcon className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
-                {!readOnly && !(t as any).isOptimistic && (
-                  <button 
-                    onClick={() => deleteTest({ id: t.id, appointment: appointmentId })}
-                    className="opacity-0 group-hover:opacity-100 p-2 text-white/50 hover:text-red-400 transition-all rounded-lg hover:bg-red-500/10"
-                  >
-                    <TrashIcon className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            ))
+              );
+            })
           )}
         </div>
         {!readOnly && (
