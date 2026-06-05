@@ -240,8 +240,8 @@ export default function ServiceDetailPage() {
               })}
             </div>
             
-            <div className="text-sm text-white/30 bg-white/5 p-4 rounded-xl border border-white/10">
-              <strong className="text-white/40">Nota:</strong> Los slots de disponibilidad se generarán automáticamente basándose en estos horarios. 
+            <div className="text-sm text-white/70 bg-white/5 p-4 rounded-xl border border-white/10">
+              <strong className="text-white font-semibold">Nota:</strong> Los slots de disponibilidad se generarán automáticamente basándose en estos horarios. 
               El calendario principal mostrará la disponibilidad en tiempo real.
             </div>
           </div>
