@@ -92,7 +92,7 @@ export default function PatientHeader({ setCollapsed, setMobileOpen }: PatientHe
               placeholder="Buscar doctores o servicios..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-10 py-2 bg-white/5 border border-white/15 rounded-lg text-sm text-white/80 placeholder:text-white/20 focus:outline-none focus:border-emerald-500/50 focus:bg-white/10 transition-all"
+              className="w-full pl-10 pr-10 py-2 bg-white/5 border border-white/15 rounded-lg text-sm text-white/80 placeholder:text-white/60 focus:outline-none focus:border-emerald-500/50 focus:bg-white/10 transition-all"
             />
             {searchQuery && (
               <button

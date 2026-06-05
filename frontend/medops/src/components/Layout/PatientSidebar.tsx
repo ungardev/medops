@@ -48,7 +48,7 @@ export default function PatientSidebar({
     <div className="flex flex-col h-full">
       {/* Header - Desktop & Mobile share same layout, compact styling */}
       <div className={`
-        flex items-center h-16 px-4 border-b border-white/10
+        flex items-center h-16 px-4
         ${effectiveCollapsed ? "justify-center" : "justify-between"}
         ${mobileOpen ? "lg:justify-between" : ""}
       `}>
