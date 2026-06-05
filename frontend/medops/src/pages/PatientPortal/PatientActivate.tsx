@@ -1,8 +1,10 @@
 // src/pages/PatientPortal/PatientActivate.tsx
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { CheckCircle, Lock, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { CheckCircleIcon, LockIcon } from '@heroicons/react/24/outline';
 import { apiFetch } from '../../api/client';
+
 export default function PatientActivate() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
@@ -13,7 +15,7 @@ export default function PatientActivate() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [patientName, setPatientName] = useState('');
-  useEffect(() => {
+ useEffect(() => {
     if (!token) {
       setError('Token de invitación no válido');
     }
@@ -62,17 +64,17 @@ export default function PatientActivate() {
   if (success) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-black text-white/80 px-4">
-        <div className="max-w-md w-full bg-white/5 border border-white/15 rounded-xl p-8 text-center">
+        <div className="max-w-md w-full bg-white/10 border border-white/20 rounded-xl p-8 text-center">
           <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-8 h-8 text-emerald-400" />
+            <CheckCircleIcon className="w-8 h-8 text-emerald-400" />
           </div>
           <h1 className="text-2xl font-semibold text-white/90 mb-2">¡Cuenta Activada!</h1>
-          <p className="text-white/40 mb-6">
+          <p className="text-white/50 mb-6">
             Bienvenido a MEDOPZ, {patientName}
           </p>
           <Link
             to="/patient"
-            className="inline-block bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 px-6 py-2.5 rounded-lg text-sm font-medium transition-all border border-emerald-500/25"
+            className="inline-block bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 px-6 py-2.5 rounded-xl text-sm font-medium transition-all border border-emerald-500/25"
           >
             Ir al Portal del Paciente
           </Link>
@@ -86,44 +88,44 @@ export default function PatientActivate() {
         <img src="/medopz_logo_blanco_solo.svg" alt="MEDOPZ" className="h-20 w-20 mb-4 opacity-60" />
         <img src="/medopz_fuente_blanco.svg" alt="MEDOPZ" className="h-6 opacity-60" />
       </div>
-      <div className="w-full max-w-md bg-white/5 border border-white/15 rounded-xl p-8">
+      <div className="w-full max-w-md bg-white/10 border border-white/20 rounded-xl p-8">
         <h1 className="text-xl font-semibold text-white/90 mb-2">Activar Cuenta MEDOPZ</h1>
-        <p className="text-sm text-white/40 mb-6">
+        <p className="text-sm text-white/50 mb-6">
           Crea tu contraseña para acceder al Portal del Paciente.
         </p>
         {error && (
-          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
             <p className="text-red-400 text-sm">{error}</p>
           </div>
         )}
         <form onSubmit={handleActivate} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-white/40 uppercase mb-1.5">
+            <label className="block text-xs font-medium text-white/50 uppercase mb-1.5">
               Nueva Contraseña
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+              <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/15 rounded-lg text-white/80 placeholder:text-white/20 focus:outline-none focus:border-emerald-500/50"
+                className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/20 rounded-xl text-white/80 placeholder:text-white/20 focus:outline-none focus:border-emerald-500/50"
                 placeholder="Mínimo 8 caracteres"
                 required
               />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-white/40 uppercase mb-1.5">
+            <label className="block text-xs font-medium text-white/50 uppercase mb-1.5">
               Confirmar Contraseña
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+              <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
               <input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/15 rounded-lg text-white/80 placeholder:text-white/20 focus:outline-none focus:border-emerald-500/50"
+                className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/20 rounded-xl text-white/80 placeholder:text-white/20 focus:outline-none focus:border-emerald-500/50"
                 placeholder="Repite tu contraseña"
                 required
               />
@@ -132,7 +134,7 @@ export default function PatientActivate() {
           <button
             type="submit"
             disabled={isLoading || !token}
-            className="w-full mt-6 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 py-2.5 rounded-lg text-sm font-medium uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50 transition-all border border-emerald-500/25"
+            className="w-full mt-6 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 py-2.5 rounded-xl text-sm font-medium uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50 transition-all border border-emerald-500/25"
           >
             {isLoading ? (
               <>
@@ -145,7 +147,7 @@ export default function PatientActivate() {
           </button>
         </form>
         <div className="mt-6 pt-6 border-t border-white/10 text-center">
-          <Link to="/patient/login" className="text-sm text-white/30 hover:text-white/60">
+          <Link to="/patient/login" className="text-sm text-white/50 hover:text-white/70">
             ← Volver
           </Link>
         </div>
