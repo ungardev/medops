@@ -31,11 +31,11 @@ export default function PatientLayout() {
     return (
       <div className="min-h-screen bg-black text-white antialiased flex flex-col">
         <div className="relative flex flex-1 overflow-hidden">
-          <aside className="fixed top-0 left-0 h-screen z-[300] border-r border-white/10 bg-[#0a0a0b] w-64">
+          <aside className="fixed top-0 left-0 h-screen z-[300] border-r border-white/20 bg-black w-64">
             <SidebarSkeleton />
           </aside>
           <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
-            <header className="h-14 border-b border-white/10 bg-black sticky top-0 z-30">
+            <header className="h-14 border-b border-white/20 bg-black sticky top-0 z-30">
               <HeaderSkeleton />
             </header>
             <main className="flex-1 overflow-y-auto overflow-x-hidden">
@@ -64,7 +64,7 @@ export default function PatientLayout() {
       
       <div className="relative flex flex-1 overflow-hidden">
         <aside
-          className={`fixed top-0 left-0 h-screen z-[300] transition-all duration-300 ease-in-out border-r border-white/10 bg-[#0a0a0b] overflow-hidden
+          className={`fixed top-0 left-0 h-screen z-[300] transition-all duration-300 ease-in-out border-r border-white/20 bg-black overflow-hidden
             ${mobileSidebarOpen 
               ? "translate-x-0 w-64" 
               : "-translate-x-full w-0 lg:w-auto lg:translate-x-0 lg:border-r"
@@ -86,7 +86,7 @@ export default function PatientLayout() {
             collapsed ? "lg:ml-[72px]" : "lg:ml-64"
           }`}
         >
-          <header className="h-14 border-b border-white/10 bg-black sticky top-0 z-30 flex items-center">
+          <header className="h-14 border-b border-white/20 bg-black sticky top-0 z-30 flex items-center">
             <PatientHeader
               setCollapsed={setCollapsed}
               setMobileOpen={setMobileSidebarOpen}
