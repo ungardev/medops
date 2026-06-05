@@ -37,68 +37,70 @@ export default function VaccinationMatrixUniversal({ schedule, vaccinations, onR
     { code: "DENGUE", name: "Dengue" },
   ];
   return (
-    <div className="overflow-x-auto custom-scrollbar">
-      <table className="w-full border-collapse">
-        <thead>
-          <tr className="bg-white/5">
-            <th className="sticky left-0 z-20 bg-white/5 px-4 py-3 border-r border-b border-white/15 text-left text-[10px] font-medium text-white/50 uppercase tracking-wider min-w-[140px]">
-              Vacuna
-            </th>
-            {AGE_GROUPS.map((age) => (
-              <th key={age} className="px-2 py-3 border-b border-r border-white/10 text-center text-[9px] font-medium text-white/40 min-w-[50px]">
-                {age}
+    <div className="rounded-xl overflow-hidden border border-white/20">
+      <div className="overflow-x-auto custom-scrollbar">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="bg-white/5">
+              <th className="sticky left-0 z-20 bg-white/5 px-4 py-3 border-r border-b border-white/20 text-left text-xs font-medium text-white/60 uppercase tracking-wider min-w-[160px]">
+                Vacuna
               </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {vaccineList.map((v) => (
-            <tr 
-              key={v.code} 
-              onMouseEnter={() => setHoveredRow(v.code)}
-              onMouseLeave={() => setHoveredRow(null)}
-              className={`${hoveredRow === v.code ? 'bg-white/5' : ''} transition-colors`}
-            >
-              <td className="sticky left-0 z-20 bg-white/5 px-4 py-3 border-r border-b border-white/15">
-                <div className="flex flex-col">
-                  <span className="text-[11px] font-semibold text-white/80">{v.code}</span>
-                  <span className="text-[9px] text-white/40 truncate max-w-[120px]">{v.name}</span>
-                </div>
-              </td>
-              
-              {AGE_GROUPS.map((age) => {
-                const dose = scheduleData.find(d => 
-                  d.vaccine_detail.code === v.code && 
-                  ageGroupMatches(age, d.recommended_age_months)
-                );
-                const applied = vaccinations.find(app => 
-                  app.vaccine_detail.code === v.code && 
-                  app.dose_number === dose?.dose_number
-                );
-                
-                let cellClass = "bg-transparent text-transparent";
-                if (applied) {
-                  cellClass = "bg-emerald-500/15 text-emerald-400";
-                } else if (dose) {
-                  cellClass = "bg-amber-500/10 text-amber-400/60";
-                }
-                
-                return (
-                  <td
-                    key={`${v.code}-${age}`}
-                    onClick={() => onRegisterDose?.(dose || createVirtualDose(v, age))}
-                    className={`group relative px-2 py-3 border-r border-b border-white/10 text-center cursor-pointer transition-all hover:z-10 hover:bg-white/5 ${cellClass}`}
-                  >
-                    <span className="text-[11px] font-medium">
-                      {applied ? "✓" : dose ? dose.dose_number : ""}
-                    </span>
-                  </td>
-                );
-              })}
+              {AGE_GROUPS.map((age) => (
+                <th key={age} className="px-3 py-3 border-b border-r border-white/15 text-center text-xs font-medium text-white/50 uppercase tracking-wider min-w-[60px]">
+                  {age}
+                </th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {vaccineList.map((v) => (
+              <tr 
+                key={v.code} 
+                onMouseEnter={() => setHoveredRow(v.code)}
+                onMouseLeave={() => setHoveredRow(null)}
+                className={`${hoveredRow === v.code ? 'bg-white/5' : ''} transition-colors`}
+              >
+                <td className="sticky left-0 z-20 bg-white/5 px-4 py-3 border-r border-b border-white/20">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold text-white/80">{v.code}</span>
+                    <span className="text-xs text-white/40 truncate max-w-[140px]">{v.name}</span>
+                  </div>
+                </td>
+                
+                {AGE_GROUPS.map((age) => {
+                  const dose = scheduleData.find(d => 
+                    d.vaccine_detail.code === v.code && 
+                    ageGroupMatches(age, d.recommended_age_months)
+                  );
+                  const applied = vaccinations.find(app => 
+                    app.vaccine_detail.code === v.code && 
+                    app.dose_number === dose?.dose_number
+                  );
+                  
+                  let cellClass = "bg-transparent text-transparent";
+                  if (applied) {
+                    cellClass = "bg-emerald-500/15 text-emerald-400";
+                  } else if (dose) {
+                    cellClass = "bg-amber-500/10 text-amber-400/60";
+                  }
+                  
+                  return (
+                    <td
+                      key={`${v.code}-${age}`}
+                      onClick={() => onRegisterDose?.(dose || createVirtualDose(v, age))}
+                      className={`group relative px-3 py-3 border-r border-b border-white/15 text-center cursor-pointer transition-all hover:z-10 hover:bg-white/5 ${cellClass}`}
+                    >
+                      <span className="text-sm font-medium">
+                        {applied ? "✓" : dose ? dose.dose_number : ""}
+                      </span>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
