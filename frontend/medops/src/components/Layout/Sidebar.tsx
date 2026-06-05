@@ -70,15 +70,7 @@ export default function Sidebar({
         ${mobileOpen ? "lg:justify-between" : ""}
       `}>
         {/* Logo Area */}
-        <div className={`flex items-center gap-3 ${mobileOpen ? "flex-row" : ""}`}>
-          {mobileOpen && (
-            <button
-              onClick={() => setMobileOpen(false)}
-              className="p-2 -ml-2 text-white/50 hover:text-white transition-colors duration-200"
-            >
-              <X size={20} />
-            </button>
-          )}
+        <div className={`flex items-center gap-3 ${mobileOpen ? "flex-row-reverse justify-between w-full" : ""}`}>
           <Link 
             to="/doctor" 
             className={`
@@ -99,6 +91,14 @@ export default function Sidebar({
               />
             )}
           </Link>
+          {mobileOpen && (
+            <button
+              onClick={() => setMobileOpen(false)}
+              className="p-2 -mr-2 text-white/50 hover:text-white transition-colors duration-200"
+            >
+              <X size={20} />
+            </button>
+          )}
         </div>
 
         {/* Collapse Button - Desktop only */}
