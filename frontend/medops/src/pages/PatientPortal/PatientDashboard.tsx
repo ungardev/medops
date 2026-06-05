@@ -116,8 +116,8 @@ export function PatientDashboard() {
         
         <div className="flex-1 min-w-0 w-full">
           <div className="flex items-start gap-3">
-            <div className="hidden sm:flex shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-white/20 items-center justify-center">
-              <UserIcon className="w-6 h-6 text-white/40" />
+            <div className="hidden sm:flex shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-500/10 border border-emerald-500/20 items-center justify-center">
+              <UserIcon className="w-6 h-6 text-emerald-400" />
             </div>
             
             <div className="flex-1 min-w-0 w-full">
@@ -228,7 +228,7 @@ export function PatientDashboard() {
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
-        <div className="group/card relative bg-white/10 border border-white/20 rounded-xl p-4 hover:bg-white/15 cursor-pointer transition-all hover:border-blue-500/30">
+        <div className="group/card relative bg-white/10 border border-white/20 rounded-xl p-4 hover:bg-white/15 hover:scale-[1.02] hover:shadow-xl cursor-pointer transition-all duration-300 hover:border-blue-500/30">
           <Link to={metricsConfig.next_appointment.href} className="absolute inset-0 z-10" />
           <div className="flex items-center gap-2 w-full mb-3">
             <div className={`p-1.5 rounded-lg bg-white/5 border border-white/20 ${metricsConfig.next_appointment.color}`}>
@@ -248,7 +248,7 @@ export function PatientDashboard() {
           )}
         </div>
         
-        <div className="group/card relative bg-white/10 border border-white/20 rounded-xl p-4 hover:bg-white/15 cursor-pointer transition-all hover:border-emerald-500/30">
+        <div className="group/card relative bg-white/10 border border-white/20 rounded-xl p-4 hover:bg-white/15 hover:scale-[1.02] hover:shadow-xl cursor-pointer transition-all duration-300 hover:border-emerald-500/30">
           <Link to={metricsConfig.past_appointments.href} className="absolute inset-0 z-10" />
           <div className="flex items-center gap-2 w-full mb-3">
             <div className={`p-1.5 rounded-lg bg-white/5 border border-white/20 ${metricsConfig.past_appointments.color}`}>
@@ -266,7 +266,7 @@ export function PatientDashboard() {
           </div>
         </div>
         
-        <div className="group/card relative bg-white/10 border border-white/20 rounded-xl p-4 hover:bg-white/15 cursor-pointer transition-all hover:border-purple-500/30">
+        <div className="group/card relative bg-white/10 border border-white/20 rounded-xl p-4 hover:bg-white/15 hover:scale-[1.02] hover:shadow-xl cursor-pointer transition-all duration-300 hover:border-purple-500/30">
           <Link to={metricsConfig.subscription.href} className="absolute inset-0 z-10" />
           <div className="flex items-center gap-2 w-full mb-3">
             <div className={`p-1.5 rounded-lg bg-white/5 border border-white/20 ${metricsConfig.subscription.color}`}>
@@ -292,7 +292,7 @@ export function PatientDashboard() {
           )}
         </div>
         
-        <div className="group/card relative bg-white/10 border border-white/20 rounded-xl p-4 hover:bg-white/15 cursor-pointer transition-all hover:border-amber-500/30">
+        <div className="group/card relative bg-white/10 border border-white/20 rounded-xl p-4 hover:bg-white/15 hover:scale-[1.02] hover:shadow-xl cursor-pointer transition-all duration-300 hover:border-amber-500/30">
           <Link to={metricsConfig.notifications.href} className="absolute inset-0 z-10" />
           <div className="flex items-center gap-2 w-full mb-3">
             <div className={`p-1.5 rounded-lg bg-white/5 border border-white/20 ${metricsConfig.notifications.color}`}>
