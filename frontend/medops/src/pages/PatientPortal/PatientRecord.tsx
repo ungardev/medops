@@ -16,6 +16,7 @@ import PageHeader from "@/components/Common/PageHeader";
 import { IdentificationIcon, HeartIcon, UserIcon } from "@heroicons/react/24/outline";
 import { useState, useEffect, useMemo } from "react";
 import { usePatientAuth } from "@/hooks/patient/usePatientAuth"; 
+
 function normalizeTab(id?: string): string {
   const map: Record<string, string> = {
     info: "info",
@@ -33,6 +34,7 @@ function normalizeTab(id?: string): string {
   if (!id) return "info";
   return map[id.toLowerCase()] ?? id;
 }
+
 export default function PatientRecord() {
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading, patient: authPatient } = usePatientAuth();
@@ -42,28 +44,32 @@ export default function PatientRecord() {
       navigate("/patient/login");
     }
   }, [authLoading, isAuthenticated, navigate]);
+
   if (authLoading) {
     return (
       <div className="p-8 flex items-center justify-center min-h-[400px]">
         <div className="flex flex-col items-center gap-4">
           <div className="w-8 h-8 border-2 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin" />
-          <p className="text-[10px] text-emerald-400/60">Verificando autenticación...</p>
+          <p className="text-xs text-emerald-400/60">Verificando autenticación...</p>
         </div>
       </div>
     );
   }
+
   if (!isAuthenticated) {
     return null;
   }
+
   const patientId = Number(localStorage.getItem("patient_id")) || authPatient?.id;
   
   if (!patientId) {
     return (
       <div className="p-8 flex items-center justify-center min-h-[400px]">
-        <p className="text-[10px] text-red-400">Error: No se encontró ID de paciente</p>
+        <p className="text-xs text-red-400">Error: No se encontró ID de paciente</p>
       </div>
     );
   }
+
   const { data: patient, isLoading, error } = usePatient(patientId);
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentTab, setCurrentTab] = useState(() => normalizeTab(searchParams.get("tab") ?? "info"));
@@ -128,15 +134,15 @@ export default function PatientRecord() {
     <div className="p-8 flex items-center justify-center min-h-[400px]">
       <div className="flex flex-col items-center gap-4">
         <div className="w-8 h-8 border-2 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin" />
-        <p className="text-[10px] text-emerald-400/60">Cargando expediente...</p>
+        <p className="text-xs text-emerald-400/60">Cargando expediente...</p>
       </div>
     </div>
   );
   
   if (error || !patient) return (
     <div className="p-8">
-      <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-lg">
-        <p className="text-[10px] text-red-400">Error al cargar los datos del paciente</p>
+      <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl">
+        <p className="text-xs text-red-400">Error al cargar los datos del paciente</p>
       </div>
     </div>
   );
@@ -175,26 +181,26 @@ export default function PatientRecord() {
           }
         ]}
         actions={
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/15 bg-white/5">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/20 bg-white/10">
             <UserIcon className="w-5 h-5 text-white/30" />
           </div>
         }
       />
       
-      <div className="flex flex-wrap items-center gap-6 px-5 py-3 bg-white/5 border border-white/15 rounded-lg text-[10px] text-white/30">
+      <div className="flex flex-wrap items-center gap-6 px-5 py-3 bg-white/10 border border-white/20 rounded-xl text-xs text-white/30">
         <span className="flex items-center gap-2">
-          <IdentificationIcon className="w-4 h-4 text-blue-400/40" />
-          <span className="text-white/10">Cédula:</span> 
+          <IdentificationIcon className="w-4 h-4 text-blue-400" />
+          <span className="text-white/50">Cédula:</span> 
           <span className="text-white/70 font-medium">{patient.national_id || "—"}</span>
         </span>
         <span className="flex items-center gap-2">
-          <HeartIcon className="w-4 h-4 text-red-400/30" />
-          <span className="text-white/10">Nacimiento:</span> 
+          <HeartIcon className="w-4 h-4 text-red-400" />
+          <span className="text-white/50">Nacimiento:</span> 
           <span className="text-white/70 font-medium">{patient.birthdate ? new Date(patient.birthdate).toLocaleDateString("es-VE") : '—'}</span>
         </span>
       </div>
       
-      <div className="border border-white/15 rounded-lg overflow-hidden">
+      <div className="border border-white/20 rounded-xl overflow-hidden">
         <Tabs value={currentTab} onChange={setTab} layout="horizontal">
           <Tab id="info" label="Información">
             <PatientInfoTab patientId={patientId} readOnly={true} />

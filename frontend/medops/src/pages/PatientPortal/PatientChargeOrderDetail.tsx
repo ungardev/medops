@@ -11,6 +11,7 @@ import {
   ClockIcon,
   CheckCircleIcon
 } from "@heroicons/react/24/outline";
+
 export default function PatientChargeOrderDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -82,7 +83,7 @@ export default function PatientChargeOrderDetail() {
         actions={
           <button 
             onClick={() => navigate("/patient/payments")} 
-            className="flex items-center gap-2 px-4 py-2 border border-white/15 bg-white/5 text-[11px] font-medium hover:bg-white/10 transition-all rounded-lg"
+            className="flex items-center gap-2 px-4 py-2 border border-white/20 bg-white/10 text-sm font-medium hover:bg-white/15 transition-all rounded-xl"
           >
             <ArrowLeftIcon className="w-4 h-4" /> Volver
           </button>
@@ -90,9 +91,9 @@ export default function PatientChargeOrderDetail() {
       />
       
       {successMessage && (
-        <div className="flex items-center gap-3 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+        <div className="flex items-center gap-3 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
           <CheckCircleIcon className="w-5 h-5 text-emerald-400" />
-          <p className="text-emerald-400 text-[11px] font-medium">{successMessage}</p>
+          <p className="text-emerald-400 text-sm font-medium">{successMessage}</p>
         </div>
       )}
       
@@ -102,8 +103,8 @@ export default function PatientChargeOrderDetail() {
           { label: "Pagado", val: paid, color: "text-emerald-400" },
           { label: "Pendiente", val: balance, color: balance > 0 ? "text-red-400" : "text-emerald-400" }
         ].map((s: any, i: number) => (
-          <div key={i} className="bg-white/5 border border-white/15 rounded-lg p-5">
-            <p className="text-[9px] font-medium tracking-wider text-white/40 uppercase mb-2">{s.label}</p>
+          <div key={i} className="bg-white/10 border border-white/20 rounded-xl p-5">
+            <p className="text-xs font-medium tracking-wider text-white/40 uppercase mb-2">{s.label}</p>
             <p className={`text-2xl font-semibold ${s.color}`}>
               Bs {s.val.toLocaleString('es-VE', { minimumFractionDigits: 0 })}
             </p>
@@ -116,11 +117,11 @@ export default function PatientChargeOrderDetail() {
           <section className="space-y-4">
             <div className="flex items-center gap-2">
               <ClockIcon className="w-5 h-5 text-white/30" />
-              <h3 className="text-[11px] font-medium uppercase tracking-wider text-white/60">Servicios</h3>
+              <h3 className="text-sm font-medium uppercase tracking-wider text-white/60">Servicios</h3>
             </div>
-            <div className="border border-white/15 bg-white/5 overflow-hidden rounded-lg">
+            <div className="border border-white/20 bg-white/10 overflow-hidden rounded-xl">
               <table className="w-full text-left">
-                <thead className="bg-white/5 text-[9px] text-white/40 uppercase tracking-wider">
+                <thead className="bg-white/5 text-xs text-white/40 uppercase tracking-wider">
                   <tr>
                     <th className="p-4 font-medium">Código</th>
                     <th className="p-4 font-medium">Descripción</th>
@@ -129,7 +130,7 @@ export default function PatientChargeOrderDetail() {
                     <th className="p-4 text-right font-medium">Subtotal</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5 text-[11px]">
+                <tbody className="divide-y divide-white/5 text-sm">
                   {order.items.map((item: any) => (
                     <tr key={item.id} className="hover:bg-white/5">
                       <td className="p-4 text-blue-400 font-medium">{item.code}</td>
@@ -147,18 +148,18 @@ export default function PatientChargeOrderDetail() {
           <section className="space-y-4">
             <div className="flex items-center gap-2">
               <CheckCircleIcon className="w-5 h-5 text-emerald-400" />
-              <h3 className="text-[11px] font-medium uppercase tracking-wider text-white/60">
+              <h3 className="text-sm font-medium uppercase tracking-wider text-white/60">
                 Historial de Pagos
                 {hasPendingPayments && (
                   <span className="ml-2 inline-flex items-center gap-1">
                     <Loader2 className="w-3 h-3 text-amber-400 animate-spin" />
-                    <span className="text-amber-400 text-[9px]">Actualizando...</span>
+                    <span className="text-amber-400 text-xs">Actualizando...</span>
                   </span>
                 )}
               </h3>
             </div>
             {order.payments.length === 0 ? (
-              <div className="p-6 text-center text-white/30 text-[11px]">
+              <div className="p-6 text-center text-white/30 text-sm">
                 No hay pagos registrados
               </div>
             ) : (
@@ -169,8 +170,8 @@ export default function PatientChargeOrderDetail() {
                   return (
                     <div key={payment.id} className="p-4 flex justify-between items-center">
                       <div>
-                        <p className="text-white/80 text-[11px] font-medium">Pago #{payment.id}</p>
-                        <p className="text-white/30 text-[10px]">
+                        <p className="text-white/80 text-sm font-medium">Pago #{payment.id}</p>
+                        <p className="text-white/30 text-xs">
                           {payment.received_at || "—"}
                           {payment.exchange_rate_bcv && (
                             <span className="text-white/40 ml-2">
@@ -179,7 +180,7 @@ export default function PatientChargeOrderDetail() {
                           )}
                         </p>
                         {payment.status === 'rejected' && payment.verification_notes && (
-                          <p className="text-red-400 text-[9px] mt-1">
+                          <p className="text-red-400 text-xs mt-1">
                             Rechazado: {payment.verification_notes}
                           </p>
                         )}
@@ -187,11 +188,11 @@ export default function PatientChargeOrderDetail() {
                       <div className="text-right">
                         <p className="text-emerald-400 font-medium">Bs {amountBs.toLocaleString('es-VE', { minimumFractionDigits: 0 })}</p>
                         <div className="flex items-center justify-end gap-1 mt-1">
-                          <p className="text-white/30 text-[9px]">
+                          <p className="text-white/30 text-xs">
                             {payment.method_display || payment.method} - {payment.status_display || payment.status}
                           </p>
                           {payment.verification_type && (
-                            <span className={`text-[8px] px-1.5 py-0.5 rounded-md ${
+                            <span className={`text-xs px-1.5 py-0.5 rounded-md ${
                               payment.verification_type === 'automatic' 
                                 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
                                 : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
@@ -211,34 +212,34 @@ export default function PatientChargeOrderDetail() {
         
         <div className="lg:col-span-4 space-y-8">
           {doctorData && order.status !== 'paid' && (
-            <section className="p-5 bg-emerald-500/5 border border-emerald-500/20 space-y-4 rounded-lg">
-              <h3 className="text-[10px] font-medium uppercase tracking-wider text-emerald-400/70">Datos para Pagar</h3>
+            <section className="p-5 bg-emerald-500/5 border border-emerald-500/20 space-y-4 rounded-xl">
+              <h3 className="text-xs font-medium uppercase tracking-wider text-emerald-400">Datos para Pagar</h3>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-white/40 text-[10px]">Nombre</span>
-                  <span className="text-white/80 text-[11px] font-medium">{doctorData.name}</span>
+                  <span className="text-white/40 text-xs">Nombre</span>
+                  <span className="text-white/80 text-sm font-medium">{doctorData.name}</span>
                 </div>
                 {doctorData.bank_name && (
                   <div className="flex justify-between items-center">
-                    <span className="text-white/40 text-[10px]">Banco</span>
-                    <span className="text-white/80 text-[11px] font-medium">{doctorData.bank_name}</span>
+                    <span className="text-white/40 text-xs">Banco</span>
+                    <span className="text-white/80 text-sm font-medium">{doctorData.bank_name}</span>
                   </div>
                 )}
                 {doctorData.bank_rif && (
                   <div className="flex justify-between items-center">
-                    <span className="text-white/40 text-[10px]">Cédula/RIF</span>
-                    <span className="text-white/80 text-[11px] font-medium font-mono">{doctorData.bank_rif}</span>
+                    <span className="text-white/40 text-xs">Cédula/RIF</span>
+                    <span className="text-white/80 text-sm font-medium font-mono">{doctorData.bank_rif}</span>
                   </div>
                 )}
                 {doctorData.bank_phone && (
                   <div className="flex justify-between items-center">
-                    <span className="text-white/40 text-[10px]">Teléfono</span>
-                    <span className="text-white/80 text-[11px] font-medium font-mono">{doctorData.bank_phone}</span>
+                    <span className="text-white/40 text-xs">Teléfono</span>
+                    <span className="text-white/80 text-sm font-medium font-mono">{doctorData.bank_phone}</span>
                   </div>
                 )}
                 <div className="flex justify-between items-center pt-3 border-t border-emerald-500/20">
-                  <span className="text-white/40 text-[10px]">Monto a pagar</span>
-                  <span className="text-emerald-400 text-[16px] font-semibold">Bs {balance.toLocaleString('es-VE', { minimumFractionDigits: 0 })}</span>
+                  <span className="text-white/40 text-xs">Monto a pagar</span>
+                  <span className="text-emerald-400 text-lg font-semibold">Bs {balance.toLocaleString('es-VE', { minimumFractionDigits: 0 })}</span>
                 </div>
               </div>
               <button
@@ -252,7 +253,7 @@ export default function PatientChargeOrderDetail() {
                   ].filter(Boolean).join('\n');
                   navigator.clipboard.writeText(data);
                 }}
-                className="w-full py-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-medium uppercase tracking-wider rounded-lg hover:bg-emerald-500/15 transition-all"
+                className="w-full py-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium uppercase tracking-wider rounded-lg hover:bg-emerald-500/15 transition-all"
               >
                 Copiar Datos para Pagar
               </button>
@@ -260,11 +261,11 @@ export default function PatientChargeOrderDetail() {
           )}
           
           {order.status !== 'paid' && order.status !== 'void' && order.status !== 'waived' && (
-            <section className="p-5 bg-white/5 border border-white/15 space-y-4 rounded-lg">
-              <h3 className="text-[10px] font-medium uppercase tracking-wider text-white/40">Operaciones</h3>
+            <section className="p-5 bg-white/10 border border-white/20 space-y-4 rounded-xl">
+              <h3 className="text-xs font-medium uppercase tracking-wider text-white/40">Operaciones</h3>
               <button 
                 onClick={() => setShowRegisterModal(true)}
-                className="w-full flex items-center justify-between p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-medium hover:bg-emerald-500/15 transition-all rounded-lg"
+                className="w-full flex items-center justify-between p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium hover:bg-emerald-500/15 transition-all rounded-xl"
               >
                 Registrar Mi Pago <PlusIcon className="w-4 h-4" />
               </button>
@@ -272,9 +273,9 @@ export default function PatientChargeOrderDetail() {
           )}
           
           {order.status === 'paid' && (
-            <div className="p-5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-center">
+            <div className="p-5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-center">
               <CheckCircleIcon className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
-              <p className="text-emerald-400 font-medium uppercase text-[11px]">Orden Pagada</p>
+              <p className="text-emerald-400 font-medium uppercase text-sm">Orden Pagada</p>
             </div>
           )}
         </div>
