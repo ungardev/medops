@@ -1,14 +1,23 @@
 // src/pages/PatientPortal/PatientSearch.tsx
 import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import { 
-  Search, User, Building2, Loader2, Filter, Clock, DollarSign, ArrowRight, 
-  Stethoscope, XIcon, ListIcon
-} from "lucide-react";
+ MagnifyingGlassIcon, 
+  UserIcon, 
+  BuildingOfficeIcon, 
+  ClockIcon, 
+  CurrencyDollarIcon, 
+  ArrowRightIcon, 
+  HeartIcon,
+  XMarkIcon,
+  Bars3Icon
+} from "@heroicons/react/24/outline";
 import { patientClient, Doctor, ServiceSearchResult, DoctorService } from "@/api/patient/client";
 import { ServicePurchaseFlow } from "@/components/Doctor/ServicePurchaseFlow";
 import { ServiceDetail } from "@/components/Common/ServiceDetail";
 import PageHeader from "@/components/Common/PageHeader";
+
 export default function PatientSearch() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -33,6 +42,7 @@ export default function PatientSearch() {
       setSearchQuery(queryParam);
     }
   }, [searchParams]);
+  
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
       setDoctorsResults([]);
@@ -96,64 +106,65 @@ export default function PatientSearch() {
       />
       
       <div className="relative mb-6">
-        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/20" />
+        <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/20" />
         <input
           type="text"
           placeholder="Buscar por servicio, doctor o institución..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full bg-white/5 border border-white/15 rounded-xl py-4 pl-12 pr-12 text-sm text-white/80 placeholder:text-white/20 focus:border-emerald-500/50 outline-none transition-all"
+          className="w-full bg-white/10 border border-white/20 rounded-xl py-4 pl-12 pr-12 text-sm text-white/80 placeholder:text-white/20 focus:border-emerald-500/50 outline-none transition-all"
         />
         {searchQuery && (
           <button
             onClick={() => setSearchQuery("")}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white/30 hover:text-white/60"
+            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white/50 hover:text-white/60"
           >
-            <XIcon className="w-5 h-5" />
+            <XMarkIcon className="w-5 h-5" />
           </button>
         )}
       </div>
       
       <div className="flex gap-6">
         <div className="w-48 flex-shrink-0 hidden lg:block">
-          <div className="bg-white/5 border border-white/15 rounded-lg p-4 sticky top-4">
-            <p className="text-[10px] font-medium text-white/40 mb-3">
+          <div className="bg-white/10 border border-white/20 rounded-xl p-4 sticky top-4">
+            <p className="text-xs font-medium text-white/40 mb-3">
               FILTROS
             </p>
             <div className="space-y-1">
               <button
                 onClick={() => setFilterType("all")}
-                className={`w-full text-left px-3 py-2 rounded-lg text-[11px] transition-colors flex justify-between items-center ${
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex justify-between items-center ${
                   filterType === "all" 
                     ? 'bg-emerald-500/10 text-emerald-400' 
-                    : 'text-white/40 hover:bg-white/5'
+                    : 'text-white/40 hover:bg-white/10'
                 }`}
               >
                 <span className="font-medium">Todos los resultados</span>
-                <span className="text-[10px] text-white/20">{filteredDoctors.length + filteredServices.length}</span>
+                <span className="text-xs text-white/30">{filteredDoctors.length + filteredServices.length}</span>
               </button>
               
               <button
                 onClick={() => setFilterType("doctors")}
-                className={`w-full text-left px-3 py-2 rounded-lg text-[11px] transition-colors flex justify-between items-center ${
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex justify-between items-center ${
                   filterType === "doctors" 
                     ? 'bg-emerald-500/10 text-emerald-400' 
-                    : 'text-white/40 hover:bg-white/5'
+                    : 'text-white/40 hover:bg-white/10'
                 }`}
               >
                 <span className="font-medium">Doctores</span>
-                <span className="text-[10px] text-white/20">{filteredDoctors.length}</span>
+                <span className="text-xs text-white/30">{filteredDoctors.length}</span>
               </button>
+              
               <button
                 onClick={() => setFilterType("services")}
-                className={`w-full text-left px-3 py-2 rounded-lg text-[11px] transition-colors flex justify-between items-center ${
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex justify-between items-center ${
                   filterType === "services" 
                     ? 'bg-emerald-500/10 text-emerald-400' 
-                    : 'text-white/40 hover:bg-white/5'
+                    : 'text-white/40 hover:bg-white/10'
                 }`}
               >
                 <span className="font-medium">Servicios</span>
-                <span className="text-[10px] text-white/20">{filteredServices.length}</span>
+                <span className="text-xs text-white/30">{filteredServices.length}</span>
               </button>
             </div>
           </div>
@@ -168,20 +179,20 @@ export default function PatientSearch() {
             <div className="space-y-8">
               {(filterType === "all" || filterType === "doctors") && filteredDoctors.length > 0 && (
                 <div>
-                  <h3 className="text-[11px] font-medium text-white/60 mb-4 flex items-center gap-2">
-                    <User className="w-4 h-4" /> Doctores Encontrados
+                  <h3 className="text-sm font-medium text-white/60 mb-4 flex items-center gap-2">
+                    <UserIcon className="w-4 h-4" /> Doctores Encontrados
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {filteredDoctors.map((doctor) => (
                       <Link 
                         key={doctor.id} 
                         to={`/patient/doctor/${doctor.id}`}
-                        className="group bg-white/5 border border-white/15 rounded-lg p-5 hover:bg-white/10 hover:border-white/25 transition-all cursor-pointer"
+                        className="group bg-white/10 border border-white/20 rounded-xl p-5 hover:bg-white/15 hover:border-white/30 transition-all cursor-pointer"
                       >
                         <div className="flex justify-between items-start">
                           <div className="flex gap-4">
                             <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center border border-blue-500/20 shrink-0">
-                              <User className="w-6 h-6 text-blue-400/70" />
+                              <UserIcon className="w-6 h-6 text-blue-400" />
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2 mb-1">
@@ -189,17 +200,17 @@ export default function PatientSearch() {
                                   {doctor.full_name}
                                 </h4>
                                 {doctor.is_verified && (
-                                  <span className="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-md text-[8px] font-medium">
+                                  <span className="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-md text-xs font-medium">
                                     VERIFICADO
                                   </span>
                                 )}
                               </div>
-                              <p className="text-[10px] text-blue-400/60 uppercase truncate mb-1 flex items-center gap-1">
-                                <Stethoscope className="w-3 h-3" />
+                              <p className="text-xs text-blue-400/60 uppercase truncate mb-1 flex items-center gap-1">
+                                <HeartIcon className="w-3 h-3" />
                                 {doctor.specialties?.map((s: any) => s.name).join(", ")}
                               </p>
-                              <div className="flex items-center gap-1 text-[9px] text-white/30 truncate">
-                                <Building2 className="w-3 h-3 shrink-0" />
+                              <div className="flex items-center gap-1 text-xs text-white/30 truncate">
+                                <BuildingOfficeIcon className="w-3 h-3 shrink-0" />
                                 <span className="truncate">
                                   {doctor.institutions?.map((i: any) => i.name).join(", ")}
                                 </span>
@@ -207,8 +218,8 @@ export default function PatientSearch() {
                             </div>
                           </div>
                           <div className="flex flex-col items-end gap-2 shrink-0 ml-4">
-                            <span className="text-[10px] font-medium text-blue-400/70 flex items-center gap-1">
-                              Ver Perfil <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                            <span className="text-xs font-medium text-blue-400/70 flex items-center gap-1">
+                              Ver Perfil <ArrowRightIcon className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
                             </span>
                           </div>
                         </div>
@@ -220,41 +231,41 @@ export default function PatientSearch() {
               
               {(filterType === "all" || filterType === "services") && filteredServices.length > 0 && (
                 <div>
-                  <h3 className="text-[11px] font-medium text-white/60 mb-4 flex items-center gap-2">
-                    <ListIcon className="w-4 h-4" /> Servicios Encontrados
+                  <h3 className="text-sm font-medium text-white/60 mb-4 flex items-center gap-2">
+                    <Bars3Icon className="w-4 h-4" /> Servicios Encontrados
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filteredServices.map((service, index) => (
                       <div 
                         key={service.id + index} 
-                        className="group bg-white/5 border border-white/15 rounded-lg p-5 hover:bg-white/10 hover:border-white/25 transition-all cursor-pointer"
+                        className="group bg-white/10 border border-white/20 rounded-xl p-5 hover:bg-white/15 hover:border-white/30 transition-all cursor-pointer"
                         onClick={() => handleSelectService(service)}
                       >
                         <div className="flex justify-between items-start mb-3">
-                          <span className="text-[9px] text-blue-400/60 bg-blue-500/10 px-2 py-0.5 rounded-md">
+                          <span className="text-xs text-blue-400/60 bg-blue-500/10 px-2 py-0.5 rounded-md">
                             {service.code || 'SRV'}
                           </span>
-                          <span className="flex items-center gap-1 text-[10px] text-white/40">
-                            <Clock className="w-3.5 h-3.5" />
+                          <span className="flex items-center gap-1 text-xs text-white/40">
+                            <ClockIcon className="w-3.5 h-3.5" />
                             {service.duration_minutes ? `${service.duration_minutes} min` : 'N/A'}
                           </span>
                         </div>
-                        <h4 className="text-[13px] font-medium text-white/80 mb-2 line-clamp-2 group-hover:text-emerald-400 transition-colors">
+                        <h4 className="text-sm font-medium text-white/80 mb-2 line-clamp-2 group-hover:text-emerald-400 transition-colors">
                           {service.name || 'Servicio sin nombre'}
                         </h4>
-                        <div className="flex items-center gap-2 text-[11px] text-white/50 mb-2">
-                          <User className="w-4 h-4" />
+                        <div className="flex items-center gap-2 text-sm text-white/50 mb-2">
+                          <UserIcon className="w-4 h-4" />
                           <span>Dr. {service.doctor?.full_name || 'Médico no especificado'}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-[10px] text-white/40 mb-3">
-                          <Building2 className="w-4 h-4" />
+                        <div className="flex items-center gap-2 text-xs text-white/40 mb-3">
+                          <BuildingOfficeIcon className="w-4 h-4" />
                           <span>{service.institution_name || 'Institución no especificada'}</span>
                         </div>
                         <div className="flex justify-between items-center pt-3 border-t border-white/10">
-                          <span className="text-[9px] text-blue-400/60 bg-blue-500/10 px-1.5 py-0.5 rounded-md">
+                          <span className="text-xs text-blue-400/60 bg-blue-500/10 px-1.5 py-0.5 rounded-md">
                             {service.code}
                           </span>
-                          <span className="text-emerald-400 font-medium text-[12px]">
+                          <span className="text-emerald-400 font-medium text-sm">
                             $ {service.price_usd ? service.price_usd.toLocaleString('en-US', { minimumFractionDigits: 2 }) : 'N/A'}
                           </span>
                         </div>
@@ -265,9 +276,9 @@ export default function PatientSearch() {
               )}
               
               {(filteredDoctors.length === 0 && filteredServices.length === 0 && !isSearching) && (
-                <div className="flex flex-col items-center justify-center py-16 bg-white/5 border border-dashed border-white/15 rounded-lg">
+                <div className="flex flex-col items-center justify-center py-16 bg-white/10 border border-dashed border-white/20 rounded-xl">
                   <div className="bg-white/5 p-4 rounded-full mb-4">
-                    <Search className="w-6 h-6 text-white/20" />
+                    <MagnifyingGlassIcon className="w-6 h-6 text-white/20" />
                   </div>
                   <h3 className="text-white/60 font-medium text-lg mb-1">No se encontraron resultados</h3>
                   <p className="text-white/30 text-sm text-center max-w-xs mb-4">
@@ -275,7 +286,7 @@ export default function PatientSearch() {
                   </p>
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="px-4 py-2.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-medium rounded-lg hover:bg-emerald-500/15 transition-colors"
+                    className="px-4 py-2.5 bg-emerald-500/10 text-emerald-400 text-sm font-medium rounded-lg hover:bg-emerald-500/15 transition-colors"
                   >
                     Limpiar búsqueda
                   </button>
@@ -318,12 +329,12 @@ export default function PatientSearch() {
       )}
       {!showServiceDetail && selectedService && !currentPatientId && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1a1a1b] border border-white/15 rounded-lg p-8 text-center max-w-md">
+          <div className="bg-[#1a1a1b] border border-white/20 rounded-xl p-8 text-center max-w-md">
             <p className="text-red-400 text-sm mb-4">Error: No se pudo identificar al paciente.</p>
             <p className="text-white/30 text-xs mb-4">Por favor, inicia sesión nuevamente.</p>
             <button
               onClick={() => setSelectedService(null)}
-              className="px-4 py-2.5 bg-white/5 text-white/60 text-[10px] font-medium rounded-lg hover:bg-white/10"
+              className="px-4 py-2.5 bg-white/5 text-white/60 text-sm font-medium rounded-lg hover:bg-white/10"
             >
               Cerrar
             </button>
