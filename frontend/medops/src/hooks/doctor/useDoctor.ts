@@ -10,6 +10,9 @@ export const useDoctor = (doctorId: number) => {
       return response.data; // Extraer los datos de la respuesta Axios
     },
     enabled: !!doctorId,
+    staleTime: 10 * 60 * 1000,   // 10 minutes - doctor profile rarely changes
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 };
 export const useDoctorServices = (doctorId: number) => {
@@ -20,5 +23,8 @@ export const useDoctorServices = (doctorId: number) => {
       return response.data; // Extraer los datos de la respuesta Axios
     },
     enabled: !!doctorId,
+    staleTime: 5 * 60 * 1000,    // 5 minutes
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 };

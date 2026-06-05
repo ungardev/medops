@@ -24,8 +24,9 @@ export function useUpdatePatientProfile() {
       return response.data as UpdateProfileResponse;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["patientProfile"] });
-      queryClient.invalidateQueries({ queryKey: ["patientDashboard"] });
+      // Invalidate all patient-related queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["patient", "profile"] });
+      queryClient.invalidateQueries({ queryKey: ["patient", "dashboard"] });
     },
     onError: (error) => {
       console.error("Error al actualizar perfil:", error);

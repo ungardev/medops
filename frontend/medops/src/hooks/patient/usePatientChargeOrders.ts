@@ -8,6 +8,9 @@ export function usePatientChargeOrders() {
       const response = await patientClient.getChargeOrders();
       return response.data;
     },
+    staleTime: 5 * 60 * 1000,    // 5 minutes
+    gcTime: 60 * 60 * 1000,      // 1 hour
+    refetchOnWindowFocus: false, // Don't refetch on tab switch
   });
 }
 export function usePatientChargeOrderDetail(orderId: number) {
@@ -18,12 +21,14 @@ export function usePatientChargeOrderDetail(orderId: number) {
       return response.data;
     },
     enabled: !!orderId,
-    // ✅ NUEVO: Polling condicional - solo cuando hay pagos pendientes
+    staleTime: 5 * 60 * 1000,    // 5 minutes
+    gcTime: 60 * 60 * 1000,      // 1 hour
+    refetchOnWindowFocus: false, // Don't refetch on tab switch
+    // Polling condicional - solo cuando hay pagos pendientes
     refetchInterval: (query) => {
       const data = query.state.data as PatientChargeOrder | undefined;
       const hasPendingPayments = data?.payments?.some(p => p.status === 'pending');
       return hasPendingPayments ? 10000 : false; // 10 segundos si hay pendientes
     },
-    refetchOnWindowFocus: true,
   });
 }

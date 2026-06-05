@@ -1,38 +1,17 @@
 // src/pages/PatientPortal/PatientAppointments.tsx
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Appointment } from '@/types/appointments';
 import { useAppointmentStatusStyles } from '@/hooks/appointments/useAppointmentStatusStyles';
-import { getAppointmentsByPatient } from '@/api/appointments';
+import { usePatientAppointments } from '@/hooks/patient/usePatientAppointments';
 
 const PatientAppointments: React.FC = () => {
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const storedPatientId = localStorage.getItem('patient_id');
+  const patientId = storedPatientId ? Number(storedPatientId) : null;
+  
+  const { data: appointments = [], isLoading, error } = usePatientAppointments(patientId || 0);
   const { statusStyles } = useAppointmentStatusStyles();
 
-  useEffect(() => {
-    const fetchAppointments = async () => {
-      try {
-        const storedPatientId = localStorage.getItem('patient_id');
-        if (!storedPatientId) {
-          setError('No se encontró ID de paciente. Por favor, inicia sesión nuevamente.');
-          setLoading(false);
-          return;
-        }
-        const patientId = Number(storedPatientId);
-        const data = await getAppointmentsByPatient(patientId);
-        setAppointments(data);
-      } catch (err: any) {
-        console.error('Error fetching appointments:', err);
-        setError(err.message || 'Error al cargar las citas');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAppointments();
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="p-8 flex items-center justify-center min-h-[400px]">
         <div className="flex flex-col items-center gap-4">

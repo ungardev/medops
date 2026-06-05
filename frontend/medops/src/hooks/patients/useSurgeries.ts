@@ -21,6 +21,10 @@ export function useSurgeries(patientId: number) {
       }
       return [];
     },
+    enabled: !!patientId,
+    staleTime: 5 * 60 * 1000,    // 5 minutes
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
   const create = useMutation({
     mutationFn: (data: Partial<Surgery>) =>

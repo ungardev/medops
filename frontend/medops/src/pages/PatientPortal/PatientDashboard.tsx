@@ -1,5 +1,5 @@
 // src/pages/PatientPortal/PatientDashboard.tsx
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import moment from 'moment';
 import { 
@@ -13,7 +13,7 @@ import {
   EnvelopeIcon,
   BellIcon
 } from '@heroicons/react/24/outline';
-import { patientClient } from '@/api/patient/client';
+import { usePatientDashboard } from '@/hooks/patient/usePatientDashboard';
 import { useBCVRate } from '@/hooks/dashboard/useBCVRate';
 import { PatientDashboard as PatientDashboardType } from '@/types/patient';
 
@@ -45,31 +45,15 @@ const metricsConfig = {
 };
 
 export function PatientDashboard() {
-  const [dashboard, setDashboard] = useState<PatientDashboardType | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: dashboard, isLoading } = usePatientDashboard();
   const { data: bcvRate } = useBCVRate();
   
   const [now, setNow] = useState(moment());
   
-  useEffect(() => {
-    loadDashboard();
-  }, []);
-  
-  useEffect(() => {
+  useState(() => {
     const timer = setInterval(() => setNow(moment()), 1000);
     return () => clearInterval(timer);
   }, []);
-  
-  const loadDashboard = async () => {
-    try {
-      const response = await patientClient.getDashboard();
-      setDashboard(response.data);
-    } catch (err) {
-      console.error('Error loading dashboard:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
   
   const bcvDisplay = bcvRate 
     ? `${Number(bcvRate.rate).toLocaleString('es-VE', { minimumFractionDigits: 2 })} Bs/USD`

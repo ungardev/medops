@@ -8,6 +8,9 @@ export function usePatientServicesHistory() {
       const response = await patientClient.getServicesHistory();
       return response.data;
     },
+    staleTime: 5 * 60 * 1000,    // 5 minutes
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }
 export function usePatientServicesCatalog() {
@@ -17,6 +20,9 @@ export function usePatientServicesCatalog() {
       const response = await patientClient.getServicesCatalog();
       return response.data;
     },
+    staleTime: 10 * 60 * 1000,   // 10 minutes - catalog is almost static
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }
 export function usePatientServicesRecommended() {
@@ -26,6 +32,9 @@ export function usePatientServicesRecommended() {
       const response = await patientClient.getServicesRecommended();
       return response.data;
     },
+    staleTime: 2 * 60 * 1000,    // 2 minutes - recommendations may change
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }
 export function usePatientSearchDoctors(query: string) {
@@ -36,6 +45,9 @@ export function usePatientSearchDoctors(query: string) {
       return response.data;
     },
     enabled: query.length > 0,
+    staleTime: 30 * 1000,       // 30 seconds - search results
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }
 export function usePatientSearchServices(query: string) {
@@ -46,5 +58,8 @@ export function usePatientSearchServices(query: string) {
       return response.data;
     },
     enabled: query.length > 0,
+    staleTime: 30 * 1000,       // 30 seconds - search results
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }

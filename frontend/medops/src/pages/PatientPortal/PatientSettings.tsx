@@ -1,8 +1,8 @@
 // src/pages/PatientPortal/PatientSettings.tsx
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import PageHeader from "@/components/Common/PageHeader";
 import { useUpdatePatientProfile } from "@/hooks/patient/useUpdatePatientProfile";
-import { patientClient } from "@/api/patient/client";
+import { usePatientProfile } from "@/hooks/patient/usePatientProfile";
 import { usePatientPaymentMethod, useUpdatePatientPaymentMethod } from "@/hooks/patient/usePatientPaymentMethod";
 import { VENEZUELAN_BANKS } from "@/constants/banks";
 import { 
@@ -165,8 +165,7 @@ function PaymentMethodsSection() {
 
 export default function PatientSettings() {
   const [activeSection, setActiveSection] = useState("profile");
-  const [profileData, setProfileData] = useState<PatientProfile | null>(null);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const { data: profileData, isLoading: isLoadingProfile } = usePatientProfile();
   
   const [formData, setFormData] = useState({
     email: "",
@@ -194,33 +193,18 @@ export default function PatientSettings() {
     { id: "payment-methods", label: "Métodos de Pago", icon: CreditCard },
   ];
   
-  useEffect(() => {
-    loadProfile();
-  }, []);
-  
-  const loadProfile = async () => {
-    try {
-      setIsLoadingProfile(true);
-      const response = await patientClient.getProfile();
-      const data = response.data;
-      setProfileData(data);
-      
-      setFormData({
-        email: data.user.email || "",
-        phone: data.user.phone || data.patient.phone || "",
-      });
-      
-      setNotifications({
-        email: data.user.notifications_email ?? true,
-        sms: data.user.notifications_sms ?? true,
-        whatsapp: data.user.notifications_whatsapp ?? true,
-      });
-    } catch (err) {
-      console.error("Error loading profile:", err);
-    } finally {
-      setIsLoadingProfile(false);
-    }
-  };
+  // Update form data when profile loads
+  if (profileData && formData.email === "" && formData.phone === "") {
+    setFormData({
+      email: profileData.user.email || "",
+      phone: profileData.user.phone || profileData.patient.phone || "",
+    });
+    setNotifications({
+      email: profileData.user.notifications_email ?? true,
+      sms: profileData.user.notifications_sms ?? true,
+      whatsapp: profileData.user.notifications_whatsapp ?? true,
+    });
+  }
   
   const handleSaveProfile = async () => {
     setPasswordError("");
