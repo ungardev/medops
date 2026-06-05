@@ -349,7 +349,7 @@ export const ActiveInstitutionCard: React.FC = () => {
       </div>
       
       {/* Selectors */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4 pb-4 border-b border-white/10">
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-4 pb-4 border-b border-white/10">
         <ButtonGroup
           items={[
             { label: "Dia", value: "day" },
