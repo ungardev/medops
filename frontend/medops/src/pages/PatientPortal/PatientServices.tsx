@@ -112,7 +112,7 @@ export default function PatientServices() {
     );
   }
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader 
         breadcrumbs={[
           { label: "MEDOPZ", path: "/patient" },
@@ -123,195 +123,166 @@ export default function PatientServices() {
       <Tabs value={activeTab} onChange={handleTabChange} layout="horizontal">
         
         <Tab id="catalog" label={<><Bars3Icon className="w-4 h-4" /> Catálogo</>}>
-          <div className="flex gap-4 mt-6">
-            <div className="w-48 flex-shrink-0">
-              <div className="bg-white/10 border border-white/20 rounded-xl p-4 sticky top-4">
-                <p className="text-xs font-medium text-white/50 mb-3">
-                  CATEGORÍAS
-                </p>
-                <div className="space-y-1">
+          <div className="space-y-4">
+            {/* Horizontal Category Chips */}
+            <div className="flex gap-2 overflow-x-auto pb-2 mb-2 scrollbar-hide">
+              <button
+                onClick={() => setSelectedCategory(null)}
+                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                  !selectedCategory 
+                    ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' 
+                    : 'bg-white/10 text-white/60 hover:bg-white/15 hover:text-white/80'
+                }`}
+              >
+                Todos ({services.length})
+              </button>
+              {CATEGORIES.map((category) => {
+                const count = getCategoryCount(category);
+                return (
                   <button
-                    onClick={() => setSelectedCategory(null)}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex justify-between items-center ${
-                      !selectedCategory 
-                        ? 'bg-emerald-500/10 text-emerald-400' 
-                        : 'text-white/50 hover:bg-white/10'
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                      selectedCategory === category 
+                        ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' 
+                        : 'bg-white/10 text-white/60 hover:bg-white/15 hover:text-white/80'
                     }`}
                   >
-                    <span className="font-medium">Todos los servicios</span>
-                    <span className="text-xs text-white/30">{services.length}</span>
+                    {category} ({count})
                   </button>
-                  
-                  {CATEGORIES.map((category) => {
-                    const count = getCategoryCount(category);
-                    const isActive = selectedCategory === category;
-                    return (
-                      <button
-                        key={category}
-                        onClick={() => setSelectedCategory(category)}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex justify-between items-center ${
-                          isActive 
-                            ? 'bg-emerald-500/10 text-emerald-400' 
-                            : 'text-white/50 hover:bg-white/10'
-                        }`}
-                      >
-                        <span className="font-medium">{category}</span>
-                        <span className={`text-xs ${count > 0 ? 'text-white/30' : 'text-white/20'}`}>
-                          {count}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+                );
+              })}
             </div>
             
-            <div className="flex-1">
-              <div className="mb-4 relative">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/20" />
-                <input
-                  type="text"
-                  placeholder="Buscar por servicio, doctor o institución..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-white/10 border border-white/20 rounded-xl py-2.5 pl-10 pr-10 text-sm text-white/80 placeholder:text-white/20 focus:border-emerald-500/50 outline-none"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/50 hover:text-white/60"
-                  >
-                    <XMarkIcon className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-              
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm text-white/40">
-                  {filteredServices.length} servicios encontrados
-                  {selectedCategory && ` en "${selectedCategory}"`}
-                </p>
-                {(selectedCategory || searchQuery) && (
-                  <button
-                    onClick={() => {
-                      setSelectedCategory(null);
-                      setSearchQuery("");
-                    }}
-                    className="text-sm text-emerald-400 hover:text-emerald-400 font-medium"
-                  >
-                    Limpiar filtros
-                  </button>
-                )}
-              </div>
-              {filteredServices.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredServices.map((service) => (
-                    <div 
-                      key={service.id} 
-                      className="group bg-white/10 border border-white/20 rounded-xl p-5 hover:bg-white/15 hover:border-white/30 transition-all cursor-pointer"
-                      onClick={() => {
-                        setSelectedService(service);
-                        setShowServiceDetail(true);
-                      }}
-                    >
-                      <div className="flex justify-between items-start mb-3">
-                        <span className="text-xs text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md">
-                          {service.category_name || 'Servicio'}
-                        </span>
-                        <span className="flex items-center gap-1 text-xs text-white/40">
-<ClockIcon className="w-3.5 h-3.5" />
-                          {service.duration_minutes ? `${service.duration_minutes} min` : 'N/A'}
-                        </span>
-                      </div>
-                      <h4 className="text-sm font-medium text-white/80 mb-3 line-clamp-2">
-                        {service.name || 'Servicio sin nombre'}
-                      </h4>
-                      <div className="flex items-center gap-2 text-sm text-white/50 mb-2">
-<UserIcon className="w-4 h-4" />
-                        <span>Dr. {service.doctor_name || 'Médico no especificado'}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-white/40 mb-3">
-                        <BuildingOfficeIcon className="w-4 h-4" />
-                        <span>{service.institution_name || 'Institución no especificada'}</span>
-                      </div>
-                      <div className="flex justify-between items-center pt-3 border-t border-white/10">
-                        <span className="text-xs text-blue-400/60 bg-blue-500/10 px-1.5 py-0.5 rounded-md">
-                          {service.code}
-                        </span>
-                        <span className="text-emerald-400 font-medium text-sm">
-                          $ {service.price_usd ? service.price_usd.toLocaleString('en-US', { minimumFractionDigits: 2 }) : 'N/A'}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-16 bg-white/10 border border-dashed border-white/20 rounded-xl">
-                  <div className="bg-white/5 p-4 rounded-full mb-4">
-                    <Bars3Icon className="w-6 h-6 text-white/20" />
-                  </div>
-                  <h3 className="text-white/60 font-medium text-lg mb-1">No se encontraron servicios</h3>
-                  <p className="text-white/30 text-sm text-center max-w-xs mb-4">
-                    {searchQuery 
-                      ? `No hay resultados para "${searchQuery}"${selectedCategory ? ` en "${selectedCategory}"` : ''}`
-                      : `No hay servicios en la categoría "${selectedCategory}"`
-                    }
-                  </p>
-                  <button
-                    onClick={() => {
-                      setSelectedCategory(null);
-                      setSearchQuery("");
-                    }}
-                    className="px-4 py-2.5 bg-emerald-500/10 text-emerald-400 text-xs font-medium rounded-lg hover:bg-emerald-500/15 transition-colors"
-                  >
-                    Ver todos los servicios
-                  </button>
-                </div>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm text-white/40">
+                {filteredServices.length} servicios encontrados
+                {selectedCategory && ` en "${selectedCategory}"`}
+              </p>
+              {(selectedCategory || searchQuery) && (
+                <button
+                  onClick={() => {
+                    setSelectedCategory(null);
+                    setSearchQuery("");
+                  }}
+                  className="text-sm text-emerald-400 hover:text-emerald-300 font-medium"
+                >
+                  Limpiar
+                </button>
               )}
             </div>
+            {filteredServices.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredServices.map((service) => (
+                  <div 
+                    key={service.id} 
+                    className="group bg-white/10 border border-white/15 rounded-xl p-5 hover:bg-white/15 hover:border-emerald-500/30 hover:scale-[1.02] hover:shadow-xl transition-all cursor-pointer"
+                    onClick={() => {
+                      setSelectedService(service);
+                      setShowServiceDetail(true);
+                    }}
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <span className="text-xs text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md font-medium">
+                        {service.category_name || 'Servicio'}
+                      </span>
+                      <span className="flex items-center gap-1 text-xs text-white/40">
+                        <ClockIcon className="w-3.5 h-3.5" />
+                        {service.duration_minutes ? `${service.duration_minutes} min` : 'N/A'}
+                      </span>
+                    </div>
+                    <h4 className="text-sm font-semibold text-white/90 mb-3 line-clamp-2 group-hover:text-emerald-400 transition-colors">
+                      {service.name || 'Servicio sin nombre'}
+                    </h4>
+                    <div className="flex items-center gap-2 text-xs text-white/50 mb-2">
+                      <UserIcon className="w-4 h-4 text-white/30" />
+                      <span>Dr. {service.doctor_name || 'Médico no especificado'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-white/40 mb-4">
+                      <BuildingOfficeIcon className="w-4 h-4 text-white/30" />
+                      <span>{service.institution_name || 'Institución no especificada'}</span>
+                    </div>
+                    <div className="flex justify-between items-center pt-3 border-t border-white/10">
+                      <span className="text-xs text-white/30 font-mono">
+                        {service.code}
+                      </span>
+                      <span className="text-emerald-400 font-bold text-base">
+                        $ {service.price_usd ? service.price_usd.toLocaleString('en-US', { minimumFractionDigits: 2 }) : 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-16 bg-white/5 border border-dashed border-white/10 rounded-xl">
+                <div className="bg-white/5 p-4 rounded-full mb-4">
+                  <Bars3Icon className="w-6 h-6 text-white/20" />
+                </div>
+                <h3 className="text-white/60 font-semibold text-base mb-1">No se encontraron servicios</h3>
+                <p className="text-white/30 text-sm text-center max-w-xs mb-4">
+                  {searchQuery 
+                    ? `No hay resultados para "${searchQuery}"`
+                    : `No hay servicios en la categoría seleccionada`
+                  }
+                </p>
+                <button
+                  onClick={() => {
+                    setSelectedCategory(null);
+                    setSearchQuery("");
+                  }}
+                  className="px-4 py-2 bg-emerald-500/10 text-emerald-400 text-xs font-medium rounded-lg hover:bg-emerald-500/20 transition-colors border border-emerald-500/20"
+                >
+                  Ver todos los servicios
+                </button>
+              </div>
+            )}
           </div>
         </Tab>
         <Tab id="history" label={<><DocumentIcon className="w-4 h-4" /> Historial</>}>
-          <div className="space-y-4 mt-6">
+          <div className="space-y-3">
             {historyData?.orders?.map((order) => (
-              <div key={order.id} className="bg-white/10 border border-white/20 rounded-xl overflow-hidden">
+              <div key={order.id} className="bg-white/10 border border-white/15 rounded-xl overflow-hidden hover:border-white/25 transition-colors">
                 <button
                   onClick={() => handleToggleOrder(order.id)}
-                  className="w-full flex items-center justify-between p-5 hover:bg-white/10 transition-colors"
+                  className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors"
                 >
                   <div className="flex items-center gap-4">
                     <div className={`w-3 h-3 rounded-full ${order.status === 'paid' ? 'bg-emerald-400' : 'bg-amber-400'}`} />
                     <div className="text-left">
-                      <p className="text-sm font-medium text-white/80">Orden #{order.id}</p>
-                      <div className="flex items-center gap-2 text-xs text-white/40 mt-1">
-                        <ClockIcon className="w-3.5 h-3.5" />
-                        <span>{order.date}</span>
-                        <BuildingOfficeIcon className="w-3.5 h-3.5 ml-2" />
-                        <span>{order.institution}</span>
+                      <p className="text-sm font-semibold text-white/90">Orden #{order.id}</p>
+                      <div className="flex items-center gap-3 text-xs text-white/40 mt-1">
+                        <span className="flex items-center gap-1">
+                          <ClockIcon className="w-3.5 h-3.5" />
+                          {order.date}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <BuildingOfficeIcon className="w-3.5 h-3.5" />
+                          {order.institution}
+                        </span>
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    <p className="text-emerald-400 font-medium text-sm">
+                    <p className="text-emerald-400 font-bold text-sm">
                       Bs {order.total.toLocaleString('es-VE', { minimumFractionDigits: 0 })}
                     </p>
                     {expandedOrder === order.id 
-                      ? <ChevronDownIcon className="w-4 h-4 text-white/30" /> 
-                      : <ChevronRightIcon className="w-4 h-4 text-white/30" />
+                      ? <ChevronDownIcon className="w-4 h-4 text-white/40" /> 
+                      : <ChevronRightIcon className="w-4 h-4 text-white/40" />
                     }
                   </div>
                 </button>
                 
                 {expandedOrder === order.id && (
-                  <div className="border-t border-white/10 bg-black/20 p-5 space-y-3">
+                  <div className="border-t border-white/10 bg-black/20 p-4 space-y-3">
                     {order.items?.map((item, index) => (
-                      <div key={index} className="flex justify-between items-center text-sm">
+                      <div key={index} className="flex justify-between items-center text-sm py-2 border-b border-white/5 last:border-0">
                         <div>
                           <p className="font-medium text-white/70">{item.description}</p>
-                          <p className="text-xs text-white/30">{item.code}</p>
+                          <p className="text-xs text-white/30 font-mono">{item.code}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium text-white/70">Bs {item.subtotal.toLocaleString('es-VE', { minimumFractionDigits: 0 })}</p>
+                          <p className="font-semibold text-white/70">Bs {item.subtotal.toLocaleString('es-VE', { minimumFractionDigits: 0 })}</p>
                           <p className="text-xs text-white/30">x{item.qty}</p>
                         </div>
                       </div>
@@ -323,21 +294,21 @@ export default function PatientServices() {
           </div>
         </Tab>
         <Tab id="recommended" label={<><HeartIcon className="w-4 h-4" /> Recomendados</>}>
-          <div className="space-y-6 mt-6">
-            <div className="bg-white/10 border border-white/20 rounded-xl p-5">
-              <p className="text-xs font-medium text-white/50 mb-4 flex items-center gap-2">
-                <UserIcon className="w-4 h-4" /> Doctores Recomendados
+          <div className="space-y-6">
+            <div className="bg-white/5 border border-white/15 rounded-xl p-5">
+              <p className="text-xs font-semibold text-white/50 mb-4 uppercase tracking-wider flex items-center gap-2">
+                <UserIcon className="w-4 h-4 text-emerald-400/60" /> Doctores Recomendados
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {recommendedData?.recommended_doctors?.map((doctor) => (
-                  <div key={doctor.id} className="bg-white/10 rounded-xl p-4 hover:bg-white/15 transition-colors cursor-pointer border border-white/20">
+                  <div key={doctor.id} className="bg-white/5 rounded-xl p-4 hover:bg-white/10 transition-colors cursor-pointer border border-transparent hover:border-white/10">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center shrink-0">
-                        <UserIcon className="w-5 h-5 text-white/30" />
+                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                        <UserIcon className="w-5 h-5 text-emerald-400" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-white/80 truncate">{doctor.full_name}</p>
-                        <p className="text-xs text-white/30 truncate">
+                        <p className="text-sm font-semibold text-white/90 truncate">{doctor.full_name}</p>
+                        <p className="text-xs text-white/40 truncate">
                           {doctor.specialties?.join(", ")}
                         </p>
                       </div>
@@ -346,29 +317,29 @@ export default function PatientServices() {
                 ))}
               </div>
             </div>
-            <div className="bg-white/10 border border-white/20 rounded-xl p-5">
-              <p className="text-xs font-medium text-white/50 mb-4 flex items-center gap-2">
-                <CurrencyDollarIcon className="w-4 h-4" /> Servicios Populares
+            <div className="bg-white/5 border border-white/15 rounded-xl p-5">
+              <p className="text-xs font-semibold text-white/50 mb-4 uppercase tracking-wider flex items-center gap-2">
+                <CurrencyDollarIcon className="w-4 h-4 text-emerald-400/60" /> Servicios Populares
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {recommendedData?.recommended_services?.map((service: RecommendedService) => (
                   <div 
                     key={service.id} 
-                    className="bg-white/10 rounded-xl p-4 hover:bg-white/15 transition-colors cursor-pointer border border-white/20 group"
+                    className="bg-white/5 rounded-xl p-4 hover:bg-white/10 transition-all cursor-pointer border border-transparent hover:border-emerald-500/20 group"
                     onClick={() => handleSelectRecommendedService(service)}
                   >
-                    <h4 className="text-sm font-medium text-white/80 mb-2 line-clamp-1">
+                    <h4 className="text-sm font-semibold text-white/90 mb-2 line-clamp-1 group-hover:text-emerald-400 transition-colors">
                       {service.name}
                     </h4>
-                    <div className="flex items-center gap-2 text-xs text-white/40 mb-1">
+                    <div className="flex items-center gap-2 text-xs text-white/40 mb-2">
                       <UserIcon className="w-3.5 h-3.5" />
                       <span>Dr. {service.doctor_name}</span>
                     </div>
-                    <div className="flex justify-between items-center mt-2">
+                    <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/5">
                       <span className="text-xs text-white/30">
                         {service.times_used} veces usada
                       </span>
-                      <span className="text-emerald-400 font-medium text-sm">
+                      <span className="text-emerald-400 font-bold text-sm">
                         $ {service.price_usd?.toFixed(2)}
                       </span>
                     </div>

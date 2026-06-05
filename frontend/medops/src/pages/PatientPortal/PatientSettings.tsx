@@ -269,7 +269,7 @@ export default function PatientSettings() {
   }
   
   return (
-    <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
+    <div className="max-w-[1600px] mx-auto p-4 lg:p-6">
       <PageHeader 
         breadcrumbs={[
           { label: "MEDOPZ", path: "/patient" },
@@ -280,23 +280,21 @@ export default function PatientSettings() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-1">
           <div className="bg-white/10 border border-white/20 rounded-xl overflow-hidden">
-            <div className="px-5 py-3 border-b border-white/20 bg-white/5">
-              <h3 className="text-xs font-medium text-white/40">
-                Ajustes
-              </h3>
-            </div>
             <div className="divide-y divide-white/5">
               {sections.map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
                   onClick={() => setActiveSection(id)}
-                  className={`w-full flex items-center gap-3 px-5 py-3 text-left transition-colors ${
+                  className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-all duration-200 relative ${
                     activeSection === id 
-                      ? "bg-white/10 text-white/90" 
-                      : "text-white/40 hover:text-white/70 hover:bg-white/10"
+                      ? "bg-emerald-500/10 text-emerald-400" 
+                      : "text-white/50 hover:text-white/80 hover:bg-white/5"
                   }`}
                 >
-                  <Icon size={16} />
+                  {activeSection === id && (
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500 rounded-r" />
+                  )}
+                  <Icon size={18} className={activeSection === id ? "text-emerald-400" : "text-white/40"} />
                   <span className="text-sm font-medium">{label}</span>
                 </button>
               ))}
@@ -308,57 +306,62 @@ export default function PatientSettings() {
           <div className="bg-white/10 border border-white/20 rounded-xl p-6">
             
             {activeSection === "profile" && (
-              <div className="space-y-6">
-                <h2 className="text-xl font-semibold text-white/90">Información del Perfil</h2>
+              <div className="space-y-5">
+                <h2 className="text-lg font-semibold text-white/90">Información del Perfil</h2>
                 
-                <div className="flex items-center gap-4 p-5 bg-white/10 border border-white/20 rounded-xl">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-white/20 flex items-center justify-center">
-                    <User className="w-7 h-7 text-white/40" />
+                <div className="flex items-center gap-4 p-5 bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border border-emerald-500/20 rounded-xl">
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-500/30 to-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                    <User className="w-7 h-7 text-emerald-400" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-white/90">
+                    <p className="text-base font-semibold text-white/90">
                       {profileData?.patient.full_name || "Paciente"}
                     </p>
-                    <p className="text-xs text-white/30">
-                      ID: {profileData?.patient.id}
-                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-xs text-white/40">ID: {profileData?.patient.id}</span>
+                      {profileData?.user.is_verified && (
+                        <span className="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded text-xs font-medium">
+                          Verificado
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
-                    <label className="flex items-center gap-2 text-xs font-medium text-white/40 mb-1.5">
-                      <Mail className="w-3.5 h-3.5" />
-                      Email
+                    <label className="flex items-center gap-2 text-xs font-semibold text-white/60 uppercase tracking-wider mb-2">
+                      <Mail className="w-3.5 h-3.5 text-emerald-400/60" />
+                      Correo Electrónico
                     </label>
                     <input
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full px-4 py-2.5 bg-white/5 border border-white/20 rounded-lg text-white/80 focus:outline-none focus:border-emerald-500/50 placeholder:text-white/20"
+                      className="w-full px-4 py-3 bg-white/5 border border-white/15 rounded-lg text-white/90 focus:outline-none focus:border-emerald-500/50 focus:bg-white/10 placeholder:text-white/20 transition-all"
                     />
-                    <p className="text-xs text-white/20 mt-1">Este email se usa para iniciar sesión</p>
+                    <p className="text-xs text-white/30 mt-1.5">Este email se usa para iniciar sesión</p>
                   </div>
                   
                   <div>
-                    <label className="flex items-center gap-2 text-xs font-medium text-white/40 mb-1.5">
-                      <Phone className="w-3.5 h-3.5" />
+                    <label className="flex items-center gap-2 text-xs font-semibold text-white/60 uppercase tracking-wider mb-2">
+                      <Phone className="w-3.5 h-3.5 text-emerald-400/60" />
                       Teléfono
                     </label>
                     <input
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full px-4 py-2.5 bg-white/5 border border-white/20 rounded-lg text-white/80 focus:outline-none focus:border-emerald-500/50 placeholder:text-white/20"
+                      className="w-full px-4 py-3 bg-white/5 border border-white/15 rounded-lg text-white/90 focus:outline-none focus:border-emerald-500/50 focus:bg-white/10 placeholder:text-white/20 transition-all"
                       placeholder="04121234567"
                     />
                   </div>
                 </div>
                 
                 <div className="p-5 bg-amber-500/5 border border-amber-500/20 rounded-xl">
-                  <label className="flex items-center gap-2 text-xs font-medium text-amber-400/80 mb-1.5">
+                  <label className="flex items-center gap-2 text-xs font-semibold text-amber-400/80 uppercase tracking-wider mb-2">
                     <Lock className="w-3.5 h-3.5" />
-                    Confirmar cambios con tu contraseña
+                    Confirmar Cambios con tu Contraseña
                   </label>
                   <input
                     type="password"
@@ -367,8 +370,8 @@ export default function PatientSettings() {
                       setCurrentPassword(e.target.value);
                       setPasswordError("");
                     }}
-                    className="w-full px-4 py-2.5 bg-white/5 border border-amber-500/20 rounded-lg text-white/80 focus:outline-none focus:border-amber-500/50 placeholder:text-white/20"
-                    placeholder="••••••••"
+                    className="w-full px-4 py-3 bg-white/5 border border-amber-500/20 rounded-lg text-white/90 focus:outline-none focus:border-amber-500/50 placeholder:text-white/20 transition-all"
+                    placeholder="Ingresa tu contraseña actual"
                   />
                   {passwordError && (
                     <p className="flex items-center gap-1 text-xs text-red-400 mt-2">
@@ -388,7 +391,7 @@ export default function PatientSettings() {
                 <button 
                   onClick={handleSaveProfile}
                   disabled={updateProfileMutation.isPending}
-                  className={`flex items-center gap-2 px-6 py-2.5 bg-emerald-500/15 text-emerald-400 text-sm font-medium rounded-lg hover:bg-emerald-500/25 transition-all border border-emerald-500/25 ${
+                  className={`flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white text-sm font-semibold rounded-lg hover:bg-emerald-400 transition-all ${
                     updateProfileMutation.isPending ? "opacity-50 cursor-not-allowed" : ""
                   }`}
                 >
@@ -403,94 +406,109 @@ export default function PatientSettings() {
             )}
             
             {activeSection === "notifications" && (
-              <div className="space-y-6">
-                <h2 className="text-xl font-semibold text-white/90">Notificaciones</h2>
-                <div className="space-y-4">
+              <div className="space-y-5">
+                <h2 className="text-lg font-semibold text-white/90">Preferencias de Notificación</h2>
+                <div className="bg-white/5 border border-white/15 rounded-xl overflow-hidden">
                   {[
-                    { id: "email", label: "Notificaciones por Email", desc: "Recibe recordatorios de citas por email", key: "email" },
-                    { id: "sms", label: "Notificaciones por SMS", desc: "Recibe recordatorios de citas por mensaje de texto", key: "sms" },
-                    { id: "whatsapp", label: "Notificaciones por WhatsApp", desc: "Recibe mensajes de WhatsApp", key: "whatsapp" },
-                  ].map((item) => (
-                    <div key={item.id} className="flex items-center justify-between py-3 border-b border-white/5">
-                      <div>
-                        <p className="text-sm font-medium text-white/80">{item.label}</p>
-                        <p className="text-xs text-white/30">{item.desc}</p>
+                    { id: "email", label: "Notificaciones por Email", desc: "Recibe recordatorios de citas y actualizaciones importantes", key: "email", icon: Mail },
+                    { id: "sms", label: "Notificaciones por SMS", desc: "Recibe alertas rápidas a tu teléfono", key: "sms", icon: Phone },
+                    { id: "whatsapp", label: "Notificaciones por WhatsApp", desc: "Mensajes directos a tu WhatsApp registrado", key: "whatsapp", icon: Bell },
+                  ].map((item, idx) => {
+                    const IconComponent = item.icon;
+                    const isLast = idx === 2;
+                    return (
+                      <div key={item.id} className={`flex items-center justify-between p-4 ${!isLast ? 'border-b border-white/5' : ''}`}>
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
+                            <IconComponent className="w-4 h-4 text-white/40" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-white/80">{item.label}</p>
+                            <p className="text-xs text-white/30">{item.desc}</p>
+                          </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={notifications[item.key as keyof typeof notifications]}
+                            onChange={(e) => handleNotificationChange(item.key, e.target.checked)}
+                            className="sr-only peer" 
+                          />
+                          <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                        </label>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          checked={notifications[item.key as keyof typeof notifications]}
-                          onChange={(e) => handleNotificationChange(item.key, e.target.checked)}
-                          className="sr-only peer" 
-                        />
-                        <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
-                      </label>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
             
             {activeSection === "security" && (
-              <div className="space-y-6">
-                <h2 className="text-xl font-semibold text-white/90">Seguridad</h2>
-                <div className="space-y-4">
+              <div className="space-y-5">
+                <h2 className="text-lg font-semibold text-white/90">Seguridad de la Cuenta</h2>
+                <div className="bg-white/5 border border-white/15 rounded-xl p-5 space-y-4">
                   <div>
-                    <label className="flex items-center gap-2 text-xs font-medium text-white/40 mb-1.5">
-                      <Lock className="w-3.5 h-3.5" />
+                    <label className="flex items-center gap-2 text-xs font-semibold text-white/60 uppercase tracking-wider mb-2">
+                      <Lock className="w-3.5 h-3.5 text-emerald-400/60" />
                       Contraseña Actual
                     </label>
                     <input
                       type="password"
-                      className="w-full px-4 py-2.5 bg-white/5 border border-white/20 rounded-lg text-white/80 focus:outline-none focus:border-white/25 placeholder:text-white/20"
+                      className="w-full px-4 py-3 bg-white/5 border border-white/15 rounded-lg text-white/90 focus:outline-none focus:border-emerald-500/50 placeholder:text-white/20 transition-all"
                       placeholder="••••••••"
                     />
                   </div>
                   <div>
-                    <label className="flex items-center gap-2 text-xs font-medium text-white/40 mb-1.5">
-                      <Lock className="w-3.5 h-3.5" />
+                    <label className="flex items-center gap-2 text-xs font-semibold text-white/60 uppercase tracking-wider mb-2">
+                      <Lock className="w-3.5 h-3.5 text-emerald-400/60" />
                       Nueva Contraseña
                     </label>
                     <input
                       type="password"
-                      className="w-full px-4 py-2.5 bg-white/5 border border-white/20 rounded-lg text-white/80 focus:outline-none focus:border-white/25 placeholder:text-white/20"
+                      className="w-full px-4 py-3 bg-white/5 border border-white/15 rounded-lg text-white/90 focus:outline-none focus:border-emerald-500/50 placeholder:text-white/20 transition-all"
                       placeholder="••••••••"
                     />
                   </div>
                   <div>
-                    <label className="flex items-center gap-2 text-xs font-medium text-white/40 mb-1.5">
-                      <Lock className="w-3.5 h-3.5" />
-                      Confirmar Contraseña
+                    <label className="flex items-center gap-2 text-xs font-semibold text-white/60 uppercase tracking-wider mb-2">
+                      <Lock className="w-3.5 h-3.5 text-emerald-400/60" />
+                      Confirmar Nueva Contraseña
                     </label>
                     <input
                       type="password"
-                      className="w-full px-4 py-2.5 bg-white/5 border border-white/20 rounded-lg text-white/80 focus:outline-none focus:border-white/25 placeholder:text-white/20"
+                      className="w-full px-4 py-3 bg-white/5 border border-white/15 rounded-lg text-white/90 focus:outline-none focus:border-emerald-500/50 placeholder:text-white/20 transition-all"
                       placeholder="••••••••"
                     />
                   </div>
                 </div>
-                <button className="px-6 py-2.5 bg-emerald-500/15 text-emerald-400 text-sm font-medium rounded-lg hover:bg-emerald-500/25 transition-all border border-emerald-500/25">
+                <button className="flex items-center gap-2 px-5 py-3 bg-emerald-500/15 text-emerald-400 text-sm font-medium rounded-lg hover:bg-emerald-500/25 transition-all border border-emerald-500/25">
+                  <Lock className="w-4 h-4" />
                   Cambiar Contraseña
                 </button>
               </div>
             )}
             
             {activeSection === "subscription" && (
-              <div className="space-y-6">
-                <h2 className="text-xl font-semibold text-white/90">Mi Suscripción</h2>
-                <div className="p-6 bg-gradient-to-r from-emerald-500/5 to-blue-500/5 border border-emerald-500/20 rounded-xl">
-                  <div className="flex items-center justify-between">
+              <div className="space-y-5">
+                <h2 className="text-lg font-semibold text-white/90">Mi Suscripción</h2>
+                <div className="p-6 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/20 rounded-xl">
+                  <div className="flex items-center justify-between mb-4">
                     <div>
-                      <p className="text-xs text-emerald-400/70 font-medium">Plan Actual</p>
-                      <p className="text-2xl font-semibold text-white/90 mt-1">Free</p>
+                      <p className="text-xs text-emerald-400/70 font-semibold uppercase tracking-wider">Plan Actual</p>
+                      <p className="text-3xl font-bold text-white/90 mt-1">Free</p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs text-white/30">Próxima facturación</p>
-                      <p className="text-sm font-medium text-white/70">--</p>
+                    <div className="w-16 h-16 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                      <CreditCard className="w-8 h-8 text-emerald-400/60" />
                     </div>
                   </div>
+                  <div className="h-px bg-gradient-to-r from-emerald-500/20 via-emerald-500/10 to-transparent mb-4" />
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-white/40">Próxima facturación</span>
+                    <span className="text-white/60 font-medium">--</span>
+                  </div>
                 </div>
-                <button className="w-full px-6 py-2.5 border border-white/20 text-white/50 text-sm font-medium rounded-lg hover:bg-white/10 transition-all">
+                <button className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-white/5 border border-white/15 text-white/70 text-sm font-medium rounded-lg hover:bg-white/10 transition-all">
+                  <CreditCard className="w-4 h-4" />
                   Ver Planes Disponibles
                 </button>
               </div>
