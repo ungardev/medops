@@ -190,58 +190,6 @@ export const ActiveInstitutionCard: React.FC = () => {
     }
     return value.toLocaleString();
   };
-  
-  // BuildResumen Ejecutivo
-  const buildResumen = () => {
-    if (!metrics) return null;
-    
-    const parts: { label: string; value: number; color: string }[] = [];
-    
-    if (metrics.scheduled_count > 0) {
-      parts.push({
-        label: 'agendadas',
-        value: metrics.scheduled_count,
-        color: 'text-white/80'
-      });
-    }
-    if (metrics.waiting_count > 0) {
-      parts.push({
-        label: 'en espera',
-        value: metrics.waiting_count,
-        color: 'text-amber-400'
-      });
-    }
-    if (metrics.in_consultation_count > 0) {
-      parts.push({
-        label: 'en consulta',
-        value: metrics.in_consultation_count,
-        color: 'text-blue-400'
-      });
-    }
-    if (metrics.completed_count > 0) {
-      parts.push({
-        label: 'finalizadas',
-        value: metrics.completed_count,
-        color: 'text-emerald-400'
-      });
-    }
-    
-    if (parts.length === 0) return null;
-    
-    return parts.map((part, idx) => (
-      <React.Fragment key={part.label}>
-        <span className={`font-semibold ${part.color}`}>
-          {part.value}
-        </span>
-        <span className="text-white/60">
-          {part.label}
-        </span>
-        {idx < parts.length - 1 && (
-          <span className="text-white/40 mx-1">·</span>
-        )}
-      </React.Fragment>
-    ));
-  };
 
   if (isLoading) {
     return (
@@ -289,8 +237,6 @@ export const ActiveInstitutionCard: React.FC = () => {
   const bcvDisplay = bcvRate 
     ? `${Number(bcvRate.rate).toLocaleString('es-VE', { minimumFractionDigits: 2 })} Bs/USD`
     : "--";
-  
-  const resumenParts = buildResumen();
   
   return (
     <div className="bg-white/5 sm:border sm:border-white/15 p-4 sm:p-6 lg:p-8 sm:rounded-xl">
@@ -401,16 +347,6 @@ export const ActiveInstitutionCard: React.FC = () => {
           </div>
         </div>
       </div>
-      
-      {/* Resumen Ejecutivo */}
-      {resumenParts && (
-        <div className="flex items-center gap-2 px-3 py-2.5 bg-emerald-500/5 border border-emerald-500/15 rounded-xl mb-4 sm:mb-6">
-          <span className="text-sm font-semibold text-emerald-400 uppercase tracking-wider mr-2">Estado:</span>
-          <div className="flex items-center gap-2 flex-wrap">
-            {resumenParts}
-          </div>
-        </div>
-      )}
       
       {/* Selectors */}
       <div className="flex flex-col xs:flex-row items-start xs:items-center gap-3 mb-4 pb-4 border-b border-white/10">
