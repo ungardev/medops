@@ -307,7 +307,7 @@ export const ActiveInstitutionCard: React.FC = () => {
         </div>
         
         {/* BCV Rate + Mobile Time - Compact */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-end gap-3 sm:gap-4 shrink-0 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row items-center sm:items-end gap-3 sm:gap-4 shrink-0 w-full sm:w-auto">
           {/* Mobile: compact time + BCV inline */}
           <div className="sm:hidden flex items-center gap-3">
             <span className="text-xl font-bold text-white">
