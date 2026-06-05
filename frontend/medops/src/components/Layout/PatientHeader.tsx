@@ -72,7 +72,7 @@ export default function PatientHeader({ setCollapsed, setMobileOpen }: PatientHe
   };
   
   return (
-    <div className="flex items-center justify-between w-full px-4 bg-black/40 border-b border-white/20">
+    <div className="w-full flex items-center justify-between h-full bg-white/5 px-5 lg:px-6 border-b border-white/10 relative z-[110]">
       <div className="flex items-center gap-2 lg:gap-4 flex-1 min-w-0">
         
         <button 
