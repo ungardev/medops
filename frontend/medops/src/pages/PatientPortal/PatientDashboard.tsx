@@ -172,11 +172,11 @@ export function PatientDashboard() {
             <div className="p-1.5 rounded-lg bg-white/5 border border-white/20 text-blue-400">
               <IdentificationIcon className="h-4 w-4" />
             </div>
-            <span className="text-xs text-white/40">
+            <span className="text-xs font-semibold text-white/70 uppercase tracking-wider">
               Cédula
             </span>
           </div>
-          <div className="text-xl font-medium text-white/80">
+          <div className="text-2xl font-bold text-white">
             {dashboard.patient.national_id || "--"}
           </div>
         </div>
@@ -186,11 +186,11 @@ export function PatientDashboard() {
             <div className="p-1.5 rounded-lg bg-white/5 border border-white/20 text-purple-400">
               <CakeIcon className="h-4 w-4" />
             </div>
-            <span className="text-xs text-white/40">
+            <span className="text-xs font-semibold text-white/70 uppercase tracking-wider">
               Nacimiento
             </span>
           </div>
-          <div className="text-xl font-medium text-white/80">
+          <div className="text-2xl font-bold text-white">
             {dashboard.patient.birthdate 
               ? moment(dashboard.patient.birthdate).format('DD/MM/YYYY')
               : "--"}
@@ -202,11 +202,11 @@ export function PatientDashboard() {
             <div className="p-1.5 rounded-lg bg-white/5 border border-white/20 text-emerald-400">
               <UserIcon className="h-4 w-4" />
             </div>
-            <span className="text-xs text-white/40">
+            <span className="text-xs font-semibold text-white/70 uppercase tracking-wider">
               Edad
             </span>
           </div>
-          <div className="text-xl font-medium text-white/80">
+          <div className="text-2xl font-bold text-white">
             {patientAge}
           </div>
         </div>
@@ -216,11 +216,11 @@ export function PatientDashboard() {
             <div className="p-1.5 rounded-lg bg-white/5 border border-white/20 text-cyan-400">
               <PhoneIcon className="h-4 w-4" />
             </div>
-            <span className="text-xs text-white/40">
+            <span className="text-xs font-semibold text-white/70 uppercase tracking-wider">
               Teléfono
             </span>
           </div>
-          <div className="text-xl font-medium text-white/80">
+          <div className="text-2xl font-bold text-white">
             {dashboard.patient.phone || "--"}
           </div>
         </div>
@@ -234,15 +234,15 @@ export function PatientDashboard() {
             <div className={`p-1.5 rounded-lg bg-white/5 border border-white/20 ${metricsConfig.next_appointment.color}`}>
               <CalendarIcon className="h-4 w-4" />
             </div>
-            <span className="text-xs text-white/40">
+            <span className="text-xs font-semibold text-white/70 uppercase tracking-wider">
               {metricsConfig.next_appointment.label}
             </span>
           </div>
-          <div className="text-xl font-medium text-white/80">
+          <div className="text-2xl font-bold text-white">
             {nextAppointmentDate || "Sin citas"}
           </div>
           {nextAppointment?.doctor && (
-            <div className="text-xs text-white/50 mt-1">
+            <div className="text-sm text-white/60 mt-1">
               Dr. {nextAppointment.doctor.name}
             </div>
           )}
@@ -254,14 +254,14 @@ export function PatientDashboard() {
             <div className={`p-1.5 rounded-lg bg-white/5 border border-white/20 ${metricsConfig.past_appointments.color}`}>
               <CheckCircleIcon className="h-4 w-4" />
             </div>
-            <span className="text-xs text-white/40">
+            <span className="text-xs font-semibold text-white/70 uppercase tracking-wider">
               {metricsConfig.past_appointments.label}
             </span>
           </div>
-          <div className="text-xl font-medium text-white/80">
+          <div className="text-2xl font-bold text-white">
             {dashboard.past_appointments_count || 0}
           </div>
-          <div className="text-xs text-white/50 mt-1">
+          <div className="text-sm text-white/60 mt-1">
             consultas completadas
           </div>
         </div>
@@ -272,7 +272,7 @@ export function PatientDashboard() {
             <div className={`p-1.5 rounded-lg bg-white/5 border border-white/20 ${metricsConfig.subscription.color}`}>
               <CreditCardIcon className="h-4 w-4" />
             </div>
-            <span className="text-xs text-white/40">
+            <span className="text-xs font-semibold text-white/70 uppercase tracking-wider">
               {metricsConfig.subscription.label}
             </span>
           </div>
@@ -281,7 +281,7 @@ export function PatientDashboard() {
               <div className="text-xl font-medium text-white/80 capitalize">
                 {dashboard.subscription.plan}
               </div>
-              <div className="text-xs text-white/50 mt-1">
+              <div className="text-sm text-white/60 mt-1">
                 {dashboard.subscription.days_remaining} días restantes
               </div>
             </>
@@ -298,14 +298,14 @@ export function PatientDashboard() {
             <div className={`p-1.5 rounded-lg bg-white/5 border border-white/20 ${metricsConfig.notifications.color}`}>
               <BellIcon className="h-4 w-4" />
             </div>
-            <span className="text-xs text-white/40">
+            <span className="text-xs font-semibold text-white/70 uppercase tracking-wider">
               {metricsConfig.notifications.label}
             </span>
           </div>
-          <div className="text-xl font-medium text-white/80">
+          <div className="text-2xl font-bold text-white">
             {unreadNotifications}
           </div>
-          <div className="text-xs text-white/50 mt-1">
+          <div className="text-sm text-white/60 mt-1">
             mensajes sin leer
           </div>
         </div>
