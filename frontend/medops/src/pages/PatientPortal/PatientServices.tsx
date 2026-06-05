@@ -9,9 +9,8 @@ import {
 } from "@/hooks/patient/usePatientServices";
 import { Loader2 } from "lucide-react";
 import { 
-  ReceiptIcon, 
-  ListIcon, 
-  StethoscopeIcon, 
+  DocumentIcon,
+  Bars3Icon,
   ChevronDownIcon, 
   ChevronRightIcon,
   ClockIcon,
@@ -21,6 +20,7 @@ import {
   MagnifyingGlassIcon,
   XMarkIcon
 } from "@heroicons/react/24/outline";
+import { StethoscopeIcon as StethoscopeIconSolid } from "@heroicons/react/24/solid";
 import { DoctorService, RecommendedService } from "@/api/patient/client";
 import { ServicePurchaseFlow } from "@/components/Doctor/ServicePurchaseFlow";
 import { ServiceDetail } from "@/components/Common/ServiceDetail";
@@ -122,7 +122,7 @@ export default function PatientServices() {
       
       <Tabs value={activeTab} onChange={handleTabChange} layout="horizontal">
         
-        <Tab id="catalog" label={<><ListIcon className="w-4 h-4" /> Catálogo</>}>
+        <Tab id="catalog" label={<><Bars3Icon className="w-4 h-4" /> Catálogo</>}>
           <div className="flex gap-4 mt-6">
             <div className="w-48 flex-shrink-0">
               <div className="bg-white/10 border border-white/20 rounded-xl p-4 sticky top-4">
@@ -248,7 +248,7 @@ export default function PatientServices() {
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 bg-white/10 border border-dashed border-white/20 rounded-xl">
                   <div className="bg-white/5 p-4 rounded-full mb-4">
-                    <ListIcon className="w-6 h-6 text-white/20" />
+                    <Bars3Icon className="w-6 h-6 text-white/20" />
                   </div>
                   <h3 className="text-white/60 font-medium text-lg mb-1">No se encontraron servicios</h3>
                   <p className="text-white/30 text-sm text-center max-w-xs mb-4">
@@ -271,7 +271,7 @@ export default function PatientServices() {
             </div>
           </div>
         </Tab>
-        <Tab id="history" label={<><ReceiptIcon className="w-4 h-4" /> Historial</>}>
+        <Tab id="history" label={<><DocumentIcon className="w-4 h-4" /> Historial</>}>
           <div className="space-y-4 mt-6">
             {historyData?.orders?.map((order) => (
               <div key={order.id} className="bg-white/10 border border-white/20 rounded-xl overflow-hidden">
@@ -322,7 +322,7 @@ export default function PatientServices() {
             ))}
           </div>
         </Tab>
-        <Tab id="recommended" label={<><StethoscopeIcon className="w-4 h-4" /> Recomendados</>}>
+        <Tab id="recommended" label={<><StethoscopeIconSolid className="w-4 h-4" /> Recomendados</>}>
           <div className="space-y-6 mt-6">
             <div className="bg-white/10 border border-white/20 rounded-xl p-5">
               <p className="text-xs font-medium text-white/50 mb-4 flex items-center gap-2">

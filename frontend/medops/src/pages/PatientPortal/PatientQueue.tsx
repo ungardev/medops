@@ -134,7 +134,7 @@ export default function PatientQueue() {
                 </p>
                 {patientEntry.serviceId && (
                   <div className="flex items-center gap-1.5 text-xs text-cyan-400/70 mt-1">
-                    <Clipboard className="w-3.5 h-3.5" />
+                    <ClipboardDocumentIcon className="w-3.5 h-3.5" />
                     <span>{getServiceName(patientEntry.serviceId) || "Servicio no identificado"}</span>
                   </div>
                 )}
