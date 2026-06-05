@@ -134,7 +134,7 @@ export default function Sidebar({
                   onClick={() => mobileOpen && setMobileOpen(false)}
                   className={`
                     group relative flex items-center
-                    ${effectiveCollapsed ? "justify-center px-3 py-3.5" : "px-4 py-3.5"}
+                    ${effectiveCollapsed ? "justify-center px-3 py-4" : "px-4 py-4"}
                     mb-0.5 overflow-hidden rounded-lg
                     transition-all duration-200
                     ${isActive 
@@ -144,18 +144,18 @@ export default function Sidebar({
                   `}
                 >
                   <Icon 
-                    size={22} 
-                    className={`shrink-0 ${isActive ? "text-emerald-400" : "text-white/60 group-hover:text-white/90"}`} 
+                    size={24} 
+                    className={`shrink-0 ${isActive ? "text-emerald-400" : "text-white/80 group-hover:text-white"}`} 
                     strokeWidth={isActive ? 2 : 1.5} 
                   />
                   
                   {!effectiveCollapsed && (
                     <span 
                       className={`
-                        ml-3 text-sm font-medium tracking-wide
+                        ml-3 text-base font-semibold tracking-wide
                         overflow-hidden whitespace-nowrap
                         transition-all duration-200
-                        ${isActive ? "text-white" : "text-white/70 group-hover:text-white/90"}
+                        ${isActive ? "text-white" : "text-white/80 group-hover:text-white"}
                       `}
                     >
                       {label}
