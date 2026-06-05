@@ -2,7 +2,8 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/Common/PageHeader";
 import { usePatientChargeOrders } from "@/hooks/patient/usePatientChargeOrders";
-import { Loader2, Banknotes, CircleStack, ShieldCheck, ChevronRight } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { BanknotesIcon, CircleStackIcon, ShieldCheckIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 
 const STATUS_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
   open: { bg: "bg-amber-500/10", text: "text-amber-400", dot: "bg-amber-400" },
@@ -68,7 +69,7 @@ export default function PatientPayments() {
         ]}
         actions={
           <div className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/20 rounded-lg">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <ShieldCheckIcon className="w-4 h-4 text-emerald-400" />
             <span className="text-xs text-emerald-400">
               Conexión segura
             </span>
@@ -80,7 +81,7 @@ export default function PatientPayments() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white/10 border border-white/20 rounded-xl p-5">
             <div className="flex items-center gap-2 mb-3">
-              <CircleStack className="w-4 h-4 text-amber-400" />
+              <CircleStackIcon className="w-4 h-4 text-amber-400" />
               <span className="text-xs font-medium text-white/40">Pendiente</span>
             </div>
             <div className="text-2xl font-semibold text-amber-400">
@@ -95,7 +96,7 @@ export default function PatientPayments() {
           
           <div className="bg-white/10 border border-white/20 rounded-xl p-5">
             <div className="flex items-center gap-2 mb-3">
-              <Banknotes className="w-4 h-4 text-emerald-400" />
+              <BanknotesIcon className="w-4 h-4 text-emerald-400" />
               <span className="text-xs font-medium text-white/40">Pagado</span>
             </div>
             <div className="text-2xl font-semibold text-emerald-400">
@@ -126,7 +127,7 @@ export default function PatientPayments() {
         <div className="border border-white/20 bg-white/10 rounded-xl overflow-hidden">
           <div className="px-5 py-3 border-b border-white/20 bg-white/5 flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <CircleStack className="w-4 h-4 text-white/30" />
+              <CircleStackIcon className="w-4 h-4 text-white/30" />
               <h3 className="text-sm font-medium text-white/60">
                 Historial de Órdenes
               </h3>
@@ -139,7 +140,7 @@ export default function PatientPayments() {
           <div className="divide-y divide-white/5">
             {orders.length === 0 && !isLoading && (
               <div className="flex flex-col items-center justify-center p-12">
-                <Banknotes className="w-8 h-8 text-white/10 mb-4" />
+                <BanknotesIcon className="w-8 h-8 text-white/10 mb-4" />
                 <p className="text-sm text-white/20">
                   No se encontraron órdenes
                 </p>
@@ -190,7 +191,7 @@ export default function PatientPayments() {
                         Total: $ {Number(order.total).toLocaleString('es-VE', { minimumFractionDigits: 2 })}
                       </p>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-white/20 group-hover:text-white/50 transition-colors" />
+                    <ChevronRightIcon className="w-4 h-4 text-white/20 group-hover:text-white/50 transition-colors" />
                   </div>
                 </div>
               );

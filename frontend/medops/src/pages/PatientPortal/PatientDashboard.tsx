@@ -3,16 +3,16 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import moment from 'moment';
 import { 
-  Calendar,
-  CreditCard,
-  CheckCircle,
-  User,
-  IdCard,
-  Cake,
-  Phone,
-  Mail,
-  Bell
-} from 'lucide-react';
+  CalendarIcon,
+  CreditCardIcon,
+  CheckCircleIcon,
+  UserIcon,
+  IdentificationIcon,
+  CakeIcon,
+  PhoneIcon,
+  EnvelopeIcon,
+  BellIcon
+} from '@heroicons/react/24/outline';
 import { patientClient } from '@/api/patient/client';
 import { useBCVRate } from '@/hooks/dashboard/useBCVRate';
 import { PatientDashboard as PatientDashboardType } from '@/types/patient';
@@ -20,25 +20,25 @@ import { PatientDashboard as PatientDashboardType } from '@/types/patient';
 const metricsConfig = {
   next_appointment: {
     label: "Próxima Cita",
-    icon: Calendar,
+    icon: CalendarIcon,
     color: "text-blue-400",
     href: "/patient/appointments",
   },
   past_appointments: {
     label: "Realizadas",
-    icon: CheckCircle,
+    icon: CheckCircleIcon,
     color: "text-emerald-400",
     href: "/patient/appointments",
   },
   subscription: {
     label: "Suscripción",
-    icon: CreditCard,
+    icon: CreditCardIcon,
     color: "text-purple-400",
     href: "/patient/payments",
   },
   notifications: {
     label: "Notificaciones",
-    icon: Bell,
+    icon: BellIcon,
     color: "text-amber-400",
     href: "/patient/notifications",
   },
@@ -117,7 +117,7 @@ export function PatientDashboard() {
         <div className="flex-1 min-w-0 w-full">
           <div className="flex items-start gap-3">
             <div className="hidden sm:flex shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-white/20 items-center justify-center">
-              <User className="w-6 h-6 text-white/40" />
+              <UserIcon className="w-6 h-6 text-white/40" />
             </div>
             
             <div className="flex-1 min-w-0 w-full">
@@ -128,7 +128,7 @@ export function PatientDashboard() {
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 md:mt-2">
                 {dashboard.patient.email && (
                   <div className="flex items-center gap-1.5 text-white/40">
-                    <Mail className="w-3.5 h-3.5 shrink-0" />
+                    <EnvelopeIcon className="w-3.5 h-3.5 shrink-0" />
                     <span className="text-xs whitespace-normal break-words">
                       {dashboard.patient.email}
                     </span>
@@ -136,7 +136,7 @@ export function PatientDashboard() {
                 )}
                 {dashboard.patient.phone && (
                   <div className="flex items-center gap-1.5 text-white/40">
-                    <Phone className="w-3.5 h-3.5 shrink-0" />
+                    <PhoneIcon className="w-3.5 h-3.5 shrink-0" />
                     <span className="text-xs">
                       {dashboard.patient.phone}
                     </span>
@@ -170,7 +170,7 @@ export function PatientDashboard() {
         <div className="bg-white/10 border border-white/20 rounded-xl p-4 hover:bg-white/15 transition-all hover:border-blue-500/30">
           <div className="flex items-center gap-2 w-full mb-3">
             <div className="p-1.5 rounded-lg bg-white/5 border border-white/20 text-blue-400">
-              <IdCard className="h-4 w-4" />
+              <IdentificationIcon className="h-4 w-4" />
             </div>
             <span className="text-xs text-white/40">
               Cédula
@@ -184,7 +184,7 @@ export function PatientDashboard() {
         <div className="bg-white/10 border border-white/20 rounded-xl p-4 hover:bg-white/15 transition-all hover:border-purple-500/30">
           <div className="flex items-center gap-2 w-full mb-3">
             <div className="p-1.5 rounded-lg bg-white/5 border border-white/20 text-purple-400">
-              <Cake className="h-4 w-4" />
+              <CakeIcon className="h-4 w-4" />
             </div>
             <span className="text-xs text-white/40">
               Nacimiento
@@ -200,7 +200,7 @@ export function PatientDashboard() {
         <div className="bg-white/10 border border-white/20 rounded-xl p-4 hover:bg-white/15 transition-all hover:border-emerald-500/30">
           <div className="flex items-center gap-2 w-full mb-3">
             <div className="p-1.5 rounded-lg bg-white/5 border border-white/20 text-emerald-400">
-              <User className="h-4 w-4" />
+              <UserIcon className="h-4 w-4" />
             </div>
             <span className="text-xs text-white/40">
               Edad
@@ -214,7 +214,7 @@ export function PatientDashboard() {
         <div className="bg-white/10 border border-white/20 rounded-xl p-4 hover:bg-white/15 transition-all hover:border-cyan-500/30">
           <div className="flex items-center gap-2 w-full mb-3">
             <div className="p-1.5 rounded-lg bg-white/5 border border-white/20 text-cyan-400">
-              <Phone className="h-4 w-4" />
+              <PhoneIcon className="h-4 w-4" />
             </div>
             <span className="text-xs text-white/40">
               Teléfono
@@ -232,7 +232,7 @@ export function PatientDashboard() {
           <Link to={metricsConfig.next_appointment.href} className="absolute inset-0 z-10" />
           <div className="flex items-center gap-2 w-full mb-3">
             <div className={`p-1.5 rounded-lg bg-white/5 border border-white/20 ${metricsConfig.next_appointment.color}`}>
-              <Calendar className="h-4 w-4" />
+              <CalendarIcon className="h-4 w-4" />
             </div>
             <span className="text-xs text-white/40">
               {metricsConfig.next_appointment.label}
@@ -252,7 +252,7 @@ export function PatientDashboard() {
           <Link to={metricsConfig.past_appointments.href} className="absolute inset-0 z-10" />
           <div className="flex items-center gap-2 w-full mb-3">
             <div className={`p-1.5 rounded-lg bg-white/5 border border-white/20 ${metricsConfig.past_appointments.color}`}>
-              <CheckCircle className="h-4 w-4" />
+              <CheckCircleIcon className="h-4 w-4" />
             </div>
             <span className="text-xs text-white/40">
               {metricsConfig.past_appointments.label}
@@ -270,7 +270,7 @@ export function PatientDashboard() {
           <Link to={metricsConfig.subscription.href} className="absolute inset-0 z-10" />
           <div className="flex items-center gap-2 w-full mb-3">
             <div className={`p-1.5 rounded-lg bg-white/5 border border-white/20 ${metricsConfig.subscription.color}`}>
-              <CreditCard className="h-4 w-4" />
+              <CreditCardIcon className="h-4 w-4" />
             </div>
             <span className="text-xs text-white/40">
               {metricsConfig.subscription.label}
@@ -296,7 +296,7 @@ export function PatientDashboard() {
           <Link to={metricsConfig.notifications.href} className="absolute inset-0 z-10" />
           <div className="flex items-center gap-2 w-full mb-3">
             <div className={`p-1.5 rounded-lg bg-white/5 border border-white/20 ${metricsConfig.notifications.color}`}>
-              <Bell className="h-4 w-4" />
+              <BellIcon className="h-4 w-4" />
             </div>
             <span className="text-xs text-white/40">
               {metricsConfig.notifications.label}

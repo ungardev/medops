@@ -7,20 +7,20 @@ import {
   usePatientServicesCatalog,
   usePatientServicesRecommended 
 } from "@/hooks/patient/usePatientServices";
+import { Loader2 } from "lucide-react";
 import { 
-  Receipt, 
-  List, 
-  Stethoscope, 
-  ChevronDown, 
-  ChevronRight,
-  Clock,
-  Building2,
-  User,
-  Loader2,
-  DollarSign,
-  Search,
-  X
-} from "lucide-react";
+  ReceiptIcon, 
+  ListIcon, 
+  StethoscopeIcon, 
+  ChevronDownIcon, 
+  ChevronRightIcon,
+  ClockIcon,
+  BuildingOfficeIcon,
+  UserIcon,
+  CurrencyDollarIcon,
+  MagnifyingGlassIcon,
+  XMarkIcon
+} from "@heroicons/react/24/outline";
 import { DoctorService, RecommendedService } from "@/api/patient/client";
 import { ServicePurchaseFlow } from "@/components/Doctor/ServicePurchaseFlow";
 import { ServiceDetail } from "@/components/Common/ServiceDetail";
@@ -122,7 +122,7 @@ export default function PatientServices() {
       
       <Tabs value={activeTab} onChange={handleTabChange} layout="horizontal">
         
-        <Tab id="catalog" label={<><List className="w-4 h-4" /> Catálogo</>}>
+        <Tab id="catalog" label={<><ListIcon className="w-4 h-4" /> Catálogo</>}>
           <div className="flex gap-4 mt-6">
             <div className="w-48 flex-shrink-0">
               <div className="bg-white/10 border border-white/20 rounded-xl p-4 sticky top-4">
@@ -168,7 +168,7 @@ export default function PatientServices() {
             
             <div className="flex-1">
               <div className="mb-4 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/20" />
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/20" />
                 <input
                   type="text"
                   placeholder="Buscar por servicio, doctor o institución..."
@@ -181,7 +181,7 @@ export default function PatientServices() {
                     onClick={() => setSearchQuery("")}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/50 hover:text-white/60"
                   >
-                    <X className="w-4 h-4" />
+                    <XMarkIcon className="w-4 h-4" />
                   </button>
                 )}
               </div>
@@ -219,7 +219,7 @@ export default function PatientServices() {
                           {service.category_name || 'Servicio'}
                         </span>
                         <span className="flex items-center gap-1 text-xs text-white/40">
-                          <Clock className="w-3.5 h-3.5" />
+<ClockIcon className="w-3.5 h-3.5" />
                           {service.duration_minutes ? `${service.duration_minutes} min` : 'N/A'}
                         </span>
                       </div>
@@ -227,11 +227,11 @@ export default function PatientServices() {
                         {service.name || 'Servicio sin nombre'}
                       </h4>
                       <div className="flex items-center gap-2 text-sm text-white/50 mb-2">
-                        <User className="w-4 h-4" />
+<UserIcon className="w-4 h-4" />
                         <span>Dr. {service.doctor_name || 'Médico no especificado'}</span>
                       </div>
                       <div className="flex items-center gap-2 text-xs text-white/40 mb-3">
-                        <Building2 className="w-4 h-4" />
+                        <BuildingOfficeIcon className="w-4 h-4" />
                         <span>{service.institution_name || 'Institución no especificada'}</span>
                       </div>
                       <div className="flex justify-between items-center pt-3 border-t border-white/10">
@@ -248,7 +248,7 @@ export default function PatientServices() {
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 bg-white/10 border border-dashed border-white/20 rounded-xl">
                   <div className="bg-white/5 p-4 rounded-full mb-4">
-                    <List className="w-6 h-6 text-white/20" />
+                    <ListIcon className="w-6 h-6 text-white/20" />
                   </div>
                   <h3 className="text-white/60 font-medium text-lg mb-1">No se encontraron servicios</h3>
                   <p className="text-white/30 text-sm text-center max-w-xs mb-4">
@@ -271,7 +271,7 @@ export default function PatientServices() {
             </div>
           </div>
         </Tab>
-        <Tab id="history" label={<><Receipt className="w-4 h-4" /> Historial</>}>
+        <Tab id="history" label={<><ReceiptIcon className="w-4 h-4" /> Historial</>}>
           <div className="space-y-4 mt-6">
             {historyData?.orders?.map((order) => (
               <div key={order.id} className="bg-white/10 border border-white/20 rounded-xl overflow-hidden">
@@ -284,9 +284,9 @@ export default function PatientServices() {
                     <div className="text-left">
                       <p className="text-sm font-medium text-white/80">Orden #{order.id}</p>
                       <div className="flex items-center gap-2 text-xs text-white/40 mt-1">
-                        <Clock className="w-3.5 h-3.5" />
+                        <ClockIcon className="w-3.5 h-3.5" />
                         <span>{order.date}</span>
-                        <Building2 className="w-3.5 h-3.5 ml-2" />
+                        <BuildingOfficeIcon className="w-3.5 h-3.5 ml-2" />
                         <span>{order.institution}</span>
                       </div>
                     </div>
@@ -296,8 +296,8 @@ export default function PatientServices() {
                       Bs {order.total.toLocaleString('es-VE', { minimumFractionDigits: 0 })}
                     </p>
                     {expandedOrder === order.id 
-                      ? <ChevronDown className="w-4 h-4 text-white/30" /> 
-                      : <ChevronRight className="w-4 h-4 text-white/30" />
+                      ? <ChevronDownIcon className="w-4 h-4 text-white/30" /> 
+                      : <ChevronRightIcon className="w-4 h-4 text-white/30" />
                     }
                   </div>
                 </button>
@@ -322,18 +322,18 @@ export default function PatientServices() {
             ))}
           </div>
         </Tab>
-        <Tab id="recommended" label={<><Stethoscope className="w-4 h-4" /> Recomendados</>}>
+        <Tab id="recommended" label={<><StethoscopeIcon className="w-4 h-4" /> Recomendados</>}>
           <div className="space-y-6 mt-6">
             <div className="bg-white/10 border border-white/20 rounded-xl p-5">
               <p className="text-xs font-medium text-white/50 mb-4 flex items-center gap-2">
-                <User className="w-4 h-4" /> Doctores Recomendados
+                <UserIcon className="w-4 h-4" /> Doctores Recomendados
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {recommendedData?.recommended_doctors?.map((doctor) => (
                   <div key={doctor.id} className="bg-white/10 rounded-xl p-4 hover:bg-white/15 transition-colors cursor-pointer border border-white/20">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center shrink-0">
-                        <User className="w-5 h-5 text-white/30" />
+                        <UserIcon className="w-5 h-5 text-white/30" />
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-white/80 truncate">{doctor.full_name}</p>
@@ -348,7 +348,7 @@ export default function PatientServices() {
             </div>
             <div className="bg-white/10 border border-white/20 rounded-xl p-5">
               <p className="text-xs font-medium text-white/50 mb-4 flex items-center gap-2">
-                <DollarSign className="w-4 h-4" /> Servicios Populares
+                <CurrencyDollarIcon className="w-4 h-4" /> Servicios Populares
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {recommendedData?.recommended_services?.map((service: RecommendedService) => (
@@ -361,7 +361,7 @@ export default function PatientServices() {
                       {service.name}
                     </h4>
                     <div className="flex items-center gap-2 text-xs text-white/40 mb-1">
-                      <User className="w-3.5 h-3.5" />
+                      <UserIcon className="w-3.5 h-3.5" />
                       <span>Dr. {service.doctor_name}</span>
                     </div>
                     <div className="flex justify-between items-center mt-2">

@@ -5,14 +5,14 @@ import { usePatientWaitingRoom } from "@/hooks/patients/usePatientWaitingRoom";
 import { useMedicalServices } from "@/hooks/services/useMedicalServices";
 import PageHeader from "@/components/Common/PageHeader";
 import { 
-  Clock, 
-  CheckCircle,
-  User,
-  Building2,
-  Bell,
-  Clipboard,
-  EyeOff
-} from "lucide-react";
+  ClockIcon, 
+  CheckCircleIcon,
+  UserIcon,
+  BuildingOfficeIcon,
+  BellAlertIcon,
+  ClipboardDocumentIcon,
+  EyeSlashIcon
+} from "@heroicons/react/24/outline";
 
 const renderStatusBadge = (status: string, isPatient: boolean = false) => {
   const base = "inline-flex items-center justify-center px-2.5 py-1 text-xs rounded-md font-medium border whitespace-nowrap";
@@ -41,7 +41,7 @@ const renderWaitTime = (entry: any) => {
   if (entry.status === "completed") {
     return (
       <div className="flex items-center gap-1 text-xs text-emerald-400">
-        <CheckCircle className="w-3.5 h-3.5" />
+        <CheckCircleIcon className="w-3.5 h-3.5" />
         <span>Sesión finalizada</span>
       </div>
     );
@@ -52,7 +52,7 @@ const renderWaitTime = (entry: any) => {
   const minutes = Math.floor((Date.now() - new Date(entry.arrival_time).getTime()) / 60000);
   return (
     <div className="flex items-center gap-1 text-xs text-amber-400/50">
-      <Clock className="w-3.5 h-3.5" />
+      <ClockIcon className="w-3.5 h-3.5" />
       <span>{minutes < 60 ? `${minutes}m` : `${Math.floor(minutes/60)}h ${minutes%60}m`}</span>
     </div>
   );
@@ -112,7 +112,7 @@ export default function PatientQueue() {
         ]}
         actions={
           <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/20 bg-white/10">
-            <Clock className="w-5 h-5 text-white/30" />
+            <ClockIcon className="w-5 h-5 text-white/30" />
           </div>
         }
       />
@@ -123,7 +123,7 @@ export default function PatientQueue() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center">
-                <User className="w-6 h-6 text-cyan-400" />
+                <UserIcon className="w-6 h-6 text-cyan-400" />
               </div>
               <div>
                 <p className="text-xs text-cyan-400/60 mb-0.5">Tu Estado</p>
@@ -163,7 +163,7 @@ export default function PatientQueue() {
         <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-6">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
-              <Bell className="w-6 h-6 text-amber-400" />
+              <BellAlertIcon className="w-6 h-6 text-amber-400" />
             </div>
             <div>
               <p className="text-sm font-medium text-amber-400 mb-1">No tienes turno activo</p>
@@ -183,7 +183,7 @@ export default function PatientQueue() {
               Cola de Espera
             </h3>
             <div className="flex items-center gap-1.5 text-xs text-white/30">
-              <EyeOff className="w-3.5 h-3.5" />
+              <EyeSlashIcon className="w-3.5 h-3.5" />
               <span>Nombres protegidos por confidencialidad</span>
             </div>
           </div>
@@ -222,14 +222,14 @@ export default function PatientQueue() {
                       
                       {serviceName && (
                         <div className="flex items-center gap-1.5 text-xs text-blue-400/60">
-                          <Clipboard className="w-3.5 h-3.5" />
+<ClipboardDocumentIcon className="w-3.5 h-3.5" />
                           <span>{serviceName}</span>
                         </div>
                       )}
                       
                       {entry.institution_data && (
                         <div className="flex items-center gap-1.5 text-xs text-white/30">
-                          <Building2 className="w-3.5 h-3.5" />
+                          <BuildingOfficeIcon className="w-3.5 h-3.5" />
                           <span>{entry.institution_data.name}</span>
                         </div>
                       )}
