@@ -104,7 +104,7 @@ export default function InstitutionalLayout() {
             collapsed ? "lg:ml-[72px]" : "lg:ml-64"
           }`}
         >
-          <header className="h-16 border-b border-white/10 bg-black sticky top-0 z-30 flex items-center transition-colors duration-300">
+          <header className="h-14 sm:h-16 border-b border-white/10 bg-black sticky top-0 z-30 flex items-center transition-colors duration-300">
             <InstitutionalHeader
               setCollapsed={setCollapsed}
               setMobileOpen={setMobileSidebarOpen}
@@ -112,7 +112,7 @@ export default function InstitutionalLayout() {
           </header>
           
           <main className="flex-1 overflow-y-auto overflow-x-hidden">
-            <div className="max-w-[1600px] mx-auto p-4 sm:p-5 lg:p-6 animate-in fade-in duration-300">
+            <div className="max-w-[1800px] mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-5 lg:py-6 animate-in fade-in duration-300">
               <Outlet />
             </div>
           </main>
