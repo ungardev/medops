@@ -86,7 +86,7 @@ export default function PatientLayout() {
             collapsed ? "lg:ml-[72px]" : "lg:ml-64"
           }`}
         >
-          <header className="h-14 border-b border-white/20 bg-black sticky top-0 z-30 flex items-center">
+          <header className="h-14 bg-black sticky top-0 z-30 flex items-center">
             <PatientHeader
               setCollapsed={setCollapsed}
               setMobileOpen={setMobileSidebarOpen}
