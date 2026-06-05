@@ -97,7 +97,9 @@ export const getCompletedAppointmentsByPatient = async (patientId: number): Prom
   return response.data.map(mapAppointmentList);
 };
 // ✅ FIX: Usar apiFetch (token de doctor/admin) para evitar 401 en portal del doctor
+// ✅ Robusto: maneja tanto array plano como formato paginado { results }
 export const getPendingAppointmentsByPatient = async (patientId: number): Promise<Appointment[]> => {
-  const response = await apiFetch<{ results: any[] }>(`patients/${patientId}/pending_appointments/`);
-  return response.results.map(mapAppointmentList);
+  const response = await apiFetch<any>(`patients/${patientId}/pending_appointments/`);
+  const results = Array.isArray(response) ? response : (response.results ?? []);
+  return results.map(mapAppointmentList);
 };
