@@ -127,17 +127,17 @@ export function PatientDashboard() {
               
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 md:mt-2">
                 {dashboard.patient.email && (
-                  <div className="flex items-center gap-1.5 text-white/40">
-                    <EnvelopeIcon className="w-3.5 h-3.5 shrink-0" />
-                    <span className="text-xs whitespace-normal break-words">
+                  <div className="flex items-center gap-1.5 text-white/60">
+                    <EnvelopeIcon className="w-4 h-4 shrink-0" />
+                    <span className="text-sm whitespace-normal break-words">
                       {dashboard.patient.email}
                     </span>
                   </div>
                 )}
                 {dashboard.patient.phone && (
-                  <div className="flex items-center gap-1.5 text-white/40">
-                    <PhoneIcon className="w-3.5 h-3.5 shrink-0" />
-                    <span className="text-xs">
+                  <div className="flex items-center gap-1.5 text-white/60">
+                    <PhoneIcon className="w-4 h-4 shrink-0" />
+                    <span className="text-sm">
                       {dashboard.patient.phone}
                     </span>
                   </div>
