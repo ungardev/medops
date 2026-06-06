@@ -315,6 +315,7 @@ export interface Patient extends PatientRef {
 // DATOS DE ENTRADA PARA CREAR/EDITAR PACIENTE (escritura)
 // =====================================================
 export type PatientInput = {
+  id_type?: string;
   national_id?: string;
   first_name: string;
   middle_name?: string;

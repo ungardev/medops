@@ -114,6 +114,27 @@ class PatientViewSet(viewsets.ModelViewSet):
 
         return queryset.none()
 
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+
+        if response.status_code == 201:
+            patient_id = response.data.get("id")
+            user = request.user
+
+            if hasattr(user, "doctor_profile"):
+                doctor = user.doctor_profile
+                DoctorPatientRelationship.objects.get_or_create(
+                    doctor=doctor,
+                    patient_id=patient_id,
+                    defaults={
+                        "relationship_type": "primary_care",
+                        "status": "active",
+                        "created_by": user,
+                    },
+                )
+
+        return response
+
     @action(detail=True, methods=["get"])
     def clinical_summary(self, request, pk=None):
         """Endpoint extra para un resumen rápido en el Frontend."""
@@ -355,6 +376,43 @@ class PatientViewSet(viewsets.ModelViewSet):
         except Exception as e:
             logger.error(f"Error en delete_document: {str(e)}")
             return Response({"error": str(e)}, status=500)
+
+    @action(detail=False, methods=["get"])
+    def check(self, request):
+        """
+        Endpoint para verificar si existe un paciente con cierta cédula.
+        Uso: GET /patients/check/?national_id=12345678&id_type=V
+        Retorna los datos del paciente si existe, o {"exists": false} si no.
+        """
+        national_id = request.query_params.get("national_id", "").strip()
+        id_type = request.query_params.get("id_type", "V").strip().upper()
+
+        if not national_id:
+            return Response({"error": "national_id es requerido"}, status=400)
+
+        normalized_id = re.sub(r"[^0-9]", "", national_id)
+
+        patient = Patient.objects.filter(
+            national_id=normalized_id, id_type=id_type, active=True
+        ).first()
+
+        if patient:
+            return Response(
+                {
+                    "exists": True,
+                    "patient": {
+                        "id": patient.id,
+                        "full_name": patient.full_name,
+                        "national_id": patient.national_id,
+                        "id_type": patient.id_type,
+                        "is_minor": patient.is_minor,
+                        "phone_number": patient.phone_number,
+                        "email": patient.email,
+                    },
+                }
+            )
+
+        return Response({"exists": False})
 
 
 class DoctorPatientRelationshipViewSet(viewsets.ModelViewSet):

@@ -200,7 +200,19 @@ class Patient(models.Model):
         ("O+", "O+"),
         ("O-", "O-"),
     ]
+    ID_TYPE_CHOICES = [
+        ("V", "Venezolano"),
+        ("E", "Extranjero"),
+        ("J", "Jurídico"),
+        ("G", "Gobierno"),
+    ]
     # --- Identificación ---
+    id_type = models.CharField(
+        max_length=1,
+        choices=ID_TYPE_CHOICES,
+        default="V",
+        verbose_name="Tipo de identificación",
+    )
     national_id = models.CharField(
         max_length=12,
         unique=True,
@@ -425,6 +437,12 @@ class Patient(models.Model):
         self.last_name = normalize_title_case(self.last_name)
         if self.second_last_name:
             self.second_last_name = normalize_title_case(self.second_last_name)
+
+        # Normalizar cédula (solo dígitos)
+        if self.national_id:
+            import re
+
+            self.national_id = re.sub(r"[^0-9]", "", self.national_id)
 
         # Auto-detectar si es menor de edad basado en fecha de nacimiento
         if self.birthdate:

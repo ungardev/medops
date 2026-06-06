@@ -1,9 +1,10 @@
 // src/components/Patients/NewPatientModal.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useCreatePatient } from "../../hooks/patients/useCreatePatient";
 import { PatientInput } from "../../types/patients";
-import { X, Save, Loader2, UserIcon } from "lucide-react";
+import { X, Save, Loader2, UserIcon, AlertTriangle } from "lucide-react";
+import { apiFetch } from "../../api/client";
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -15,6 +16,7 @@ interface FormValues {
   middle_name?: string;
   last_name: string;
   second_last_name?: string;
+  id_type: string;
   national_id: string;
   phone_number?: string;
   email?: string;
@@ -35,16 +37,59 @@ const RELATIONSHIP_OPTIONS = [
   { value: "other", label: "Otro" },
 ];
 const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientCreated }) => {
-  const { register, handleSubmit, formState: { errors }, reset, watch } = useForm<FormValues>();
+  const { register, handleSubmit, formState: { errors }, reset, watch, setValue } = useForm<FormValues>({
+    defaultValues: {
+      id_type: "V"
+    }
+  });
   const createPatient = useCreatePatient();
   const [isMinor, setIsMinor] = useState(false);
   const [parentalConsent, setParentalConsent] = useState(false);
+  const [idType, setIdType] = useState("V");
+  const [existingPatient, setExistingPatient] = useState<{id: number, full_name: string} | null>(null);
+  const [checkingPatient, setCheckingPatient] = useState(false);
+
+  const nationalIdValue = watch("national_id");
+
+  useEffect(() => {
+    if (!nationalIdValue || nationalIdValue.length < 5) {
+      setExistingPatient(null);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setCheckingPatient(true);
+      try {
+        const normalizedId = nationalIdValue.replace(/[^0-9]/g, "");
+        const response = await apiFetch<{data: {exists: boolean, patient?: {id: number, full_name: string}}}>(`/patients/check/?national_id=${normalizedId}&id_type=${idType}`);
+        if (response.data.exists && response.data.patient) {
+          setExistingPatient({
+            id: response.data.patient.id,
+            full_name: response.data.patient.full_name
+          });
+        } else {
+          setExistingPatient(null);
+        }
+      } catch (error) {
+        setExistingPatient(null);
+      } finally {
+        setCheckingPatient(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [nationalIdValue, idType]);
+
   if (!open) return null;
   const onSubmit = (values: FormValues) => {
+    if (existingPatient) {
+      return;
+    }
     const payload: PatientInput = {
       first_name: values.first_name.trim(),
       last_name: values.last_name.trim(),
-      national_id: values.national_id.trim(),
+      id_type: idType,
+      national_id: values.national_id.replace(/[^0-9]/g, "").trim(),
       ...(values.middle_name?.trim() && { middle_name: values.middle_name.trim() }),
       ...(values.second_last_name?.trim() && { second_last_name: values.second_last_name.trim() }),
       ...(values.phone_number?.trim() && { phone_number: values.phone_number.trim() }),
@@ -129,10 +174,39 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
           </div>
           <div className={sectionStyles}>
             <h4 className="text-sm font-medium text-white/70 uppercase tracking-wider mb-4">Identificación</h4>
-            <div>
-              <label className={labelStyles}>Cédula de Identidad *</label>
-              <input {...register("national_id", { required: true })} className={inputClass} placeholder="Ej: V-12345678" />
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className={labelStyles}>Tipo</label>
+                <select 
+                  className={inputClass}
+                  value={idType}
+                  onChange={(e) => setIdType(e.target.value)}
+                >
+                  <option value="V">V - Venezolano</option>
+                  <option value="E">E - Extranjero</option>
+                  <option value="J">J - Jurídico</option>
+                  <option value="G">G - Gobierno</option>
+                </select>
+              </div>
+              <div className="col-span-2">
+                <label className={labelStyles}>Cédula de Identidad *</label>
+                <input {...register("national_id", { required: true })} className={inputClass} placeholder="Ej: 12345678" />
+              </div>
             </div>
+            {checkingPatient && (
+              <div className="mt-2 text-xs text-white/40">Verificando...</div>
+            )}
+            {existingPatient && (
+              <div className="mt-3 p-3 bg-red-500/15 border border-red-500/25 rounded-xl flex items-start gap-3">
+                <AlertTriangle className="h-4 w-4 text-red-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm text-red-400 font-medium">Paciente ya existe</p>
+                  <p className="text-xs text-white/60 mt-1">
+                    Ya existe un paciente con esta cédula: <span className="text-white/80">{existingPatient.full_name}</span>
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
           <div className={sectionStyles}>
             <h4 className="text-sm font-medium text-white/70 uppercase tracking-wider mb-4">Contacto</h4>
@@ -256,7 +330,7 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
             </button>
             <button
               type="submit"
-              disabled={createPatient.isPending || (isMinor && !parentalConsent)}
+              disabled={createPatient.isPending || (isMinor && !parentalConsent) || !!existingPatient}
               className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium text-white bg-emerald-500/15 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all disabled:opacity-50"
             >
               {createPatient.isPending ? (

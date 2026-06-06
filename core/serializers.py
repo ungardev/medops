@@ -275,6 +275,7 @@ class PatientWriteSerializer(serializers.ModelSerializer):
             "middle_name",
             "last_name",
             "second_last_name",
+            "id_type",
             "national_id",
             "birthdate",
             "birth_place",
