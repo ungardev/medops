@@ -16,7 +16,7 @@ import EmptyState from "../../components/Common/EmptyState";
 import { EmptyStateRegistry } from "../../components/Common/EmptyStateRegistry";
 import NewPatientModal from "../../components/Patients/NewPatientModal";
 import PatientsTable from "../../components/Patients/PatientsTable";
-import { Patient } from "../../types/patients";
+import { Patient } from "@/types/patient";
 export default function Patients() {
   const [query, setQuery] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);

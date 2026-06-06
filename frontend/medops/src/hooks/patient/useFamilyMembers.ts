@@ -3,7 +3,7 @@ import { apiFetch } from "@/api/client";
 import { FamilyMember } from "@/context/PatientContext";
 
 interface FamilyLink {
-  id: number;
+  link_id: number;
   patient_id: number;
   full_name: string;
   national_id: string | null;
