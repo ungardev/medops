@@ -4,7 +4,9 @@ import PageHeader from "@/components/Common/PageHeader";
 import { useUpdatePatientProfile } from "@/hooks/patient/useUpdatePatientProfile";
 import { usePatientProfile } from "@/hooks/patient/usePatientProfile";
 import { usePatientPaymentMethod, useUpdatePatientPaymentMethod } from "@/hooks/patient/usePatientPaymentMethod";
+import { usePatient, FamilyMember } from "@/context/PatientContext";
 import { VENEZUELAN_BANKS } from "@/constants/banks";
+import AddFamilyMember from "@/components/Patients/AddFamilyMember";
 import { 
   User, 
   Bell, 
@@ -14,7 +16,11 @@ import {
   Phone,
   Save,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  UsersIcon,
+  PlusIcon,
+  TrashIcon,
+  UserIcon
 } from "lucide-react";
 
 interface PatientProfile {
@@ -38,6 +44,118 @@ interface PatientProfile {
     notifications_sms: boolean;
     notifications_whatsapp: boolean;
   };
+}
+
+function FamilySection() {
+  const { familyMembers, removeFamilyMember, refreshFamilyMembers } = usePatient();
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [removingId, setRemovingId] = useState<number | null>(null);
+
+  const handleRemove = async (linkId: number) => {
+    if (!window.confirm("¿Estás seguro de eliminar este vínculo familiar?")) return;
+    setRemovingId(linkId);
+    try {
+      const token = localStorage.getItem("patient_access_token") || localStorage.getItem("patient_drf_token");
+      await fetch(`/api/patient-family-links/${linkId}/unlink/`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Token ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      removeFamilyMember(linkId);
+    } catch (err) {
+      console.error("Error removing family link:", err);
+    } finally {
+      setRemovingId(null);
+    }
+  };
+
+  const handleAdded = () => {
+    refreshFamilyMembers();
+  };
+
+  const getRelationshipLabel = (type: string) => {
+    switch (type) {
+      case "self": return "Yo mismo";
+      case "child": return "Hijo/Hija";
+      case "dependent": return "Dependiente";
+      default: return type;
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-white/90">Mis Familiares</h2>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-sm font-medium rounded-lg transition-all"
+        >
+          <PlusIcon className="w-4 h-4" />
+          Agregar
+        </button>
+      </div>
+
+      {familyMembers.length === 0 ? (
+        <div className="p-6 bg-white/5 border border-white/10 rounded-xl text-center">
+          <UsersIcon className="w-12 h-12 text-white/20 mx-auto mb-3" />
+          <p className="text-sm text-white/50">No tienes familiares vinculados</p>
+          <p className="text-xs text-white/30 mt-1">Agrega menores o dependientes para gestionar sus citas</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {familyMembers.map((member) => (
+            <div
+              key={member.link_id}
+              className="flex items-center gap-4 p-4 bg-white/5 border border-white/10 rounded-xl"
+            >
+              <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center justify-center shrink-0">
+                <UserIcon className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white truncate">{member.full_name}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs text-white/40">
+                    {getRelationshipLabel(member.relationship_type)}
+                  </span>
+                  {member.is_minor && (
+                    <span className="text-xs px-2 py-0.5 bg-amber-500/15 text-amber-400 rounded-md">
+                      Menor
+                    </span>
+                  )}
+                  {member.age && (
+                    <span className="text-xs text-white/30">
+                      {member.age} años
+                    </span>
+                  )}
+                </div>
+              </div>
+              {member.relationship_type !== "self" && (
+                <button
+                  onClick={() => handleRemove(member.link_id)}
+                  disabled={removingId === member.link_id}
+                  className="p-2 text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all disabled:opacity-50"
+                >
+                  {removingId === member.link_id ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <TrashIcon className="w-4 h-4" />
+                  )}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <AddFamilyMember
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onAdded={handleAdded}
+      />
+    </div>
+  );
 }
 
 function PaymentMethodsSection() {
@@ -191,9 +309,9 @@ export default function PatientSettings() {
     { id: "security", label: "Seguridad", icon: Lock },
     { id: "subscription", label: "Suscripción", icon: CreditCard },
     { id: "payment-methods", label: "Métodos de Pago", icon: CreditCard },
+    { id: "family", label: "Familiares", icon: UsersIcon },
   ];
   
-  // Update form data when profile loads
   useEffect(() => {
     if (profileData && formData.email === "" && formData.phone === "") {
       setFormData({
@@ -515,6 +633,8 @@ export default function PatientSettings() {
             )}
             
             {activeSection === "payment-methods" && <PaymentMethodsSection />}
+
+            {activeSection === "family" && <FamilySection />}
           </div>
         </div>
       </div>

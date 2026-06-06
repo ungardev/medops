@@ -373,4 +373,38 @@ export const chargeClient = {
     return patientApi.post<PurchaseServiceResponse>('/charges/purchase-service/', data);
   }
 };
+
+// ============================================
+// CLIENTE PARA VÍNCULOS FAMILIARES
+// ============================================
+export interface FamilyMember {
+  id: number;
+  patient_id: number;
+  full_name: string;
+  national_id: string | null;
+  age: number | null;
+  is_minor: boolean;
+  birthdate: string | null;
+  relationship_type: 'self' | 'child' | 'dependent';
+  relationship_type_display: string;
+  created_at: string;
+}
+
+export interface FamilyLinkRequest {
+  patient: number;
+  relationship_type: 'child' | 'dependent';
+}
+
+export const familyClient = {
+  getFamilyMembers: () => {
+    return patientApi.get<{ family: FamilyMember[] }>('/patient-family-links/family/');
+  },
+  addFamilyMember: (data: FamilyLinkRequest) => {
+    return patientApi.post<FamilyMember>('/patient-family-links/family/', data);
+  },
+  removeFamilyMember: (linkId: number) => {
+    return patientApi.delete(`/patient-family-links/${linkId}/unlink/`);
+  },
+};
+
 export default patientApi;

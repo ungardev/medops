@@ -93,12 +93,12 @@ export default function Patients() {
     <div className="border border-white/15 bg-white/5 backdrop-blur-md rounded-xl overflow-hidden">
       <div className="overflow-x-auto">
         <PatientsTable
-          headers={["ID", "Nombre Completo", "Cédula", "Género", "Contacto", "Acciones"]}
+          headers={["ID", "Nombre Completo", "Tipo", "Cédula", "Género", "Contacto", "Acciones"]}
           isLoading={isLoadingPaged && query.length === 0}
         >
           {list.length === 0 ? (
             <tr>
-              <td colSpan={6}>
+              <td colSpan={7}>
                 <EmptyState
                   icon={React.createElement(EmptyStateRegistry.pacientes.icon, { className: "w-14 h-14 text-white/10" })}
                   title={EmptyStateRegistry.pacientes.title}
@@ -121,6 +121,18 @@ export default function Patients() {
                   <div className="text-sm font-medium text-white group-hover:text-emerald-400 transition-colors line-clamp-1 cursor-pointer">
                     {p.full_name}
                   </div>
+                </td>
+                
+                <td className="hidden sm:table-cell px-5 py-4 w-[100px]">
+                  {p.is_minor ? (
+                    <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 bg-amber-500/15 border border-amber-500/25 text-amber-400 rounded-md">
+                      Menor
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 bg-white/5 border border-white/10 text-white/40 rounded-md">
+                      Adulto
+                    </span>
+                  )}
                 </td>
                 
                 <td className="hidden md:table-cell px-5 py-4 text-sm font-medium text-white/60 w-[140px] lg:w-[160px]">
