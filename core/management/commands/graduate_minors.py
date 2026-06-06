@@ -39,7 +39,9 @@ class Command(BaseCommand):
         else:
             start_date = today
 
-        self.stdout.write(f"📅 Buscando menores que cumplan 18 años desde {start_date}...")
+        self.stdout.write(
+            f"📅 Buscando menores que cumplan 18 años desde {start_date}..."
+        )
 
         minor_patients = Patient.objects.filter(
             is_minor=True,
@@ -49,12 +51,16 @@ class Command(BaseCommand):
         graduating = []
         for patient in minor_patients:
             if patient.birthdate:
-                age_18_date = patient.birthdate.replace(year=patient.birthdate.year + 18)
+                age_18_date = patient.birthdate.replace(
+                    year=patient.birthdate.year + 18
+                )
                 if start_date <= age_18_date <= today:
-                    graduating.append({
-                        "patient": patient,
-                        "graduation_date": age_18_date,
-                    })
+                    graduating.append(
+                        {
+                            "patient": patient,
+                            "graduation_date": age_18_date,
+                        }
+                    )
 
         self.stdout.write(f"📋 {len(graduating)} pacientes por graduar")
 
@@ -64,11 +70,10 @@ class Command(BaseCommand):
 
         if dry_run:
             self.stdout.write(self.style.WARNING("🧪 MODO DRY-RUN"))
- for item in graduating:
+            for item in graduating:
                 patient = item["patient"]
                 family_links = PatientFamilyLink.objects.filter(
-                    patient=patient,
-                    status="active"
+                    patient=patient, status="active"
                 )
                 self.stdout.write(
                     f"   would graduate: {patient.full_name} "
@@ -83,8 +88,7 @@ class Command(BaseCommand):
         for item in graduating:
             patient = item["patient"]
             family_links = PatientFamilyLink.objects.filter(
-                patient=patient,
-                status="active"
+                patient=patient, status="active"
             )
 
             for link in family_links:
@@ -120,8 +124,7 @@ class Command(BaseCommand):
     def _send_notification(self, item):
         patient = item["patient"]
         family_links = PatientFamilyLink.objects.filter(
-            patient=patient,
-            status="inactive"
+            patient=patient, status="inactive"
         )
 
         for link in family_links:

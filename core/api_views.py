@@ -97,9 +97,22 @@ class PatientViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = super().get_queryset()
-        queryset = queryset.filter(active=True)
-        return queryset
+        queryset = Patient.objects.filter(active=True)
+
+        if user.is_superuser:
+            return queryset
+
+        if hasattr(user, "doctor_profile"):
+            doctor = user.doctor_profile
+            patient_ids = DoctorPatientRelationship.objects.filter(
+                doctor=doctor, status="active"
+            ).values_list("patient_id", flat=True)
+            return queryset.filter(id__in=patient_ids)
+
+        if hasattr(user, "patient_profile"):
+            return queryset.filter(id=user.patient_profile.patient_id)
+
+        return queryset.none()
 
     @action(detail=True, methods=["get"])
     def clinical_summary(self, request, pk=None):
@@ -615,11 +628,13 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         user = self.request.user
         qs = super().get_queryset()
 
-        # Filtro para Doctores (institucionales)
+        # Filtro para Doctores (filtrar por relación doctor-paciente)
         if not user.is_superuser and hasattr(user, "doctor_profile"):
             doctor = user.doctor_profile
-            if doctor.active_institution:
-                qs = qs.filter(institution=doctor.active_institution)
+            patient_ids = DoctorPatientRelationship.objects.filter(
+                doctor=doctor, status="active"
+            ).values_list("patient_id", flat=True)
+            qs = qs.filter(patient_id__in=patient_ids)
 
         # Filtro para Pacientes (solo sus propias citas)
         elif hasattr(user, "patient_profile"):
