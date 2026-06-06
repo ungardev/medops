@@ -36,7 +36,7 @@ export function useFamilyMembers() {
         },
       });
       return data.family.map((f) => ({
-        link_id: f.id,
+        link_id: f.link_id,
         patient_id: f.patient_id,
         full_name: f.full_name,
         national_id: f.national_id,
@@ -67,7 +67,7 @@ export function useAddFamilyMember() {
         body: JSON.stringify(payload),
       });
       return {
-        link_id: data.id,
+        link_id: data.link_id,
         patient_id: data.patient_id,
         full_name: data.full_name,
         national_id: data.national_id,

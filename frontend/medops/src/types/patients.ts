@@ -7,6 +7,7 @@ export interface PatientRef {
   full_name: string;          // usar SIEMPRE este campo en UI (viene del backend)
   national_id?: string | null;
   email?: string | null;
+  is_minor?: boolean;
 }
 // =====================================================
 // PREDISPOSICIÓN GENÉTICA
