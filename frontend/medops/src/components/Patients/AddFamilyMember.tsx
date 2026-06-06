@@ -236,7 +236,7 @@ export default function AddFamilyMember({ isOpen, onClose, onAdded }: AddFamilyM
                 </>
               )}
             </button>
-          </>
+          </div>
         ) : success ? (
           <div className="py-6 text-center">
             <div className="w-16 h-16 bg-emerald-500/20 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto mb-4">
