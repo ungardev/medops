@@ -1,9 +1,9 @@
 // src/components/Patients/NewPatientModal.tsx
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useCreatePatient } from "../../hooks/patients/useCreatePatient";
 import { PatientInput } from "../../types/patients";
-import { X, Save, Loader2 } from "lucide-react";
+import { X, Save, Loader2, UserIcon } from "lucide-react";
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -19,10 +19,26 @@ interface FormValues {
   phone_number?: string;
   email?: string;
   gender?: "M" | "F" | "Other" | "Unknown";
+  is_minor: boolean;
+  representative_name?: string;
+  representative_email?: string;
+  representative_phone?: string;
+  relationship_type?: string;
+  parental_consent: boolean;
 }
+const RELATIONSHIP_OPTIONS = [
+  { value: "father", label: "Padre" },
+  { value: "mother", label: "Madre" },
+  { value: "legal_guardian", label: "Tutor Legal" },
+  { value: "grandfather", label: "Abuelo" },
+  { value: "grandmother", label: "Abuela" },
+  { value: "other", label: "Otro" },
+];
 const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientCreated }) => {
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<FormValues>();
+  const { register, handleSubmit, formState: { errors }, reset, watch } = useForm<FormValues>();
   const createPatient = useCreatePatient();
+  const [isMinor, setIsMinor] = useState(false);
+  const [parentalConsent, setParentalConsent] = useState(false);
   if (!open) return null;
   const onSubmit = (values: FormValues) => {
     const payload: PatientInput = {
@@ -34,6 +50,14 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
       ...(values.phone_number?.trim() && { phone_number: values.phone_number.trim() }),
       ...(values.email?.trim() && { email: values.email.trim() }),
       ...(values.gender && { gender: values.gender }),
+      is_minor: isMinor,
+      ...(isMinor && {
+        representative_name: values.representative_name?.trim(),
+        representative_email: values.representative_email?.trim(),
+        representative_phone: values.representative_phone?.trim(),
+        relationship_type: values.relationship_type,
+        parental_consent: parentalConsent,
+      }),
     };
     createPatient.mutate(payload, {
       onSuccess: (data) => {
@@ -42,6 +66,8 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
         }
         onCreated();
         reset();
+        setIsMinor(false);
+        setParentalConsent(false);
         onClose();
       },
     });
@@ -134,6 +160,91 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
               </select>
             </div>
           </div>
+
+          <div className={sectionStyles}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-amber-500/15 border border-amber-500/25 rounded-lg">
+                  <UserIcon className="h-4 w-4 text-amber-400" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-white/70">Paciente Menor de Edad</h4>
+                  <p className="text-xs text-white/40 mt-0.5">¿El paciente tiene menos de 18 años?</p>
+                </div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  className="sr-only peer"
+                  checked={isMinor}
+                  onChange={(e) => setIsMinor(e.target.checked)}
+                />
+                <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white/30 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500/50 peer-checked:after:bg-emerald-400"></div>
+              </label>
+            </div>
+          </div>
+
+          {isMinor && (
+            <div className={sectionStyles}>
+              <h4 className="text-sm font-medium text-amber-400 uppercase tracking-wider mb-4">Datos del Representante</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className={labelStyles}>Nombre del Representante *</label>
+                  <input 
+                    {...register("representative_name", { required: isMinor })} 
+                    className={inputClass} 
+                    placeholder="Nombre completo del representante" 
+                  />
+                </div>
+                <div>
+                  <label className={labelStyles}>Correo Electrónico</label>
+                  <input 
+                    {...register("representative_email")} 
+                    className={inputClass} 
+                    placeholder="correo@ejemplo.com" 
+                    type="email"
+                  />
+                </div>
+                <div>
+                  <label className={labelStyles}>Teléfono</label>
+                  <input 
+                    {...register("representative_phone")} 
+                    className={inputClass} 
+                    placeholder="+58 412-1234567" 
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className={labelStyles}>Parentesco *</label>
+                  <select 
+                    {...register("relationship_type", { required: isMinor })} 
+                    className={inputClass}
+                  >
+                    <option value="">Seleccionar parentesco</option>
+                    {RELATIONSHIP_OPTIONS.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="mt-4 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    className="mt-1 w-4 h-4 rounded border-white/20 bg-white/5 text-emerald-400 focus:ring-emerald-400 focus:ring-offset-0"
+                    checked={parentalConsent}
+                    onChange={(e) => setParentalConsent(e.target.checked)}
+                  />
+                  <div className="flex-1">
+                    <span className="text-sm text-amber-400 font-medium">Consentimiento Parental</span>
+                    <p className="text-xs text-white/50 mt-1">
+                      Declaro que soy el representante legal del menor y autorizo la atención médica del paciente.
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </div>
+          )}
           
           <div className="flex items-center justify-end gap-3 pt-5 border-t border-white/10">
             <button
@@ -145,7 +256,7 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
             </button>
             <button
               type="submit"
-              disabled={createPatient.isPending}
+              disabled={createPatient.isPending || (isMinor && !parentalConsent)}
               className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium text-white bg-emerald-500/15 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all disabled:opacity-50"
             >
               {createPatient.isPending ? (

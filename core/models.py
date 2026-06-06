@@ -5592,6 +5592,42 @@ class PatientInvitation(models.Model):
 
     notes = models.TextField(blank=True, verbose_name="Notas")
 
+    # === CAMPOS PARA INVITACIÓN DE MENORES ===
+    invited_representative_name = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        verbose_name="Nombre del representante invitado",
+    )
+
+    invited_representative_email = models.EmailField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Email del representante invitado",
+    )
+
+    invited_representative_relationship = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        choices=[
+            ("father", "Padre"),
+            ("mother", "Madre"),
+            ("legal_guardian", "Tutor Legal"),
+            ("grandfather", "Abuelo"),
+            ("grandmother", "Abuela"),
+            ("other", "Otro"),
+        ],
+        verbose_name="Relación del representante",
+    )
+
+    is_invitation_for_minor = models.BooleanField(
+        default=False,
+        verbose_name="¿Invitación para menor?",
+        help_text="Si es true, la invitación es para el representante del menor",
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -5623,6 +5659,191 @@ class PatientInvitation(models.Model):
         if not self.expires_at:
             self.expires_at = timezone.now() + timedelta(days=7)
         super().save(*args, **kwargs)
+
+
+# ==========================================
+# 23. RELACIÓN DOCTOR-PACIENTE
+# ==========================================
+class DoctorPatientRelationship(models.Model):
+    """
+    Define la relación explícita entre un doctor y sus pacientes.
+    Reemplaza la inferencia via Appointment para privacidad y control.
+    """
+
+    RELATIONSHIP_TYPES = [
+        ("primary_care", "Médico de Cabecera"),
+        ("consulting", "Consultante"),
+        ("referred", "Referido"),
+        ("emergency", "Emergencia"),
+    ]
+
+    STATUS_CHOICES = [
+        ("active", "Activa"),
+        ("inactive", "Inactiva"),
+        ("transferred", "Transferida"),
+    ]
+
+    doctor = models.ForeignKey(
+        "DoctorOperator",
+        on_delete=models.CASCADE,
+        related_name="patient_relationships",
+        verbose_name="Doctor",
+    )
+
+    patient = models.ForeignKey(
+        "Patient",
+        on_delete=models.CASCADE,
+        related_name="doctor_relationships",
+        verbose_name="Paciente",
+    )
+
+    relationship_type = models.CharField(
+        max_length=20,
+        choices=RELATIONSHIP_TYPES,
+        default="primary_care",
+        verbose_name="Tipo de relación",
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="active",
+        verbose_name="Estado",
+    )
+
+    institution = models.ForeignKey(
+        "InstitutionSettings",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="doctor_patient_relationships",
+        verbose_name="Institución",
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True, verbose_name="Fecha de creación"
+    )
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_relationships",
+        verbose_name="Creado por",
+    )
+
+    notes = models.TextField(blank=True, verbose_name="Notas")
+
+    class Meta:
+        db_table = "doctor_patient_relationships"
+        verbose_name = "Relación Doctor-Paciente"
+        verbose_name_plural = "Relaciones Doctor-Paciente"
+        unique_together = ("doctor", "patient", "relationship_type")
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["doctor", "status"]),
+            models.Index(fields=["patient", "status"]),
+            models.Index(fields=["relationship_type"]),
+        ]
+
+    def __str__(self):
+        return f"{self.doctor.full_name} - {self.patient.full_name} ({self.get_relationship_type_display()})"
+
+
+# ==========================================
+# 24. VÍNCULO FAMILIAR PACIENTE
+# ==========================================
+class PatientFamilyLink(models.Model):
+    """
+    Permite a un representante (PatientUser) gestionar múltiples pacientes menores.
+    El menor NUNCA accede a la plataforma - solo el representante gestiona.
+    """
+
+    RELATIONSHIP_TYPES = [
+        ("self", "Yo mismo"),
+        ("child", "Hijo/Hija"),
+        ("dependent", "Dependiente"),
+    ]
+
+    STATUS_CHOICES = [
+        ("active", "Activo"),
+        ("inactive", "Inactivo"),
+    ]
+
+    patient_user = models.ForeignKey(
+        "PatientUser",
+        on_delete=models.CASCADE,
+        related_name="family_links",
+        verbose_name="Usuario Paciente (Representante)",
+    )
+
+    patient = models.ForeignKey(
+        "Patient",
+        on_delete=models.CASCADE,
+        related_name="family_links",
+        verbose_name="Paciente",
+    )
+
+    relationship_type = models.CharField(
+        max_length=20,
+        choices=RELATIONSHIP_TYPES,
+        default="child",
+        verbose_name="Tipo de relación",
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="active",
+        verbose_name="Estado",
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True, verbose_name="Fecha de creación"
+    )
+
+    class Meta:
+        db_table = "patient_family_links"
+        verbose_name = "Vínculo Familiar"
+        verbose_name_plural = "Vínculos Familiares"
+        unique_together = ("patient_user", "patient")
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["patient_user", "status"]),
+            models.Index(fields=["patient"]),
+        ]
+
+    def __str__(self):
+        return f"{self.patient_user.user.username} - {self.patient.full_name} ({self.get_relationship_type_display()})"
+
+    def clean(self):
+        if self.relationship_type == "self":
+            existing = PatientFamilyLink.objects.filter(
+                patient_user=self.patient_user, relationship_type="self"
+            ).exclude(pk=self.pk)
+            if existing.exists():
+                raise ValidationError(
+                    "Solo puede existir un vínculo 'self' por usuario."
+                )
+
+        max_minors = 5
+        minor_count = (
+            PatientFamilyLink.objects.filter(
+                patient_user=self.patient_user,
+                relationship_type__in=["child", "dependent"],
+            )
+            .exclude(pk=self.pk)
+            .count()
+        )
+
+        if (
+            self.relationship_type in ["child", "dependent"]
+            and minor_count >= max_minors
+        ):
+            raise ValidationError(
+                f"No puede tener más de {max_minors} menores vinculados."
+            )
 
 
 # ==========================================

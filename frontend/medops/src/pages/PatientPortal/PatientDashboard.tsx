@@ -1,6 +1,6 @@
 // src/pages/PatientPortal/PatientDashboard.tsx
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import moment from 'moment';
 import { 
   CalendarIcon,
@@ -11,10 +11,14 @@ import {
   CakeIcon,
   PhoneIcon,
   EnvelopeIcon,
-  BellIcon
+  BellIcon,
+  UsersIcon,
+  PlusIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/outline';
 import { usePatientDashboard } from '@/hooks/patient/usePatientDashboard';
 import { useBCVRate } from '@/hooks/dashboard/useBCVRate';
+import { usePatient } from '@/context/PatientContext';
 import { PatientDashboard as PatientDashboardType } from '@/types/patient';
 
 const metricsConfig = {
@@ -47,6 +51,8 @@ const metricsConfig = {
 export function PatientDashboard() {
   const { data: dashboard, isLoading } = usePatientDashboard();
   const { data: bcvRate } = useBCVRate();
+  const { familyMembers, activePatient, setActivePatient } = usePatient();
+  const navigate = useNavigate();
   
   const [now, setNow] = useState(moment());
   
@@ -92,6 +98,17 @@ export function PatientDashboard() {
     : "--";
   
   const unreadNotifications = dashboard.notifications?.unread_count ?? 0;
+
+  const otherFamilyMembers = familyMembers.filter(m => m.patient_id !== activePatient?.patient_id);
+  
+  const getRelationshipLabel = (type: string) => {
+    switch (type) {
+      case "self": return "Yo mismo";
+      case "child": return "Hijo/Hija";
+      case "dependent": return "Dependiente";
+      default: return type;
+    }
+  };
   
   return (
     <div className="bg-white/10 border border-white/20 p-4 md:p-6 rounded-xl">
@@ -109,7 +126,7 @@ export function PatientDashboard() {
                 {dashboard.patient.full_name}
               </h4>
               
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 md:mt-2">
+<div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 md:mt-2">
                 {dashboard.patient.email && (
                   <div className="flex items-center gap-1.5 text-white/60">
                     <EnvelopeIcon className="w-4 h-4 shrink-0" />
@@ -148,6 +165,45 @@ export function PatientDashboard() {
           </div>
         </div>
       </div>
+
+      {otherFamilyMembers.length > 0 && (
+        <div className="mb-6 bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <UsersIcon className="w-5 h-5 text-emerald-400" />
+              <span className="text-sm font-semibold text-emerald-400 uppercase tracking-wider">
+                Mis Familiares
+              </span>
+            </div>
+            <button
+              onClick={() => navigate('/patient/settings')}
+              className="flex items-center gap-1 text-xs text-emerald-400/70 hover:text-emerald-400 transition-colors"
+            >
+              <PlusIcon className="w-4 h-4" />
+              Agregar
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {otherFamilyMembers.map((member) => (
+              <button
+                key={member.link_id}
+                onClick={() => setActivePatient(member.patient_id)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-emerald-500/30 transition-all"
+              >
+                <UserIcon className="w-4 h-4 text-white/50" />
+                <span className="text-sm text-white/80">{member.full_name}</span>
+                <span className="text-xs text-white/40">
+                  {getRelationshipLabel(member.relationship_type)}
+                </span>
+                {member.is_minor && (
+                  <span className="text-xs text-amber-400/70">Menor</span>
+                )}
+                <ChevronRightIcon className="w-3 h-3 text-white/30" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         

@@ -61,6 +61,9 @@ from .models import (
     PlatformEarnings,
     Disbursement,
     VueltoRequest,
+    DoctorPatientRelationship,
+    PatientFamilyLink,
+    PatientUser,
 )
 from .choices import (
     UNIT_CHOICES,
@@ -4181,6 +4184,10 @@ class PatientInvitationSerializer(serializers.ModelSerializer):
             "payment_amount",
             "payment_date",
             "notes",
+            "invited_representative_name",
+            "invited_representative_email",
+            "invited_representative_relationship",
+            "is_invitation_for_minor",
             "created_at",
             "updated_at",
             "is_active",
@@ -4192,7 +4199,14 @@ class PatientInvitationSerializer(serializers.ModelSerializer):
 class PatientInvitationCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = PatientInvitation
-        fields = ["patient", "doctor"]
+        fields = [
+            "patient",
+            "doctor",
+            "invited_representative_name",
+            "invited_representative_email",
+            "invited_representative_relationship",
+            "is_invitation_for_minor",
+        ]
 
 
 class PatientInvitationActivateSerializer(serializers.Serializer):
@@ -4879,3 +4893,145 @@ class VueltoRequestCreateSerializer(serializers.ModelSerializer):
             "patient_national_id",
             "patient_bank_code",
         ]
+
+
+# ==========================================
+# SERIALIZER: RELACIÓN DOCTOR-PACIENTE
+# ==========================================
+class DoctorPatientRelationshipSerializer(serializers.ModelSerializer):
+    doctor_name = serializers.CharField(source="doctor.full_name", read_only=True)
+    patient_name = serializers.CharField(source="patient.full_name", read_only=True)
+    patient_national_id = serializers.CharField(
+        source="patient.national_id", read_only=True
+    )
+    patient_age = serializers.IntegerField(source="patient.age", read_only=True)
+    institution_name = serializers.CharField(
+        source="institution.name", read_only=True, allow_null=True
+    )
+    relationship_type_display = serializers.CharField(
+        source="get_relationship_type_display", read_only=True
+    )
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+
+    class Meta:
+        model = DoctorPatientRelationship
+        fields = [
+            "id",
+            "doctor",
+            "doctor_name",
+            "patient",
+            "patient_name",
+            "patient_national_id",
+            "patient_age",
+            "relationship_type",
+            "relationship_type_display",
+            "status",
+            "status_display",
+            "institution",
+            "institution_name",
+            "notes",
+            "created_at",
+            "created_by",
+        ]
+        read_only_fields = ["id", "created_at", "created_by"]
+
+
+class DoctorPatientRelationshipWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DoctorPatientRelationship
+        fields = [
+            "doctor",
+            "patient",
+            "relationship_type",
+            "status",
+            "institution",
+            "notes",
+        ]
+
+    def create(self, validated_data):
+        request = self.context.get("request")
+        user = request.user if request else None
+        validated_data["created_by"] = user
+        return super().create(validated_data)
+
+
+# ==========================================
+# SERIALIZER: VÍNCULO FAMILIAR
+# ==========================================
+class PatientFamilyLinkSerializer(serializers.ModelSerializer):
+    patient_name = serializers.CharField(source="patient.full_name", read_only=True)
+    patient_national_id = serializers.CharField(
+        source="patient.national_id", read_only=True
+    )
+    patient_age = serializers.IntegerField(source="patient.age", read_only=True)
+    patient_is_minor = serializers.BooleanField(
+        source="patient.is_minor", read_only=True
+    )
+    patient_birthdate = serializers.DateField(
+        source="patient.birthdate", read_only=True
+    )
+    relationship_type_display = serializers.CharField(
+        source="get_relationship_type_display", read_only=True
+    )
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+
+    class Meta:
+        model = PatientFamilyLink
+        fields = [
+            "id",
+            "patient_user",
+            "patient",
+            "patient_name",
+            "patient_national_id",
+            "patient_age",
+            "patient_is_minor",
+            "patient_birthdate",
+            "relationship_type",
+            "relationship_type_display",
+            "status",
+            "status_display",
+            "created_at",
+        ]
+        read_only_fields = ["id", "created_at"]
+
+
+class PatientFamilyLinkWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PatientFamilyLink
+        fields = [
+            "patient",
+            "relationship_type",
+        ]
+
+    def validate(self, attrs):
+        request = self.context.get("request")
+        user = request.user if request else None
+        patient = attrs.get("patient")
+        relationship_type = attrs.get("relationship_type", "self")
+
+        if relationship_type == "self":
+            if PatientFamilyLink.objects.filter(
+                patient_user__user=user, relationship_type="self"
+            ).exists():
+                raise serializers.ValidationError(
+                    "Ya tienes un vínculo 'Yo mismo' registrado."
+                )
+
+        max_minors = 5
+        minor_count = PatientFamilyLink.objects.filter(
+            patient_user__user=user, relationship_type__in=["child", "dependent"]
+        ).count()
+
+        if relationship_type in ["child", "dependent"] and minor_count >= max_minors:
+            raise serializers.ValidationError(
+                f"No puedes tener más de {max_minors} menores vinculados."
+            )
+
+        return attrs
+
+    def create(self, validated_data):
+        request = self.context.get("request")
+        user = request.user if request else None
+        patient_user = PatientUser.objects.get(user=user)
+        validated_data["patient_user"] = patient_user
+        return super().create(validated_data)

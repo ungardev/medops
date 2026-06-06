@@ -345,6 +345,13 @@ export type PatientInput = {
   medical_history?: string;
   // Predisposiciones genéticas en input (IDs numéricos)
   genetic_predispositions?: number[];
+  // Campos para menores de edad
+  is_minor?: boolean;
+  representative_name?: string;
+  representative_email?: string;
+  representative_phone?: string;
+  relationship_type?: string;
+  parental_consent?: boolean;
 };
 // =====================================================
 // PERFIL CLÍNICO COMPLETO (respuesta enriquecida del backend)

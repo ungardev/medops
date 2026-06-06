@@ -344,6 +344,197 @@ class PatientViewSet(viewsets.ModelViewSet):
             return Response({"error": str(e)}, status=500)
 
 
+class DoctorPatientRelationshipViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar relaciones doctor-paciente.
+    Permite a los doctores ver y gestionar sus pacientes de forma explícita.
+    """
+
+    queryset = DoctorPatientRelationship.objects.all()
+    serializer_class = DoctorPatientRelationshipSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.action in ["create", "update", "partial_update"]:
+            return DoctorPatientRelationshipWriteSerializer
+        return DoctorPatientRelationshipSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = super().get_queryset()
+
+        if user.is_superuser:
+            return queryset
+
+        if hasattr(user, "doctor_profile"):
+            doctor = user.doctor_profile
+            queryset = queryset.filter(doctor=doctor, status="active")
+        else:
+            queryset = queryset.none()
+
+        patient_id = self.request.query_params.get("patient")
+        if patient_id:
+            queryset = queryset.filter(patient_id=patient_id)
+
+        relationship_type = self.request.query_params.get("relationship_type")
+        if relationship_type:
+            queryset = queryset.filter(relationship_type=relationship_type)
+
+        return queryset.select_related("doctor", "patient", "institution")
+
+    @action(detail=False, methods=["get"])
+    def my_patients(self, request):
+        """
+        GET /api/doctor-patient-relationships/my-patients/
+        Lista todos los pacientes activos del doctor logueado.
+        """
+        user = request.user
+        if not hasattr(user, "doctor_profile"):
+            return Response(
+                {"error": "No eres un doctor operator"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        doctor = user.doctor_profile
+        relationships = DoctorPatientRelationship.objects.filter(
+            doctor=doctor, status="active"
+        ).select_related("patient", "institution")
+
+        patients_data = []
+        for rel in relationships:
+            patients_data.append(
+                {
+                    "relationship_id": rel.id,
+                    "patient_id": rel.patient.id,
+                    "full_name": rel.patient.full_name,
+                    "national_id": rel.patient.national_id,
+                    "age": rel.patient.age,
+                    "is_minor": rel.patient.is_minor,
+                    "relationship_type": rel.relationship_type,
+                    "relationship_type_display": rel.get_relationship_type_display(),
+                    "institution_name": rel.institution.name
+                    if rel.institution
+                    else None,
+                    "created_at": rel.created_at.isoformat()
+                    if rel.created_at
+                    else None,
+                }
+            )
+
+        return Response({"patients": patients_data})
+
+
+class PatientFamilyLinkViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar vínculos familiares del paciente.
+    Un representante puede gestionar múltiples menores.
+    """
+
+    queryset = PatientFamilyLink.objects.all()
+    serializer_class = PatientFamilyLinkSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.action in ["create", "update", "partial_update"]:
+            return PatientFamilyLinkWriteSerializer
+        return PatientFamilyLinkSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = super().get_queryset()
+
+        try:
+            patient_user = PatientUser.objects.get(user=user)
+            queryset = queryset.filter(patient_user=patient_user, status="active")
+        except PatientUser.DoesNotExist:
+            queryset = queryset.none()
+
+        relationship_type = self.request.query_params.get("relationship_type")
+        if relationship_type:
+            queryset = queryset.filter(relationship_type=relationship_type)
+
+        return queryset.select_related("patient", "patient_user")
+
+    @action(detail=False, methods=["get", "post"])
+    def family(self, request):
+        """
+        GET /api/patient-family-links/family/
+        Lista todos los familiares del paciente logueado (incluyendo yo mismo).
+
+        POST /api/patient-family-links/family/
+        Agrega un nuevo familiar (menor dependiente).
+        """
+        user = request.user
+
+        try:
+            patient_user = PatientUser.objects.get(user=user)
+        except PatientUser.DoesNotExist:
+            return Response(
+                {"error": "No tienes un perfil de paciente"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if request.method == "GET":
+            links = PatientFamilyLink.objects.filter(
+                patient_user=patient_user, status="active"
+            ).select_related("patient")
+
+            family_data = []
+            for link in links:
+                family_data.append(
+                    {
+                        "link_id": link.id,
+                        "patient_id": link.patient.id,
+                        "full_name": link.patient.full_name,
+                        "national_id": link.patient.national_id,
+                        "age": link.patient.age,
+                        "is_minor": link.patient.is_minor,
+                        "birthdate": link.patient.birthdate.isoformat()
+                        if link.patient.birthdate
+                        else None,
+                        "relationship_type": link.relationship_type,
+                        "relationship_type_display": link.get_relationship_type_display(),
+                        "created_at": link.created_at.isoformat()
+                        if link.created_at
+                        else None,
+                    }
+                )
+
+            return Response({"family": family_data})
+
+        elif request.method == "POST":
+            serializer = PatientFamilyLinkWriteSerializer(
+                data=request.data, context={"request": request}
+            )
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=["delete"])
+    def unlink(self, request, pk=None):
+        """
+        DELETE /api/patient-family-links/{id}/unlink/
+        Elimina un vínculo familiar (no elimina al paciente).
+        """
+        user = request.user
+        try:
+            patient_user = PatientUser.objects.get(user=user)
+            link = PatientFamilyLink.objects.get(pk=pk, patient_user=patient_user)
+            link.status = "inactive"
+            link.save()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except PatientUser.DoesNotExist:
+            return Response(
+                {"error": "No tienes un perfil de paciente"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        except PatientFamilyLink.DoesNotExist:
+            return Response(
+                {"error": "Vínculo no encontrado"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+
 class AppointmentViewSet(viewsets.ModelViewSet):
     """
     Control Élite de Citas y Notas Clínicas.

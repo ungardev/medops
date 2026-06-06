@@ -51,6 +51,9 @@ from .api_views import (
     DoctorProfileViewSet,
     # --- ✅ NUEVO: ViewSet de Horarios de Servicios ---
     ServiceScheduleViewSet,  # AÑADIDO AQUÍ
+    # --- ✅ NUEVO: ViewSets de Relaciones ---
+    DoctorPatientRelationshipViewSet,
+    PatientFamilyLinkViewSet,
     # --- Funciones ---
     update_appointment_status,
     update_waitingroom_status,
@@ -203,6 +206,14 @@ from django.conf.urls.static import static
 router = routers.DefaultRouter()
 # --- Core ---
 router.register(r"patients", PatientViewSet, basename="patient")
+router.register(
+    r"doctor-patient-relationships",
+    DoctorPatientRelationshipViewSet,
+    basename="doctor-patient-relationship",
+)
+router.register(
+    r"patient-family-links", PatientFamilyLinkViewSet, basename="patient-family-link"
+)
 router.register(r"appointments", AppointmentViewSet, basename="appointment")
 router.register(r"payments", PaymentViewSet, basename="payment")
 router.register(r"waitingroom", WaitingRoomEntryViewSet, basename="waitingroom")

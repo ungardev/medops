@@ -10,6 +10,7 @@ import { queryClient, initQueryPersistence } from "@/lib/reactQuery";
 import { NotifyProvider } from "./context/NotifyContext";
 import { AuthProvider } from "./context/AuthContext";
 import { AdminAuthProvider } from "./context/AdminAuthContext";
+import { PatientProvider } from "./context/PatientContext";
 import axios from "axios";
 import * as Sentry from "@sentry/react";
 import { getCurrentPortal, getPortalConfig } from "@/lib/subdomain";
@@ -159,7 +160,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                   path="/patient"
                   element={
                     <ProtectedRoute allowedRoles={["patient"]}>
-                      <PatientLayout />
+                      <PatientProvider>
+                        <PatientLayout />
+                      </PatientProvider>
                     </ProtectedRoute>
                   }
                 >
