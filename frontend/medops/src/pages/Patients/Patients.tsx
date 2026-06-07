@@ -146,8 +146,8 @@ export default function Patients() {
                 </td>
                 
                 <td className="hidden lg:table-cell px-5 py-4 text-sm text-white/60 max-w-[180px] lg:max-w-[220px]">
-                  <div className="truncate" title={p.contact_info || ""}>
-                    {p.contact_info || "—"}
+                  <div className="truncate" title={p.phone_number || ""}>
+                    {p.phone_number || "—"}
                   </div>
                 </td>
                 
