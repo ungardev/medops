@@ -93,7 +93,12 @@ export default function AddFamilyMember({ isOpen, onClose, onAdded }: AddFamilyM
         handleClose();
       }, 1500);
     } catch (err: any) {
-      setError(err.response?.data?.error || err.message || "Error al crear vínculo");
+      const errorMsg = err.response?.data?.error || err.message || "Error al crear vínculo";
+      if (errorMsg.includes("5") || errorMsg.includes("más de") || errorMsg.includes("menores")) {
+        setError("Has alcanzado el límite máximo de 5 familiares vinculados. Para agregar más, contacta a soporte.");
+      } else {
+        setError(errorMsg);
+      }
     } finally {
       setIsLoading(false);
     }

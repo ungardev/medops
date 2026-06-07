@@ -133,6 +133,27 @@ class PatientViewSet(viewsets.ModelViewSet):
                     },
                 )
 
+            is_minor = response.data.get("is_minor", False)
+            representative_id = response.data.get("representative")
+
+            if is_minor and representative_id:
+                try:
+                    representative_patient = Patient.objects.get(pk=representative_id)
+                    patient_user = PatientUser.objects.get(
+                        patient=representative_patient
+                    )
+
+                    PatientFamilyLink.objects.get_or_create(
+                        patient_user=patient_user,
+                        patient_id=patient_id,
+                        defaults={
+                            "relationship_type": "child",
+                            "status": "active",
+                        },
+                    )
+                except (Patient.DoesNotExist, PatientUser.DoesNotExist):
+                    pass
+
         return response
 
     @action(detail=True, methods=["get"])

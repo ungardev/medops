@@ -496,6 +496,26 @@ class Patient(models.Model):
                     }
                 )
 
+            if self.first_name and self.last_name and self.birthdate:
+                existing_minors = Patient.objects.filter(
+                    is_minor=True,
+                    first_name__iexact=self.first_name,
+                    last_name__iexact=self.last_name,
+                    representative=self.representative,
+                    active=True,
+                ).exclude(pk=self.pk)
+
+                if existing_minors.exists():
+                    same_minor = existing_minors.filter(
+                        birthdate=self.birthdate
+                    ).first()
+                    if same_minor:
+                        raise ValidationError(
+                            f"Ya existe un menor registrado con el mismo nombre, "
+                            f"representante y fecha de nacimiento: {same_minor.full_name} "
+                            f"(ID: {same_minor.national_id})"
+                        )
+
 
 class Appointment(models.Model):
     STATUS_CHOICES = [

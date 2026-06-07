@@ -330,7 +330,7 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
             </button>
             <button
               type="submit"
-              disabled={createPatient.isPending || (isMinor && !parentalConsent) || !!existingPatient}
+              disabled={createPatient.isPending || (isMinor && !parentalConsent) || (!isMinor && !!existingPatient)}
               className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium text-white bg-emerald-500/15 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all disabled:opacity-50"
             >
               {createPatient.isPending ? (
