@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useCreatePatient } from "../../hooks/patients/useCreatePatient";
 import { PatientInput } from "../../types/patients";
-import { X, Save, Loader2, UserIcon, AlertTriangle, SearchIcon, UserPlus } from "lucide-react";
+import { X, Save, Loader2, UserIcon, AlertTriangle, SearchIcon, UserPlus, CalendarIcon } from "lucide-react";
 import { apiFetch } from "../../api/client";
 import CreateRepresentativeModal from "./CreateRepresentativeModal";
 
@@ -21,10 +21,10 @@ interface FormValues {
   second_last_name?: string;
   id_type: string;
   national_id: string;
+  birthdate: string;
   phone_number?: string;
   email?: string;
   gender?: "M" | "F" | "Other" | "Unknown";
-  is_minor: boolean;
   relationship_type?: string;
   parental_consent: boolean;
 }
@@ -47,6 +47,17 @@ const RELATIONSHIP_OPTIONS = [
   { value: "other", label: "Otro" },
 ];
 
+const calculateAge = (birthdate: string): number => {
+  const today = new Date();
+  const birth = new Date(birthdate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
+};
+
 const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientCreated }) => {
   const { register, handleSubmit, formState: { errors }, reset, watch, setValue } = useForm<FormValues>({
     defaultValues: {
@@ -54,11 +65,14 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
     }
   });
   const createPatient = useCreatePatient();
-  const [isMinor, setIsMinor] = useState(false);
   const [parentalConsent, setParentalConsent] = useState(false);
   const [idType, setIdType] = useState("V");
   const [existingPatient, setExistingPatient] = useState<{id: number, full_name: string} | null>(null);
   const [checkingPatient, setCheckingPatient] = useState(false);
+
+  // Age detection states
+  const [age, setAge] = useState<number | null>(null);
+  const [isMinor, setIsMinor] = useState(false);
 
   // Representative search states
   const [representativeQuery, setRepresentativeQuery] = useState("");
@@ -69,8 +83,7 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
   const [showDropdown, setShowDropdown] = useState(false);
   
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-
+  const birthdateValue = watch("birthdate");
   const nationalIdValue = watch("national_id");
 
   // Close dropdown when clicking outside
@@ -83,6 +96,29 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Calculate age and detect minor when birthdate changes
+  useEffect(() => {
+    if (birthdateValue && birthdateValue.length === 10) {
+      try {
+        const parsedDate = new Date(birthdateValue);
+        if (!isNaN(parsedDate.getTime())) {
+          const calculatedAge = calculateAge(birthdateValue);
+          setAge(calculatedAge);
+          setIsMinor(calculatedAge < 18);
+        } else {
+          setAge(null);
+          setIsMinor(false);
+        }
+      } catch {
+        setAge(null);
+        setIsMinor(false);
+      }
+    } else {
+      setAge(null);
+      setIsMinor(false);
+    }
+  }, [birthdateValue]);
 
   // Check for duplicate patient (national_id)
   useEffect(() => {
@@ -129,7 +165,6 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
           `patients/search/?q=${encodeURIComponent(representativeQuery.trim())}`,
           { method: "GET" }
         );
-        // Filter out minors and show only adults
         const adults = (data.results || []).filter((p: PatientSearchResult) => !p.is_minor);
         setRepresentativeResults(adults.slice(0, 5));
         setShowDropdown(true);
@@ -177,6 +212,7 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
     const payload: PatientInput = {
       first_name: values.first_name.trim(),
       last_name: values.last_name.trim(),
+      birthdate: values.birthdate || undefined,
       id_type: idType,
       national_id: values.national_id.replace(/[^0-9]/g, "").trim(),
       ...(values.middle_name?.trim() && { middle_name: values.middle_name.trim() }),
@@ -199,9 +235,10 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
         }
         onCreated();
         reset();
-        setIsMinor(false);
         setParentalConsent(false);
         setSelectedRepresentative(null);
+        setAge(null);
+        setIsMinor(false);
         onClose();
       },
     });
@@ -219,7 +256,7 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
           className="bg-[#1a1a1b] border border-white/15 w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl rounded-xl"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between px-6 py-5 border-b border-white/15 bg-white/5 sticky top-0 rounded-t-xl">
+          <div className="flex items-center justify-between px-6 py-5 border-b border-white/15 bg-white/5 sticky top-0 rounded-t-xl z-10">
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-emerald-500/15 border border-emerald-500/25 rounded-xl">
                 <Save className="h-5 w-5 text-emerald-400" />
@@ -235,7 +272,9 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
               <X className="w-5 h-5" />
             </button>
           </div>
+
           <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-5">
+            {/* Sección 1: Nombre Completo */}
             <div className={sectionStyles}>
               <h4 className="text-sm font-medium text-white/70 uppercase tracking-wider mb-4">Nombre Completo</h4>
               <div className="grid grid-cols-2 gap-4">
@@ -265,6 +304,44 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
                 </div>
               </div>
             </div>
+
+            {/* Sección 2: Fecha de Nacimiento - DETERMINA EDAD */}
+            <div className={sectionStyles}>
+              <h4 className="text-sm font-medium text-white/70 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <CalendarIcon className="w-4 h-4" />
+                Fecha de Nacimiento
+                <span className="text-xs text-emerald-400/60 ml-2">(determina edad)</span>
+              </h4>
+              <div>
+                <input
+                  type="date"
+                  {...register("birthdate")}
+                  className={inputClass}
+                  style={{ colorScheme: 'dark' }}
+                />
+              </div>
+              
+              {/* Badge de Edad Dinámico */}
+              <div className="mt-3">
+                {age === null ? (
+                  <span className="text-xs text-white/30 italic">
+                    Ingrese fecha de nacimiento para determinar edad
+                  </span>
+                ) : age < 18 ? (
+                  <span className="inline-flex items-center gap-2 text-sm px-3 py-1.5 bg-amber-500/15 border border-amber-500/25 text-amber-400 rounded-full">
+                    <UserIcon className="w-4 h-4" />
+                    Menor de edad ({age} años)
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-2 text-sm px-3 py-1.5 bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 rounded-full">
+                    <UserIcon className="w-4 h-4" />
+                    Adulto ({age} años)
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Sección 3: Identificación */}
             <div className={sectionStyles}>
               <h4 className="text-sm font-medium text-white/70 uppercase tracking-wider mb-4">Identificación</h4>
               <div className="grid grid-cols-3 gap-4">
@@ -283,7 +360,14 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
                 </div>
                 <div className="col-span-2">
                   <label className={labelStyles}>Cédula de Identidad *</label>
-                  <input {...register("national_id", { required: true })} className={inputClass} placeholder="Ej: 12345678" />
+                  <input 
+                    {...register("national_id", { required: true })} 
+                    className={inputClass} 
+                    placeholder={isMinor 
+                      ? "Si no tiene cédula propia, usar la del representante" 
+                      : "Ej: 12345678"
+                    }
+                  />
                 </div>
               </div>
               {checkingPatient && (
@@ -301,6 +385,8 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
                 </div>
               )}
             </div>
+
+            {/* Sección 4: Contacto */}
             <div className={sectionStyles}>
               <h4 className="text-sm font-medium text-white/70 uppercase tracking-wider mb-4">Contacto</h4>
               <div className="grid grid-cols-2 gap-4">
@@ -314,10 +400,11 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
                 </div>
               </div>
             </div>
+
+            {/* Sección 5: Género */}
             <div className={sectionStyles}>
-              <h4 className="text-sm font-medium text-white/70 uppercase tracking-wider mb-4">Información Adicional</h4>
+              <h4 className="text-sm font-medium text-white/70 uppercase tracking-wider mb-4">Género</h4>
               <div>
-                <label className={labelStyles}>Género</label>
                 <select {...register("gender")} className={inputClass}>
                   <option value="">Seleccionar</option>
                   <option value="M">Masculino</option>
@@ -328,37 +415,14 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
               </div>
             </div>
 
-            <div className={sectionStyles}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-amber-500/15 border border-amber-500/25 rounded-lg">
-                    <UserIcon className="h-4 w-4 text-amber-400" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-white/70">Paciente Menor de Edad</h4>
-                    <p className="text-xs text-white/40 mt-0.5">¿El paciente tiene menos de 18 años?</p>
-                  </div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    className="sr-only peer"
-                    checked={isMinor}
-                    onChange={(e) => {
-                      setIsMinor(e.target.checked);
-                      if (!e.target.checked) {
-                        setSelectedRepresentative(null);
-                      }
-                    }}
-                  />
-                  <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white/30 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500/50 peer-checked:after:bg-emerald-400"></div>
-                </label>
-              </div>
-            </div>
-
+            {/* Sección 6: Datos del Representante - SOLO SI ES MENOR */}
             {isMinor && (
               <div className={sectionStyles}>
-                <h4 className="text-sm font-medium text-amber-400 uppercase tracking-wider mb-4">Datos del Representante</h4>
+                <h4 className="text-sm font-medium text-amber-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <UserIcon className="w-4 h-4" />
+                  Datos del Representante
+                  <span className="text-xs text-amber-400/60 ml-2">(detectado automáticamente)</span>
+                </h4>
                 
                 {!selectedRepresentative ? (
                   <div className="relative" ref={dropdownRef}>
@@ -372,7 +436,6 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
                         onFocus={() => representativeQuery.length >= 3 && setShowDropdown(true)}
                         className={`${inputClass} pl-11`}
                         placeholder="Escribe nombre o cédula (mín. 3 caracteres)"
-                        ref={searchInputRef}
                       />
                       {isSearchingRepresentative && (
                         <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 animate-spin" />
@@ -494,6 +557,7 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
               </div>
             )}
             
+            {/* Footer Buttons */}
             <div className="flex items-center justify-end gap-3 pt-5 border-t border-white/10">
               <button
                 type="button"
