@@ -223,9 +223,11 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
       is_minor: isMinor,
       ...(isMinor && selectedRepresentative && {
         representative_id: selectedRepresentative.id,
-        relationship_type: values.relationship_type,
+        relationship_type: values.relationship_type || undefined,
         parental_consent: parentalConsent,
-        consent_date: parentalConsent ? new Date().toISOString() : undefined,
+        consent_date: parentalConsent 
+          ? new Date().toISOString().replace('T', ' ').replace('.000Z', '')
+          : undefined,
         representative_phone: selectedRepresentative.phone_number || undefined,
       }),
     };
@@ -574,7 +576,8 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
                   createPatient.isPending || 
                   (isMinor && !parentalConsent) || 
                   (!isMinor && !!existingPatient) ||
-                  (isMinor && !selectedRepresentative)
+                  (isMinor && !selectedRepresentative) ||
+                  Object.keys(errors).length > 0
                 }
                 className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium text-white bg-emerald-500/15 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all disabled:opacity-50"
               >
