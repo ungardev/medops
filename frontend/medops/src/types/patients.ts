@@ -259,6 +259,7 @@ export interface Patient extends PatientRef {
   };
   gender: "M" | "F" | "Other" | "Unknown" | null;
   contact_info?: string | null;
+  phone_number?: string | null;
   // ✅ NUEVOS CAMPOS AGREGADOS
   tattoo?: boolean | null;
   profession?: string | null;

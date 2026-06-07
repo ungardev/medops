@@ -59,7 +59,7 @@ export default function DemographicsSection({ patient, onRefresh, readOnly = fal
     birth_place: patient.birth_place ?? "",
     birth_country: patient.birth_country ?? "",
     email: patient.email ?? "",
-    contact_info: patient.contact_info ?? "",
+    phone_number: patient.phone_number ?? "",
     gender: patient.gender ?? "",
     tattoo: patient.tattoo ?? null,
     profession: patient.profession ?? "",
@@ -122,7 +122,7 @@ export default function DemographicsSection({ patient, onRefresh, readOnly = fal
         birth_place: form.birth_place || undefined,
         birth_country: form.birth_country || undefined,
         email: form.email || undefined,
-        contact_info: form.contact_info || undefined,
+        phone_number: form.phone_number || undefined,
         address: form.address || undefined,
         gender: (form.gender || undefined) as "F" | "Other" | "M" | "Unknown" | null | undefined,
         tattoo: form.tattoo ?? undefined,
@@ -298,7 +298,7 @@ export default function DemographicsSection({ patient, onRefresh, readOnly = fal
         
         <div className="col-span-12 md:col-span-3">
           <label className={labelClass}>Teléfono</label>
-          <input type="text" value={form.contact_info} onChange={(e) => setForm({...form, contact_info: e.target.value})} disabled={isDisabled} className={inputClass} />
+          <input type="text" value={form.phone_number} onChange={(e) => setForm({...form, phone_number: e.target.value})} disabled={isDisabled} className={inputClass} />
         </div>
         
         <div className="col-span-12 md:col-span-2">
