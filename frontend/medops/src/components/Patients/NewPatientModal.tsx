@@ -163,11 +163,14 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
     const timer = setTimeout(async () => {
       setIsSearchingRepresentative(true);
       try {
-        const data = await apiFetch<{ results: PatientSearchResult[] }>(
+        const data = await apiFetch<{ results: PatientSearchResult[] } | PatientSearchResult[]>(
           `patients/search/?q=${encodeURIComponent(representativeQuery.trim())}`,
           { method: "GET" }
         );
-        const adults = (data.results || []).filter((p: PatientSearchResult) => !p.is_minor);
+        const rawList: PatientSearchResult[] = Array.isArray(data)
+          ? data
+          : (data.results || []);
+        const adults = rawList.filter((p: PatientSearchResult) => !p.is_minor);
         setRepresentativeResults(adults.slice(0, 5));
         setShowDropdown(true);
       } catch (error) {

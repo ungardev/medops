@@ -3409,7 +3409,7 @@ def patient_search_api(request):
     limit = int(request.query_params.get("limit", 10))
 
     if not q:
-        return Response([])
+        return Response({"results": [], "count": 0})
 
     try:
         from django.db import connection
@@ -3442,7 +3442,7 @@ def patient_search_api(request):
         patients = Patient.objects.filter(query)[:limit]
 
         serializer = PatientListSerializer(patients, many=True)
-        return Response(serializer.data)
+        return Response({"results": serializer.data, "count": len(serializer.data)})
     except Exception as e:
         return Response({"error": str(e)}, status=500)
 

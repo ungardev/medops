@@ -462,6 +462,7 @@ class PatientListSerializer(serializers.ModelSerializer):
     full_name = serializers.ReadOnlyField()
     age = serializers.ReadOnlyField()
     is_pediatric = serializers.ReadOnlyField()
+    is_minor = serializers.ReadOnlyField()
     short_address = serializers.SerializerMethodField()
     representative_name = serializers.SerializerMethodField()
 
@@ -473,8 +474,10 @@ class PatientListSerializer(serializers.ModelSerializer):
             "national_id",
             "age",
             "is_pediatric",
+            "is_minor",
             "gender",
             "phone_number",
+            "email",
             "contact_info",
             "short_address",
             "active",
