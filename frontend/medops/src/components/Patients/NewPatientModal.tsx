@@ -225,6 +225,8 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
         representative_id: selectedRepresentative.id,
         relationship_type: values.relationship_type,
         parental_consent: parentalConsent,
+        consent_date: parentalConsent ? new Date().toISOString() : undefined,
+        representative_phone: selectedRepresentative.phone_number || undefined,
       }),
     };
 
