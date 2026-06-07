@@ -67,8 +67,9 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
   const createPatient = useCreatePatient();
   const [parentalConsent, setParentalConsent] = useState(false);
   const [idType, setIdType] = useState("V");
-  const [existingPatient, setExistingPatient] = useState<{id: number, full_name: string} | null>(null);
+  const [existingPatient, setExistingPatient] = useState<{id: number, full_name: string, is_active: boolean} | null>(null);
   const [checkingPatient, setCheckingPatient] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
 
   // Age detection states
   const [age, setAge] = useState<number | null>(null);
@@ -131,11 +132,12 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
       setCheckingPatient(true);
       try {
         const normalizedId = nationalIdValue.replace(/[^0-9]/g, "");
-        const response = await apiFetch<{exists: boolean, patient?: {id: number, full_name: string}}>(`/patients/check/?national_id=${normalizedId}&id_type=${idType}`);
+        const response = await apiFetch<{exists: boolean, is_active: boolean, patient?: {id: number, full_name: string}}>(`/patients/check/?national_id=${normalizedId}&id_type=${idType}`);
         if (response.exists && response.patient) {
           setExistingPatient({
             id: response.patient.id,
-            full_name: response.patient.full_name
+            full_name: response.patient.full_name,
+            is_active: response.is_active
           });
         } else {
           setExistingPatient(null);
@@ -200,8 +202,32 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
 
   if (!open) return null;
 
+  const handleRestore = async () => {
+    if (!existingPatient || existingPatient.is_active) return;
+    
+    setIsRestoring(true);
+    try {
+      await apiFetch<{success: boolean, patient: {id: number, full_name: string}}>(
+        `/patients/${existingPatient.id}/restore/`,
+        { method: "POST" }
+      );
+      onCreated();
+      reset();
+      setExistingPatient(null);
+      setParentalConsent(false);
+      setSelectedRepresentative(null);
+      setAge(null);
+      setIsMinor(false);
+      onClose();
+    } catch (error) {
+      console.error("Error restoring patient:", error);
+    } finally {
+      setIsRestoring(false);
+    }
+  };
+
   const onSubmit = (values: FormValues) => {
-    if (existingPatient) {
+    if (existingPatient && existingPatient.is_active) {
       return;
     }
 
@@ -377,7 +403,7 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
               {checkingPatient && (
                 <div className="mt-2 text-xs text-white/40">Verificando...</div>
               )}
-              {existingPatient && (
+              {existingPatient && existingPatient.is_active && (
                 <div className="mt-3 p-3 bg-red-500/15 border border-red-500/25 rounded-xl flex items-start gap-3">
                   <AlertTriangle className="h-4 w-4 text-red-400 mt-0.5 flex-shrink-0" />
                   <div>
@@ -385,6 +411,35 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
                     <p className="text-xs text-white/60 mt-1">
                       Ya existe un paciente con esta cédula: <span className="text-white/80">{existingPatient.full_name}</span>
                     </p>
+                  </div>
+                </div>
+              )}
+              {existingPatient && !existingPatient.is_active && (
+                <div className="mt-3 p-3 bg-amber-500/15 border border-amber-500/25 rounded-xl flex items-start gap-3">
+                  <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm text-amber-400 font-medium">Paciente eliminado encontrado</p>
+                    <p className="text-xs text-white/60 mt-1">
+                      Este paciente fue eliminado: <span className="text-white/80">{existingPatient.full_name}</span>
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleRestore}
+                      disabled={isRestoring}
+                      className="mt-3 flex items-center gap-2 px-4 py-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-sm font-medium rounded-lg transition-all disabled:opacity-50"
+                    >
+                      {isRestoring ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin" />
+                          Restaurando...
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus size={16} />
+                          Restaurar Paciente
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
               )}
@@ -575,7 +630,7 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
                 disabled={
                   createPatient.isPending || 
                   (isMinor && !parentalConsent) || 
-                  (!isMinor && !!existingPatient) ||
+                  (!isMinor && !!existingPatient && existingPatient.is_active) ||
                   (isMinor && !selectedRepresentative) ||
                   Object.keys(errors).length > 0
                 }

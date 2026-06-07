@@ -403,7 +403,8 @@ class PatientViewSet(viewsets.ModelViewSet):
         """
         Endpoint para verificar si existe un paciente con cierta cédula.
         Uso: GET /patients/check/?national_id=12345678&id_type=V
-        Retorna los datos del paciente si existe, o {"exists": false} si no.
+        Retorna los datos del paciente si existe (activo o inactivo),
+        o {"exists": false} si no existe ningún paciente con esa cédula.
         """
         national_id = request.query_params.get("national_id", "").strip()
         id_type = request.query_params.get("id_type", "V").strip().upper()
@@ -413,6 +414,7 @@ class PatientViewSet(viewsets.ModelViewSet):
 
         normalized_id = re.sub(r"[^0-9]", "", national_id)
 
+        # Primero buscar paciente activo
         patient = Patient.objects.filter(
             national_id=normalized_id, id_type=id_type, active=True
         ).first()
@@ -421,6 +423,7 @@ class PatientViewSet(viewsets.ModelViewSet):
             return Response(
                 {
                     "exists": True,
+                    "is_active": True,
                     "patient": {
                         "id": patient.id,
                         "full_name": patient.full_name,
@@ -433,7 +436,56 @@ class PatientViewSet(viewsets.ModelViewSet):
                 }
             )
 
-        return Response({"exists": False})
+        # Buscar paciente inactivo con la misma cédula
+        inactive_patient = Patient.objects.filter(
+            national_id=normalized_id, id_type=id_type, active=False
+        ).first()
+
+        if inactive_patient:
+            return Response(
+                {
+                    "exists": True,
+                    "is_active": False,
+                    "patient": {
+                        "id": inactive_patient.id,
+                        "full_name": inactive_patient.full_name,
+                        "national_id": inactive_patient.national_id,
+                        "id_type": inactive_patient.id_type,
+                        "is_minor": inactive_patient.is_minor,
+                        "phone_number": inactive_patient.phone_number,
+                        "email": inactive_patient.email,
+                    },
+                }
+            )
+
+        return Response({"exists": False, "is_active": False})
+
+    @action(detail=True, methods=["post"])
+    def restore(self, request, pk=None):
+        """
+        Restaurar un paciente eliminado (soft delete).
+        Uso: POST /patients/{id}/restore/
+        """
+        try:
+            patient = Patient.objects.get(pk=pk, active=False)
+            patient.active = True
+            patient.save(update_fields=["active"])
+            return Response(
+                {
+                    "success": True,
+                    "message": f"Paciente {patient.full_name} restaurado exitosamente.",
+                    "patient": {
+                        "id": patient.id,
+                        "full_name": patient.full_name,
+                        "national_id": patient.national_id,
+                        "active": patient.active,
+                    },
+                }
+            )
+        except Patient.DoesNotExist:
+            return Response(
+                {"error": "Paciente no encontrado o ya está activo."}, status=404
+            )
 
 
 class DoctorPatientRelationshipViewSet(viewsets.ModelViewSet):
