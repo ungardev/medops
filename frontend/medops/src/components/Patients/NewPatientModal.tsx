@@ -61,11 +61,11 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
       setCheckingPatient(true);
       try {
         const normalizedId = nationalIdValue.replace(/[^0-9]/g, "");
-        const response = await apiFetch<{data: {exists: boolean, patient?: {id: number, full_name: string}}}>(`/patients/check/?national_id=${normalizedId}&id_type=${idType}`);
-        if (response.data.exists && response.data.patient) {
+        const response = await apiFetch<{exists: boolean, patient?: {id: number, full_name: string}}>(`/patients/check/?national_id=${normalizedId}&id_type=${idType}`);
+        if (response.exists && response.patient) {
           setExistingPatient({
-            id: response.data.patient.id,
-            full_name: response.data.patient.full_name
+            id: response.patient.id,
+            full_name: response.patient.full_name
           });
         } else {
           setExistingPatient(null);
