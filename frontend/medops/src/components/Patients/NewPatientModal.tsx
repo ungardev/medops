@@ -59,9 +59,10 @@ const calculateAge = (birthdate: string): number => {
 };
 
 const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientCreated }) => {
-  const { register, handleSubmit, formState: { errors }, reset, watch, setValue } = useForm<FormValues>({
+  const { register, handleSubmit, formState: { errors, isSubmitted }, reset, watch, setValue } = useForm<FormValues>({
     defaultValues: {
-      id_type: "V"
+      id_type: "V",
+      parental_consent: false
     }
   });
   const createPatient = useCreatePatient();
@@ -634,8 +635,7 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
                   createPatient.isPending || 
                   (isMinor && !parentalConsent) || 
                   (!isMinor && !!existingPatient && existingPatient.is_active) ||
-                  (isMinor && !selectedRepresentative) ||
-                  Object.keys(errors).length > 0
+                  (isMinor && !selectedRepresentative)
                 }
                 className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium text-white bg-emerald-500/15 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all disabled:opacity-50"
               >
