@@ -159,7 +159,7 @@ class DoctorPatientRelationshipRequiredMixin:
                 doctor=doctor, status="active"
             ).values_list("patient_id", flat=True)
 
-            if target_id not in patient_ids and target_id != doctor.patient_id:
+            if target_id not in patient_ids:
                 return queryset.none()
 
             return queryset.filter(patient_id=target_id)
@@ -209,7 +209,6 @@ class UnifiedPatientDoctorAccessMixin:
                         doctor=doctor, status="active"
                     ).values_list("patient_id", flat=True)
                 )
-                patient_ids.append(doctor.patient_id)
                 if target_id in patient_ids:
                     return queryset.filter(patient_id=target_id)
 
@@ -227,7 +226,6 @@ class UnifiedPatientDoctorAccessMixin:
                     doctor=doctor, status="active"
                 ).values_list("patient_id", flat=True)
             )
-            patient_ids.append(doctor.patient_id)
             return queryset.filter(patient_id__in=patient_ids)
 
         if hasattr(user, "patient_profile"):
@@ -1699,7 +1697,6 @@ def appointment_search_api(request):
             doctor=doctor, status="active"
         ).values_list("patient_id", flat=True)
     )
-    patient_ids.append(doctor.patient_id)
 
     q = request.query_params.get("q", "").strip()
     limit = int(request.query_params.get("limit", 10))
@@ -1770,7 +1767,6 @@ def chargeorder_search_api(request):
             doctor=doctor, status="active"
         ).values_list("patient_id", flat=True)
     )
-    patient_ids.append(doctor.patient_id)
 
     q = request.query_params.get("q", "").strip()
     limit = int(request.query_params.get("limit", 10))
@@ -2151,11 +2147,13 @@ def appointment_detail_api(request, pk):
         )
 
         patient_id = appointment.patient_id
-        patient_ids = DoctorPatientRelationship.objects.filter(
-            doctor=doctor, status="active"
-        ).values_list("patient_id", flat=True)
+        patient_ids = list(
+            DoctorPatientRelationship.objects.filter(
+                doctor=doctor, status="active"
+            ).values_list("patient_id", flat=True)
+        )
 
-        if patient_id not in patient_ids and patient_id != doctor.patient_id:
+        if patient_id not in patient_ids:
             return Response(
                 {"error": "No tienes acceso a los datos de este paciente"}, status=403
             )
@@ -3934,7 +3932,6 @@ def audit_by_patient(request, patient_id):
                 doctor=doctor, status="active"
             ).values_list("patient_id", flat=True)
         )
-        patient_ids.append(doctor.patient_id)
         if target_id not in patient_ids:
             return Response(
                 {"error": "No tienes acceso a los datos de este paciente"}, status=403
@@ -4594,7 +4591,6 @@ def vital_signs_api(request, appointment_id):
                 doctor=doctor, status="active"
             ).values_list("patient_id", flat=True)
         )
-        patient_ids.append(doctor.patient_id)
         if patient_id not in patient_ids:
             return Response(
                 {"error": "No tienes acceso a los datos de este paciente"}, status=403
@@ -4880,7 +4876,6 @@ def clinical_note_api(request, appointment_id):
                 doctor=doctor, status="active"
             ).values_list("patient_id", flat=True)
         )
-        patient_ids.append(doctor.patient_id)
         if patient_id not in patient_ids:
             return Response(
                 {"error": "No tienes acceso a los datos de este paciente"}, status=403
@@ -8930,36 +8925,11 @@ class OperationalHubView(APIView):
             from core.models import WaitingRoomEntry
             from core.serializers import WaitingRoomEntrySerializer
 
-            # ✅ CAMBIO: Usar timezone.local para obtener la fecha en la zona horaria local
-            today = timezone.localdate()  # En lugar de timezone.now().date()
+            today = timezone.localdate()
 
-            # Logging para depuración
             logger.info(
                 f"[_get_live_queue] institution_id={institution_id}, today={today}"
             )
-
-            # Contar todas las entradas del día (independientemente del estado)
-            count_today = WaitingRoomEntry.objects.filter(
-                institution_id=institution_id, arrival_time__date=today
-            ).count()
-            logger.info(f"[_get_live_queue] Total entradas hoy: {count_today}")
-
-            # Contar por estado
-            for status in [
-                "waiting",
-                "in_consultation",
-                "completed",
-                "canceled",
-                "no_show",
-            ]:
-                count = WaitingRoomEntry.objects.filter(
-                    institution_id=institution_id,
-                    arrival_time__date=today,
-                    status=status,
-                ).count()
-                logger.info(
-                    f"[_get_live_queue] Entradas con status '{status}': {count}"
-                )
 
             live_queue = WaitingRoomEntry.objects.filter(
                 institution_id=institution_id,
