@@ -991,7 +991,7 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         )
 
 
-class MedicalDocumentViewSet(viewsets.ModelViewSet):
+class MedicalDocumentViewSet(UnifiedPatientDoctorAccessMixin, viewsets.ModelViewSet):
     """
     Gestión de documentos médicos con filtrado por paciente y cita.
 
@@ -1003,6 +1003,7 @@ class MedicalDocumentViewSet(viewsets.ModelViewSet):
 
     Seguridad:
     - Doctores solo ven SUS documentos generados
+    - Pacientes ven solo documentos propios o de sus dependientes
     - Excepciones: estudios externos y documentos subidos por usuarios son visibles para todos
     """
 
@@ -1156,7 +1157,7 @@ class MedicationCatalogViewSet(viewsets.ModelViewSet):
 
 
 # ViewSets Automáticos (Mocks de serializers y modelos)
-class PaymentViewSet(viewsets.ModelViewSet):
+class PaymentViewSet(UnifiedPatientDoctorAccessMixin, viewsets.ModelViewSet):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
 
@@ -1212,7 +1213,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
             )
 
 
-class WaitingRoomEntryViewSet(viewsets.ModelViewSet):
+class WaitingRoomEntryViewSet(PatientFamilyLinkRequiredMixin, viewsets.ModelViewSet):
     queryset = WaitingRoomEntry.objects.all()
     serializer_class = WaitingRoomEntrySerializer
 
@@ -1269,7 +1270,7 @@ class PrescriptionViewSet(UnifiedPatientDoctorAccessMixin, viewsets.ModelViewSet
         ).prefetch_related("components")
 
 
-class ChargeOrderViewSet(viewsets.ModelViewSet):
+class ChargeOrderViewSet(UnifiedPatientDoctorAccessMixin, viewsets.ModelViewSet):
     queryset = ChargeOrder.objects.all()
     serializer_class = ChargeOrderSerializer
 
@@ -1443,7 +1444,7 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
             return Response({"error": str(e)}, status=500)
 
 
-class ChargeItemViewSet(viewsets.ModelViewSet):
+class ChargeItemViewSet(UnifiedPatientDoctorAccessMixin, viewsets.ModelViewSet):
     queryset = ChargeItem.objects.all()
     serializer_class = ChargeItemSerializer
 
@@ -9081,7 +9082,28 @@ class ServiceScheduleViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        # Filtrar por servicio si se pasa el parámetro service_id
+        user = self.request.user
+
+        if user.is_superuser:
+            pass
+        elif hasattr(user, "doctor_profile"):
+            doctor = user.doctor_profile
+            if doctor.active_institution:
+                self.queryset = self.queryset.filter(
+                    service__institution=doctor.active_institution
+                )
+            else:
+                from .models import DoctorInstitution
+
+                institution_ids = DoctorInstitution.objects.filter(
+                    doctor=doctor
+                ).values_list("institution_id", flat=True)
+                self.queryset = self.queryset.filter(
+                    service__institution_id__in=institution_ids
+                )
+        else:
+            return ServiceSchedule.objects.none()
+
         service_id = self.request.query_params.get("service_id")
         if service_id:
             return self.queryset.filter(service_id=service_id)
@@ -9405,7 +9427,24 @@ class BedViewSet(viewsets.ModelViewSet):
         return BedSerializer
 
     def get_queryset(self):
+        user = self.request.user
         queryset = Bed.objects.select_related("institution")
+
+        if user.is_superuser:
+            pass
+        elif hasattr(user, "doctor_profile"):
+            doctor = user.doctor_profile
+            if doctor.active_institution:
+                queryset = queryset.filter(institution=doctor.active_institution)
+            else:
+                from .models import DoctorInstitution
+
+                institution_ids = DoctorInstitution.objects.filter(
+                    doctor=doctor
+                ).values_list("institution_id", flat=True)
+                queryset = queryset.filter(institution_id__in=institution_ids)
+        else:
+            return Bed.objects.none()
 
         institution_id = self.request.query_params.get("institution")
         if institution_id:
