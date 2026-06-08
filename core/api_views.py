@@ -6753,8 +6753,11 @@ def patient_charge_orders(request):
     """
     GET /api/patient-charge-orders/
 
-    Lista todas las órdenes de cobro del paciente autenticado.
+    Lista todas las órdenes de cobro del paciente autenticado,
+    incluyendo órdenes de menores a su cargo (donde es responsible_payer).
     """
+    from django.db.models import Q
+
     try:
         patient_user = get_patient_user_from_request(request)
         if not patient_user:
@@ -6762,15 +6765,15 @@ def patient_charge_orders(request):
 
         patient = patient_user.patient
 
-        # Obtener todas las charge orders del paciente
         charge_orders = (
-            ChargeOrder.objects.filter(patient=patient)
-            .select_related("institution", "doctor", "doctor__user")
+            ChargeOrder.objects.filter(
+                Q(patient=patient) | Q(responsible_payer=patient)
+            )
+            .select_related("institution", "doctor", "doctor__user", "patient")
             .prefetch_related("items", "payments")
             .order_by("-issued_at")
         )
 
-        # Calcular métricas
         total_pending = sum(
             order.balance_due
             for order in charge_orders
@@ -6787,6 +6790,17 @@ def patient_charge_orders(request):
                 "orders": [
                     {
                         "id": order.id,
+                        "patient_id": order.patient.id,
+                        "patient_name": order.patient.full_name,
+                        "patient_is_minor": order.patient.is_minor,
+                        "is_dependent_order": order.responsible_payer_id is not None
+                        and order.responsible_payer_id != patient.id,
+                        "responsible_payer_name": (
+                            order.responsible_payer.full_name
+                            if order.responsible_payer_id
+                            and order.responsible_payer_id != patient.id
+                            else None
+                        ),
                         "institution": order.institution.name,
                         "institution_tax_id": order.institution.tax_id,
                         "total": float(order.total),
@@ -6822,7 +6836,10 @@ def patient_charge_order_detail(request, order_id):
     GET /api/patient-charge-orders/{order_id}/
 
     Detalle de una orden de cobro específica.
+    Permite acceso si el paciente es el titular o el responsible_payer (representante).
     """
+    from django.db.models import Q
+
     try:
         patient_user = get_patient_user_from_request(request)
         if not patient_user:
@@ -6831,8 +6848,18 @@ def patient_charge_order_detail(request, order_id):
         patient = patient_user.patient
 
         order = (
-            ChargeOrder.objects.filter(id=order_id, patient=patient)
-            .select_related("institution", "doctor", "doctor__user", "appointment")
+            ChargeOrder.objects.filter(
+                Q(id=order_id, patient=patient)
+                | Q(id=order_id, responsible_payer=patient)
+            )
+            .select_related(
+                "institution",
+                "doctor",
+                "doctor__user",
+                "appointment",
+                "patient",
+                "responsible_payer",
+            )
             .prefetch_related("items", "payments")
             .first()
         )
@@ -6899,6 +6926,17 @@ def patient_charge_order_detail(request, order_id):
                 "status": order.status,
                 "status_display": order.get_status_display(),
                 "issued_at": order.issued_at.strftime("%Y-%m-%d %H:%M"),
+                "patient_id": order.patient.id,
+                "patient_name": order.patient.full_name,
+                "patient_is_minor": order.patient.is_minor,
+                "is_dependent_order": order.responsible_payer_id is not None
+                and order.responsible_payer_id != patient.id,
+                "responsible_payer_name": (
+                    order.responsible_payer.full_name
+                    if order.responsible_payer_id
+                    and order.responsible_payer_id != patient.id
+                    else None
+                ),
                 "items": [
                     {
                         "id": item.id,
@@ -6973,7 +7011,9 @@ def patient_register_payment(request, order_id):
 
         patient = patient_user.patient
 
-        order = ChargeOrder.objects.filter(id=order_id, patient=patient).first()
+        order = ChargeOrder.objects.filter(
+            Q(id=order_id, patient=patient) | Q(id=order_id, responsible_payer=patient)
+        ).first()
 
         if not order:
             return Response({"error": "Orden no encontrada"}, status=404)

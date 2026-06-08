@@ -155,7 +155,7 @@ export default function PatientPayments() {
                   className={`group flex items-center justify-between p-5 hover:bg-white/10 transition-all cursor-pointer ${
                     order.status === 'paid' ? 'bg-emerald-500/5' : 
                     order.status === 'void' ? 'bg-red-500/5' : ''
-                  }`}
+                  } ${order.is_dependent_order ? 'border-l-2 border-l-white/20' : ''}`}
                   onClick={() => navigate(`/patient/payments/${order.id}`)}
                 >
                   <div className="flex-1">
@@ -164,9 +164,16 @@ export default function PatientPayments() {
                         {String(index + 1).padStart(3, '0')}
                       </span>
                       <div className="flex flex-col gap-0.5">
-                        <p className="text-sm font-medium text-white/80">
-                          Orden #{order.id} - {order.institution}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium text-white/80">
+                            Orden #{order.id} - {order.institution}
+                          </p>
+                          {order.patient_is_minor && (
+                            <span className="text-xs px-2 py-0.5 bg-white/5 border border-white/10 text-white/40 rounded">
+                              Menor
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-white/20">
                           {order.issued_at}
                         </p>
@@ -177,11 +184,16 @@ export default function PatientPayments() {
                               {order.status_display}
                             </span>
                           </div>
+                          {order.is_dependent_order && order.responsible_payer_name && (
+                            <span className="text-xs text-white/30">
+                              Pagado por: {order.responsible_payer_name}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-4">
                     <div className="text-right">
                       <span className="text-base font-medium text-white/80">

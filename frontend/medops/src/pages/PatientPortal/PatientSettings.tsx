@@ -120,8 +120,13 @@ function FamilySection() {
                     {getRelationshipLabel(member.relationship_type)}
                   </span>
                   {member.is_minor && (
-                    <span className="text-xs px-2 py-0.5 bg-amber-500/15 text-amber-400 rounded-md">
+                    <span className="text-xs px-2 py-0.5 bg-white/5 border border-white/10 text-white/40 rounded-md">
                       Menor
+                    </span>
+                  )}
+                  {!member.national_id && member.is_minor && (
+                    <span className="text-xs px-2 py-0.5 bg-white/5 border border-white/10 text-white/40 rounded-md">
+                      Sin ID
                     </span>
                   )}
                   {member.age && (

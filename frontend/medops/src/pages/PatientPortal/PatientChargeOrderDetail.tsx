@@ -96,6 +96,28 @@ export default function PatientChargeOrderDetail() {
           <p className="text-emerald-400 text-sm font-medium">{successMessage}</p>
         </div>
       )}
+
+      {order.is_dependent_order && (
+        <div className="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-xl">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              {order.patient_is_minor && (
+                <span className="text-xs px-2 py-0.5 bg-white/5 border border-white/10 text-white/40 rounded">
+                  Menor
+                </span>
+              )}
+              <span className="text-sm text-white/80 font-medium">
+                Paciente: {order.patient_name}
+              </span>
+            </div>
+            {order.responsible_payer_name && (
+              <p className="text-xs text-white/40">
+                Responsable del pago: {order.responsible_payer_name}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[

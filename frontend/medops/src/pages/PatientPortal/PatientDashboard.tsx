@@ -216,8 +216,19 @@ export function PatientDashboard() {
               Cédula
             </span>
           </div>
-          <div className="text-2xl font-bold text-white">
-            {dashboard.patient.national_id || "--"}
+          <div className="flex items-center gap-2">
+            {dashboard.patient.national_id ? (
+              <div className="text-2xl font-bold text-white">
+                {dashboard.patient.national_id}
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold text-white">--</div>
+                <span className="text-xs px-2 py-0.5 bg-white/5 border border-white/10 text-white/40 rounded">
+                  Sin ID
+                </span>
+              </>
+            )}
           </div>
         </div>
         

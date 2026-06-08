@@ -137,6 +137,11 @@ export interface PatientPaymentMethod {
 
 export interface PatientChargeOrderSummary {
   id: number;
+  patient_id: number;
+  patient_name: string;
+  patient_is_minor: boolean;
+  is_dependent_order: boolean;
+  responsible_payer_name: string | null;
   institution: string;
   institution_tax_id: string;
   total: number;
@@ -180,6 +185,11 @@ export interface PatientPayment {
 
 export interface PatientChargeOrder {
   id: number;
+  patient_id: number;
+  patient_name: string;
+  patient_is_minor: boolean;
+  is_dependent_order: boolean;
+  responsible_payer_name: string | null;
   institution: {
     id: number;
     name: string;
