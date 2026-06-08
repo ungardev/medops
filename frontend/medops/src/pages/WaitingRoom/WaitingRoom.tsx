@@ -160,9 +160,9 @@ const filteredServices = useMemo(() =>
   
   const handleCheckIn = async (appointment: Appointment) => {
     const institutionIdToSend = selectedInstitutionId ?? activeInstitution?.id ?? null;
-    const patientId = appointment.patient && typeof appointment.patient === 'object' 
-      ? appointment.patient.id 
-      : appointment.patient;
+    const patient = appointment.patient;
+    const patientId = patient.id;
+    const patientFullName = patient.full_name;
     const appointmentId = appointment.id;
     
     if (!patientId) {
@@ -179,12 +179,12 @@ const filteredServices = useMemo(() =>
     try {
       await registerArrival.mutateAsync({
         patient_id: patientId,
+        patient_full_name: patientFullName,
         appointment_id: appointmentId,
         institution_id: institutionIdToSend,
         service_id: null
       });
       
-      queryClient.invalidateQueries({ queryKey: ['operationalHub', selectedInstitutionId] });
       setToast({ message: "Llegada registrada exitosamente", type: "success" });
     } catch (error) {
       console.error("Error checking in:", error);
@@ -418,14 +418,14 @@ const filteredServices = useMemo(() =>
       {showModal && (
         <RegisterWalkinModal 
           onClose={() => setShowModal(false)}
-          onSuccess={async (id, institutionId, serviceId) => {
+          onSuccess={async ({ id, full_name, institutionId, serviceId }) => {
             const institutionIdToSend = institutionId ?? selectedInstitutionId ?? activeInstitution?.id ?? null;
             await registerArrival.mutateAsync({ 
               patient_id: id, 
+              patient_full_name: full_name,
               institution_id: institutionIdToSend,
               service_id: serviceId 
             });
-            queryClient.invalidateQueries({ queryKey: ['operationalHub', selectedInstitutionId] });
           }}
           existingEntries={liveQueue} 
           institutionId={selectedInstitutionId || activeInstitution?.id}

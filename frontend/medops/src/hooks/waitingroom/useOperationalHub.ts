@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { keepPreviousData } from '@tanstack/react-query';
 import { apiFetch } from '@/api/client';
 
-interface OperationalHubData {
+export interface OperationalHubData {
   live_queue: any[];
   pending_entries: any[];
   filters: {

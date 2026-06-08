@@ -11,9 +11,16 @@ interface ServiceOption {
   name: string;
   category_id?: number;
 }
+interface PatientRegistrationData {
+  id: number;
+  full_name: string;
+  institutionId: number | null;
+  serviceId: number | null;
+}
+
 interface Props {
   onClose: () => void;
-  onSuccess: (patientId: number, institutionId: number | null, serviceId: number | null) => void;
+  onSuccess: (data: PatientRegistrationData) => void;
   existingEntries: WaitingRoomEntry[];
   institutionId?: number | null;
   services: ServiceOption[];
@@ -70,7 +77,12 @@ const RegisterWalkinModal: React.FC<Props> = ({
     
     setIsSubmitting(true);
     try {
-      await onSuccess(selectedPatient.id, institutionId || null, selectedServiceId);
+      await onSuccess({
+        id: selectedPatient.id,
+        full_name: selectedPatient.full_name,
+        institutionId: institutionId || null,
+        serviceId: selectedServiceId
+      });
       setSubmitSuccess(true);
       setTimeout(() => {
         onClose();
@@ -83,7 +95,12 @@ const RegisterWalkinModal: React.FC<Props> = ({
     if (!selectedServiceId) return;
     setShowNewPatientModal(false);
     queryClient.invalidateQueries({ queryKey: ["notifications"] });
-    onSuccess(patientId, institutionId || null, selectedServiceId);
+    onSuccess({
+      id: patientId,
+      full_name: "Nuevo Paciente",
+      institutionId: institutionId || null,
+      serviceId: selectedServiceId
+    });
     onClose();
   };
   const alreadyInWaitingRoom = selectedPatient
