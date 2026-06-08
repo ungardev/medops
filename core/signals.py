@@ -35,9 +35,9 @@ def appointment_created_or_updated(sender, instance, created, **kwargs):
             try:
                 entry, created = WaitingRoomEntry.objects.get_or_create(
                     appointment=instance,
+                    patient=instance.patient,
+                    institution=instance.institution,
                     defaults={
-                        "patient": instance.patient,
-                        "institution": instance.institution,
                         "status": "waiting",
                         "priority": "scheduled",
                         "arrival_time": timezone.now(),

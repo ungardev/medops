@@ -104,7 +104,7 @@ const RegisterWalkinModal: React.FC<Props> = ({
     onClose();
   };
   const alreadyInWaitingRoom = selectedPatient
-    ? existingEntries.some((e) => e.patient.id === selectedPatient.id && !["completed", "canceled"].includes(e.status))
+    ? existingEntries.some((e) => e.patient.id === selectedPatient.id && !["completed", "canceled", "pending"].includes(e.status))
     : false;
   const inputStyles = "w-full bg-white/5 border border-white/15 rounded-xl px-5 py-3.5 text-sm text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/60";
   const labelStyles = "text-sm font-medium text-white/50 uppercase tracking-wider mb-2 block";

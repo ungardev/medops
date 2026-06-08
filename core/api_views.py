@@ -2194,13 +2194,14 @@ def update_appointment_notes(request, pk):
 
 @api_view(["POST"])
 @permission_classes([conditional_permission()])
+@transaction.atomic
 def register_arrival(request):
     """
     Registra la llegada de un paciente (walk-in o cita existente).
     Crea una Appointment (si no existe) y una WaitingRoomEntry.
+    ✅ FIX: Wrapped in transaction.atomic to prevent orphaned appointments
     """
     try:
-        # Validar datos de entrada
         patient_id = request.data.get("patient_id")
         appointment_id = request.data.get("appointment_id")
         institution_id = request.data.get("institution_id") or request.headers.get(
@@ -2216,23 +2217,37 @@ def register_arrival(request):
                 {"error": "El ID de la institución es requerido"}, status=400
             )
 
-        # Obtener paciente e institución
-        patient = get_object_or_404(Patient, pk=int(patient_id))
-        institution = get_object_or_404(InstitutionSettings, pk=int(institution_id))
+        try:
+            patient = get_object_or_404(Patient, pk=int(patient_id))
+            institution = get_object_or_404(InstitutionSettings, pk=int(institution_id))
+        except (ValueError, Http404):
+            return Response(
+                {"error": "ID de paciente o institución inválido"}, status=400
+            )
 
-        # Manejo de Appointment
         appointment = None
 
         if appointment_id:
-            # Si se proporciona un appointment_id, usar la cita existente
-            appointment = get_object_or_404(Appointment, pk=int(appointment_id))
-            # Actualizar estado a 'arrived' si estaba 'pending'
+            try:
+                appointment = get_object_or_404(Appointment, pk=int(appointment_id))
+            except (ValueError, Http404):
+                return Response({"error": "ID de cita inválido"}, status=400)
+
+            if appointment.patient_id != patient.id:
+                return Response(
+                    {"error": "La cita no pertenece a este paciente"}, status=403
+                )
+
+            if appointment.institution_id != institution.id:
+                return Response(
+                    {"error": "La cita no pertenece a esta institución"}, status=403
+                )
+
             if appointment.status in ["pending", "tentative", "confirmed"]:
                 appointment.status = "arrived"
                 appointment.arrival_time = timezone.now()
                 appointment.save(update_fields=["status", "arrival_time"])
         else:
-            # Crear una nueva Appointment para Walk-in
             appointment_data = {
                 "patient": patient,
                 "doctor": request.user.doctor_profile
@@ -2246,21 +2261,20 @@ def register_arrival(request):
                 "notes": "Llegada Walk-in registrada manualmente",
             }
 
-            # Asignar servicio si se proporciona
             if service_id:
                 try:
                     doctor_service = DoctorService.objects.get(
-                        id=service_id, institution_id__in=[institution_id, None]
+                        id=int(service_id), institution_id=institution.id
                     )
                     appointment_data["doctor_service"] = doctor_service
-                except DoctorService.DoesNotExist:
+                except (DoctorService.DoesNotExist, ValueError):
                     return Response(
-                        {"error": "Service not found in this institution"}, status=400
+                        {"error": "Servicio no encontrado en esta institución"},
+                        status=400,
                     )
 
             appointment = Appointment.objects.create(**appointment_data)
 
-        # ✅ CORRECCIÓN: Usar get_or_create en lugar de create para evitar duplicados
         entry, created = WaitingRoomEntry.objects.get_or_create(
             patient=patient,
             institution=institution,
@@ -2272,18 +2286,20 @@ def register_arrival(request):
             },
         )
 
-        # Si ya existía, actualizar su estado
         if not created:
             entry.status = "waiting"
             entry.arrival_time = timezone.now()
             entry.save(update_fields=["status", "arrival_time"])
 
+        logger.info(
+            f"register_arrival: Patient {patient.id} registered at institution {institution.id}, entry_id={entry.id}, created={created}"
+        )
         serializer = WaitingRoomEntrySerializer(entry)
         return Response(serializer.data, status=201)
 
     except Exception as e:
-        logger.error(f"Error en register_arrival: {str(e)}")
-        return Response({"error": str(e)}, status=500)
+        logger.error(f"Error en register_arrival: {str(e)}", exc_info=True)
+        return Response({"error": "Error interno al registrar llegada"}, status=500)
 
 
 # Auditoría y Logs
