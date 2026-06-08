@@ -2485,11 +2485,12 @@ def patient_dependents(request, patient_id):
 
 
 @api_view(["POST"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def register_minor(request):
     """
     POST /api/patients/register-minor/
     Registra un paciente menor con su representante.
+    Solo el representante autenticado puede registrar menores a su cargo.
     """
     try:
         data = request.data
@@ -2505,6 +2506,15 @@ def register_minor(request):
             representative = Patient.objects.get(pk=representative_id)
         except Patient.DoesNotExist:
             return Response({"error": "Representante no encontrado."}, status=404)
+
+        patient_user = get_patient_user_from_request(request)
+        if not patient_user:
+            return Response({"error": "No autenticado"}, status=401)
+
+        if patient_user.patient_id != representative.id:
+            return Response(
+                {"error": "No eres el representante de este paciente"}, status=403
+            )
 
         # Validar consentimiento parental
         if not data.get("parental_consent"):
@@ -5207,7 +5217,7 @@ def patient_login(request):
 
 
 @api_view(["POST"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def patient_logout(request):
     """
     POST /api/patient-auth/logout/
