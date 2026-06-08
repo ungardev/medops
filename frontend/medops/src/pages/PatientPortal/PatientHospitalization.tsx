@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/Common/PageHeader";
 import { useHospitalizations } from "@/hooks/patients/useHospitalizations";
 import { usePatientAuth } from "@/hooks/patient/usePatientAuth";
+import { usePatient } from "@/context/PatientContext";
 import HospitalizationDetailDrawer from "@/components/Patients/HospitalizationDetailDrawer";
 import type { Hospitalization } from "@/types/patients";
 import { Bed } from "lucide-react";
@@ -37,14 +38,14 @@ const tabs = [
 
 export default function PatientHospitalization() {
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading: authLoading, patient: authPatient } = usePatientAuth();
-  const patientId = Number(localStorage.getItem("patient_id")) || authPatient?.id || 0;
+  const { isAuthenticated, isLoading: authLoading } = usePatientAuth();
+  const { activePatientId } = usePatient();
 
   const [activeTab, setActiveTab] = useState("all");
   const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
   const [selectedHospitalization, setSelectedHospitalization] = useState<Hospitalization | undefined>(undefined);
 
-  const { query } = useHospitalizations(patientId);
+  const { query } = useHospitalizations(activePatientId || 0);
   const { data: hospitalizations, isLoading, error } = query;
 
   const stats = useMemo(() => {

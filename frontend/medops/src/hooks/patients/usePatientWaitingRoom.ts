@@ -1,6 +1,7 @@
 // src/hooks/patients/usePatientWaitingRoom.ts
 import { useMemo } from "react";
 import { useWaitingRoomEntriesToday } from "@/hooks/waitingroom/useWaitingRoomEntriesToday";
+import { usePatient } from "@/context/PatientContext";
 import type { WaitingRoomEntry, WaitingRoomStatus } from "@/types/waitingRoom";
 interface PatientWaitingRoomResult {
   allEntries: WaitingRoomEntry[];
@@ -12,12 +13,9 @@ interface PatientWaitingRoomResult {
 }
 export function usePatientWaitingRoom(): PatientWaitingRoomResult {
   const { data: entries, isLoading, error } = useWaitingRoomEntriesToday();
+  const { activePatientId } = usePatient();
   
-  const storedPatientId = typeof window !== "undefined" 
-    ? localStorage.getItem("patient_id") 
-    : null;
-  
-  const patientId = storedPatientId ? Number(storedPatientId) : null;
+  const patientId = activePatientId;
   
   const result = useMemo(() => {
     const allEntries: WaitingRoomEntry[] = (entries ?? []).filter((entry: WaitingRoomEntry) =>

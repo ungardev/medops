@@ -2209,11 +2209,29 @@ def patient_dependents(request, patient_id):
     """
     GET /api/patients/{id}/dependents/
     Lista todos los dependientes (menores) de un representante.
+    Solo puede acceder el propio paciente o alguien con PatientFamilyLink activa.
     """
     try:
+        patient_user = get_patient_user_from_request(request)
+        if not patient_user:
+            return Response({"error": "No autenticado"}, status=401)
+
+        requesting_patient = patient_user.patient
+
+        # Verificar autorización: es el mismo paciente o tiene PatientFamilyLink activa
+        is_self = requesting_patient.id == int(patient_id)
+        has_link = PatientFamilyLink.objects.filter(
+            patient_user=patient_user, patient_id=patient_id, status="active"
+        ).exists()
+
+        if not is_self and not has_link:
+            return Response(
+                {"error": "No tienes acceso a los dependientes de este paciente"},
+                status=403,
+            )
+
         representative = Patient.objects.get(pk=patient_id)
 
-        # Verificar que tiene dependientes
         dependents = Patient.objects.filter(
             representative=representative, is_minor=True, active=True
         )
@@ -2330,12 +2348,23 @@ def approve_minor_consent(request, patient_id):
     """
     POST /api/patients/{id}/approve-consent/
     Aprueba el consentimiento parental de un menor.
+    Solo el representante del menor puede aprobar el consentimiento.
     """
     try:
+        patient_user = get_patient_user_from_request(request)
+        if not patient_user:
+            return Response({"error": "No autenticado"}, status=401)
+
         patient = Patient.objects.get(pk=patient_id)
 
         if not patient.is_minor:
             return Response({"error": "Este paciente no es menor de edad."}, status=400)
+
+        # Verificar que el paciente autenticado es el representante del menor
+        if patient.representative_id != patient_user.patient_id:
+            return Response(
+                {"error": "No eres el representante de este paciente"}, status=403
+            )
 
         # Aprobar consentimiento
         patient.parental_consent = True

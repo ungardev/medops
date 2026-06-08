@@ -1,5 +1,6 @@
 // src/pages/PatientPortal/PatientSettings.tsx
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/Common/PageHeader";
 import { useUpdatePatientProfile } from "@/hooks/patient/useUpdatePatientProfile";
 import { usePatientProfile } from "@/hooks/patient/usePatientProfile";
@@ -47,9 +48,11 @@ interface PatientProfile {
 }
 
 function FamilySection() {
-  const { familyMembers, removeFamilyMember, refreshFamilyMembers } = usePatient();
+  const { familyMembers, removeFamilyMember, refreshFamilyMembers, setActivePatient } = usePatient();
   const [showAddModal, setShowAddModal] = useState(false);
   const [removingId, setRemovingId] = useState<number | null>(null);
+  
+  const navigate = useNavigate();
 
   const handleRemove = async (linkId: number) => {
     if (!window.confirm("¿Estás seguro de eliminar este vínculo familiar?")) return;
@@ -108,7 +111,13 @@ function FamilySection() {
           {familyMembers.map((member) => (
             <div
               key={member.link_id}
-              className="flex items-center gap-4 p-4 bg-white/5 border border-white/10 rounded-xl"
+              className={`flex items-center gap-4 p-4 bg-white/5 border border-white/10 rounded-xl ${member.relationship_type !== "self" ? "cursor-pointer hover:bg-white/10 hover:border-emerald-500/30 transition-all" : ""}`}
+              onClick={() => {
+                if (member.relationship_type !== "self") {
+                  setActivePatient(member.patient_id);
+                  navigate('/patient/record?tab=info');
+                }
+              }}
             >
               <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center justify-center shrink-0">
                 <UserIcon className="w-5 h-5 text-emerald-400" />
@@ -138,7 +147,10 @@ function FamilySection() {
               </div>
               {member.relationship_type !== "self" && (
                 <button
-                  onClick={() => handleRemove(member.link_id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemove(member.link_id);
+                  }}
                   disabled={removingId === member.link_id}
                   className="p-2 text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all disabled:opacity-50"
                 >

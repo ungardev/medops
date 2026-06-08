@@ -1,6 +1,7 @@
 // src/pages/PatientPortal/PatientQueue.tsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { usePatient } from "@/context/PatientContext";
 import { usePatientWaitingRoom } from "@/hooks/patients/usePatientWaitingRoom";
 import { useMedicalServices } from "@/hooks/services/useMedicalServices";
 import PageHeader from "@/components/Common/PageHeader";
@@ -60,19 +61,19 @@ const renderWaitTime = (entry: any) => {
 
 export default function PatientQueue() {
   const navigate = useNavigate();
-  const storedPatientId = localStorage.getItem("patient_id");
+  const { activePatientId } = usePatient();
   
   const { data: medicalServices, isLoading: servicesLoading } = useMedicalServices();
   
   useEffect(() => {
-    if (!storedPatientId) {
+    if (!activePatientId) {
       navigate("/patient/login");
     }
-  }, [navigate, storedPatientId]);
+  }, [navigate, activePatientId]);
   
-  if (!storedPatientId) return null;
+  if (!activePatientId) return null;
   
-  const patientId = Number(storedPatientId);
+  const patientId = activePatientId;
   const { 
     allEntries, 
     patientEntry, 

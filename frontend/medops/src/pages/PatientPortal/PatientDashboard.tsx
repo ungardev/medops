@@ -187,7 +187,10 @@ export function PatientDashboard() {
             {otherFamilyMembers.map((member) => (
               <button
                 key={member.link_id}
-                onClick={() => setActivePatient(member.patient_id)}
+                onClick={() => {
+                  setActivePatient(member.patient_id);
+                  navigate('/patient/record?tab=info');
+                }}
                 className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-emerald-500/30 transition-all"
               >
                 <UserIcon className="w-4 h-4 text-white/50" />

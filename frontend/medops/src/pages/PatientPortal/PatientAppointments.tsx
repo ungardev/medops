@@ -2,13 +2,13 @@
 import React from 'react';
 import { Appointment } from '@/types/appointments';
 import { useAppointmentStatusStyles } from '@/hooks/appointments/useAppointmentStatusStyles';
+import { usePatient } from '@/context/PatientContext';
 import { usePatientAppointments } from '@/hooks/patient/usePatientAppointments';
 
 const PatientAppointments: React.FC = () => {
-  const storedPatientId = localStorage.getItem('patient_id');
-  const patientId = storedPatientId ? Number(storedPatientId) : null;
+  const { activePatientId } = usePatient();
   
-  const { data: appointments = [], isLoading, error } = usePatientAppointments(patientId || 0);
+  const { data: appointments = [], isLoading, error } = usePatientAppointments();
   const { statusStyles } = useAppointmentStatusStyles();
 
   if (isLoading) {

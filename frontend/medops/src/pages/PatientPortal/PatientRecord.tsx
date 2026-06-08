@@ -1,6 +1,8 @@
 // src/pages/PatientPortal/PatientRecord.tsx
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { usePatient } from "@/hooks/patients/usePatient";
+import { usePatient } from "@/context/PatientContext";
+import { usePatientAuth } from "@/hooks/patient/usePatientAuth";
+import { usePatient as usePatientData } from "@/hooks/patients/usePatient";
 import { useConsultationsByPatient } from "@/hooks/patients/useConsultationsByPatient";
 import { Tabs, Tab } from "@/components/ui/Tabs";
 import PatientInfoTab from "@/components/Patients/PatientInfoTab";
@@ -15,7 +17,6 @@ import HospitalizationsTab from "@/components/Patients/HospitalizationsTab";
 import PageHeader from "@/components/Common/PageHeader";
 import { IdentificationIcon, HeartIcon, UserIcon } from "@heroicons/react/24/outline";
 import { useState, useEffect, useMemo } from "react";
-import { usePatientAuth } from "@/hooks/patient/usePatientAuth"; 
 
 function normalizeTab(id?: string): string {
   const map: Record<string, string> = {
@@ -37,7 +38,8 @@ function normalizeTab(id?: string): string {
 
 export default function PatientRecord() {
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading: authLoading, patient: authPatient } = usePatientAuth();
+  const { activePatientId, activePatient, familyMembers } = usePatient();
+  const { isAuthenticated, isLoading: authLoading } = usePatientAuth();
   
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -60,9 +62,7 @@ export default function PatientRecord() {
     return null;
   }
 
-  const patientId = Number(localStorage.getItem("patient_id")) || authPatient?.id;
-  
-  if (!patientId) {
+  if (!activePatientId) {
     return (
       <div className="p-8 flex items-center justify-center min-h-[400px]">
         <p className="text-xs text-red-400">Error: No se encontró ID de paciente</p>
@@ -70,10 +70,10 @@ export default function PatientRecord() {
     );
   }
 
-  const { data: patient, isLoading, error } = usePatient(patientId);
+  const { data: patient, isLoading, error } = usePatientData(activePatientId);
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentTab, setCurrentTab] = useState(() => normalizeTab(searchParams.get("tab") ?? "info"));
-  const { data: completedConsultations } = useConsultationsByPatient(patientId);
+  const { data: completedConsultations } = useConsultationsByPatient(activePatientId || 0);
   const appointmentsList = completedConsultations?.list ?? [];
   
   const latestBiometrics = useMemo(() => {
@@ -150,13 +150,20 @@ export default function PatientRecord() {
   const patientAge = patient.age ?? calculateAge(patient.birthdate);
   const weightDisplay = latestBiometrics.weight ? `${latestBiometrics.weight} KG` : "--";
   const heightDisplay = latestBiometrics.height ? `${latestBiometrics.height} CM` : "--";
+  const isViewingMinor = activePatient?.is_minor === true;
+  
+  const pageTitle = isViewingMinor ? `Expediente de ${activePatient?.full_name || patient.full_name}` : "Mi Expediente";
+  const selfMember = familyMembers.find(m => m.relationship_type === 'self');
+  const pageSubtitle = isViewingMinor && selfMember 
+    ? `Menor a cargo de ${selfMember.full_name}` 
+    : null;
   
   return (
     <div className="space-y-6">
       <PageHeader 
         breadcrumbs={[
           { label: "MEDOPZ", path: "/patient" },
-          { label: "Mi Expediente", active: true }
+          { label: pageTitle, active: true }
         ]}
         stats={[
           { 
@@ -181,11 +188,24 @@ export default function PatientRecord() {
           }
         ]}
         actions={
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/20 bg-white/10">
-            <UserIcon className="w-5 h-5 text-white/30" />
+          <div className="flex items-center gap-3">
+            {isViewingMinor && (
+              <span className="text-xs px-2.5 py-1 bg-white/5 border border-white/10 text-white/40 rounded-md">
+                Menor
+              </span>
+            )}
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/20 bg-white/10">
+              <UserIcon className="w-5 h-5 text-white/30" />
+            </div>
           </div>
         }
       />
+      
+      {pageSubtitle && (
+        <div className="text-center text-xs text-white/40 -mt-2">
+          {pageSubtitle}
+        </div>
+      )}
       
       <div className="flex flex-wrap items-center gap-6 px-5 py-3 bg-white/10 border border-white/20 rounded-xl text-xs text-white/30">
         <span className="flex items-center gap-2">
@@ -203,7 +223,7 @@ export default function PatientRecord() {
       <div className="border border-white/20 rounded-xl overflow-hidden">
         <Tabs value={currentTab} onChange={setTab} layout="horizontal">
           <Tab id="info" label="Información">
-            <PatientInfoTab patientId={patientId} readOnly={true} />
+            <PatientInfoTab patientId={activePatientId || 0} readOnly={true} />
           </Tab>
           <Tab id="consultas" label="Consultas">
             <PatientConsultationsTab patient={patient} readOnly={true} />
@@ -212,13 +232,13 @@ export default function PatientRecord() {
             <PatientDocumentsTab patient={patient} />
           </Tab>
           <Tab id="vacunacion" label="Vacunación">
-            <VaccinationTab patientId={patientId} onRefresh={() => {}} readOnly={true} />
+            <VaccinationTab patientId={activePatientId || 0} onRefresh={() => {}} readOnly={true} />
           </Tab>
           <Tab id="cirugias" label="Cirugías">
-            <SurgeriesTab patientId={patientId} onRefresh={() => {}} readOnly={true} />
+            <SurgeriesTab patientId={activePatientId || 0} onRefresh={() => {}} readOnly={true} />
           </Tab>
           <Tab id="hospitalizacion" label="Hospitalización">
-            <HospitalizationsTab patientId={patientId} onRefresh={() => {}} readOnly={true} />
+            <HospitalizationsTab patientId={activePatientId || 0} onRefresh={() => {}} readOnly={true} />
           </Tab>
           <Tab id="citas" label="Citas">
             <PatientPendingAppointmentsTab patient={patient} />
