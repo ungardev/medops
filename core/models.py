@@ -468,6 +468,7 @@ class Patient(models.Model):
 
     def clean(self):
         from django.core.exceptions import ValidationError
+        from datetime import date as date_cls
 
         super().clean()
 
@@ -478,6 +479,29 @@ class Patient(models.Model):
                     "representative": "Los pacientes menores de edad deben tener un representante."
                 }
             )
+
+        # Validación de cédula basada en edad (paradigma MEDOPZ 2.0)
+        # En Venezuela, niños menores de 9 años no tienen cédula.
+        # Si son menores de 9, la cédula es opcional (heredan identidad del representante).
+        # Si son 9+, la cédula es obligatoria.
+        if self.is_minor and self.birthdate:
+            today = date_cls.today()
+            calculated_age = (
+                today.year
+                - self.birthdate.year
+                - (
+                    (today.month, today.day)
+                    < (self.birthdate.month, self.birthdate.day)
+                )
+            )
+            if calculated_age >= 9 and not self.national_id:
+                raise ValidationError(
+                    {
+                        "national_id": (
+                            "Los pacientes menores con 9 años o más deben tener cédula de identidad."
+                        )
+                    }
+                )
 
         # Validar consentimiento parental
         if self.is_minor and self.parental_consent and not self.consent_date:
@@ -1709,6 +1733,20 @@ class ChargeOrder(models.Model):
         "Patient", on_delete=models.CASCADE, related_name="charge_orders"
     )
 
+    responsible_payer = models.ForeignKey(
+        "Patient",
+        on_delete=models.PROTECT,
+        related_name="responsible_charge_orders",
+        null=True,
+        blank=True,
+        help_text=(
+            "Para menores: el representante que paga. "
+            "Para adultos: el mismo paciente. "
+            "Auto-completado en save() si está vacío."
+        ),
+        verbose_name="Responsable de pago",
+    )
+
     doctor = models.ForeignKey(
         "DoctorOperator",
         on_delete=models.SET_NULL,
@@ -1767,6 +1805,7 @@ class ChargeOrder(models.Model):
             models.Index(fields=["patient", "status"]),
             models.Index(fields=["institution", "status"]),
             models.Index(fields=["doctor", "status"]),
+            models.Index(fields=["responsible_payer", "status"]),
         ]
         verbose_name = "Orden de Cobro"
         verbose_name_plural = "Órdenes de Cobro"
@@ -1780,6 +1819,13 @@ class ChargeOrder(models.Model):
                 self.doctor = self.appointment.doctor
             if not self.institution:
                 self.institution = self.appointment.institution
+
+        if not self.responsible_payer and self.patient_id:
+            if self.patient.is_minor and self.patient.representative_id:
+                self.responsible_payer = self.patient.representative
+            else:
+                self.responsible_payer = self.patient
+
         super().save(*args, **kwargs)
 
     def recalc_totals(self):

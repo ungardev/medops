@@ -393,15 +393,37 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
                   </select>
                 </div>
                 <div className="col-span-2">
-                  <label className={labelStyles}>Cédula de Identidad *</label>
+                  <label className={labelStyles}>
+                    Cédula de Identidad
+                    {(!isMinor || (age !== null && age >= 9)) && (
+                      <span className="text-red-400 ml-1">*</span>
+                    )}
+                  </label>
                   <input 
-                    {...register("national_id", { required: true })} 
+                    {...register("national_id", { 
+                      required: (!isMinor || (age !== null && age >= 9)) 
+                        ? "La cédula es obligatoria" 
+                        : false 
+                    })} 
                     className={inputClass} 
-                    placeholder={isMinor 
-                      ? "Si no tiene cédula propia, usar la del representante" 
-                      : "Ej: 12345678"
+                    placeholder={
+                      isMinor && age !== null && age < 9
+                        ? "Opcional - se usa la del representante"
+                        : isMinor 
+                          ? "Cédula del menor" 
+                          : "Ej: 12345678"
                     }
                   />
+                  {isMinor && age !== null && age < 9 && (
+                    <p className="mt-1 text-xs text-amber-400/70">
+                      ⓘ Menor de 9 años puede no tener cédula. La responsabilidad legal y de pagos recae en el representante.
+                    </p>
+                  )}
+                  {errors.national_id && (
+                    <p className="mt-1 text-xs text-red-400">
+                      {errors.national_id.message}
+                    </p>
+                  )}
                 </div>
               </div>
               {checkingPatient && (

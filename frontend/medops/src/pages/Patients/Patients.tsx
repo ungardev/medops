@@ -136,7 +136,13 @@ export default function Patients() {
                 </td>
                 
                 <td className="hidden md:table-cell px-5 py-4 text-sm font-medium text-white/60 w-[140px] lg:w-[160px]">
-                  {p.national_id || "—"}
+                  {p.is_minor && !p.national_id ? (
+                    <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 bg-amber-500/15 border border-amber-500/25 text-amber-400 rounded-md">
+                      👶 Del representante
+                    </span>
+                  ) : (
+                    p.national_id || "—"
+                  )}
                 </td>
                 
                 <td className="hidden md:table-cell px-5 py-4 w-[100px] lg:w-[130px]">
