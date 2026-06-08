@@ -35,6 +35,8 @@ const RegisterWalkinModal: React.FC<Props> = ({
   const [showNewPatientModal, setShowNewPatientModal] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
   useEffect(() => {
     const fetchResults = async () => {
       if (!query || query.length < 1) {
@@ -63,10 +65,18 @@ const RegisterWalkinModal: React.FC<Props> = ({
     setResults([]);
     setSelectedServiceId(null);
   };
-  const handleProceedWithPatient = () => {
-    if (selectedPatient && selectedServiceId) {
-      onSuccess(selectedPatient.id, institutionId || null, selectedServiceId);
-      onClose();
+  const handleProceedWithPatient = async () => {
+    if (!selectedPatient || !selectedServiceId || isSubmitting) return;
+    
+    setIsSubmitting(true);
+    try {
+      await onSuccess(selectedPatient.id, institutionId || null, selectedServiceId);
+      setSubmitSuccess(true);
+      setTimeout(() => {
+        onClose();
+      }, 800);
+    } catch (error) {
+      setIsSubmitting(false);
     }
   };
   const handleNewPatientCreated = (patientId: number) => {
@@ -158,13 +168,27 @@ const RegisterWalkinModal: React.FC<Props> = ({
                             Selecciona un servicio para continuar
                           </div>
                         )}
-                        {selectedServiceId && (
+                        {selectedServiceId && !submitSuccess && (
                           <button 
                             onClick={handleProceedWithPatient}
-                            className="flex-1 bg-emerald-500/15 text-emerald-400 text-sm font-medium py-3 rounded-xl hover:bg-emerald-500/25 transition-all border border-emerald-500/25"
+                            disabled={isSubmitting}
+                            className="flex-1 bg-emerald-500/15 text-emerald-400 text-sm font-medium py-3 rounded-xl hover:bg-emerald-500/25 transition-all border border-emerald-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                           >
-                            Continuar
+                            {isSubmitting ? (
+                              <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                Registrando...
+                              </>
+                            ) : (
+                              "Continuar"
+                            )}
                           </button>
+                        )}
+                        {submitSuccess && (
+                          <div className="flex-1 bg-emerald-500/20 text-emerald-400 text-sm font-medium py-3 rounded-xl border border-emerald-500/30 flex items-center justify-center gap-2">
+                            <CheckIcon className="w-4 h-4" />
+                            ¡Registrado!
+                          </div>
                         )}
                         <button 
                           onClick={() => setSelectedPatient(null)}
