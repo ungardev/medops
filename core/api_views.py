@@ -48,7 +48,7 @@ from core.utils.document_verification import get_verification_url
 import traceback
 import secrets
 import string
-from core.permissions import IsDoctorOperatorOrReadOnly
+from core.permissions import IsDoctorOperatorOrReadOnly, can_access_patient
 from django.core.mail import send_mail
 from django.conf import settings
 from rest_framework.authentication import TokenAuthentication
@@ -73,6 +73,50 @@ def conditional_permission():
     En desarrollo local DEBUG=False, por lo tanto AllowAny.
     """
     return IsAuthenticated if settings.DEBUG else AllowAny
+
+
+class PatientFamilyLinkRequiredMixin:
+    """
+    Mixin que verifica PatientFamilyLink para endpoints de pacientes.
+
+    Aplica seguridad a get_queryset() para que pacientes solo puedan
+    acceder a datos de:
+    1. ellos mismos (patient_id == user.patient_profile.patient_id)
+    2. pacientes vinculados via PatientFamilyLink activa
+
+    Uso:
+        class SurgeryViewSet(PatientFamilyLinkRequiredMixin, viewsets.ModelViewSet):
+            ...
+    """
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        user = self.request.user
+
+        if not user or not user.is_authenticated:
+            return queryset.none()
+
+        patient_id = self.request.query_params.get("patient")
+        if not patient_id:
+            patient_id = self.kwargs.get("patient_id") or self.kwargs.get("pk")
+
+        if not patient_id:
+            return queryset
+
+        try:
+            target_id = int(patient_id)
+        except (ValueError, TypeError):
+            return queryset.none()
+
+        if not hasattr(user, "patient_profile"):
+            return queryset.none()
+
+        patient_user = user.patient_profile
+
+        if not can_access_patient(patient_user, target_id):
+            return queryset.none()
+
+        return queryset.filter(patient_id=target_id)
 
 
 # ==========================================
@@ -1278,7 +1322,7 @@ class ChargeItemViewSet(viewsets.ModelViewSet):
     serializer_class = ChargeItemSerializer
 
 
-class MedicalTestViewSet(viewsets.ModelViewSet):
+class MedicalTestViewSet(PatientFamilyLinkRequiredMixin, viewsets.ModelViewSet):
     """
     ViewSet para gestionar órdenes de exámenes médicos.
     ✅ Filtra por appointment para aislar datos por consulta.
@@ -1291,6 +1335,7 @@ class MedicalTestViewSet(viewsets.ModelViewSet):
         """
         Filtra por appointment si se proporciona en query params.
         Esto garantiza aislamiento total entre consultas de diferentes pacientes.
+        También aplica PatientFamilyLinkRequiredMixin para patient_id.
         """
         queryset = MedicalTest.objects.select_related("appointment")
         appointment_id = self.request.query_params.get("appointment")
@@ -1299,7 +1344,7 @@ class MedicalTestViewSet(viewsets.ModelViewSet):
         return queryset.order_by("-created_at")
 
 
-class MedicalReferralViewSet(viewsets.ModelViewSet):
+class MedicalReferralViewSet(PatientFamilyLinkRequiredMixin, viewsets.ModelViewSet):
     """
     ViewSet para gestionar referencias médicas inter-institucionales.
     ✅ Filtra por appointment para aislar datos por consulta.
@@ -1333,17 +1378,17 @@ class SpecialtyViewSet(viewsets.ModelViewSet):
     serializer_class = SpecialtySerializer
 
 
-class PersonalHistoryViewSet(viewsets.ModelViewSet):
+class PersonalHistoryViewSet(PatientFamilyLinkRequiredMixin, viewsets.ModelViewSet):
     queryset = PersonalHistory.objects.all()
     serializer_class = PersonalHistorySerializer
 
 
-class FamilyHistoryViewSet(viewsets.ModelViewSet):
+class FamilyHistoryViewSet(PatientFamilyLinkRequiredMixin, viewsets.ModelViewSet):
     queryset = FamilyHistory.objects.all()
     serializer_class = FamilyHistorySerializer
 
 
-class HabitViewSet(viewsets.ModelViewSet):
+class HabitViewSet(PatientFamilyLinkRequiredMixin, viewsets.ModelViewSet):
     queryset = Habit.objects.all()
     serializer_class = HabitSerializer
 
@@ -1369,7 +1414,7 @@ class VaccinationScheduleViewSet(viewsets.ModelViewSet):
         return queryset.select_related("vaccine")
 
 
-class PatientVaccinationViewSet(viewsets.ModelViewSet):
+class PatientVaccinationViewSet(PatientFamilyLinkRequiredMixin, viewsets.ModelViewSet):
     queryset = PatientVaccination.objects.all()
     serializer_class = PatientVaccinationSerializer
 
@@ -1379,22 +1424,22 @@ class PatientClinicalProfileViewSet(viewsets.ModelViewSet):
     serializer_class = ClinicalNoteSerializer
 
 
-class AllergyViewSet(viewsets.ModelViewSet):
+class AllergyViewSet(PatientFamilyLinkRequiredMixin, viewsets.ModelViewSet):
     queryset = Allergy.objects.all()
     serializer_class = AllergySerializer
 
 
-class MedicalHistoryViewSet(viewsets.ModelViewSet):
+class MedicalHistoryViewSet(PatientFamilyLinkRequiredMixin, viewsets.ModelViewSet):
     queryset = MedicalHistory.objects.all()
     serializer_class = MedicalHistorySerializer
 
 
-class ClinicalAlertViewSet(viewsets.ModelViewSet):
+class ClinicalAlertViewSet(PatientFamilyLinkRequiredMixin, viewsets.ModelViewSet):
     queryset = ClinicalAlert.objects.all()
     serializer_class = ClinicalAlertSerializer
 
 
-class ClinicalBackgroundViewSet(viewsets.ModelViewSet):
+class ClinicalBackgroundViewSet(PatientFamilyLinkRequiredMixin, viewsets.ModelViewSet):
     queryset = MedicalHistory.objects.all()
     serializer_class = MedicalHistorySerializer
 
@@ -8897,7 +8942,7 @@ def create_charge_order_from_service(request):
         return Response({"error": str(e)}, status=500)
 
 
-class SurgeryViewSet(viewsets.ModelViewSet):
+class SurgeryViewSet(PatientFamilyLinkRequiredMixin, viewsets.ModelViewSet):
     """
     Sistema Quirúrgico Integral MEDOPZ
     - GET /api/surgeries/                    # Listar todas
@@ -8971,7 +9016,7 @@ class SurgeryViewSet(viewsets.ModelViewSet):
         )
 
 
-class HospitalizationViewSet(viewsets.ModelViewSet):
+class HospitalizationViewSet(PatientFamilyLinkRequiredMixin, viewsets.ModelViewSet):
     """
     Sistema de Gestión Hospitalaria MEDOPZ
     - GET /api/hospitalizations/                    # Listar todas

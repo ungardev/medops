@@ -4,10 +4,73 @@ from django.utils import timezone
 from datetime import timedelta
 from django.http import HttpRequest
 from rest_framework import permissions
-from .models import InstitutionPermission, InstitutionSettings, DoctorOperator
+from .models import (
+    InstitutionPermission,
+    InstitutionSettings,
+    DoctorOperator,
+    PatientFamilyLink,
+    PatientUser,
+)
 from typing import Dict, Any, Optional
 
 logger = logging.getLogger(__name__)
+
+
+def can_access_patient(patient_user: PatientUser, target_patient_id: int) -> bool:
+    """
+    Verifica si el patient_user tiene acceso a los datos del target_patient_id.
+
+    Returns True si:
+    - target_patient_id == patient_user.patient_id (es el mismo paciente)
+    - Existe PatientFamilyLink activa entre patient_user y target_patient
+
+    Returns False en otro caso.
+    """
+    if not patient_user or not target_patient_id:
+        return False
+
+    if patient_user.patient_id == target_patient_id:
+        return True
+
+    has_link = PatientFamilyLink.objects.filter(
+        patient_user=patient_user, patient_id=target_patient_id, status="active"
+    ).exists()
+
+    return has_link
+
+
+class HasPatientFamilyLinkOrSelf(permissions.BasePermission):
+    """
+    Permiso que verifica que el usuario tiene PatientFamilyLink activa
+    al paciente cuyos datos está intentando acceder, o que es el paciente mismo.
+
+    Para endpoints de paciente que reciben patient_id en query params o URL.
+    """
+
+    message = "No tienes acceso a los datos de este paciente."
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+
+        if not hasattr(request.user, "patient_profile"):
+            return False
+
+        patient_user = request.user.patient_profile
+
+        patient_id = request.query_params.get("patient")
+        if not patient_id:
+            patient_id = view.kwargs.get("patient_id") or view.kwargs.get("pk")
+
+        if not patient_id:
+            return False
+
+        try:
+            target_id = int(patient_id)
+        except (ValueError, TypeError):
+            return False
+
+        return can_access_patient(patient_user, target_id)
 
 
 class IsDoctorOperator(permissions.BasePermission):
