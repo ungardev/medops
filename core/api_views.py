@@ -119,6 +119,130 @@ class PatientFamilyLinkRequiredMixin:
         return queryset.filter(patient_id=target_id)
 
 
+class DoctorPatientRelationshipRequiredMixin:
+    """
+    Mixin que verifica DoctorPatientRelationship para endpoints de doctores.
+
+    Aplica seguridad a get_queryset() para que doctores solo puedan
+    acceder a datos de pacientes con quienes tienen una relación activa:
+    1. Pacientes propios (patient_id == doctor.patient_id)
+    2. Pacientes vinculados via DoctorPatientRelationship activa
+
+    Uso:
+        class DiagnosisViewSet(DoctorPatientRelationshipRequiredMixin, viewsets.ModelViewSet):
+            ...
+    """
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        user = self.request.user
+
+        if not user or not user.is_authenticated:
+            return queryset.none()
+
+        if not hasattr(user, "doctor_profile"):
+            return queryset.none()
+
+        doctor = user.doctor_profile
+
+        patient_id = self.request.query_params.get("patient")
+        if not patient_id:
+            patient_id = self.kwargs.get("patient_id") or self.kwargs.get("pk")
+
+        if patient_id:
+            try:
+                target_id = int(patient_id)
+            except (ValueError, TypeError):
+                return queryset.none()
+
+            patient_ids = DoctorPatientRelationship.objects.filter(
+                doctor=doctor, status="active"
+            ).values_list("patient_id", flat=True)
+
+            if target_id not in patient_ids and target_id != doctor.patient_id:
+                return queryset.none()
+
+            return queryset.filter(patient_id=target_id)
+
+        patient_ids = DoctorPatientRelationship.objects.filter(
+            doctor=doctor, status="active"
+        ).values_list("patient_id", flat=True)
+
+        return queryset.filter(patient_id__in=patient_ids)
+
+
+class UnifiedPatientDoctorAccessMixin:
+    """
+    Mixin que verifica acceso tanto para doctores como para pacientes.
+
+    Aplica seguridad a get_queryset() para que tanto doctores como pacientes
+    puedan acceder a datos de pacientes con quienes tienen relación:
+    - Doctores: via DoctorPatientRelationship activa
+    - Pacientes: via PatientFamilyLink activa o son ellos mismos
+
+    Uso:
+        class PrescriptionViewSet(UnifiedPatientDoctorAccessMixin, viewsets.ModelViewSet):
+            ...
+    """
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        user = self.request.user
+
+        if not user or not user.is_authenticated:
+            return queryset.none()
+
+        patient_id = self.request.query_params.get("patient")
+        if not patient_id:
+            patient_id = self.kwargs.get("patient_id") or self.kwargs.get("pk")
+
+        if patient_id:
+            try:
+                target_id = int(patient_id)
+            except (ValueError, TypeError):
+                return queryset.none()
+
+            if hasattr(user, "doctor_profile"):
+                doctor = user.doctor_profile
+                patient_ids = list(
+                    DoctorPatientRelationship.objects.filter(
+                        doctor=doctor, status="active"
+                    ).values_list("patient_id", flat=True)
+                )
+                patient_ids.append(doctor.patient_id)
+                if target_id in patient_ids:
+                    return queryset.filter(patient_id=target_id)
+
+            if hasattr(user, "patient_profile"):
+                patient_user = user.patient_profile
+                if can_access_patient(patient_user, target_id):
+                    return queryset.filter(patient_id=target_id)
+
+            return queryset.none()
+
+        if hasattr(user, "doctor_profile"):
+            doctor = user.doctor_profile
+            patient_ids = list(
+                DoctorPatientRelationship.objects.filter(
+                    doctor=doctor, status="active"
+                ).values_list("patient_id", flat=True)
+            )
+            patient_ids.append(doctor.patient_id)
+            return queryset.filter(patient_id__in=patient_ids)
+
+        if hasattr(user, "patient_profile"):
+            patient_user = user.patient_profile
+            linked_ids = list(
+                PatientFamilyLink.objects.filter(
+                    patient_user=patient_user, status="active"
+                ).values_list("patient_id", flat=True)
+            )
+            linked_ids.append(patient_user.patient_id)
+            return queryset.filter(patient_id__in=linked_ids)
+
+        return queryset.none()
+
+
 # ==========================================
 # 1. VIEWSETS (Requeridos por el Router) [cite: 5, 6]
 # ==========================================
@@ -1093,22 +1217,24 @@ class WaitingRoomEntryViewSet(viewsets.ModelViewSet):
     serializer_class = WaitingRoomEntrySerializer
 
 
-class GeneticPredispositionViewSet(viewsets.ModelViewSet):
+class GeneticPredispositionViewSet(
+    PatientFamilyLinkRequiredMixin, viewsets.ModelViewSet
+):
     queryset = GeneticPredisposition.objects.all()
     serializer_class = GeneticPredispositionSerializer
 
 
-class DiagnosisViewSet(viewsets.ModelViewSet):
+class DiagnosisViewSet(UnifiedPatientDoctorAccessMixin, viewsets.ModelViewSet):
     queryset = Diagnosis.objects.all()
     serializer_class = DiagnosisSerializer
 
 
-class TreatmentViewSet(viewsets.ModelViewSet):
+class TreatmentViewSet(UnifiedPatientDoctorAccessMixin, viewsets.ModelViewSet):
     queryset = Treatment.objects.all()
     serializer_class = TreatmentSerializer
 
 
-class PrescriptionViewSet(viewsets.ModelViewSet):
+class PrescriptionViewSet(UnifiedPatientDoctorAccessMixin, viewsets.ModelViewSet):
     """
     ViewSet para gestionar prescripciones médicas.
 
@@ -1419,7 +1545,9 @@ class PatientVaccinationViewSet(PatientFamilyLinkRequiredMixin, viewsets.ModelVi
     serializer_class = PatientVaccinationSerializer
 
 
-class PatientClinicalProfileViewSet(viewsets.ModelViewSet):
+class PatientClinicalProfileViewSet(
+    PatientFamilyLinkRequiredMixin, viewsets.ModelViewSet
+):
     queryset = ClinicalNote.objects.all()
     serializer_class = ClinicalNoteSerializer
 
@@ -1555,7 +1683,23 @@ def appointment_search_api(request):
     """
     Busca citas por paciente, ID, o campos relacionados.
     Soporta búsqueda por nombre, cédula, ID de cita, o fecha.
+    ✅ SEGURIDAD: Solo retorna citas de pacientes con DoctorPatientRelationship activa
     """
+    user = request.user
+    if not user or not user.is_authenticated:
+        return Response({"error": "No autenticado"}, status=401)
+
+    if not hasattr(user, "doctor_profile"):
+        return Response({"error": "No tienes acceso a este recurso"}, status=403)
+
+    doctor = user.doctor_profile
+    patient_ids = list(
+        DoctorPatientRelationship.objects.filter(
+            doctor=doctor, status="active"
+        ).values_list("patient_id", flat=True)
+    )
+    patient_ids.append(doctor.patient_id)
+
     q = request.query_params.get("q", "").strip()
     limit = int(request.query_params.get("limit", 10))
 
@@ -1567,14 +1711,17 @@ def appointment_search_api(request):
 
         db_vendor = connection.vendor
 
+        base_filter = Q(patient_id__in=patient_ids)
+
         if db_vendor == "postgresql":
             appointments = (
                 Appointment.objects.filter(
+                    base_filter,
                     Q(patient__first_name__unaccent__icontains=q)
                     | Q(patient__last_name__unaccent__icontains=q)
                     | Q(patient__national_id__icontains=q)
                     | Q(id__icontains=q)
-                    | Q(appointment_date__icontains=q)
+                    | Q(appointment_date__icontains=q),
                 )
                 .select_related("patient", "doctor", "institution")
                 .order_by("-appointment_date")[:limit]
@@ -1584,11 +1731,12 @@ def appointment_search_api(request):
             pattern = rf"(?i){re.escape(norm_q)}"
             appointments = (
                 Appointment.objects.filter(
+                    base_filter,
                     Q(patient__first_name__regex=pattern)
                     | Q(patient__last_name__regex=pattern)
                     | Q(patient__national_id__icontains=q)
                     | Q(id__icontains=q)
-                    | Q(appointment_date__icontains=q)
+                    | Q(appointment_date__icontains=q),
                 )
                 .select_related("patient", "doctor", "institution")
                 .order_by("-appointment_date")[:limit]
@@ -1606,7 +1754,23 @@ def chargeorder_search_api(request):
     """
     Busca órdenes de cobro por paciente, ID, o campos relacionados.
     Soporta búsqueda por nombre, cédula, ID de orden, ID de cita, o monto.
+    ✅ SEGURIDAD: Solo retorna órdenes de pacientes con DoctorPatientRelationship activa
     """
+    user = request.user
+    if not user or not user.is_authenticated:
+        return Response({"error": "No autenticado"}, status=401)
+
+    if not hasattr(user, "doctor_profile"):
+        return Response({"error": "No tienes acceso a este recurso"}, status=403)
+
+    doctor = user.doctor_profile
+    patient_ids = list(
+        DoctorPatientRelationship.objects.filter(
+            doctor=doctor, status="active"
+        ).values_list("patient_id", flat=True)
+    )
+    patient_ids.append(doctor.patient_id)
+
     q = request.query_params.get("q", "").strip()
     limit = int(request.query_params.get("limit", 10))
 
@@ -1617,17 +1781,19 @@ def chargeorder_search_api(request):
         from django.db import connection
 
         db_vendor = connection.vendor
+        base_filter = Q(patient_id__in=patient_ids)
 
         if db_vendor == "postgresql":
             charge_orders = (
                 ChargeOrder.objects.filter(
+                    base_filter,
                     Q(patient__first_name__unaccent__icontains=q)
                     | Q(patient__middle_name__unaccent__icontains=q)
                     | Q(patient__last_name__unaccent__icontains=q)
                     | Q(patient__second_last_name__unaccent__icontains=q)
                     | Q(patient__national_id__icontains=q)
                     | Q(id__icontains=q)
-                    | Q(appointment__id__icontains=q)
+                    | Q(appointment__id__icontains=q),
                 )
                 .select_related("appointment", "patient", "institution", "doctor")
                 .order_by("-issued_at")[:limit]
@@ -1637,13 +1803,14 @@ def chargeorder_search_api(request):
             pattern = rf"(?i){re.escape(norm_q)}"
             charge_orders = (
                 ChargeOrder.objects.filter(
+                    base_filter,
                     Q(patient__first_name__regex=pattern)
                     | Q(patient__middle_name__regex=pattern)
                     | Q(patient__last_name__regex=pattern)
                     | Q(patient__second_last_name__regex=pattern)
                     | Q(patient__national_id__icontains=q)
                     | Q(id__icontains=q)
-                    | Q(appointment__id__icontains=q)
+                    | Q(appointment__id__icontains=q),
                 )
                 .select_related("appointment", "patient", "institution", "doctor")
                 .order_by("-issued_at")[:limit]
@@ -1962,8 +2129,18 @@ def appointment_detail_api(request, pk):
     Usa AppointmentDetailSerializer para incluir charge_order con payments.
 
     ✅ ACTUALIZADO: Ahora acepta GET, PUT, PATCH, DELETE
+    ✅ SEGURIDAD: Verifica DoctorPatientRelationship con el paciente
     """
     try:
+        user = request.user
+        if not user or not user.is_authenticated:
+            return Response({"error": "No autenticado"}, status=401)
+
+        if not hasattr(user, "doctor_profile"):
+            return Response({"error": "No tienes acceso a este recurso"}, status=403)
+
+        doctor = user.doctor_profile
+
         appointment = (
             Appointment.objects.select_related(
                 "patient", "doctor", "institution", "note"
@@ -1971,6 +2148,16 @@ def appointment_detail_api(request, pk):
             .prefetch_related("diagnoses", "documents")
             .get(pk=pk)
         )
+
+        patient_id = appointment.patient_id
+        patient_ids = DoctorPatientRelationship.objects.filter(
+            doctor=doctor, status="active"
+        ).values_list("patient_id", flat=True)
+
+        if patient_id not in patient_ids and patient_id != doctor.patient_id:
+            return Response(
+                {"error": "No tienes acceso a los datos de este paciente"}, status=403
+            )
 
         # GET - Obtener detalle
         if request.method == "GET":
@@ -2364,7 +2551,7 @@ def register_minor(request):
 
 
 @api_view(["GET"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def minor_verification(request):
     """
     GET /api/patients/minor-verification/
@@ -2697,7 +2884,17 @@ def generate_medical_report(request, pk):
     """
     Genera PDF de informe médico completo y lo persiste en MedicalDocument.
     pk = appointment_id (ID de la consulta)
+    ✅ SEGURIDAD: Verifica DoctorPatientRelationship con el paciente
     """
+    user = request.user
+    if not user or not user.is_authenticated:
+        return Response({"error": "No autenticado"}, status=401)
+
+    if not hasattr(user, "doctor_profile"):
+        return Response({"error": "No tienes acceso a este recurso"}, status=403)
+
+    doctor_profile = user.doctor_profile
+
     try:
         appointment = get_object_or_404(
             Appointment.objects.select_related(
@@ -2708,6 +2905,18 @@ def generate_medical_report(request, pk):
         patient = appointment.patient
         doctor = appointment.doctor
         institution = appointment.institution
+
+        patient_id = patient.id
+        patient_ids = list(
+            DoctorPatientRelationship.objects.filter(
+                doctor=doctor_profile, status="active"
+            ).values_list("patient_id", flat=True)
+        )
+        patient_ids.append(doctor_profile.patient_id)
+        if patient_id not in patient_ids:
+            return Response(
+                {"error": "No tienes acceso a los datos de este paciente"}, status=403
+            )
 
         report, created = MedicalReport.objects.get_or_create(
             appointment=appointment,
@@ -3694,6 +3903,40 @@ def audit_by_appointment(request, appointment_id):
 
 @api_view(["GET"])
 def audit_by_patient(request, patient_id):
+    """
+    Obtiene el historial de auditoría de un paciente.
+    ✅ SEGURIDAD: Verifica DoctorPatientRelationship o PatientFamilyLink
+    """
+    user = request.user
+    if not user or not user.is_authenticated:
+        return Response({"error": "No autenticado"}, status=401)
+
+    try:
+        target_id = int(patient_id)
+    except (ValueError, TypeError):
+        return Response({"error": "ID de paciente inválido"}, status=400)
+
+    if hasattr(user, "doctor_profile"):
+        doctor = user.doctor_profile
+        patient_ids = list(
+            DoctorPatientRelationship.objects.filter(
+                doctor=doctor, status="active"
+            ).values_list("patient_id", flat=True)
+        )
+        patient_ids.append(doctor.patient_id)
+        if target_id not in patient_ids:
+            return Response(
+                {"error": "No tienes acceso a los datos de este paciente"}, status=403
+            )
+    elif hasattr(user, "patient_profile"):
+        patient_user = user.patient_profile
+        if not can_access_patient(patient_user, target_id):
+            return Response(
+                {"error": "No tienes acceso a los datos de este paciente"}, status=403
+            )
+    else:
+        return Response({"error": "No tienes acceso a este recurso"}, status=403)
+
     try:
         data = services.get_audit_logic(patient_id=patient_id)
         return Response(data)
@@ -4318,7 +4561,41 @@ def start_consultation_from_entry(request, entry_id):
 def vital_signs_api(request, appointment_id):
     """
     Obtener o crear signos vitales para una cita.
+    ✅ SEGURIDAD: Verifica DoctorPatientRelationship con el paciente de la cita
     """
+    user = request.user
+    if not user or not user.is_authenticated:
+        return Response({"error": "No autenticado"}, status=401)
+
+    try:
+        appointment = Appointment.objects.select_related("patient").get(
+            pk=appointment_id
+        )
+    except Appointment.DoesNotExist:
+        return Response({"error": "Cita no encontrada"}, status=404)
+
+    patient_id = appointment.patient_id
+
+    if hasattr(user, "doctor_profile"):
+        doctor = user.doctor_profile
+        patient_ids = list(
+            DoctorPatientRelationship.objects.filter(
+                doctor=doctor, status="active"
+            ).values_list("patient_id", flat=True)
+        )
+        patient_ids.append(doctor.patient_id)
+        if patient_id not in patient_ids:
+            return Response(
+                {"error": "No tienes acceso a los datos de este paciente"}, status=403
+            )
+    elif hasattr(user, "patient_profile"):
+        patient_user = user.patient_profile
+        if not can_access_patient(patient_user, patient_id):
+            return Response(
+                {"error": "No tienes acceso a los datos de este paciente"}, status=403
+            )
+    else:
+        return Response({"error": "No tienes acceso a este recurso"}, status=403)
 
     if request.method == "GET":
         vitals = VitalSigns.objects.filter(appointment_id=appointment_id).first()
@@ -4333,11 +4610,6 @@ def vital_signs_api(request, appointment_id):
                 return Response(
                     {"error": "Ya existen signos vitales. Usa PATCH."}, status=400
                 )
-
-            try:
-                appointment = Appointment.objects.get(pk=appointment_id)
-            except Appointment.DoesNotExist:
-                return Response({"error": "Cita no encontrada"}, status=404)
 
             serializer = VitalSignsSerializer(
                 data={**request.data, "appointment": appointment_id}
@@ -4565,6 +4837,7 @@ def create_charge_order_from_appointment(request, appointment_id):
 def clinical_note_api(request, appointment_id):
     """
     API para notas clínicas SOAP.
+    ✅ SEGURIDAD: Verifica DoctorPatientRelationship con el paciente de la cita
 
     GET /api/appointments/<appointment_id>/clinical-note/
         - Retorna 200 con la nota si existe
@@ -4576,6 +4849,39 @@ def clinical_note_api(request, appointment_id):
     PATCH /api/appointments/<appointment_id>/clinical-note/
         - Actualiza nota existente
     """
+    user = request.user
+    if not user or not user.is_authenticated:
+        return Response({"error": "No autenticado"}, status=401)
+
+    try:
+        appointment = Appointment.objects.select_related("patient").get(
+            pk=appointment_id
+        )
+    except Appointment.DoesNotExist:
+        return Response({"error": "Cita no encontrada"}, status=404)
+
+    patient_id = appointment.patient_id
+
+    if hasattr(user, "doctor_profile"):
+        doctor = user.doctor_profile
+        patient_ids = list(
+            DoctorPatientRelationship.objects.filter(
+                doctor=doctor, status="active"
+            ).values_list("patient_id", flat=True)
+        )
+        patient_ids.append(doctor.patient_id)
+        if patient_id not in patient_ids:
+            return Response(
+                {"error": "No tienes acceso a los datos de este paciente"}, status=403
+            )
+    elif hasattr(user, "patient_profile"):
+        patient_user = user.patient_profile
+        if not can_access_patient(patient_user, patient_id):
+            return Response(
+                {"error": "No tienes acceso a los datos de este paciente"}, status=403
+            )
+    else:
+        return Response({"error": "No tienes acceso a este recurso"}, status=403)
 
     if request.method == "GET":
         note = ClinicalNote.objects.filter(appointment_id=appointment_id).first()
@@ -4591,13 +4897,6 @@ def clinical_note_api(request, appointment_id):
                     {"error": "Ya existe una nota clínica. Usa PATCH para actualizar."},
                     status=400,
                 )
-
-            from .models import Appointment
-
-            try:
-                appointment = Appointment.objects.get(pk=appointment_id)
-            except Appointment.DoesNotExist:
-                return Response({"error": "Cita no encontrada"}, status=404)
 
             serializer = ClinicalNoteSerializer(
                 data={**request.data, "appointment": appointment_id}
@@ -8942,7 +9241,7 @@ def create_charge_order_from_service(request):
         return Response({"error": str(e)}, status=500)
 
 
-class SurgeryViewSet(PatientFamilyLinkRequiredMixin, viewsets.ModelViewSet):
+class SurgeryViewSet(UnifiedPatientDoctorAccessMixin, viewsets.ModelViewSet):
     """
     Sistema Quirúrgico Integral MEDOPZ
     - GET /api/surgeries/                    # Listar todas
@@ -9016,7 +9315,7 @@ class SurgeryViewSet(PatientFamilyLinkRequiredMixin, viewsets.ModelViewSet):
         )
 
 
-class HospitalizationViewSet(PatientFamilyLinkRequiredMixin, viewsets.ModelViewSet):
+class HospitalizationViewSet(UnifiedPatientDoctorAccessMixin, viewsets.ModelViewSet):
     """
     Sistema de Gestión Hospitalaria MEDOPZ
     - GET /api/hospitalizations/                    # Listar todas
