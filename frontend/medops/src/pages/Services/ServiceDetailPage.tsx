@@ -176,12 +176,7 @@ export default function ServiceDetailPage() {
                 />
               </div>
               <div className="md:col-span-1">
-                <div className="space-y-1">
-                  <label className="block text-xs text-white/40 uppercase">Cupos/Slot</label>
-                  <p className="text-[10px] text-white/30 leading-tight">
-                    Pacientes por horario
-                  </p>
-                </div>
+                <label className="block text-xs text-white/40 uppercase mb-2">Cupos/Slot</label>
                 <input 
                   type="number" 
                   placeholder="1"
