@@ -25,6 +25,7 @@ import {
   BuildingOfficeIcon,
   CheckCircleIcon
 } from "@heroicons/react/24/outline";
+import { Loader2 } from "lucide-react";
 import { useOperationalHub } from "@/hooks/waitingroom/useOperationalHub";
 import { useInstitutions } from "@/hooks/settings/useInstitutions"; 
 const renderStatusBadge = (status: string) => {
@@ -84,6 +85,7 @@ export default function WaitingRoom() {
   const [entryToCancel, setEntryToCancel] = useState<WaitingRoomEntry | null>(null);
   const [showConfirmCancel, setShowConfirmCancel] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  const [startingEntryId, setStartingEntryId] = useState<number | null>(null);
   
   const { activeInstitution } = useInstitutions();
   
@@ -149,12 +151,16 @@ const filteredServices = useMemo(() =>
   };
   
   const handleStartConsultation = async (entry: WaitingRoomEntry) => {
+    if (startingEntryId !== null) return;
+    setStartingEntryId(Number(entry.id));
     try {
       await startConsultation.mutateAsync(Number(entry.id));
       navigate("/consultation");
     } catch (error) {
       console.error("Error iniciando consulta:", error);
       setToast({ message: "Error al iniciar consulta", type: "error" });
+    } finally {
+      setStartingEntryId(null);
     }
   };
   
@@ -317,9 +323,21 @@ const filteredServices = useMemo(() =>
                         {entry.status === 'waiting' && (
                           <button 
                             onClick={() => handleStartConsultation(entry)}
-                            className="p-2 text-white/30 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
+                            disabled={startingEntryId !== null}
+                            className={`p-2 rounded-lg transition-all flex items-center gap-1.5 ${
+                              startingEntryId === Number(entry.id)
+                                ? "text-emerald-400 bg-emerald-500/10 cursor-wait"
+                                : "text-white/30 hover:text-emerald-400 hover:bg-emerald-500/10"
+                            }`}
                           >
-                            <PlayIcon className="w-5 h-5" />
+                            {startingEntryId === Number(entry.id) ? (
+                              <>
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                                <span className="text-xs font-medium">Iniciando...</span>
+                              </>
+                            ) : (
+                              <PlayIcon className="w-5 h-5" />
+                            )}
                           </button>
                         )}
                         {entry.status !== 'completed' && (
