@@ -93,7 +93,7 @@ export default function ServiceDetailPage() {
         </div>
         <div className="text-right">
           <p className="text-emerald-400 font-semibold text-lg">${service.price_usd}</p>
-          <p className="text-white/30 text-xs">{service.duration_minutes} min / cita</p>
+          <p className="text-white/30 text-xs">{service.duration_minutes} min / servicio</p>
         </div>
       </div>
       
@@ -176,9 +176,15 @@ export default function ServiceDetailPage() {
                 />
               </div>
               <div className="md:col-span-1">
-                <label className="block text-xs text-white/40 uppercase mb-2">Cupos/Slot</label>
+                <div className="space-y-1">
+                  <label className="block text-xs text-white/40 uppercase">Cupos/Slot</label>
+                  <p className="text-[10px] text-white/30 leading-tight">
+                    Pacientes por horario
+                  </p>
+                </div>
                 <input 
                   type="number" 
+                  placeholder="1"
                   value={newSchedule.max_appointments}
                   onChange={(e) => setNewSchedule({...newSchedule, max_appointments: parseInt(e.target.value)})}
                   className="w-full bg-white/5 border border-white/15 p-3 text-white/80 text-sm rounded-xl focus:border-emerald-500/50 outline-none"
@@ -221,7 +227,7 @@ export default function ServiceDetailPage() {
                                   {schedule.start_time} - {schedule.end_time}
                                 </p>
                                 <p className="text-xs text-white/30 mt-1">
-                                  {schedule.slot_duration}min / {schedule.max_appointments}c
+                                  {schedule.slot_duration} min · {schedule.max_appointments} pac.
                                 </p>
                               </div>
                               <button 
@@ -240,9 +246,13 @@ export default function ServiceDetailPage() {
               })}
             </div>
             
-            <div className="text-sm text-white/70 bg-white/5 p-4 rounded-xl border border-white/10">
-              <strong className="text-white font-semibold">Nota:</strong> Los slots de disponibilidad se generarán automáticamente basándose en estos horarios. 
-              El calendario principal mostrará la disponibilidad en tiempo real.
+            <div className="text-sm text-white/70 bg-white/5 p-4 rounded-xl border border-white/10 space-y-2">
+              <p>
+                <strong className="text-white font-semibold">Nota:</strong> Los slots de disponibilidad se generarán automáticamente basándose en estos horarios. El calendario principal mostrará la disponibilidad en tiempo real.
+              </p>
+              <p className="text-white/50">
+                <strong className="text-emerald-400">Cupos/Slot:</strong> Máximo de pacientes que pueden atenderse simultáneamente en cada horario. Para consultas 1:1 (un solo paciente a la vez), usa <strong className="text-white">1</strong>. Para servicios con múltiples estaciones simultáneas (fisioterapia, laboratorio, etc.), usa el número de estaciones disponibles.
+              </p>
             </div>
           </div>
         )}
