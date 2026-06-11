@@ -12,9 +12,9 @@ import {
   ArrowLeftIcon, 
   TrashIcon, 
   ClockIcon,
-  PlusIcon,
-  PencilSquareIcon
+  PlusIcon
 } from '@heroicons/react/24/outline';
+import { Loader2 } from 'lucide-react';
 
 const DIAS_SEMANA = [
   { label: 'Lunes', value: 0 },
@@ -188,9 +188,19 @@ export default function ServiceDetailPage() {
               <div className="md:col-span-1 flex items-end">
                 <button 
                   onClick={handleAddSchedule}
-                  className="w-full bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 text-sm font-medium py-3 px-5 rounded-xl flex justify-center items-center gap-2 transition-colors border border-emerald-500/25"
+                  disabled={createSchedule.isPending}
+                  className="w-full bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 text-sm font-medium py-3 px-5 rounded-xl flex justify-center items-center gap-2 transition-colors border border-emerald-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <PlusIcon className="w-5 h-5" /> Agregar
+                  {createSchedule.isPending ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Cargando...
+                    </>
+                  ) : (
+                    <>
+                      <PlusIcon className="w-5 h-5" /> Agregar
+                    </>
+                  )}
                 </button>
               </div>
             </div>
