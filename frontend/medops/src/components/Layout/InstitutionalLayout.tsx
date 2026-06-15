@@ -2,7 +2,6 @@
 import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import InstitutionalHeader from "./InstitutionalHeader";
-import InstitutionalFooter from "./InstitutionalFooter";
 import { useState, useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 import { SidebarSkeleton, HeaderSkeleton } from "@/components/ui/Skeleton";
@@ -116,8 +115,6 @@ export default function InstitutionalLayout() {
               <Outlet />
             </div>
           </main>
-          
-          <InstitutionalFooter />
         </div>
       </div>
       
