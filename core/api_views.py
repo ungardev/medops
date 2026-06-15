@@ -1212,7 +1212,15 @@ class PaymentViewSet(UnifiedPatientDoctorAccessMixin, viewsets.ModelViewSet):
 
 
 class WaitingRoomEntryViewSet(PatientFamilyLinkRequiredMixin, viewsets.ModelViewSet):
-    queryset = WaitingRoomEntry.objects.all()
+    queryset = WaitingRoomEntry.objects.select_related(
+        "patient__neighborhood__parish__municipality__state__country",
+        "patient__representative",
+        "appointment__doctor_service",
+        "institution",
+    ).prefetch_related(
+        "patient__medical_history",
+        "patient__genetic_predispositions",
+    )
     serializer_class = WaitingRoomEntrySerializer
 
 
@@ -4572,7 +4580,34 @@ def start_consultation_from_entry(request, entry_id):
         entry.status = "in_consultation"
         entry.save(update_fields=["status"])
 
-        serializer = AppointmentDetailSerializer(appointment)
+        # ✅ OPTIMIZACIÓN: Fetch con todos los related objects para evitar N+1 en serialización
+        appointment_optimized = (
+            Appointment.objects.select_related(
+                "patient__neighborhood__parish__municipality__state__country",
+                "patient__representative",
+                "institution",
+                "doctor",
+                "doctor_service__category",
+                "note",
+            )
+            .prefetch_related(
+                "diagnoses__treatments",
+                "diagnoses__prescriptions",
+                "diagnoses__catalog",
+                "medical_tests__catalog",
+                "referrals__specialties",
+                "prescriptions__medication_catalog",
+                "charge_order__items",
+                "charge_order__payments",
+                "documents",
+                "patient__medical_history",
+                "patient__genetic_predispositions",
+                "patient__alerts",
+            )
+            .get(pk=appointment.pk)
+        )
+
+        serializer = AppointmentDetailSerializer(appointment_optimized)
         return Response(serializer.data, status=201)
 
     except Exception as e:
@@ -8947,17 +8982,29 @@ class OperationalHubView(APIView):
                 f"[_get_live_queue] institution_id={institution_id}, today={today}"
             )
 
-            live_queue = WaitingRoomEntry.objects.filter(
-                institution_id=institution_id,
-                status__in=[
-                    "waiting",
-                    "in_consultation",
-                    "completed",
-                    "canceled",
-                    "no_show",
-                ],
-                arrival_time__date=today,
-            ).select_related("patient", "appointment", "institution")
+            live_queue = (
+                WaitingRoomEntry.objects.filter(
+                    institution_id=institution_id,
+                    status__in=[
+                        "waiting",
+                        "in_consultation",
+                        "completed",
+                        "canceled",
+                        "no_show",
+                    ],
+                    arrival_time__date=today,
+                )
+                .select_related(
+                    "patient__neighborhood__parish__municipality__state__country",
+                    "patient__representative",
+                    "appointment__doctor_service",
+                    "institution",
+                )
+                .prefetch_related(
+                    "patient__medical_history",
+                    "patient__genetic_predispositions",
+                )
+            )
 
             logger.info(
                 f"[_get_live_queue] Resultado final: {live_queue.count()} entradas"
@@ -8976,11 +9023,24 @@ class OperationalHubView(APIView):
         try:
             from core.serializers import AppointmentSerializer
 
-            pending_entries = Appointment.objects.filter(
-                institution_id=institution_id,
-                status__in=["pending", "tentative", "confirmed"],
-                appointment_date__gte=today,  # ✅ Hoy y fechas futuras
-            ).select_related("patient", "doctor", "institution", "doctor_service")
+            pending_entries = (
+                Appointment.objects.filter(
+                    institution_id=institution_id,
+                    status__in=["pending", "tentative", "confirmed"],
+                    appointment_date__gte=today,  # ✅ Hoy y fechas futuras
+                )
+                .select_related(
+                    "patient__neighborhood__parish__municipality__state__country",
+                    "patient__representative",
+                    "doctor",
+                    "institution",
+                    "doctor_service__category",
+                )
+                .prefetch_related(
+                    "charge_orders__items",
+                    "charge_orders__payments",
+                )
+            )
 
             logger.info(
                 f"[_get_pending_entries] institution_id={institution_id}, today={today}, found {pending_entries.count()} pending entries"
