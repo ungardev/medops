@@ -45,7 +45,7 @@ export default function PatientSidebar({
   const effectiveCollapsed = mobileOpen ? false : collapsed;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-[100dvh]">
       {/* Header - Desktop & Mobile share same layout, compact styling */}
       <div className={`
         flex items-center h-16 px-4 border-b border-white/10
@@ -106,7 +106,7 @@ export default function PatientSidebar({
       )}
 
       {/* Nav Items */}
-      <nav className="flex-1 min-h-0 overflow-y-auto px-2 py-2">
+      <nav className="flex-1 min-h-0 overflow-y-auto px-2 py-2 pb-[env(safe-area-inset-bottom)]">
         <ul className={`flex flex-col ${effectiveCollapsed ? "pt-2" : ""} space-y-1`}>
           {navItems.map(({ path, label, icon: Icon }) => {
             const isActive = location.pathname === path;
