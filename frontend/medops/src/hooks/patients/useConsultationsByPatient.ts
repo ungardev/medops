@@ -46,7 +46,7 @@ export function useConsultationsByPatient(patientId: number) {
       list: Array.isArray(data) ? data : [],
       totalCount: Array.isArray(data) ? data.length : 0,
     }),
-    staleTime: 1000 * 60 * 5,
+    staleTime: 30 * 60 * 1000,
     retry: 1,
   });
 }

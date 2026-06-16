@@ -2,6 +2,12 @@
 import { useAuth as useAuthContext } from '@/context/AuthContext';
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { queryClient } from '@/lib/reactQuery';
+import { getPatient, setPatientCache } from '@/hooks/patients/usePatient';
+import type { PatientClinicalProfile } from '@/types/patients';
+
+const PATIENT_CACHE_KEY = 'medops_patient_cache';
+
 export function usePatientAuth() {
   const { 
     isAuthenticated, 
@@ -13,7 +19,7 @@ export function usePatientAuth() {
     verifyToken 
   } = useAuthContext();
   const navigate = useNavigate();
-  // Login para paciente
+
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     try {
       const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
@@ -29,7 +35,6 @@ export function usePatientAuth() {
       }
       const data = await response.json();
       
-      // Guardar TODOS los tokens en localStorage
       if (data.access_token) {
         localStorage.setItem('patient_access_token', data.access_token);
       }
@@ -46,8 +51,6 @@ export function usePatientAuth() {
         localStorage.setItem('patient_name', data.patient.full_name);
       }
       
-      // ✅ CORRECCIÓN CRÍTICA: Usar data.token (DRF token) en lugar de data.access_token (PatientSession token)
-      // El endpoint verify_patient_token acepta DRF token, NO PatientSession token
       contextLogin('patient', data.token, {
         id: data.patient.id,
         username: data.patient.full_name || '',
@@ -55,6 +58,20 @@ export function usePatientAuth() {
         is_staff: false,
         is_superuser: false,
       });
+
+      if (data.patient?.id) {
+        const patientId = data.patient.id;
+
+        queryClient.prefetchQuery({
+          queryKey: ["patient", patientId],
+          queryFn: () => getPatient(patientId),
+          staleTime: 30 * 60 * 1000,
+        });
+
+        getPatient(patientId).then((patientData: PatientClinicalProfile) => {
+          setPatientCache(patientData);
+        }).catch(() => {});
+      }
       
       return true;
     } catch (error: any) {
@@ -62,7 +79,7 @@ export function usePatientAuth() {
       throw error;
     }
   }, [contextLogin, navigate]);
-  // Logout para paciente
+
   const logout = useCallback(async () => {
     try {
       const token = localStorage.getItem('patient_access_token') || localStorage.getItem('patient_drf_token');
@@ -79,16 +96,22 @@ export function usePatientAuth() {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      // Limpiar TODOS los tokens de paciente
+      const patientId = localStorage.getItem('patient_id');
+      
       localStorage.removeItem('patient_access_token');
       localStorage.removeItem('patient_refresh_token');
       localStorage.removeItem('patient_drf_token');
       localStorage.removeItem('patient_id');
       localStorage.removeItem('patient_name');
       
+      if (patientId) {
+        localStorage.removeItem(`${PATIENT_CACHE_KEY}_${patientId}`);
+      }
+      
       contextLogout();
     }
   }, [contextLogout]);
+
   return {
     isAuthenticated,
     isLoading,
