@@ -64,6 +64,8 @@ from .models import (
     DoctorPatientRelationship,
     PatientFamilyLink,
     PatientUser,
+    PatientNotification,
+    MedicalStatusAuditLog,
 )
 from .choices import (
     UNIT_CHOICES,
