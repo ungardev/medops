@@ -3,7 +3,8 @@ import { useAuth as useAuthContext } from '@/context/AuthContext';
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { queryClient } from '@/lib/reactQuery';
-import { getPatient, setPatientCache } from '@/hooks/patients/usePatient';
+import { getPatient } from 'api/patients';
+import { setPatientCache } from '@/hooks/patients/usePatient';
 import type { PatientClinicalProfile } from '@/types/patients';
 
 const PATIENT_CACHE_KEY = 'medops_patient_cache';
