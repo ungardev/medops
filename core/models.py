@@ -3803,10 +3803,32 @@ class Surgery(models.Model):
         ]
 
     def save(self, *args, **kwargs):
+        old_instance = None
+        if self.pk:
+            try:
+                old_instance = Surgery.objects.get(pk=self.pk)
+            except Surgery.DoesNotExist:
+                pass
+
         self.name = normalize_title_case(self.name)
         if self.hospital:
             self.hospital = normalize_title_case(self.hospital)
         super().save(*args, **kwargs)
+
+        # Audit log de cambio de estado
+        if old_instance and old_instance.status != self.status:
+            try:
+                MedicalStatusAuditLog.objects.create(
+                    patient=self.patient,
+                    record_type="surgery",
+                    record_id=self.pk,
+                    old_status=old_instance.status,
+                    new_status=self.status,
+                    changed_by=getattr(self, "_changed_by_user", None),
+                    notes=f"Cambio de estado en cirugía: {old_instance.get_status_display()} → {self.get_status_display()}",
+                )
+            except Exception:
+                pass
 
     def __str__(self):
         return f"{self.patient} — {self.name} [{self.get_status_display()}]"
@@ -3865,6 +3887,14 @@ class Hospitalization(models.Model):
         null=True,
         related_name="hospitalizations",
         verbose_name="Diagnóstico de ingreso",
+    )
+    charge_order = models.ForeignKey(
+        "ChargeOrder",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="hospitalizations",
+        verbose_name="Orden de cobro asociada",
     )
 
     # === DATOS DE ADMISIÓN ===
@@ -3996,6 +4026,21 @@ class Hospitalization(models.Model):
                     old_bed.status = "available"
                     old_bed.save(update_fields=["status"])
             except Bed.DoesNotExist:
+                pass
+
+        # Audit log de cambio de estado
+        if old_instance and old_instance.status != self.status:
+            try:
+                MedicalStatusAuditLog.objects.create(
+                    patient=self.patient,
+                    record_type="hospitalization",
+                    record_id=self.pk,
+                    old_status=old_instance.status,
+                    new_status=self.status,
+                    changed_by=getattr(self, "_changed_by_user", None),
+                    notes=f"Cambio de estado en hospitalización: {old_instance.get_status_display()} → {self.get_status_display()}",
+                )
+            except Exception:
                 pass
 
 
@@ -4557,6 +4602,172 @@ class AuditLog(models.Model):
     def is_cross_access(self):
         """Verificar si fue cross-institution access"""
         return self.is_cross_institution
+
+
+class MedicalStatusAuditLog(models.Model):
+    """
+    Log de auditoría para cambios de estado en cirugías y hospitalizaciones.
+    Registra cada cambio de estado con usuario responsable y timestamp.
+    """
+
+    RECORD_TYPE_CHOICES = [
+        ("surgery", "Cirugía"),
+        ("hospitalization", "Hospitalización"),
+    ]
+
+    patient = models.ForeignKey(
+        "Patient",
+        on_delete=models.CASCADE,
+        related_name="status_audit_logs",
+        verbose_name="Paciente",
+    )
+
+    record_type = models.CharField(
+        max_length=20,
+        choices=RECORD_TYPE_CHOICES,
+        verbose_name="Tipo de registro",
+    )
+
+    record_id = models.PositiveIntegerField(
+        verbose_name="ID del registro",
+    )
+
+    old_status = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        verbose_name="Estado anterior",
+    )
+
+    new_status = models.CharField(
+        max_length=50,
+        verbose_name="Estado nuevo",
+    )
+
+    changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="medical_status_changes",
+        verbose_name="Cambiado por",
+    )
+
+    notes = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Notas del cambio",
+    )
+
+    metadata = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Información adicional del cambio",
+    )
+
+    timestamp = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha y hora del cambio",
+    )
+
+    class Meta:
+        ordering = ["-timestamp"]
+        indexes = [
+            models.Index(fields=["patient", "timestamp"]),
+            models.Index(fields=["record_type", "record_id"]),
+            models.Index(fields=["old_status", "new_status"]),
+        ]
+        verbose_name = "Auditoría de Estado Médico"
+        verbose_name_plural = "Auditorías de Estados Médicos"
+
+    def __str__(self):
+        return f"{self.get_record_type_display()} {self.record_id}: {self.old_status} → {self.new_status} ({self.timestamp})"
+
+
+class PatientNotification(models.Model):
+    """
+    Notificaciones para pacientes sobre cambios en sus registros médicos.
+    """
+
+    NOTIFICATION_TYPES = [
+        ("surgery_scheduled", "Cirugía Programada"),
+        ("surgery_in_progress", "Cirugía En Curso"),
+        ("surgery_completed", "Cirugía Completada"),
+        ("surgery_canceled", "Cirugía Cancelada"),
+        ("surgery_postponed", "Cirugía Pospuesta"),
+        ("hospitalization_admitted", "Hospitalización - Admitido"),
+        ("hospitalization_critical", "Hospitalización - Estado Crítico"),
+        ("hospitalization_discharged", "Hospitalización - Dado de Alta"),
+        ("hospitalization_improving", "Hospitalización - En Mejoría"),
+        ("general", "Notificación General"),
+    ]
+
+    patient = models.ForeignKey(
+        "Patient",
+        on_delete=models.CASCADE,
+        related_name="notifications",
+        verbose_name="Paciente",
+    )
+
+    notification_type = models.CharField(
+        max_length=30,
+        choices=NOTIFICATION_TYPES,
+        verbose_name="Tipo de notificación",
+    )
+
+    title = models.CharField(
+        max_length=255,
+        verbose_name="Título",
+    )
+
+    message = models.TextField(
+        verbose_name="Mensaje",
+    )
+
+    is_read = models.BooleanField(
+        default=False,
+        verbose_name="Leída",
+    )
+
+    related_record_type = models.CharField(
+        max_length=20,
+        choices=[
+            ("surgery", "Cirugía"),
+            ("hospitalization", "Hospitalización"),
+        ],
+        null=True,
+        blank=True,
+        verbose_name="Tipo de registro relacionado",
+    )
+
+    related_record_id = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name="ID del registro relacionado",
+    )
+
+    metadata = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Datos adicionales de la notificación",
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de creación",
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["patient", "is_read", "-created_at"]),
+            models.Index(fields=["notification_type", "-created_at"]),
+        ]
+        verbose_name = "Notificación de Paciente"
+        verbose_name_plural = "Notificaciones de Pacientes"
+
+    def __str__(self):
+        return f"{self.patient}: {self.title} ({self.created_at})"
 
 
 # ==========================================
@@ -6659,3 +6870,112 @@ class VueltoRequest(models.Model):
 
             self.reference = f"VUELTO-{int(time.time())}"
         super().save(*args, **kwargs)
+
+
+# ==============================================================================
+# SIGNALS - Medical Status Change Notifications
+# ==============================================================================
+
+
+def _notify_patient_of_status_change(audit_log):
+    """
+    Crea una PatientNotification cuando cambia el estado de un registro médico.
+    Solo notifica al paciente si tiene notificaciones habilitadas.
+    """
+    try:
+        from .models import PatientNotification, PatientUser
+
+        patient_user = PatientUser.objects.filter(patient=audit_log.patient).first()
+        if not patient_user:
+            return
+
+        record_type_display = audit_log.get_record_type_display()
+        old_display = audit_log.old_status
+        new_display = audit_log.new_status
+
+        notification_map = {
+            ("surgery", "scheduled"): (
+                "surgery_scheduled",
+                f"Cirugía Programada - {record_type_display} #{audit_log.record_id}",
+                f"Su cirugía ha sido programada. Estado: {new_display}",
+            ),
+            ("surgery", "in_progress"): (
+                "surgery_in_progress",
+                f"Cirugía En Curso - {record_type_display} #{audit_log.record_id}",
+                f"Su cirugía ha iniciado. Estado: {new_display}",
+            ),
+            ("surgery", "completed"): (
+                "surgery_completed",
+                f"Cirugía Completada - {record_type_display} #{audit_log.record_id}",
+                f"Su cirugía ha sido completada exitosamente. Estado: {new_display}",
+            ),
+            ("surgery", "canceled"): (
+                "surgery_canceled",
+                f"Cirugía Cancelada - {record_type_display} #{audit_log.record_id}",
+                f"Su cirugía ha sido cancelada. Estado: {new_display}",
+            ),
+            ("surgery", "postponed"): (
+                "surgery_postponed",
+                f"Cirugía Pospuesta - {record_type_display} #{audit_log.record_id}",
+                f"Su cirugía ha sido pospuesta. Estado: {new_display}",
+            ),
+            ("hospitalization", "admitted"): (
+                "hospitalization_admitted",
+                f"Hospitalización - Admitido - #{audit_log.record_id}",
+                f"Ha sido admitido. Estado: {new_display}",
+            ),
+            ("hospitalization", "critical"): (
+                "hospitalization_critical",
+                f"Hospitalización - Estado Crítico - #{audit_log.record_id}",
+                f"Su estado ha cambiado a CRÍTICO. Requiere atención. Estado: {new_display}",
+            ),
+            ("hospitalization", "discharged"): (
+                "hospitalization_discharged",
+                f"Hospitalización - Dado de Alta - #{audit_log.record_id}",
+                f"Ha sido dado de alta. Estado: {new_display}",
+            ),
+            ("hospitalization", "improving"): (
+                "hospitalization_improving",
+                f"Hospitalización - En Mejoría - #{audit_log.record_id}",
+                f"Su estado ha mejorado. Estado: {new_display}",
+            ),
+        }
+
+        key = (audit_log.record_type, audit_log.new_status)
+        if key not in notification_map:
+            notification_type, title, message = (
+                "general",
+                f"Actualización - {record_type_display} #{audit_log.record_id}",
+                f"Hubo un cambio en su registro médico: {old_display or 'N/A'} → {new_display}",
+            )
+        else:
+            notification_type, title, message = notification_map[key]
+
+        PatientNotification.objects.create(
+            patient=audit_log.patient,
+            notification_type=notification_type,
+            title=title,
+            message=message,
+            related_record_type=audit_log.record_type,
+            related_record_id=audit_log.record_id,
+            metadata={
+                "old_status": old_display,
+                "new_status": new_display,
+                "changed_by": str(audit_log.changed_by)
+                if audit_log.changed_by
+                else None,
+            },
+        )
+    except Exception:
+        pass
+
+
+def _on_medical_status_audit_log_created(sender, instance, created, **kwargs):
+    """Signal handler para crear notificación cuando se crea un audit log de estado."""
+    if created and instance.record_type in ("surgery", "hospitalization"):
+        _notify_patient_of_status_change(instance)
+
+
+from django.db.models.signals import post_save
+
+post_save.connect(_on_medical_status_audit_log_created, sender=MedicalStatusAuditLog)
