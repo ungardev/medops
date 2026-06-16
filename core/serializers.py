@@ -4351,9 +4351,7 @@ class SurgerySerializer(serializers.ModelSerializer):
             "specimens",
             "post_op_instructions",
             "follow_up_date",
-            "hospital",
-            "created_at",
-            "updated_at",
+            "charge_order",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
 
@@ -4431,6 +4429,9 @@ class SurgeryCreateSerializer(serializers.ModelSerializer):
                 validated_data["anesthesiologist"] = doctor
 
         surgery = Surgery(**validated_data)
+        request = self.context.get("request")
+        if request and hasattr(request, "user"):
+            surgery._changed_by_user = request.user
         surgery.save()
 
         if surgical_assistants_ids:
@@ -4456,6 +4457,24 @@ class SurgeryCreateSerializer(serializers.ModelSerializer):
 
 
 class SurgeryUpdateSerializer(serializers.ModelSerializer):
+    surgical_assistants = serializers.ListField(
+        child=serializers.IntegerField(), write_only=True, required=False
+    )
+
+    def update(self, instance, validated_data):
+        request = self.context.get("request")
+        if request and hasattr(request, "user"):
+            instance._changed_by_user = request.user
+
+        surgical_assistants_ids = validated_data.pop("surgical_assistants", None)
+        result = super().update(instance, validated_data)
+
+        if surgical_assistants_ids is not None:
+            assistants = DoctorOperator.objects.filter(id__in=surgical_assistants_ids)
+            instance.assistants.set(assistants)
+
+        return result
+
     class Meta:
         model = Surgery
         fields = [
@@ -4478,6 +4497,10 @@ class SurgeryUpdateSerializer(serializers.ModelSerializer):
             "specimens",
             "post_op_instructions",
             "follow_up_date",
+            "surgical_assistants",
+            "surgery_type",
+            "hospital",
+            "charge_order",
         ]
 
 
@@ -4527,6 +4550,8 @@ class HospitalizationSerializer(serializers.ModelSerializer):
             "ward",
             "room_number",
             "bed_number",
+            "bed",
+            "charge_order",
             "admission_date",
             "expected_discharge_date",
             "actual_discharge_date",
@@ -4570,6 +4595,8 @@ class HospitalizationCreateSerializer(serializers.ModelSerializer):
             "ward",
             "room_number",
             "bed_number",
+            "bed",
+            "charge_order",
             "admission_date",
             "expected_discharge_date",
             "chief_complaint",
@@ -4595,6 +4622,9 @@ class HospitalizationCreateSerializer(serializers.ModelSerializer):
                 validated_data["attending_doctor"] = doctor
 
         hospitalization = Hospitalization(**validated_data)
+        request = self.context.get("request")
+        if request and hasattr(request, "user"):
+            hospitalization._changed_by_user = request.user
         hospitalization.save()
 
         if diagnoses and len(diagnoses) > 0:
@@ -4612,13 +4642,27 @@ class HospitalizationCreateSerializer(serializers.ModelSerializer):
 
 
 class HospitalizationUpdateSerializer(serializers.ModelSerializer):
+    def update(self, instance, validated_data):
+        request = self.context.get("request")
+        if request and hasattr(request, "user"):
+            instance._changed_by_user = request.user
+        return super().update(instance, validated_data)
+
     class Meta:
         model = Hospitalization
         fields = [
             "status",
+            "attending_doctor",
+            "admission_diagnosis",
+            "admission_type",
+            "admission_date",
+            "chief_complaint",
+            "allergies_at_admission",
             "ward",
             "room_number",
             "bed_number",
+            "bed",
+            "charge_order",
             "expected_discharge_date",
             "actual_discharge_date",
             "clinical_summary",
@@ -5039,3 +5083,34 @@ class PatientFamilyLinkWriteSerializer(serializers.ModelSerializer):
         patient_user = PatientUser.objects.get(user=user)
         validated_data["patient_user"] = patient_user
         return super().create(validated_data)
+
+
+class PatientNotificationSerializer(serializers.ModelSerializer):
+    notification_type_display = serializers.CharField(
+        source="get_notification_type_display", read_only=True
+    )
+
+    class Meta:
+        model = PatientNotification
+        fields = [
+            "id",
+            "notification_type",
+            "notification_type_display",
+            "title",
+            "message",
+            "is_read",
+            "related_record_type",
+            "related_record_id",
+            "metadata",
+            "created_at",
+        ]
+        read_only_fields = [
+            "id",
+            "notification_type",
+            "title",
+            "message",
+            "related_record_type",
+            "related_record_id",
+            "metadata",
+            "created_at",
+        ]

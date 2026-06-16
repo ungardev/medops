@@ -4229,17 +4229,37 @@ def refresh_emergency_access(request):
             doctor, institution, "emergency_access_refreshed"
         )
 
-        return Response(
-            {
-                "message": "Emergency access refrescado por 24 horas",
-                "expires_at": permission.expires_at,
-            }
-        )
-
-    except InstitutionSettings.DoesNotExist:
-        return Response({"error": "Institution not found"}, status=404)
+        return Response({"status": "ok", "message": "Emergency access refreshed"})
     except Exception as e:
         return Response({"error": str(e)}, status=500)
+
+
+class PatientNotificationViewSet(viewsets.ModelViewSet):
+    """
+    API para que los pacientes vean sus notificaciones de cambios de estado.
+    Solo devuelve notificaciones del paciente autenticado via PatientUser.
+    """
+
+    serializer_class = PatientNotificationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        try:
+            patient_user = PatientUser.objects.get(user=user)
+            return PatientNotification.objects.filter(
+                patient=patient_user.patient
+            ).order_by("-created_at")
+        except PatientUser.DoesNotExist:
+            return PatientNotification.objects.none()
+
+    @action(detail=True, methods=["patch"])
+    def mark_read(self, request, pk=None):
+        """Marcar una notificación como leída."""
+        notification = self.get_object()
+        notification.is_read = True
+        notification.save(update_fields=["is_read"])
+        return Response(PatientNotificationSerializer(notification).data)
 
 
 @api_view(["POST"])

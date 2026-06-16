@@ -28,6 +28,7 @@ from .api_views import (
     VaccinationScheduleViewSet,
     PatientVaccinationViewSet,
     PatientClinicalProfileViewSet,
+    PatientNotificationViewSet,
     AllergyViewSet,
     MedicalHistoryViewSet,
     ClinicalAlertViewSet,
@@ -284,6 +285,11 @@ router.register(
     r"patient/service-categories",
     ServiceCategoryViewSet,
     basename="patient-service-categories",
+)
+router.register(
+    r"patient/notifications",
+    PatientNotificationViewSet,
+    basename="patient-notifications",
 )
 # --- Direcciones ---
 router.register(r"countries", CountryViewSet, basename="country")

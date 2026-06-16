@@ -25,7 +25,6 @@ interface Props {
 
 interface Form {
   id?: number;
-  hospital: string;
   ward: string;
   room_number: string;
   bed_number: string;
@@ -84,7 +83,6 @@ const DISCHARGE_TYPES = [
 
 const getDefaultForm = (): Form => ({
   id: undefined,
-  hospital: "",
   ward: "",
   room_number: "",
   bed_number: "",
@@ -132,7 +130,6 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
     if (open && initial) {
       setForm({
         id: initial.id,
-        hospital: (initial as any).hospital || "",
         ward: initial.ward || "",
         room_number: initial.room_number || "",
         bed_number: initial.bed_number || "",
@@ -260,7 +257,7 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
     };
 
     const formFields = [
-      "hospital", "admission_type", "status", "ward", "room_number", "bed_number",
+      "admission_type", "status", "ward", "room_number", "bed_number",
       "admission_date", "expected_discharge_date", "chief_complaint", "clinical_summary",
       "allergies_at_admission", "vital_signs", "daily_notes", "complications",
       "discharge_type", "discharge_summary", "discharge_instructions", "discharge_medications",
@@ -316,10 +313,6 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
         <div className="p-6 space-y-5">
           {/* Centro médico */}
           <div className={sectionClass}>
-            <div>
-              <label className={labelClass}>Centro médico</label>
-              <input className={inputClass} value={form.hospital} onChange={(e) => handleChange("hospital", e.target.value)} placeholder="Hospital o clínica" />
-            </div>
           </div>
 
           {/* Asignación de cama */}
