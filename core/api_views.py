@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
 from django.template.loader import render_to_string
-from django.db.models import Sum, Count, Q, Max
+from django.db.models import Sum, Count, Q, Max, Avg, F, Value
 from .models import *
 from .serializers import *
 from datetime import date
@@ -9387,22 +9387,138 @@ class SurgeryViewSet(UnifiedPatientDoctorAccessMixin, viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def stats(self, request):
-        """Estadísticas quirúrgicas"""
+        """Estadísticas quirúrgicas expandidas"""
         queryset = self.get_queryset()
+        today = timezone.now().date()
+        start_of_week = today - timedelta(days=today.weekday())
+        start_of_month = today.replace(day=1)
 
-        total = queryset.count()
-        scheduled = queryset.filter(status="scheduled").count()
-        in_progress = queryset.filter(status="in_progress").count()
-        completed = queryset.filter(status="completed").count()
-        canceled = queryset.filter(status="canceled").count()
+        # === BY STATUS ===
+        by_status = {
+            "scheduled": queryset.filter(status="scheduled").count(),
+            "pre_op": queryset.filter(status="pre_op").count(),
+            "in_progress": queryset.filter(status="in_progress").count(),
+            "completed": queryset.filter(status="completed").count(),
+            "canceled": queryset.filter(status="canceled").count(),
+            "postponed": queryset.filter(status="postponed").count(),
+        }
+
+        # === SCHEDULED TIMING ===
+        scheduled_qs = queryset.filter(status="scheduled", scheduled_date__isnull=False)
+        scheduled_today = scheduled_qs.filter(scheduled_date=today).count()
+        scheduled_this_week = scheduled_qs.filter(
+            scheduled_date__gte=start_of_week,
+            scheduled_date__lte=today + timedelta(days=7),
+        ).count()
+        scheduled_this_month = scheduled_qs.filter(
+            scheduled_date__gte=start_of_month,
+            scheduled_date__lte=today + timedelta(days=31),
+        ).count()
+
+        # === BY SURGERY TYPE ===
+        by_surgery_type = dict(
+            queryset.values("surgery_type")
+            .annotate(count=Count("id"))
+            .values_list("surgery_type", "count")
+        )
+
+        # === BY RISK LEVEL ===
+        by_risk_level = dict(
+            queryset.values("risk_level")
+            .annotate(count=Count("id"))
+            .values_list("risk_level", "count")
+        )
+
+        # === BY ASA CLASSIFICATION ===
+        by_asa = dict(
+            queryset.exclude(asa_classification__isnull=True, asa_classification="")
+            .values("asa_classification")
+            .annotate(count=Count("id"))
+            .values_list("asa_classification", "count")
+        )
+
+        # === WITH COMPLICATIONS ===
+        with_complications = queryset.exclude(
+            complications__isnull=True, complications=""
+        ).count()
+
+        # === AVG DURATION (surgery_start to surgery_end) ===
+        duration_qs = queryset.filter(
+            surgery_start__isnull=False, surgery_end__isnull=False
+        )
+        avg_duration_minutes = None
+        if duration_qs.exists():
+            total_minutes = sum(
+                (s.surgery_end - s.surgery_start).total_seconds() / 60
+                for s in duration_qs.only("surgery_start", "surgery_end")
+            )
+            avg_duration_minutes = round(total_minutes / duration_qs.count(), 1)
+
+        # === FINANCIAL (via charge_order FK) ===
+        surgeries_with_charge = queryset.select_related("charge_order").filter(
+            charge_order__isnull=False
+        )
+        total_revenue = Decimal("0.00")
+        outstanding_balance = Decimal("0.00")
+        paid_count = 0
+        pending_count = 0
+
+        if surgeries_with_charge.exists():
+            charge_orders = [s.charge_order for s in surgeries_with_charge]
+            total_revenue = sum((co.total or Decimal("0.00")) for co in charge_orders)
+            outstanding_balance = sum(
+                (co.balance_due or Decimal("0.00")) for co in charge_orders
+            )
+            paid_count = sum(1 for co in charge_orders if co.status == "paid")
+            pending_count = sum(
+                1 for co in charge_orders if co.status in ("open", "partially_paid")
+            )
+
+        avg_revenue_per_surgery = None
+        if surgeries_with_charge.count() > 0:
+            avg_revenue_per_surgery = float(
+                total_revenue / surgeries_with_charge.count()
+            )
+
+        # === BY SPECIALTY ===
+        by_specialty = dict(
+            queryset.filter(specialty__isnull=False)
+            .values("specialty__name")
+            .annotate(count=Count("id"))
+            .values_list("specialty__name", "count")
+        )
+
+        # === BY SURGEON ===
+        by_surgeon = dict(
+            queryset.filter(surgeon__isnull=False)
+            .values("surgeon__full_name")
+            .annotate(count=Count("id"))
+            .values_list("surgeon__full_name", "count")
+        )
 
         return Response(
             {
-                "total": total,
-                "scheduled": scheduled,
-                "in_progress": in_progress,
-                "completed": completed,
-                "canceled": canceled,
+                "total": queryset.count(),
+                "by_status": by_status,
+                "scheduled_today": scheduled_today,
+                "scheduled_this_week": scheduled_this_week,
+                "scheduled_this_month": scheduled_this_month,
+                "by_surgery_type": by_surgery_type,
+                "by_risk_level": by_risk_level,
+                "by_asa_classification": by_asa,
+                "with_complications_count": with_complications,
+                "avg_duration_minutes": avg_duration_minutes,
+                "financial": {
+                    "total_revenue": float(total_revenue),
+                    "outstanding_balance": float(outstanding_balance),
+                    "paid_count": paid_count,
+                    "pending_count": pending_count,
+                    "avg_revenue_per_surgery": round(avg_revenue_per_surgery, 2)
+                    if avg_revenue_per_surgery
+                    else 0,
+                },
+                "by_specialty": by_specialty,
+                "by_surgeon": by_surgeon,
             }
         )
 
@@ -9452,24 +9568,106 @@ class HospitalizationViewSet(UnifiedPatientDoctorAccessMixin, viewsets.ModelView
 
     @action(detail=False, methods=["get"])
     def stats(self, request):
-        """Estadísticas de hospitalización"""
+        """Estadísticas de hospitalización expandidas"""
         queryset = self.get_queryset()
+        today = timezone.now().date()
 
-        total = queryset.count()
-        admitted = queryset.filter(
-            status__in=["admitted", "stable", "critical", "improving"]
-        ).count()
-        critical = queryset.filter(status="critical").count()
+        # === BY STATUS ===
+        by_status = {
+            "admitted": queryset.filter(status="admitted").count(),
+            "stable": queryset.filter(status="stable").count(),
+            "critical": queryset.filter(status="critical").count(),
+            "improving": queryset.filter(status="improving").count(),
+            "awaiting_discharge": queryset.filter(status="awaiting_discharge").count(),
+            "discharged": queryset.filter(status="discharged").count(),
+            "transferred": queryset.filter(status="transferred").count(),
+            "deceased": queryset.filter(status="deceased").count(),
+        }
+
+        # === CURRENT INPATIENTS ===
+        inpatient_statuses = [
+            "admitted",
+            "stable",
+            "critical",
+            "improving",
+            "awaiting_discharge",
+        ]
+        current_inpatients = queryset.filter(status__in=inpatient_statuses)
+        current_inpatient_count = current_inpatients.count()
+
+        # === DISCHARGED TODAY / THIS WEEK ===
         discharged_today = queryset.filter(
-            actual_discharge_date__date=timezone.now().date()
+            status="discharged", actual_discharge_date__date=today
         ).count()
+        start_of_week = today - timedelta(days=today.weekday())
+        discharged_this_week = queryset.filter(
+            status="discharged",
+            actual_discharge_date__date__gte=start_of_week,
+            actual_discharge_date__date__lte=today,
+        ).count()
+
+        # === CRITICAL ===
+        critical_count = queryset.filter(status="critical").count()
+
+        # === AVG LENGTH OF STAY (for discharged patients) ===
+        discharged_qs = queryset.filter(
+            status="discharged", actual_discharge_date__isnull=False
+        )
+        avg_length_of_stay_days = None
+        if discharged_qs.exists():
+            total_days = sum(
+                (h.actual_discharge_date - h.admission_date).days
+                for h in discharged_qs.only("admission_date", "actual_discharge_date")
+            )
+            avg_length_of_stay_days = round(total_days / discharged_qs.count(), 1)
+
+        # === OVERDUE DISCHARGES (expected_discharge_date < today AND still inpatient) ===
+        overdue_discharges = current_inpatients.filter(
+            expected_discharge_date__isnull=False, expected_discharge_date__lt=today
+        ).count()
+
+        # === WITH COMPLICATIONS ===
+        with_complications = queryset.exclude(
+            complications__isnull=True, complications=""
+        ).count()
+
+        # === BY ADMISSION TYPE ===
+        by_admission_type = dict(
+            queryset.values("admission_type")
+            .annotate(count=Count("id"))
+            .values_list("admission_type", "count")
+        )
+
+        # === BY WARD ===
+        by_ward = dict(
+            queryset.filter(ward__isnull=False)
+            .values("ward")
+            .annotate(count=Count("id"))
+            .values_list("ward", "count")
+        )
+
+        # === BY ATTENDING DOCTOR ===
+        by_attending_doctor = dict(
+            queryset.filter(attending_doctor__isnull=False)
+            .values("attending_doctor__full_name")
+            .annotate(count=Count("id"))
+            .values_list("attending_doctor__full_name", "count")
+        )
 
         return Response(
             {
-                "total": total,
-                "admitted": admitted,
-                "critical": critical,
+                "total": queryset.count(),
+                "by_status": by_status,
+                "current_inpatients": current_inpatient_count,
+                "critical": critical_count,
                 "discharged_today": discharged_today,
+                "discharged_this_week": discharged_this_week,
+                "avg_length_of_stay_days": avg_length_of_stay_days,
+                "overdue_discharges": overdue_discharges,
+                "with_complications_count": with_complications,
+                "by_admission_type": by_admission_type,
+                "by_ward": by_ward,
+                "by_attending_doctor": by_attending_doctor,
             }
         )
 
