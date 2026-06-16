@@ -24,7 +24,7 @@ export default function DetailSection({ title, icon: Icon, children, className =
 }
 
 interface DetailRowProps {
-  label: string;
+  label?: string;
   value?: string | ReactNode;
   valueClassName?: string;
   noValue?: string;
@@ -32,12 +32,17 @@ interface DetailRowProps {
 
 export function DetailRow({ label, value, valueClassName = "text-white/80", noValue = "—" }: DetailRowProps) {
   if (value === undefined || value === null || value === "") {
-    return (
+    return label ? (
       <div className="flex justify-between items-start">
         <span className="text-sm text-white/40">{label}</span>
         <span className={`text-sm ${valueClassName} text-white/20`}>{noValue}</span>
       </div>
+    ) : (
+      <span className="text-sm text-white/20">{noValue}</span>
     );
+  }
+  if (!label) {
+    return <span className={`text-sm ${valueClassName}`}>{value}</span>;
   }
   return (
     <div className="flex justify-between items-start">
@@ -48,19 +53,24 @@ export function DetailRow({ label, value, valueClassName = "text-white/80", noVa
 }
 
 interface DetailMultilineProps {
-  label: string;
+  label?: string;
   value?: string | null;
   noValue?: string;
 }
 
 export function DetailMultiline({ label, value, noValue = "Sin información registrada" }: DetailMultilineProps) {
   if (!value) {
-    return (
+    return label ? (
       <div className="space-y-1">
         <span className="text-sm text-white/40">{label}</span>
         <p className="text-sm text-white/20">{noValue}</p>
       </div>
+    ) : (
+      <p className="text-sm text-white/20">{noValue}</p>
     );
+  }
+  if (!label) {
+    return <p className="text-sm text-white/80 whitespace-pre-wrap">{value}</p>;
   }
   return (
     <div className="space-y-1">

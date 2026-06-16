@@ -1,25 +1,21 @@
 // src/components/Patients/SurgeriesModal.tsx
 import React, { useState, useEffect } from "react";
 import { Surgery } from "../../types/patients";
-import { 
-  ScissorsIcon, 
+import {
+  ScissorsIcon,
   Save,
   Loader2,
   X,
   ShieldCheckIcon,
   AlertTriangle,
   Heart,
-  Plus,
-  Trash2,
-  HashIcon,
-  ClipboardListIcon,
-  CheckCircleIcon,
 } from "lucide-react";
-import { useDoctorSearch } from "@/hooks/core/useDoctorSearch";
-import { useIcdSearch } from "@/hooks/diagnosis/useIcdSearch";
-import type { IcdResult } from "@/hooks/diagnosis/useIcdSearch";
 import type { DiagnosisType, DiagnosisStatus } from "@/types/consultation";
-import DiagnosisBadge from "@/components/Consultation/DiagnosisBadge";
+import DoctorSearchInput from "@/components/Common/DoctorSearchInput";
+import IcdDiagnosisSearch, { TYPE_OPTIONS, STATUS_OPTIONS, type DiagnosisEntry } from "@/components/Common/IcdDiagnosisSearch";
+import type { IcdResult } from "@/hooks/diagnosis/useIcdSearch";
+import { useDoctorSearch } from "@/hooks/core/useDoctorSearch";
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -27,6 +23,7 @@ interface Props {
   initial?: Surgery;
   patientId: number;
 }
+
 interface Form {
   id?: number;
   name: string;
@@ -40,13 +37,13 @@ interface Form {
   procedure_description: string;
   complications: string;
   post_op_instructions: string;
-  surgeon: number | string | null;  // ID (number) o nombre manual (string)
-  surgeon_name: string | null;       // Nombre para mostrar
+  surgeon: number | string | null;
+  surgeon_name: string | null;
   anesthesiologist: number | string | null;
   anesthesiologist_name: string | null;
   surgical_assistants: number | string | null;
   surgical_assistants_name: string | null;
-  diagnoses: { id: number; icd_code: string; title: string; type: string; status: string }[];
+  diagnoses: DiagnosisEntry[];
   surgical_technique: string;
   findings: string;
   estimated_blood_loss: number | null;
@@ -55,6 +52,7 @@ interface Form {
   doctorSearchQuery: string;
   diagnosisSearchQuery: string;
 }
+
 const SURGERY_TYPES = [
   { value: "elective", label: "Electiva / Programada" },
   { value: "emergency", label: "Emergencia" },
@@ -62,6 +60,7 @@ const SURGERY_TYPES = [
   { value: "minimally_invasive", label: "Mínimamente Invasiva" },
   { value: "open", label: "Cirugía Abierta" },
 ];
+
 const SURGERY_STATUSES = [
   { value: "scheduled", label: "Programada" },
   { value: "pre_op", label: "En Pre-operatorio" },
@@ -70,12 +69,14 @@ const SURGERY_STATUSES = [
   { value: "canceled", label: "Cancelada" },
   { value: "postponed", label: "Pospuesta" },
 ];
+
 const RISK_LEVELS = [
   { value: "low", label: "Bajo Riesgo" },
   { value: "moderate", label: "Riesgo Moderado" },
   { value: "high", label: "Alto Riesgo" },
   { value: "critical", label: "Crítico" },
 ];
+
 const ASA_CLASSIFICATIONS = [
   { value: "", label: "No aplica" },
   { value: "I", label: "ASA I - Paciente sano" },
@@ -85,69 +86,52 @@ const ASA_CLASSIFICATIONS = [
   { value: "V", label: "ASA V - Paciente moribundo" },
 ];
 
-const TYPE_OPTIONS: { value: DiagnosisType; label: string }[] = [
-  { value: "presumptive", label: "Presuntivo (Sospecha)" },
-  { value: "definitive", label: "Definitivo (Confirmado)" },
-  { value: "differential", label: "Diferencial (En estudio)" },
-  { value: "provisional", label: "Provisional" },
-];
+const getDefaultForm = (): Form => ({
+  id: undefined,
+  name: "",
+  hospital: "",
+  scheduled_date: "",
+  scheduled_time: "",
+  surgery_type: "elective",
+  status: "scheduled",
+  risk_level: "moderate",
+  asa_classification: "",
+  procedure_description: "",
+  complications: "",
+  post_op_instructions: "",
+  surgeon: null,
+  surgeon_name: null,
+  anesthesiologist: null,
+  anesthesiologist_name: null,
+  surgical_assistants: null,
+  surgical_assistants_name: null,
+  diagnoses: [],
+  surgical_technique: "",
+  findings: "",
+  estimated_blood_loss: null,
+  specimens: "",
+  follow_up_date: "",
+  doctorSearchQuery: "",
+  diagnosisSearchQuery: "",
+});
 
-const STATUS_OPTIONS: { value: DiagnosisStatus; label: string }[] = [
-  { value: "under_investigation", label: "En Investigación" },
-  { value: "awaiting_results", label: "Esperando Resultados" },
-  { value: "confirmed", label: "Confirmado" },
-  { value: "ruled_out", label: "Descartado" },
-  { value: "chronic", label: "Crónico / Pre-existente" },
-];
 export default function SurgeriesModal({ open, onClose, onSave, initial, patientId }: Props) {
-  const [form, setForm] = useState<Form>({
-    id: undefined,
-    name: "",
-    hospital: "",
-    scheduled_date: "",
-    scheduled_time: "",
-    surgery_type: "elective",
-    status: "scheduled",
-    risk_level: "moderate",
-    asa_classification: "",
-    procedure_description: "",
-    complications: "",
-    post_op_instructions: "",
-    surgeon: null,
-    surgeon_name: null,
-    anesthesiologist: null,
-    anesthesiologist_name: null,
-    surgical_assistants: null,
-    surgical_assistants_name: null,
-    diagnoses: [],
-    surgical_technique: "",
-    findings: "",
-    estimated_blood_loss: null,
-    specimens: "",
-    follow_up_date: "",
-    doctorSearchQuery: "",
-    diagnosisSearchQuery: ""
-  });
+  const [form, setForm] = useState<Form>(getDefaultForm());
   const [isSaving, setIsSaving] = useState(false);
   const [diagnosisSearchQuery, setDiagnosisSearchQuery] = useState("");
-  const { data: icdResults = [], isLoading: icdLoading } = useIcdSearch(diagnosisSearchQuery);
-  
   const [doctorSearchQuery, setDoctorSearchQuery] = useState("");
   const [anesthesiologistSearchQuery, setAnesthesiologistSearchQuery] = useState("");
   const [surgicalAssistantsSearchQuery, setSurgicalAssistantsSearchQuery] = useState("");
-  
+
   const { results: surgeonResults, loading: surgeonLoading } = useDoctorSearch(doctorSearchQuery);
   const { results: anesthesiologistResults, loading: anesthesiologistLoading } = useDoctorSearch(anesthesiologistSearchQuery);
   const { results: surgicalAssistantsResults, loading: surgicalAssistantsLoading } = useDoctorSearch(surgicalAssistantsSearchQuery);
-  
-  // Diagnosis type/status selection
+
   const [selectedDiagnosisType, setSelectedDiagnosisType] = useState<DiagnosisType>("presumptive");
   const [selectedDiagnosisStatus, setSelectedDiagnosisStatus] = useState<DiagnosisStatus>("under_investigation");
   const [showDiagnosisForm, setShowDiagnosisForm] = useState(false);
   const [selectedDiagnosisResult, setSelectedDiagnosisResult] = useState<IcdResult | null>(null);
 
-  
-  
   useEffect(() => {
     if (open && initial) {
       setForm({
@@ -176,154 +160,12 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
         specimens: (initial as any).specimens || "",
         follow_up_date: (initial as any).follow_up_date || "",
         doctorSearchQuery: "",
-        diagnosisSearchQuery: ""
+        diagnosisSearchQuery: "",
       });
     } else if (open) {
-      setForm({
-        id: undefined,
-        name: "",
-        hospital: "",
-        scheduled_date: "",
-        scheduled_time: "",
-        surgery_type: "elective",
-        status: "scheduled",
-        risk_level: "moderate",
-        asa_classification: "",
-        procedure_description: "",
-        complications: "",
-        post_op_instructions: "",
-        surgeon: null,
-        surgeon_name: null,
-        anesthesiologist: null,
-        anesthesiologist_name: null,
-        surgical_assistants: null,
-        surgical_assistants_name: null,
-        diagnoses: [],
-        surgical_technique: "",
-        findings: "",
-        estimated_blood_loss: null,
-        specimens: "",
-        follow_up_date: "",
-        doctorSearchQuery: "",
-        diagnosisSearchQuery: ""
-      });
+      setForm(getDefaultForm());
     }
-}, [open, initial]);
-  
-const handleDoctorSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDoctorSearchQuery(e.target.value);
-  };
-  
-  const selectDoctor = (doctor: any, role: "surgeon" | "anesthesiologist" | "surgical_assistants") => {
-    const doctorName = doctor.full_name || `${doctor.first_name || ''} ${doctor.last_name || ''}`.trim();
-    const doctorId = doctor.id;
-    handleChange(role, doctorId);
-    
-    if (role === "surgeon") {
-      setForm(prev => ({ ...prev, surgeon_name: doctorName }));
-    } else if (role === "anesthesiologist") {
-      setForm(prev => ({ ...prev, anesthesiologist_name: doctorName }));
-    } else if (role === "surgical_assistants") {
-      setForm(prev => ({ ...prev, surgical_assistants_name: doctorName }));
-    }
-  };
-  
-  const handleManualDoctorInput = (value: string, role: "surgeon" | "anesthesiologist" | "surgical_assistants") => {
-    if (role === "surgeon") {
-      setDoctorSearchQuery(value);
-    } else if (role === "anesthesiologist") {
-      setAnesthesiologistSearchQuery(value);
-    } else if (role === "surgical_assistants") {
-      setSurgicalAssistantsSearchQuery(value);
-    }
-  };
-
-  const handleManualDoctorConfirm = (value: string, role: "surgeon" | "anesthesiologist" | "surgical_assistants") => {
-    if (role === "surgeon") {
-      handleChange("surgeon", value);
-      setForm(prev => ({ ...prev, surgeon_name: value }));
-    } else if (role === "anesthesiologist") {
-      handleChange("anesthesiologist", value);
-      setForm(prev => ({ ...prev, anesthesiologist_name: value }));
-    } else if (role === "surgical_assistants") {
-      handleChange("surgical_assistants", value);
-      setForm(prev => ({ ...prev, surgical_assistants_name: value }));
-    }
-  };
-  
-  const clearDoctorSelection = (role: "surgeon" | "anesthesiologist" | "surgical_assistants") => {
-    handleChange(role, null);
-    if (role === "surgeon") {
-      setDoctorSearchQuery("");
-      setForm(prev => ({ ...prev, surgeon_name: null }));
-    } else if (role === "anesthesiologist") {
-      setAnesthesiologistSearchQuery("");
-      setForm(prev => ({ ...prev, anesthesiologist_name: null }));
-    } else if (role === "surgical_assistants") {
-      setSurgicalAssistantsSearchQuery("");
-      setForm(prev => ({ ...prev, surgical_assistants_name: null }));
-    }
-  };
-  
-  const handleDiagnosisSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDiagnosisSearchQuery(e.target.value);
-  };
-  
-  const handleAnesthesiologistSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAnesthesiologistSearchQuery(e.target.value);
-  };
-  
-  const handleSurgicalAssistantsSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSurgicalAssistantsSearchQuery(e.target.value);
-  };
-  
-  const selectDiagnosisResult = (diagnosis: IcdResult) => {
-    setSelectedDiagnosisResult(diagnosis);
-    setSelectedDiagnosisType("presumptive");
-    setSelectedDiagnosisStatus("under_investigation");
-    setDiagnosisSearchQuery("");
-    setShowDiagnosisForm(true);
-  };
-  
-  const confirmDiagnosis = () => {
-    if (!selectedDiagnosisResult) return;
-    const newDiagnosis = {
-      id: selectedDiagnosisResult.id,
-      icd_code: selectedDiagnosisResult.icd_code,
-      title: selectedDiagnosisResult.title || "Sin título",
-      type: selectedDiagnosisType,
-      status: selectedDiagnosisStatus
-    };
-    setForm((prev) => ({
-      ...prev,
-      diagnoses: [...prev.diagnoses, newDiagnosis]
-    }));
-    setShowDiagnosisForm(false);
-    setSelectedDiagnosisResult(null);
-    setSelectedDiagnosisType("presumptive");
-    setSelectedDiagnosisStatus("under_investigation");
-  };
-  
-  const cancelDiagnosisSelection = () => {
-    setShowDiagnosisForm(false);
-    setSelectedDiagnosisResult(null);
-    setSelectedDiagnosisType("presumptive");
-    setSelectedDiagnosisStatus("under_investigation");
-  };
-  
-  const removeDiagnosis = (diagnosisId: number) => {
-    setForm((prev) => ({
-      ...prev,
-      diagnoses: prev.diagnoses.filter(d => d.id !== diagnosisId)
-    }));
-  };
-  
-  const clearDiagnosisSelection = () => {
-    setForm((prev) => ({
-      ...prev,
-      diagnoses: []
-    }));
-  };
+  }, [open, initial]);
 
   const handleChange = (field: keyof Form, value: any) => {
     if (field === "estimated_blood_loss") {
@@ -332,11 +174,76 @@ const handleDoctorSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       setForm((prev) => ({ ...prev, [field]: value }));
     }
   };
-  
-const handleSubmit = () => {
+
+  const selectDoctor = (doctor: any, role: "surgeon" | "anesthesiologist" | "surgical_assistants") => {
+    const doctorName = doctor.full_name || `${doctor.first_name || ""} ${doctor.last_name || ""}`.trim();
+    const doctorId = doctor.id;
+    handleChange(role, doctorId);
+    if (role === "surgeon") setForm((prev) => ({ ...prev, surgeon_name: doctorName }));
+    else if (role === "anesthesiologist") setForm((prev) => ({ ...prev, anesthesiologist_name: doctorName }));
+    else if (role === "surgical_assistants") setForm((prev) => ({ ...prev, surgical_assistants_name: doctorName }));
+  };
+
+  const handleManualDoctorConfirm = (value: string, role: "surgeon" | "anesthesiologist" | "surgical_assistants") => {
+    handleChange(role, value);
+    if (role === "surgeon") setForm((prev) => ({ ...prev, surgeon_name: value }));
+    else if (role === "anesthesiologist") setForm((prev) => ({ ...prev, anesthesiologist_name: value }));
+    else if (role === "surgical_assistants") setForm((prev) => ({ ...prev, surgical_assistants_name: value }));
+  };
+
+  const clearDoctorSelection = (role: "surgeon" | "anesthesiologist" | "surgical_assistants") => {
+    handleChange(role, null);
+    if (role === "surgeon") {
+      setDoctorSearchQuery("");
+      setForm((prev) => ({ ...prev, surgeon_name: null }));
+    } else if (role === "anesthesiologist") {
+      setAnesthesiologistSearchQuery("");
+      setForm((prev) => ({ ...prev, anesthesiologist_name: null }));
+    } else if (role === "surgical_assistants") {
+      setSurgicalAssistantsSearchQuery("");
+      setForm((prev) => ({ ...prev, surgical_assistants_name: null }));
+    }
+  };
+
+  const selectDiagnosisResult = (diagnosis: IcdResult) => {
+    setSelectedDiagnosisResult(diagnosis);
+    setSelectedDiagnosisType("presumptive");
+    setSelectedDiagnosisStatus("under_investigation");
+    setDiagnosisSearchQuery("");
+    setShowDiagnosisForm(true);
+  };
+
+  const confirmDiagnosis = () => {
+    if (!selectedDiagnosisResult) return;
+    const newDiagnosis: DiagnosisEntry = {
+      id: selectedDiagnosisResult.id,
+      icd_code: selectedDiagnosisResult.icd_code,
+      title: selectedDiagnosisResult.title || "Sin título",
+      type: selectedDiagnosisType,
+      status: selectedDiagnosisStatus,
+    };
+    setForm((prev) => ({ ...prev, diagnoses: [...prev.diagnoses, newDiagnosis] }));
+    setShowDiagnosisForm(false);
+    setSelectedDiagnosisResult(null);
+    setSelectedDiagnosisType("presumptive");
+    setSelectedDiagnosisStatus("under_investigation");
+  };
+
+  const cancelDiagnosisSelection = () => {
+    setShowDiagnosisForm(false);
+    setSelectedDiagnosisResult(null);
+    setSelectedDiagnosisType("presumptive");
+    setSelectedDiagnosisStatus("under_investigation");
+  };
+
+  const removeDiagnosis = (diagnosisId: number) => {
+    setForm((prev) => ({ ...prev, diagnoses: prev.diagnoses.filter((d) => d.id !== diagnosisId) }));
+  };
+
+  const handleSubmit = () => {
     setIsSaving(true);
     const activeInstitutionId = localStorage.getItem("active_institution_id");
-    
+
     const payload: any = {
       name: form.name,
       hospital: form.hospital,
@@ -357,50 +264,36 @@ const handleSubmit = () => {
       patient: patientId,
       institution: activeInstitutionId ? parseInt(activeInstitutionId) : undefined,
     };
-    
+
     if (form.surgeon) {
-      if (typeof form.surgeon === 'number') {
-        payload.surgeon = form.surgeon;
-      } else {
-        payload.surgeon_name = form.surgeon;
-      }
+      if (typeof form.surgeon === "number") payload.surgeon = form.surgeon;
+      else payload.surgeon_name = form.surgeon;
     }
-    
     if (form.anesthesiologist) {
-      if (typeof form.anesthesiologist === 'number') {
-        payload.anesthesiologist = form.anesthesiologist;
-      } else {
-        payload.anesthesiologist_name = form.anesthesiologist;
-      }
+      if (typeof form.anesthesiologist === "number") payload.anesthesiologist = form.anesthesiologist;
+      else payload.anesthesiologist_name = form.anesthesiologist;
     }
-    
     if (form.surgical_assistants) {
-      if (typeof form.surgical_assistants === 'number') {
-        payload.surgical_assistants = [form.surgical_assistants];
-      } else {
-        payload.surgical_assistants_name = form.surgical_assistants;
-      }
+      if (typeof form.surgical_assistants === "number") payload.surgical_assistants = [form.surgical_assistants];
+      else payload.surgical_assistants_name = form.surgical_assistants;
     }
-    
-    if (form.diagnoses && form.diagnoses.length > 0) {
-      payload.diagnoses = form.diagnoses;
-    }
-    
+    if (form.diagnoses && form.diagnoses.length > 0) payload.diagnoses = form.diagnoses;
+
     onSave(payload);
     setIsSaving(false);
     onClose();
   };
+
   const inputClass = "w-full bg-white/5 border border-white/15 rounded-xl px-5 py-3 text-sm text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30";
   const labelClass = "text-xs font-medium text-white/50 uppercase tracking-wider mb-2 block";
   const sectionClass = "bg-white/5 border border-white/10 rounded-xl p-6 space-y-5";
+
   if (!open) return null;
+
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div 
-        className="bg-[#1a1a1b] border border-white/15 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl rounded-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-6 py-5 border-b border-white/10 bg-[#1a1a1b] sticky top-0 rounded-t-xl shadow-md">
+      <div className="bg-[#1a1a1b] border border-white/15 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl rounded-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 py-5 border-b border-white/10 bg-[#1a1a1b] sticky top-0 rounded-t-xl shadow-md z-10">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
               <ScissorsIcon className="h-4 w-4 text-emerald-400" />
@@ -416,426 +309,93 @@ const handleSubmit = () => {
             <X className="w-5 h-5" />
           </button>
         </div>
+
         <div className="p-6 space-y-5">
           {/* Identificación */}
           <div className={sectionClass}>
             <div>
               <label className={labelClass}>Nombre del procedimiento</label>
-              <input
-                className={inputClass}
-                value={form.name}
-                onChange={(e) => handleChange("name", e.target.value)}
-                placeholder="Ej: Apendicectomía laparoscópica"
-              />
+              <input className={inputClass} value={form.name} onChange={(e) => handleChange("name", e.target.value)} placeholder="Ej: Apendicectomía laparoscópica" />
             </div>
             <div>
               <label className={labelClass}>Centro médico</label>
-              <input
-                className={inputClass}
-                value={form.hospital}
-                onChange={(e) => handleChange("hospital", e.target.value)}
-                placeholder="Hospital o clínica"
-              />
+              <input className={inputClass} value={form.hospital} onChange={(e) => handleChange("hospital", e.target.value)} placeholder="Hospital o clínica" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={labelClass}>Fecha programada</label>
-                <input
-                  type="date"
-                  style={{colorScheme: 'dark'}}
-                  className={inputClass}
-                  value={form.scheduled_date}
-                  onChange={(e) => handleChange("scheduled_date", e.target.value)}
-                />
+                <input type="date" style={{ colorScheme: "dark" }} className={inputClass} value={form.scheduled_date} onChange={(e) => handleChange("scheduled_date", e.target.value)} />
               </div>
               <div>
                 <label className={labelClass}>Hora programada</label>
-                <input
-                  type="time"
-                  style={{colorScheme: 'dark'}}
-                  className={inputClass}
-                  value={form.scheduled_time}
-                  onChange={(e) => handleChange("scheduled_time", e.target.value)}
-                />
+                <input type="time" style={{ colorScheme: "dark" }} className={inputClass} value={form.scheduled_time} onChange={(e) => handleChange("scheduled_time", e.target.value)} />
               </div>
             </div>
           </div>
-          
+
           {/* Equipo Quirúrgico */}
           <div className={sectionClass}>
             <div className="flex items-center gap-2 mb-5">
               <Heart className="w-5 h-5 text-red-400" />
               <span className="text-sm font-medium text-red-400 uppercase">Equipo Quirúrgico</span>
             </div>
-            
-            {/* Cirujano */}
-            <div className="mb-5">
-              <label className={labelClass}>Cirujano</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  className={inputClass}
-                  value={doctorSearchQuery}
-                  onChange={(e) => handleManualDoctorInput(e.target.value, "surgeon")}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && doctorSearchQuery.trim()) {
-                      e.preventDefault();
-                      handleManualDoctorConfirm(doctorSearchQuery, "surgeon");
-                      setDoctorSearchQuery("");
-                    }
-                  }}
-                  placeholder="Buscar cirujano..."
-                />
-                {doctorSearchQuery.length >= 2 && surgeonResults.length > 0 && (
-                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-xl max-h-96 overflow-y-auto z-10 shadow-xl">
-                    {surgeonResults.slice(0, 5).map((doctor) => (
-                      <div
-                        key={doctor.id}
-                        className="px-5 py-3 text-white/80 hover:bg-white/15 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0 transition-colors"
-                        onClick={() => {
-                          selectDoctor(doctor, "surgeon");
-                          setDoctorSearchQuery("");
-                        }}
-                      >
-                        <div className="font-medium">{doctor.full_name || 'Sin nombre'}</div>
-                        <div className="text-xs text-white/50">
-                          {doctor.specialties?.[0]?.name || 'Sin especialidad'}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {doctorSearchQuery.length >= 2 && surgeonResults.length === 0 && !surgeonLoading && (
-                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-xl p-3 z-10 shadow-xl flex flex-col gap-2">
-                    <span className="text-white/50 text-[11px]">
-                      No se encontraron doctores.
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleManualDoctorConfirm(doctorSearchQuery, "surgeon");
-                        setDoctorSearchQuery("");
-                      }}
-                      className="text-[10px] text-emerald-400 hover:text-emerald-300 text-left"
-                    >
-                      + Usar "{doctorSearchQuery}" como nombre manual
-                    </button>
-                  </div>
-                )}
-                {doctorSearchQuery.length >= 2 && surgeonLoading && (
-                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-xl p-3 z-10 shadow-xl">
-                    <span className="text-white/50 text-[10px] flex items-center gap-2">
-                      <div className="w-3 h-3 border border-white/20 border-t-emerald-400 rounded-full animate-spin" />
-                      Buscando...
-                    </span>
-                  </div>
-                )}
-              </div>
-              {form.surgeon_name && (
-                <div className="mt-3 flex items-center gap-2 px-5 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-                  <span className="text-xs text-emerald-300">{form.surgeon_name}</span>
-                  <button
-                    onClick={() => clearDoctorSelection("surgeon")}
-                    className="text-white/40 hover:text-white p-1.5 hover:bg-white/10 rounded-xl transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-            </div>
-            
-            {/* Anestesiólogo */}
-            <div className="mb-5">
-              <label className={labelClass}>Anestesiólogo</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  className={inputClass}
-                  value={anesthesiologistSearchQuery}
-                  onChange={(e) => handleManualDoctorInput(e.target.value, "anesthesiologist")}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && anesthesiologistSearchQuery.trim()) {
-                      e.preventDefault();
-                      handleManualDoctorConfirm(anesthesiologistSearchQuery, "anesthesiologist");
-                      setAnesthesiologistSearchQuery("");
-                    }
-                  }}
-                  placeholder="Buscar anestesia..."
-                />
-                {anesthesiologistSearchQuery.length >= 2 && anesthesiologistResults.length > 0 && (
-                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-xl max-h-96 overflow-y-auto z-10 shadow-xl">
-                    {anesthesiologistResults.slice(0, 5).map((doctor) => (
-                      <div
-                        key={doctor.id}
-                        className="px-5 py-3 text-white/80 hover:bg-white/15 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0 transition-colors"
-                        onClick={() => {
-                          selectDoctor(doctor, "anesthesiologist");
-                          setAnesthesiologistSearchQuery("");
-                        }}
-                      >
-                        <div className="font-medium">{doctor.full_name || 'Sin nombre'}</div>
-                        <div className="text-xs text-white/50">
-                          {doctor.specialties?.[0]?.name || 'Sin especialidad'}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {anesthesiologistSearchQuery.length >= 2 && anesthesiologistResults.length === 0 && !anesthesiologistLoading && (
-                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-xl p-3 z-10 shadow-xl flex flex-col gap-2">
-                    <span className="text-white/50 text-[11px]">
-                      No se encontraron doctores.
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleManualDoctorConfirm(anesthesiologistSearchQuery, "anesthesiologist");
-                        setAnesthesiologistSearchQuery("");
-                      }}
-                      className="text-[10px] text-emerald-400 hover:text-emerald-300 text-left"
-                    >
-                      + Usar "{anesthesiologistSearchQuery}" como nombre manual
-                    </button>
-                  </div>
-                )}
-                {anesthesiologistSearchQuery.length >= 2 && anesthesiologistLoading && (
-                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-xl p-3 z-10 shadow-xl">
-                    <span className="text-white/50 text-[10px] flex items-center gap-2">
-                      <div className="w-3 h-3 border border-white/20 border-t-emerald-400 rounded-full animate-spin" />
-                      Buscando...
-                    </span>
-                  </div>
-                )}
-              </div>
-              {form.anesthesiologist_name && (
-                <div className="mt-2 flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border border-red-500/20 rounded-lg">
-                  <span className="text-xs text-red-300">{form.anesthesiologist_name}</span>
-                  <button
-                    onClick={() => clearDoctorSelection("anesthesiologist")}
-                    className="text-white/40 hover:text-white p-1.5 hover:bg-white/10 rounded-xl transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-            </div>
-            
-            {/* Asistentes Quirúrgicos */}
-            <div>
-              <label className={labelClass}>Asistentes Quirúrgicos</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  className={inputClass}
-                  value={surgicalAssistantsSearchQuery}
-                  onChange={(e) => handleManualDoctorInput(e.target.value, "surgical_assistants")}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && surgicalAssistantsSearchQuery.trim()) {
-                      e.preventDefault();
-                      handleManualDoctorConfirm(surgicalAssistantsSearchQuery, "surgical_assistants");
-                      setSurgicalAssistantsSearchQuery("");
-                    }
-                  }}
-                  placeholder="Buscar asistentes..."
-                />
-                {surgicalAssistantsSearchQuery.length >= 2 && surgicalAssistantsResults.length > 0 && (
-                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-xl max-h-96 overflow-y-auto z-10 shadow-xl">
-                    {surgicalAssistantsResults.slice(0, 5).map((doctor) => (
-                      <div
-                        key={doctor.id}
-                        className="px-5 py-3 text-white/80 hover:bg-white/15 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0 transition-colors"
-                        onClick={() => {
-                          selectDoctor(doctor, "surgical_assistants");
-                          setSurgicalAssistantsSearchQuery("");
-                        }}
-                      >
-                        <div className="font-medium">{doctor.full_name || 'Sin nombre'}</div>
-                        <div className="text-xs text-white/50">
-                          {doctor.specialties?.[0]?.name || 'Sin especialidad'}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {surgicalAssistantsSearchQuery.length >= 2 && surgicalAssistantsResults.length === 0 && !surgicalAssistantsLoading && (
-                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-xl p-3 z-10 shadow-xl flex flex-col gap-2">
-                    <span className="text-white/50 text-[11px]">
-                      No se encontraron doctores.
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleManualDoctorConfirm(surgicalAssistantsSearchQuery, "surgical_assistants");
-                        setSurgicalAssistantsSearchQuery("");
-                      }}
-                      className="text-[10px] text-emerald-400 hover:text-emerald-300 text-left"
-                    >
-                      + Usar "{surgicalAssistantsSearchQuery}" como nombre manual
-                    </button>
-                  </div>
-                )}
-                {surgicalAssistantsSearchQuery.length >= 2 && surgicalAssistantsLoading && (
-                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-xl p-3 z-10 shadow-xl">
-                    <span className="text-white/50 text-[10px] flex items-center gap-2">
-                      <div className="w-3 h-3 border border-white/20 border-t-emerald-400 rounded-full animate-spin" />
-                      Buscando...
-                    </span>
-                  </div>
-                )}
-              </div>
-              {form.surgical_assistants_name && (
-                <div className="mt-2 flex items-center gap-2 px-4 py-2.5 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                  <span className="text-xs text-blue-300">{form.surgical_assistants_name}</span>
-                  <button
-                    onClick={() => clearDoctorSelection("surgical_assistants")}
-                    className="text-white/40 hover:text-white p-1.5 hover:bg-white/10 rounded-xl transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-            </div>
+
+            <DoctorSearchInput
+              value={doctorSearchQuery}
+              onChange={setDoctorSearchQuery}
+              onSelect={(doctor) => selectDoctor(doctor, "surgeon")}
+              onManualConfirm={(name) => handleManualDoctorConfirm(name, "surgeon")}
+              onClear={() => clearDoctorSelection("surgeon")}
+              selectedName={form.surgeon_name}
+              label="Cirujano"
+              placeholder="Buscar cirujano..."
+              accentColor="emerald"
+            />
+
+            <DoctorSearchInput
+              value={anesthesiologistSearchQuery}
+              onChange={setAnesthesiologistSearchQuery}
+              onSelect={(doctor) => selectDoctor(doctor, "anesthesiologist")}
+              onManualConfirm={(name) => handleManualDoctorConfirm(name, "anesthesiologist")}
+              onClear={() => clearDoctorSelection("anesthesiologist")}
+              selectedName={form.anesthesiologist_name}
+              label="Anestesiólogo"
+              placeholder="Buscar anestesia..."
+              accentColor="red"
+            />
+
+            <DoctorSearchInput
+              value={surgicalAssistantsSearchQuery}
+              onChange={setSurgicalAssistantsSearchQuery}
+              onSelect={(doctor) => selectDoctor(doctor, "surgical_assistants")}
+              onManualConfirm={(name) => handleManualDoctorConfirm(name, "surgical_assistants")}
+              onClear={() => clearDoctorSelection("surgical_assistants")}
+              selectedName={form.surgical_assistants_name}
+              label="Asistentes Quirúrgicos"
+              placeholder="Buscar asistentes..."
+              accentColor="blue"
+            />
           </div>
-          
-{/* Diagnósticos */}
+
+          {/* Diagnósticos */}
           <div className={sectionClass}>
-            <div className="flex items-center justify-between gap-2 mb-4">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-yellow-400" />
-                <span className="text-sm font-medium text-yellow-400 uppercase">Diagnósticos (ICD-11)</span>
-              </div>
-              <span className="text-xs text-white/40">{form.diagnoses.length} registrado{form.diagnoses.length !== 1 ? 's' : ''}</span>
-            </div>
-            
-            {/* Lista de diagnósticos */}
-            {form.diagnoses.length > 0 && (
-              <div className="space-y-2 mb-4">
-                {form.diagnoses.map((diag) => (
-                  <DiagnosisBadge
-                    key={diag.id}
-                    id={diag.id}
-                    icd_code={diag.icd_code}
-                    title={diag.title}
-                    type={diag.type as any}
-                    status={diag.status as any}
-                    onDelete={removeDiagnosis}
-                  />
-                ))}
-              </div>
-            )}
-            
-            {/* Buscador de diagnósticos - solo mostrar si no hay diagnóstico seleccionado */}
-            {!showDiagnosisForm && (
-              <div className="relative">
-                <input
-                  type="text"
-                  className={inputClass}
-                  value={diagnosisSearchQuery}
-                  onChange={handleDiagnosisSearchChange}
-                  placeholder="Buscar diagnóstico por código o descripción..."
-                />
-                {diagnosisSearchQuery.length >= 2 && icdResults.length > 0 && (
-                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-xl max-h-96 overflow-y-auto z-10 shadow-xl">
-                    {icdResults.map((diagnosis: any) => (
-                      <div 
-                        key={diagnosis.id}
-                        className="px-4 py-2.5 hover:bg-white/15 cursor-pointer border-b border-white/10 last:border-b-0 transition-colors flex items-start gap-3"
-                        onClick={() => selectDiagnosisResult(diagnosis)}
-                      >
-                        <span className="text-xs font-bold text-emerald-400 shrink-0">{diagnosis.icd_code}</span>
-                        <span className="text-xs text-white/80 leading-tight">{diagnosis.title}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {diagnosisSearchQuery.length >= 2 && icdResults.length === 0 && icdLoading && (
-                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-xl p-2 z-10 shadow-xl">
-                    <span className="text-white/50 text-[10px] flex items-center gap-2">
-                      <div className="w-3 h-3 border border-white/20 border-t-emerald-400 rounded-full animate-spin" />
-                      Buscando diagnósticos...
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
-            
-            {/* Formulario de tipo y estado del diagnóstico */}
-            {showDiagnosisForm && selectedDiagnosisResult && (
-              <div className="bg-emerald-500/10 border border-emerald-500/25 p-6 space-y-5 animate-in fade-in zoom-in-95 duration-200 rounded-xl">
-                <div className="flex items-center justify-between pb-3 border-b border-emerald-500/20">
-                  <div className="flex items-center gap-2">
-                    <HashIcon className="w-5 h-5 text-emerald-400" />
-                    <span className="text-sm font-bold uppercase tracking-wider text-emerald-400">
-                      {selectedDiagnosisResult.icd_code}
-                    </span>
-                  </div>
-                  <span className="text-xs text-white/60">
-                    {selectedDiagnosisResult.title}
-                  </span>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-white/60 uppercase tracking-wider flex items-center gap-2">
-                      <ClipboardListIcon className="w-5 h-5" />
-                      Tipo de Diagnóstico
-                    </label>
-                    <select
-                      value={selectedDiagnosisType}
-                      onChange={(e) => setSelectedDiagnosisType(e.target.value as DiagnosisType)}
-                      className="w-full bg-white/5 border border-white/15 p-3 text-sm focus:border-emerald-500/50 outline-none rounded-xl"
-                    >
-                      {TYPE_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-white/60 uppercase tracking-wider flex items-center gap-2">
-                      <CheckCircleIcon className="w-5 h-5" />
-                      Estado
-                    </label>
-                    <select
-                      value={selectedDiagnosisStatus}
-                      onChange={(e) => setSelectedDiagnosisStatus(e.target.value as DiagnosisStatus)}
-                      className="w-full bg-white/5 border border-white/15 p-3 text-sm focus:border-emerald-500/50 outline-none rounded-xl"
-                    >
-                      {STATUS_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                
-                <div className="flex gap-3">
-                  <button
-                    onClick={confirmDiagnosis}
-                    className="flex-1 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 py-3 flex items-center justify-center gap-2 transition-all rounded-xl"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span className="text-sm font-medium">Confirmar</span>
-                  </button>
-                  <button
-                    onClick={cancelDiagnosisSelection}
-                    className="flex-1 bg-white/5 hover:bg-white/10 border border-white/15 text-white/60 py-3 flex items-center justify-center gap-2 transition-all rounded-xl"
-                  >
-                    <X className="w-4 h-4" />
-                    <span className="text-sm font-medium">Cancelar</span>
-                  </button>
-                </div>
-              </div>
-            )}
-            
-            {form.diagnoses.length === 0 && !showDiagnosisForm && (
-              <div className="mt-3 p-4 border border-dashed border-white/15 text-center rounded-xl">
-                <span className="text-xs text-white/40">No hay diagnósticos registrados</span>
-              </div>
-            )}
+            <IcdDiagnosisSearch
+              value={diagnosisSearchQuery}
+              onChange={setDiagnosisSearchQuery}
+              onSelect={selectDiagnosisResult}
+              onConfirm={confirmDiagnosis}
+              onCancel={cancelDiagnosisSelection}
+              selectedDiagnosis={selectedDiagnosisResult}
+              selectedType={selectedDiagnosisType}
+              selectedStatus={selectedDiagnosisStatus}
+              onTypeChange={setSelectedDiagnosisType}
+              onStatusChange={setSelectedDiagnosisStatus}
+              diagnoses={form.diagnoses}
+              onRemoveDiagnosis={removeDiagnosis}
+              onClearAll={() => setForm((prev) => ({ ...prev, diagnoses: [] }))}
+            />
           </div>
+
           {/* Clasificación */}
           <div className={sectionClass}>
             <div className="flex items-center gap-2 mb-2">
@@ -845,29 +405,17 @@ const handleSubmit = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={labelClass}>Estado</label>
-                <select
-                  className={inputClass}
-                  value={form.status}
-                  onChange={(e) => handleChange("status", e.target.value)}
-                >
+                <select className={inputClass} value={form.status} onChange={(e) => handleChange("status", e.target.value)}>
                   {SURGERY_STATUSES.map((s) => (
-                    <option key={s.value} value={s.value}>
-                      {s.label}
-                    </option>
+                    <option key={s.value} value={s.value}>{s.label}</option>
                   ))}
                 </select>
               </div>
               <div>
                 <label className={labelClass}>Nivel de riesgo</label>
-                <select
-                  className={inputClass}
-                  value={form.risk_level}
-                  onChange={(e) => handleChange("risk_level", e.target.value)}
-                >
+                <select className={inputClass} value={form.risk_level} onChange={(e) => handleChange("risk_level", e.target.value)}>
                   {RISK_LEVELS.map((r) => (
-                    <option key={r.value} value={r.value}>
-                      {r.label}
-                    </option>
+                    <option key={r.value} value={r.value}>{r.label}</option>
                   ))}
                 </select>
               </div>
@@ -876,20 +424,15 @@ const handleSubmit = () => {
               <label className={labelClass}>Clasificación ASA</label>
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-white/30" />
-                <select
-                  className={inputClass}
-                  value={form.asa_classification}
-                  onChange={(e) => handleChange("asa_classification", e.target.value)}
-                >
+                <select className={inputClass} value={form.asa_classification} onChange={(e) => handleChange("asa_classification", e.target.value)}>
                   {ASA_CLASSIFICATIONS.map((a) => (
-                    <option key={a.value} value={a.value}>
-                      {a.label}
-                    </option>
+                    <option key={a.value} value={a.value}>{a.label}</option>
                   ))}
                 </select>
               </div>
             </div>
           </div>
+
           {/* Descripción del procedimiento */}
           <div className={sectionClass}>
             <div>
@@ -904,12 +447,7 @@ const handleSubmit = () => {
             <div className="grid grid-cols-2 gap-4 mt-4">
               <div>
                 <label className={labelClass}>Técnica quirúrgica</label>
-                <input
-                  className={inputClass}
-                  value={form.surgical_technique}
-                  onChange={(e) => handleChange("surgical_technique", e.target.value)}
-                  placeholder="Técnica utilizada..."
-                />
+                <input className={inputClass} value={form.surgical_technique} onChange={(e) => handleChange("surgical_technique", e.target.value)} placeholder="Técnica utilizada..." />
               </div>
               <div>
                 <label className={labelClass}>Pérdida sanguínea (ml)</label>
@@ -937,57 +475,49 @@ const handleSubmit = () => {
                 className={`${inputClass} min-h-[50px] resize-none`}
                 value={form.specimens}
                 onChange={(e) => handleChange("specimens", e.target.value)}
-                placeholder="Especímenes enviados a病理..."
+                placeholder="Especímenes enviados a patología..."
               />
             </div>
           </div>
-          
+
           {/* Seguimiento */}
           <div className={sectionClass}>
             <div>
               <label className={labelClass}>Fecha de seguimiento</label>
-              <input
-                type="date"
-                style={{colorScheme: 'dark'}}
-                className={inputClass}
-                value={form.follow_up_date}
-                onChange={(e) => handleChange("follow_up_date", e.target.value)}
-              />
+              <input type="date" style={{ colorScheme: "dark" }} className={inputClass} value={form.follow_up_date} onChange={(e) => handleChange("follow_up_date", e.target.value)} />
             </div>
           </div>
-          
+
           {/* Post-operatorio y complicaciones */}
           <div className={`${sectionClass} border-t border-white/10 pt-5`}>
             <div className="space-y-4">
               <div>
                 <label className={labelClass}>Instrucciones post-operatorias</label>
-                <textarea 
-                  className={`${inputClass} min-h-[60px] resize-none`} 
-                  value={form.post_op_instructions} 
-                  onChange={(e) => handleChange("post_op_instructions", e.target.value)} 
-                  placeholder="Cuidados post-operatorios..." 
+                <textarea
+                  className={`${inputClass} min-h-[60px] resize-none`}
+                  value={form.post_op_instructions}
+                  onChange={(e) => handleChange("post_op_instructions", e.target.value)}
+                  placeholder="Cuidados post-operatorios..."
                 />
               </div>
               <div>
                 <label className={labelClass}>Complicaciones</label>
-                <textarea 
-                  className={`${inputClass} min-h-[60px] resize-none`} 
-                  value={form.complications} 
-                  onChange={(e) => handleChange("complications", e.target.value)} 
-                  placeholder="Complicaciones intra o post-operatorias..." 
+                <textarea
+                  className={`${inputClass} min-h-[60px] resize-none`}
+                  value={form.complications}
+                  onChange={(e) => handleChange("complications", e.target.value)}
+                  placeholder="Complicaciones intra o post-operatorias..."
                 />
               </div>
             </div>
           </div>
         </div>
+
         <div className="flex items-center justify-end gap-3 px-6 py-5 border-t border-white/15 bg-white/5 rounded-b-xl">
-          <button 
-            onClick={onClose} 
-            className="px-5 py-3 text-sm font-medium text-white/50 hover:text-white transition-colors rounded-xl hover:bg-white/5"
-          >
+          <button onClick={onClose} className="px-5 py-3 text-sm font-medium text-white/50 hover:text-white transition-colors rounded-xl hover:bg-white/5">
             Cancelar
           </button>
-          <button 
+          <button
             onClick={handleSubmit}
             disabled={isSaving}
             className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium text-white bg-emerald-500/15 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all disabled:opacity-50"
