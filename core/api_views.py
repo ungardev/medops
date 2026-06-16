@@ -5215,6 +5215,13 @@ def patient_login(request):
         patient_user.last_login_at = timezone.now()
         patient_user.save()
 
+        # Crear vínculo familiar self si no existe
+        PatientFamilyLink.objects.get_or_create(
+            patient_user=patient_user,
+            patient=patient,
+            defaults={"relationship_type": "self", "status": "active"},
+        )
+
         # Crear/actualizar sesión en PatientSession para auditoría
         access_token = generate_token(64)
         refresh_token = generate_token(64)
@@ -6680,6 +6687,13 @@ def activate_patient_portal(request):
     invitation.status = "activated"
     invitation.activated_at = timezone.now()
     invitation.save()
+
+    # Crear vínculo familiar self si no existe
+    PatientFamilyLink.objects.get_or_create(
+        patient_user=patient_user,
+        patient=patient,
+        defaults={"relationship_type": "self", "status": "active"},
+    )
 
     # ============================================================
     # Enviar email de bienvenida via Resend REST API
