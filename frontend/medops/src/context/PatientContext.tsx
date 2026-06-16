@@ -34,7 +34,10 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 export const PatientProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [activePatientId, setActivePatientId] = useState<number | null>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? Number(stored) : null;
+    if (stored) return Number(stored);
+    const patientId = localStorage.getItem('patient_id');
+    if (patientId) return Number(patientId);
+    return null;
   });
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -79,6 +82,11 @@ export const PatientProvider: React.FC<{ children: ReactNode }> = ({ children })
         if (selfMember) {
           setActivePatientId(selfMember.patient_id);
           localStorage.setItem(STORAGE_KEY, String(selfMember.patient_id));
+        }
+      } else if (!activePatientId) {
+        const patientId = localStorage.getItem('patient_id');
+        if (patientId) {
+          setActivePatientId(Number(patientId));
         }
       }
     } catch (err) {
