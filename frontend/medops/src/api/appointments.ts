@@ -88,8 +88,9 @@ export const updateAppointmentNotes = (
   });
 // ✅ MODIFICADO: Usar Axios para autenticación del paciente
 export const getAppointmentsByPatient = async (patientId: number): Promise<Appointment[]> => {
-  const response = await patientApi.get<any[]>(`appointments/?patient=${patientId}`);
-  return response.data.map(mapAppointmentList);
+  const response = await apiFetch<any>(`appointments/?patient=${patientId}`);
+  const results = Array.isArray(response) ? response : (response.results ?? []);
+  return results.map(mapAppointmentList);
 };
 // ✅ MODIFICADO: Usar Axios para autenticación del paciente
 export const getCompletedAppointmentsByPatient = async (patientId: number): Promise<Appointment[]> => {

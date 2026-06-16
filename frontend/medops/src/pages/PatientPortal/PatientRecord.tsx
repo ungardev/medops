@@ -65,7 +65,10 @@ export default function PatientRecord() {
   if (!activePatientId) {
     return (
       <div className="p-8 flex items-center justify-center min-h-[400px]">
-        <p className="text-xs text-red-400">Error: No se encontró ID de paciente</p>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-8 h-8 border-2 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin" />
+          <p className="text-xs text-emerald-400/60">Cargando expediente...</p>
+        </div>
       </div>
     );
   }

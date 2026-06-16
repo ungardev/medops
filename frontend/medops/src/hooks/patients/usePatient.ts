@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getPatient } from "api/patients";
 import { Patient, PatientClinicalProfile } from "types/patients";
+import { queryClient } from "@/lib/reactQuery";
 
 const PATIENT_CACHE_KEY = 'medops_patient_cache';
 
@@ -12,6 +13,12 @@ function getCachedPatient(patientId: number): PatientClinicalProfile | undefined
       return JSON.parse(cached) as PatientClinicalProfile;
     }
   } catch {}
+
+  const queryCached = queryClient.getQueryData<PatientClinicalProfile>(["patient", patientId]);
+  if (queryCached) {
+    return queryCached;
+  }
+
   return undefined;
 }
 
@@ -27,6 +34,7 @@ export function usePatient(patientId: number) {
     queryFn: () => getPatient(patientId),
     enabled: !!patientId,
     staleTime: 30 * 60 * 1000,
+    gcTime: Infinity,
     retry: 1,
     refetchOnWindowFocus: false,
     initialData: getCachedPatient(patientId),

@@ -62,15 +62,13 @@ export function usePatientAuth() {
       if (data.patient?.id) {
         const patientId = data.patient.id;
 
-        queryClient.prefetchQuery({
-          queryKey: ["patient", patientId],
-          queryFn: () => getPatient(patientId),
-          staleTime: 30 * 60 * 1000,
-        });
-
-        getPatient(patientId).then((patientData: PatientClinicalProfile) => {
+        try {
+          const patientData = await getPatient(patientId);
+          queryClient.setQueryData(["patient", patientId], patientData);
           setPatientCache(patientData);
-        }).catch(() => {});
+        } catch (err) {
+          console.error('[PatientAuth] Failed to cache patient data:', err);
+        }
       }
       
       return true;

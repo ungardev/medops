@@ -111,8 +111,10 @@ export const PatientProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, []);
 
   useEffect(() => {
-    refreshFamilyMembers();
-  }, []);
+    if (familyMembers.length === 0) {
+      refreshFamilyMembers();
+    }
+  }, [familyMembers.length]);
 
   useEffect(() => {
     if (activePatientId) {
