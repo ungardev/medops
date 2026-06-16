@@ -7,7 +7,7 @@ import { usePatientAuth } from "@/hooks/patient/usePatientAuth";
 import { usePatient } from "@/context/PatientContext";
 import HospitalizationDetailDrawer from "@/components/Patients/HospitalizationDetailDrawer";
 import type { Hospitalization } from "@/types/patients";
-import { Bed } from "lucide-react";
+import { Bed, AlertCircle } from "lucide-react";
 import {
   CalendarIcon,
   ClockIcon,
@@ -27,14 +27,28 @@ const statusColors: Record<string, string> = {
   deceased: "bg-red-900/20 text-red-500 border-red-900/30",
 };
 
+const statusLabels: Record<string, string> = {
+  admitted: "Admitido",
+  stable: "Estable",
+  critical: "Crítico",
+  improving: "En Mejoría",
+  awaiting_discharge: "Esperando Alta",
+  discharged: "Dado de Alta",
+  transferred: "Transferido",
+  deceased: "Fallecido",
+};
+
 const tabs = [
   { key: "all", label: "Todos" },
   { key: "admitted", label: "Admitidos" },
   { key: "stable", label: "Estables" },
   { key: "critical", label: "Críticos" },
   { key: "improving", label: "En Mejoría" },
+  { key: "awaiting_discharge", label: "Esperando Alta" },
   { key: "discharged", label: "Dados de Alta" },
 ];
+
+const ACTIVE_STATUSES = ["admitted", "stable", "critical", "improving", "awaiting_discharge"];
 
 export default function PatientHospitalization() {
   const navigate = useNavigate();
@@ -49,9 +63,10 @@ export default function PatientHospitalization() {
   const { data: hospitalizations, isLoading, error } = query;
 
   const stats = useMemo(() => {
-    if (!hospitalizations) return { total: 0, admitted: 0, stable: 0, critical: 0, improving: 0, discharged: 0 };
+    if (!hospitalizations) return { total: 0, active: 0, admitted: 0, stable: 0, critical: 0, improving: 0, discharged: 0 };
     return {
       total: hospitalizations.length,
+      active: hospitalizations.filter((h) => h.status && ACTIVE_STATUSES.includes(h.status)).length,
       admitted: hospitalizations.filter((h) => h.status === "admitted").length,
       stable: hospitalizations.filter((h) => h.status === "stable").length,
       critical: hospitalizations.filter((h) => h.status === "critical").length,
@@ -65,6 +80,16 @@ export default function PatientHospitalization() {
     if (activeTab === "all") return hospitalizations;
     return hospitalizations.filter((h) => h.status === activeTab);
   }, [hospitalizations, activeTab]);
+
+  const activeHospitalization = useMemo(() => {
+    if (!hospitalizations) return null;
+    return hospitalizations.find((h) => h.status && ACTIVE_STATUSES.includes(h.status));
+  }, [hospitalizations]);
+
+  const criticalHospitalization = useMemo(() => {
+    if (!hospitalizations) return null;
+    return hospitalizations.find((h) => h.status === "critical");
+  }, [hospitalizations]);
 
   if (authLoading) {
     return (
@@ -112,11 +137,143 @@ export default function PatientHospitalization() {
         ]}
         stats={[
           { label: "Total", value: stats.total },
-          { label: "Admitidos", value: stats.admitted, color: "text-blue-400" },
-          { label: "Críticos", value: stats.critical, color: "text-red-400" },
+          { label: "Activos", value: stats.active, color: stats.active > 0 ? "text-blue-400" : undefined },
+          { label: "Críticos", value: stats.critical, color: stats.critical > 0 ? "text-red-400" : undefined },
           { label: "Dados de Alta", value: stats.discharged, color: "text-gray-400" },
         ]}
       />
+
+      {criticalHospitalization && (
+        <div className="bg-red-500/10 border-2 border-red-500/40 rounded-xl p-5 animate-pulse">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-red-500/20 rounded-lg">
+              <AlertCircle className="w-5 h-5 text-red-400" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-red-300">Estado Crítico</p>
+              <p className="text-xs text-red-400/60">Requiere atención inmediata</p>
+            </div>
+          </div>
+          <p className="text-base font-medium text-white/80 mb-2">
+            {(criticalHospitalization as any).admission_diagnosis_title || "Hospitalización"}
+          </p>
+          <div className="flex flex-wrap gap-3 text-sm text-white/60 mb-3">
+            {(criticalHospitalization as any).attending_doctor_name && (
+              <span className="flex items-center gap-1">
+                <UserIcon className="w-4 h-4" />
+                {(criticalHospitalization as any).attending_doctor_name}
+              </span>
+            )}
+            {criticalHospitalization.ward && (
+              <span className="flex items-center gap-1">
+                <HeartIcon className="w-4 h-4" />
+                {criticalHospitalization.ward} - Cama {criticalHospitalization.bed_number}
+              </span>
+            )}
+            {criticalHospitalization.admission_date && (
+              <span className="flex items-center gap-1">
+                <CalendarIcon className="w-4 h-4" />
+                Desde: {new Date(criticalHospitalization.admission_date).toLocaleDateString("es-VE", { day: "2-digit", month: "short" })}
+              </span>
+            )}
+            {criticalHospitalization.length_of_stay !== undefined && (
+              <span className="flex items-center gap-1">
+                <ClockIcon className="w-4 h-4" />
+                {criticalHospitalization.length_of_stay} {criticalHospitalization.length_of_stay === 1 ? "día" : "días"} de estancia
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => { setSelectedHospitalization(criticalHospitalization); setDetailDrawerOpen(true); }}
+            className="px-4 py-2 text-sm font-medium bg-red-500/20 border border-red-500/30 text-red-300 rounded-lg hover:bg-red-500/30 transition-all flex items-center gap-2"
+          >
+            <EyeIcon className="w-4 h-4" />
+            Ver Detalle
+          </button>
+        </div>
+      )}
+
+      {activeHospitalization && activeHospitalization.status !== "critical" && (
+        <div className={`border rounded-xl p-5 ${
+          activeHospitalization.status === "stable" ? "bg-emerald-500/5 border-emerald-500/20" :
+          activeHospitalization.status === "improving" ? "bg-amber-500/5 border-amber-500/20" :
+          activeHospitalization.status === "awaiting_discharge" ? "bg-purple-500/5 border-purple-500/20" :
+          "bg-blue-500/5 border-blue-500/20"
+        }`}>
+          <div className="flex items-center gap-3 mb-3">
+            <div className={`p-2 rounded-lg ${
+              activeHospitalization.status === "stable" ? "bg-emerald-500/20" :
+              activeHospitalization.status === "improving" ? "bg-amber-500/20" :
+              activeHospitalization.status === "awaiting_discharge" ? "bg-purple-500/20" :
+              "bg-blue-500/20"
+            }`}>
+              <Bed className={`w-5 h-5 ${
+                activeHospitalization.status === "stable" ? "text-emerald-400" :
+                activeHospitalization.status === "improving" ? "text-amber-400" :
+                activeHospitalization.status === "awaiting_discharge" ? "text-purple-400" :
+                "text-blue-400"
+              }`} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-white/80">
+                Hospitalización Activa
+              </p>
+              <p className="text-xs text-white/40">
+                {(activeHospitalization.status && statusLabels[activeHospitalization.status]) || activeHospitalization.status}
+              </p>
+            </div>
+          </div>
+          <p className="text-base font-medium text-white/80 mb-2">
+            {(activeHospitalization as any).admission_diagnosis_title || "Hospitalización"}
+          </p>
+          <div className="flex flex-wrap gap-3 text-sm text-white/60 mb-3">
+            {(activeHospitalization as any).attending_doctor_name && (
+              <span className="flex items-center gap-1">
+                <UserIcon className="w-4 h-4" />
+                {(activeHospitalization as any).attending_doctor_name}
+              </span>
+            )}
+            {activeHospitalization.ward && (
+              <span className="flex items-center gap-1">
+                <HeartIcon className="w-4 h-4" />
+                {activeHospitalization.ward}
+                {activeHospitalization.bed_number ? ` - Cama ${activeHospitalization.bed_number}` : ""}
+                {activeHospitalization.room_number ? ` / Hab. ${activeHospitalization.room_number}` : ""}
+              </span>
+            )}
+            {activeHospitalization.admission_date && (
+              <span className="flex items-center gap-1">
+                <CalendarIcon className="w-4 h-4" />
+                {new Date(activeHospitalization.admission_date).toLocaleDateString("es-VE", { day: "2-digit", month: "long", year: "numeric" })}
+              </span>
+            )}
+            {activeHospitalization.length_of_stay !== undefined && (
+              <span className="flex items-center gap-1">
+                <ClockIcon className="w-4 h-4" />
+                {activeHospitalization.length_of_stay} {activeHospitalization.length_of_stay === 1 ? "día" : "días"} de estancia
+              </span>
+            )}
+            {activeHospitalization.status === "awaiting_discharge" && (
+              <span className="flex items-center gap-1 text-purple-400">
+                <AlertCircle className="w-4 h-4" />
+                Alta médica pendiente
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => { setSelectedHospitalization(activeHospitalization); setDetailDrawerOpen(true); }}
+            className={`px-4 py-2 text-sm font-medium border rounded-lg hover:bg-white/10 transition-all flex items-center gap-2 ${
+              activeHospitalization.status === "stable" ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-300" :
+              activeHospitalization.status === "improving" ? "bg-amber-500/20 border-amber-500/30 text-amber-300" :
+              activeHospitalization.status === "awaiting_discharge" ? "bg-purple-500/20 border-purple-500/30 text-purple-300" :
+              "bg-blue-500/20 border-blue-500/30 text-blue-300"
+            }`}
+          >
+            <EyeIcon className="w-4 h-4" />
+            Ver Detalle
+          </button>
+        </div>
+      )}
 
       <div className="flex gap-2 border-b border-white/10 overflow-x-auto">
         {tabs.map((tab) => (
@@ -130,6 +287,13 @@ export default function PatientHospitalization() {
             }`}
           >
             {tab.label}
+            {tab.key !== "all" && stats[tab.key as keyof typeof stats] > 0 && (
+              <span className={`ml-1.5 px-1.5 py-0.5 text-xs rounded-full ${
+                tab.key === "critical" && stats.critical > 0 ? "bg-red-500/20 text-red-400" : "bg-white/10"
+              }`}>
+                {stats[tab.key as keyof typeof stats]}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -146,7 +310,11 @@ export default function PatientHospitalization() {
           filteredHospitalizations.map((hosp) => (
             <div
               key={hosp.id}
-              className="bg-white/10 border border-white/20 rounded-xl p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hover:bg-white/15 transition-colors"
+              className={`bg-white/10 border rounded-xl p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hover:bg-white/15 transition-colors ${
+                hosp.status === "critical" ? "border-red-500/30" :
+                hosp.status === "discharged" ? "border-white/5" :
+                "border-white/10"
+              }`}
             >
               <div className="flex items-start gap-4 flex-1 min-w-0">
                 <div className="mt-1">
@@ -181,17 +349,13 @@ export default function PatientHospitalization() {
                     {hosp.admission_date && (
                       <span className="flex items-center gap-1">
                         <CalendarIcon className="w-3.5 h-3.5" />
-                        {new Date(hosp.admission_date).toLocaleDateString("es-VE", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        })}
+                        {new Date(hosp.admission_date).toLocaleDateString("es-VE", { day: "2-digit", month: "short", year: "numeric" })}
                       </span>
                     )}
                   </div>
                   <div className="flex flex-wrap gap-2 mt-1">
                     <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-md border ${statusColors[hosp.status as keyof typeof statusColors] || "bg-white/5 text-white/40 border-white/10"}`}>
-                      {hosp.status_display || hosp.status}
+                      {hosp.status_display || (hosp.status && statusLabels[hosp.status]) || hosp.status}
                     </span>
                     {(hosp as any).institution_name && (
                       <span className="text-xs text-white/30">{(hosp as any).institution_name}</span>
@@ -202,10 +366,7 @@ export default function PatientHospitalization() {
 
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => {
-                    setSelectedHospitalization(hosp);
-                    setDetailDrawerOpen(true);
-                  }}
+                  onClick={() => { setSelectedHospitalization(hosp); setDetailDrawerOpen(true); }}
                   className="px-3 py-1.5 text-xs font-medium bg-white/5 border border-white/20 text-white/60 rounded-lg hover:bg-white/10 transition-all flex items-center gap-1.5"
                 >
                   <EyeIcon className="w-3.5 h-3.5" />
@@ -219,10 +380,7 @@ export default function PatientHospitalization() {
 
       <HospitalizationDetailDrawer
         open={detailDrawerOpen}
-        onClose={() => {
-          setDetailDrawerOpen(false);
-          setSelectedHospitalization(undefined);
-        }}
+        onClose={() => { setDetailDrawerOpen(false); setSelectedHospitalization(undefined); }}
         hospitalization={selectedHospitalization}
         readOnly
       />
