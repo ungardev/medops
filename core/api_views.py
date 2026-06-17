@@ -5238,7 +5238,7 @@ def patient_login(request):
         # Crear vínculo familiar self si no existe
         PatientFamilyLink.objects.get_or_create(
             patient_user=patient_user,
-            patient=patient,
+            patient=patient_user.patient,
             defaults={"relationship_type": "self", "status": "active"},
         )
 
