@@ -4276,6 +4276,29 @@ class MedicalCalculationViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        patient_id = self.request.query_params.get("patient")
+
+        if patient_id:
+            try:
+                patient = Patient.objects.get(pk=patient_id)
+                if hasattr(user, "doctor") and user.doctor:
+                    from .models import DoctorPatientRelationship
+
+                    if not DoctorPatientRelationship.objects.filter(
+                        doctor=user.doctor, patient=patient, active=True
+                    ).exists():
+                        return MedicalCalculation.objects.none()
+                elif hasattr(user, "patientuser"):
+                    if user.patientuser.patient != patient:
+                        return MedicalCalculation.objects.none()
+                else:
+                    return MedicalCalculation.objects.none()
+                return MedicalCalculation.objects.filter(patient=patient).order_by(
+                    "-created_at"
+                )
+            except Patient.DoesNotExist:
+                return MedicalCalculation.objects.none()
+
         try:
             patient_user = PatientUser.objects.get(user=user)
             return MedicalCalculation.objects.filter(
