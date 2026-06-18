@@ -6970,6 +6970,93 @@ def _notify_patient_of_status_change(audit_log):
         pass
 
 
+class MedicalCalculation(models.Model):
+    """
+    Registro de cálculos médicos realizados en el Centro de Diagnóstico Inteligente.
+    Almacena inputs, resultado, interpretación y médico que solicitó el cálculo.
+    """
+
+    CALCULATOR_CHOICES = [
+        ("bmi", "IMC"),
+        ("bsa", "BSA (Mosteller)"),
+        ("cha2ds2_vasc", "CHA₂DS₂-VASc"),
+        ("has_bled", "HAS-BLED"),
+        ("ckd_epi", "CKD-EPI 2021"),
+        ("gcs", "GCS"),
+        ("qsofa", "qSOFA"),
+        ("wells_pe", "Wells EP"),
+    ]
+
+    RISK_LEVELS = [
+        ("Bajo", "Bajo"),
+        ("Bajo-Moderado", "Bajo-Moderado"),
+        ("Moderado", "Moderado"),
+        ("Moderado-Alto", "Moderado-Alto"),
+        ("Alto", "Alto"),
+        ("Muy alto", "Muy alto"),
+        ("Extremadamente alto", "Extremadamente alto"),
+        ("Óptimo", "Óptimo"),
+    ]
+
+    patient = models.ForeignKey(
+        "Patient",
+        on_delete=models.CASCADE,
+        related_name="medical_calculations",
+        verbose_name="Paciente",
+    )
+    calculator_id = models.CharField(
+        max_length=20,
+        choices=CALCULATOR_CHOICES,
+        verbose_name="Calculadora",
+    )
+    calculator_name = models.CharField(
+        max_length=100, verbose_name="Nombre de calculadora"
+    )
+    inputs = models.JSONField(verbose_name="Parámetros de entrada")
+    result_value = models.DecimalField(
+        max_digits=10, decimal_places=4, verbose_name="Valor del resultado"
+    )
+    result_unit = models.CharField(
+        max_length=30, blank=True, null=True, verbose_name="Unidad"
+    )
+    interpretation = models.TextField(
+        blank=True, null=True, verbose_name="Interpretación"
+    )
+    risk_level = models.CharField(
+        max_length=20,
+        choices=RISK_LEVELS,
+        blank=True,
+        null=True,
+        verbose_name="Nivel de riesgo",
+    )
+    result_details = models.JSONField(
+        blank=True, null=True, verbose_name="Detalles del resultado"
+    )
+    doctor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="medical_calculations",
+        verbose_name="Médico solicitante",
+    )
+    notes = models.TextField(blank=True, null=True, verbose_name="Notas clínicas")
+    created_at = models.DateTimeField(
+        auto_now_add=True, verbose_name="Fecha de creación"
+    )
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Última modificación")
+    history = HistoricalRecords()
+
+    class Meta:
+        db_table = "medical_calculations"
+        verbose_name = "Cálculo Médico"
+        verbose_name_plural = "Cálculos Médicos"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.patient} — {self.calculator_name}: {self.result_value} {self.result_unit or ''}"
+
+
 def _on_medical_status_audit_log_created(sender, instance, created, **kwargs):
     """Signal handler para crear notificación cuando se crea un audit log de estado."""
     if created and instance.record_type in ("surgery", "hospitalization"):

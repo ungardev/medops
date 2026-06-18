@@ -66,6 +66,7 @@ from .models import (
     PatientUser,
     PatientNotification,
     MedicalStatusAuditLog,
+    MedicalCalculation,
 )
 from .choices import (
     UNIT_CHOICES,
@@ -5116,3 +5117,40 @@ class PatientNotificationSerializer(serializers.ModelSerializer):
             "metadata",
             "created_at",
         ]
+
+
+class MedicalCalculationSerializer(serializers.ModelSerializer):
+    calculator_id_display = serializers.CharField(
+        source="get_calculator_id_display", read_only=True
+    )
+    risk_level_display = serializers.CharField(
+        source="get_risk_level_display", read_only=True
+    )
+    doctor_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MedicalCalculation
+        fields = [
+            "id",
+            "patient",
+            "calculator_id",
+            "calculator_id_display",
+            "calculator_name",
+            "inputs",
+            "result_value",
+            "result_unit",
+            "interpretation",
+            "risk_level",
+            "risk_level_display",
+            "result_details",
+            "doctor",
+            "doctor_name",
+            "notes",
+            "created_at",
+        ]
+        read_only_fields = ["id", "calculator_name", "created_at"]
+
+    def get_doctor_name(self, obj) -> str | None:
+        if obj.doctor:
+            return obj.doctor.get_full_name() or obj.doctor.username
+        return None

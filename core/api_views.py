@@ -4262,6 +4262,92 @@ class PatientNotificationViewSet(viewsets.ModelViewSet):
         return Response(PatientNotificationSerializer(notification).data)
 
 
+class MedicalCalculationViewSet(viewsets.ModelViewSet):
+    """
+    API para el Centro de Diagnóstico Inteligente.
+    GET /calculator-list → lista de calculadoras disponibles
+    POST /calculate → ejecuta un cálculo y guarda el resultado
+    GET /patient/<id>/calculations → historial de cálculos de un paciente
+    """
+
+    queryset = MedicalCalculation.objects.all()
+    serializer_class = MedicalCalculationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        try:
+            patient_user = PatientUser.objects.get(user=user)
+            return MedicalCalculation.objects.filter(
+                patient=patient_user.patient
+            ).order_by("-created_at")
+        except PatientUser.DoesNotExist:
+            return MedicalCalculation.objects.none()
+
+    @action(detail=False, methods=["get"])
+    def calculator_list(self, request):
+        """Lista todas las calculadoras disponibles con su metadata."""
+        from .medical_calculators import list_calculators, serialize_calculator
+
+        calculators = list_calculators()
+        data = [serialize_calculator(c) for c in calculators]
+        return Response(data)
+
+    @action(detail=False, methods=["post"])
+    def calculate(self, request):
+        """
+        Ejecuta una calculadora y guarda el resultado.
+        body: { calculator_id, inputs: {...}, patient_id, notes? }
+        """
+        from .medical_calculators import get_calculator, serialize_result
+
+        calculator_id = request.data.get("calculator_id")
+        inputs = request.data.get("inputs", {})
+        patient_id = request.data.get("patient_id")
+        notes = request.data.get("notes", "")
+
+        if not calculator_id:
+            return Response({"error": "calculator_id es requerido"}, status=400)
+        if not patient_id:
+            return Response({"error": "patient_id es requerido"}, status=400)
+
+        config = get_calculator(calculator_id)
+        if not config:
+            return Response(
+                {"error": f"Calculadora '{calculator_id}' no encontrada"}, status=404
+            )
+
+        try:
+            patient = Patient.objects.get(pk=patient_id)
+        except Patient.DoesNotExist:
+            return Response({"error": "Paciente no encontrado"}, status=404)
+
+        try:
+            result = config.calculate(**inputs)
+        except Exception as e:
+            return Response(
+                {"error": f"Error al ejecutar cálculo: {str(e)}"}, status=400
+            )
+
+        doctor = request.user if request.user.is_authenticated else None
+
+        calc = MedicalCalculation.objects.create(
+            patient=patient,
+            calculator_id=calculator_id,
+            calculator_name=config.name,
+            inputs=inputs,
+            result_value=result.value,
+            result_unit=result.unit,
+            interpretation=result.interpretation,
+            risk_level=result.risk_level,
+            result_details={"details": result.details},
+            doctor=doctor,
+            notes=notes,
+        )
+
+        return Response(serialize_result(result), status=201)
+
+
 @api_view(["POST"])
 @permission_classes([conditional_permission()])
 def verify_weasyprint_output(request):
