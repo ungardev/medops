@@ -8,7 +8,8 @@ import DiagnosisCalculators from "./tabs/DiagnosisCalculators";
 import DiagnosisPatient from "./tabs/DiagnosisPatient";
 import DiagnosisDocuments from "./tabs/DiagnosisDocuments";
 import { getPatient } from "@/api/patients";
-import { Calculator, User, FileText } from "lucide-react";
+import { Calculator, User, FileText, CpuChipIcon, BeakerIcon } from "@heroicons/react/24/outline";
+import { Calculator as CalcIcon } from "lucide-react";
 
 const SESSION_KEY = "diagnosis_selected_patient";
 
@@ -61,7 +62,7 @@ export default function Diagnosis() {
     {
       id: "calculators" as const,
       label: "Calculadoras",
-      icon: Calculator,
+      icon: CalcIcon,
     },
     {
       id: "documents" as const,
@@ -80,9 +81,41 @@ export default function Diagnosis() {
       <PageHeader
         breadcrumbs={[
           { label: "MEDOPZ", path: "/doctor" },
-          { label: "Diagnóstico", active: true },
+          { label: "Diagnostico", active: true },
         ]}
       />
+
+      <div className="bg-white/5 border border-white/15 rounded-xl p-6">
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <div>
+            <h1 className="text-xl font-semibold text-white flex items-center gap-3">
+              <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+                <CpuChipIcon className="w-5 h-5 text-emerald-400" />
+              </div>
+              Centro de Diagnostico Inteligente
+            </h1>
+            <p className="text-sm text-white/50 mt-1 ml-11">
+              Calculadoras clinicas validadas + OCR con inteligencia artificial
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-6 ml-11 text-xs text-white/40">
+          <span className="flex items-center gap-1.5">
+            <Calculator className="w-3.5 h-3.5 text-emerald-400/60" />
+            22 calculadoras
+          </span>
+          <span className="text-white/20">|</span>
+          <span className="flex items-center gap-1.5">
+            <CalcIcon className="w-3.5 h-3.5 text-emerald-400/60" />
+            11 categorias
+          </span>
+          <span className="text-white/20">|</span>
+          <span className="flex items-center gap-1.5">
+            <BeakerIcon className="w-3.5 h-3.5 text-emerald-400/60" />
+            Motor OCR con IA
+          </span>
+        </div>
+      </div>
 
       <DisclaimerBanner />
 
@@ -95,7 +128,7 @@ export default function Diagnosis() {
       {!selectedPatient ? (
         <div className="bg-white/5 border border-white/10 rounded-xl p-8 text-center">
           <div className="text-white/30 text-sm">
-            Seleccione un paciente para acceder a las calculadoras médicas
+            Seleccione un paciente para acceder a las calculadoras medicas
           </div>
         </div>
       ) : (
@@ -108,9 +141,9 @@ export default function Diagnosis() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-base font-medium transition-colors ${
                     isActive
-                      ? "bg-blue-600 text-white"
+                      ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/25"
                       : "text-white/50 hover:text-white hover:bg-white/5"
                   }`}
                 >

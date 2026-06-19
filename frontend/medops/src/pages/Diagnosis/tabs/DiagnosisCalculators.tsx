@@ -6,7 +6,6 @@ import type { PatientRef } from "@/types/patients";
 import CalculatorEngine from "../components/CalculatorEngine";
 import {
   getPatientAutoFill,
-  CATEGORY_ICONS,
   groupCalculatorsByCategory,
   getSuggestedCalculators,
   buildLabValuesMap,
@@ -65,6 +64,7 @@ export default function DiagnosisCalculators({ patient, patientData }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [activeCalculator, setActiveCalculator] = useState<string | null>(null);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -111,20 +111,20 @@ export default function DiagnosisCalculators({ patient, patientData }: Props) {
   }, [categories, grouped, suggestedIds]);
 
   useEffect(() => {
-    if (expandedCategory === null && firstSuggestedCategory) {
+    if (!hasUserInteracted && expandedCategory === null && firstSuggestedCategory) {
       setExpandedCategory(firstSuggestedCategory);
     }
-  }, [firstSuggestedCategory, expandedCategory]);
+  }, [firstSuggestedCategory, expandedCategory, hasUserInteracted]);
 
   if (loading) {
     return (
       <div className="space-y-3">
-        {labValues.length > 0 && (
-          <div className="bg-cyan-500/5 border border-cyan-500/20 rounded-xl p-3 flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-cyan-400 flex-shrink-0" />
-            <div className="h-3 w-48 bg-cyan-500/20 rounded animate-pulse" />
-          </div>
-        )}
+      {labValues.length > 0 && (
+        <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-emerald-400 flex-shrink-0" />
+          <div className="h-3 w-48 bg-emerald-500/20 rounded animate-pulse" />
+        </div>
+      )}
         {[0, 1, 2].map((i) => (
           <CategorySkeleton key={i} index={i} />
         ))}
@@ -149,7 +149,7 @@ export default function DiagnosisCalculators({ patient, patientData }: Props) {
         <div className="space-y-4">
           <button
             onClick={() => setActiveCalculator(null)}
-            className="text-sm text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1"
+            className="text-base text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1"
           >
             ← Volver a calculadoras
           </button>
@@ -170,9 +170,9 @@ export default function DiagnosisCalculators({ patient, patientData }: Props) {
   return (
     <div className="space-y-3">
       {labValues.length > 0 && suggestedIds.size > 0 && (
-        <div className="bg-cyan-500/5 border border-cyan-500/20 rounded-xl p-3 flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-cyan-400 flex-shrink-0" />
-          <span className="text-xs text-cyan-300">
+        <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-emerald-400 flex-shrink-0" />
+          <span className="text-xs text-emerald-300">
             {suggestedIds.size} calculadora{suggestedIds.size !== 1 ? "s" : ""} con datos de laboratorio disponibles
           </span>
         </div>
@@ -182,12 +182,14 @@ export default function DiagnosisCalculators({ patient, patientData }: Props) {
         return (
           <div key={cat} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
             <button
-              onClick={() => setExpandedCategory(isExpanded ? null : cat)}
+              onClick={() => {
+                setHasUserInteracted(true);
+                setExpandedCategory(isExpanded ? null : cat);
+              }}
               className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <span className="text-lg">{CATEGORY_ICONS[cat] ?? "📋"}</span>
-                <span className="text-sm font-medium text-white">{cat}</span>
+                <span className="text-base font-medium text-white">{cat}</span>
                 <span className="text-xs text-white/40 bg-white/5 px-2 py-0.5 rounded-md">
                   {grouped[cat].length}
                 </span>
@@ -213,15 +215,15 @@ export default function DiagnosisCalculators({ patient, patientData }: Props) {
                       key={calc.id}
                       onClick={() => setActiveCalculator(calc.id)}
                       className={`w-full flex items-center gap-3 p-4 hover:bg-white/5 transition-colors text-left border-b border-white/5 last:border-0 ${
-                        isSuggested ? "bg-cyan-500/5" : ""
+                        isSuggested ? "bg-emerald-500/5" : ""
                       }`}
                     >
-                      <Calculator className={`h-4 w-4 flex-shrink-0 ${isSuggested ? "text-cyan-400" : "text-blue-400"}`} />
+                      <Calculator className={`h-4 w-4 flex-shrink-0 ${isSuggested ? "text-emerald-400" : "text-white/40"}`} />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-medium text-white">{calc.name}</span>
+                          <span className="text-base font-medium text-white">{calc.name}</span>
                           {isSuggested && (
-                            <span className="text-xs bg-cyan-500/20 text-cyan-300 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                            <span className="text-xs bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded flex items-center gap-0.5">
                               <Sparkles className="h-3 w-3" /> sugerida
                             </span>
                           )}

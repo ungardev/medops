@@ -37,20 +37,6 @@ function calculateAge(birthdate: string): number | null {
   return age >= 0 ? age : null;
 }
 
-export const CATEGORY_ICONS: Record<string, string> = {
-  Antropometría: "📐",
-  Embolia: "❤️‍🔥",
-  Sangrado: "🩸",
-  "Función Renal": "🫘",
-  Neurología: "🧠",
-  Sepsis: "🦠",
-  "Embolia Pulmonar": "🫁",
-  Hígado: "🟤",
-  "Riesgo Cardiovascular": "❤️",
-  UCI: "🏥",
-  Neumonía: "🫁",
-};
-
 export const RISK_COLORS: Record<string, string> = {
   Bajo: "text-emerald-400",
   "Bajo-Moderado": "text-green-400",

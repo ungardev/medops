@@ -2037,6 +2037,1311 @@ register_calculator(
 )
 
 
+# ─── 14. MELD-Na — Model for End-Stage Liver Disease with Sodium ─────────────
+
+
+def calculate_meld_na(
+    age: int,
+    bilirubin_mgdl: float,
+    inr: float,
+    creatinine_mgdl: float,
+    sodium_mEqL: float,
+) -> CalculatorResult:
+    import math
+
+    bili = max(bilirubin_mgdl, 1.0)
+    inr_val = max(inr, 1.0)
+    creat = max(creatinine_mgdl, 1.0)
+    na = max(min(sodium_mEqL, 140), 125)
+
+    meld = (
+        9.57 * math.log(bili) + 3.78 * math.log(inr_val) + 11.2 * math.log(creat) + 6.43
+    )
+    meld = max(6.0, min(40.0, meld))
+
+    meld_na = meld + 1.59 * (135 - na)
+    meld_na = max(6.0, min(40.0, meld_na))
+
+    if meld_na < 10:
+        interpretation = "MELD-Na bajo — listar para transplante"
+        risk_level = "Bajo"
+    elif meld_na < 19:
+        interpretation = "MELD-Na moderado — evaluar listado"
+        risk_level = "Moderado"
+    elif meld_na < 25:
+        interpretation = "MELD-Na alto — transplante prioritario"
+        risk_level = "Alto"
+    else:
+        interpretation = "MELD-Na muy alto — alto riesgo de mortalidad"
+        risk_level = "Muy alto"
+
+    return CalculatorResult(
+        name="meld_na",
+        label="MELD-Na",
+        value=round(meld_na, 1),
+        unit="puntos",
+        interpretation=interpretation,
+        risk_level=risk_level,
+        details=[
+            {"label": "Bilirrubina", "value": f"{bilirubin_mgdl:.2f} mg/dL"},
+            {"label": "INR", "value": f"{inr:.2f}"},
+            {"label": "Creatinina", "value": f"{creatinine_mgdl:.2f} mg/dL"},
+            {"label": "Sodio", "value": f"{sodium_mEqL:.0f} mEq/L"},
+            {"label": "Edad", "value": f"{age} años"},
+            {"label": "MELD crudo", "value": f"{meld:.1f}"},
+        ],
+    )
+
+
+# ─── 15. SOFA — Sequential Organ Failure Assessment ───────────────────────────
+
+
+def calculate_sofa(
+    pao2_fio2: float,
+    platelets_x1000: float,
+    bilirubin_mgdl: float,
+    map_mmhg: int,
+    gcs_score: int,
+    creatinine_mgdl: float,
+    on_vasopressors: bool,
+) -> CalculatorResult:
+    resp_pts = 0
+    if pao2_fio2 >= 400:
+        resp_pts = 0
+    elif pao2_fio2 >= 300:
+        resp_pts = 1
+    elif pao2_fio2 >= 200:
+        resp_pts = 2
+    elif pao2_fio2 >= 100:
+        resp_pts = 3
+    else:
+        resp_pts = 4
+
+    coag_pts = 0
+    if platelets_x1000 >= 150:
+        coag_pts = 0
+    elif platelets_x1000 >= 100:
+        coag_pts = 1
+    elif platelets_x1000 >= 50:
+        coag_pts = 2
+    elif platelets_x1000 >= 20:
+        coag_pts = 3
+    else:
+        coag_pts = 4
+
+    hep_pts = 0
+    if bilirubin_mgdl < 1.2:
+        hep_pts = 0
+    elif bilirubin_mgdl <= 1.9:
+        hep_pts = 1
+    elif bilirubin_mgdl <= 3.3:
+        hep_pts = 2
+    elif bilirubin_mgdl <= 11.9:
+        hep_pts = 3
+    else:
+        hep_pts = 4
+
+    circ_pts = 0
+    if on_vasopressors:
+        circ_pts = 4
+    elif map_mmhg < 70:
+        circ_pts = 1
+    else:
+        circ_pts = 0
+
+    cns_pts = 0
+    if gcs_score >= 15:
+        cns_pts = 0
+    elif gcs_score >= 13:
+        cns_pts = 1
+    elif gcs_score >= 10:
+        cns_pts = 2
+    elif gcs_score >= 6:
+        cns_pts = 3
+    else:
+        cns_pts = 4
+
+    renal_pts = 0
+    if creatinine_mgdl < 1.2:
+        renal_pts = 0
+    elif creatinine_mgdl <= 1.9:
+        renal_pts = 1
+    elif creatinine_mgdl <= 3.4:
+        renal_pts = 2
+    elif creatinine_mgdl <= 4.9:
+        renal_pts = 3
+    else:
+        renal_pts = 4
+
+    total = resp_pts + coag_pts + hep_pts + circ_pts + cns_pts + renal_pts
+
+    if total < 6:
+        interpretation = "Sepsis temprana — monitoreo intensivo"
+        risk_level = "Moderado"
+    elif total < 10:
+        interpretation = "Sepsis severa — UCI necesaria"
+        risk_level = "Alto"
+    else:
+        interpretation = "Fallo orgánico múltiple — UCI critica"
+        risk_level = "Muy alto"
+
+    return CalculatorResult(
+        name="sofa",
+        label="SOFA",
+        value=total,
+        unit="/24",
+        interpretation=interpretation,
+        risk_level=risk_level,
+        details=[
+            {"label": "Respiratorio (PaO2/FiO2)", "value": f"{resp_pts}"},
+            {"label": "Coagulacion (Plaquetas)", "value": f"{coag_pts}"},
+            {"label": "Hepatico (Bilirrubina)", "value": f"{hep_pts}"},
+            {"label": "Cardiovascular", "value": f"{circ_pts}"},
+            {"label": "SN/CNS (GCS)", "value": f"{cns_pts}"},
+            {"label": "Renal (Creatinina)", "value": f"{renal_pts}"},
+            {"label": "GCS score", "value": str(gcs_score)},
+        ],
+    )
+
+
+# ─── 16. NEWS2 — National Early Warning Score 2 ───────────────────────────────
+
+
+def calculate_news2(
+    rr_bpm: int,
+    spo2_percent: int,
+    oxygen_supplement: bool,
+    temperature_c: float,
+    systolic_bp: int,
+    hr_bpm: int,
+    altered_consciousness: bool,
+) -> CalculatorResult:
+    score = 0
+    details = []
+
+    if rr_bpm <= 8:
+        score += 3
+        details.append({"label": "FR <= 8", "value": "+3"})
+    elif rr_bpm <= 11:
+        score += 1
+        details.append({"label": "FR 9-11", "value": "+1"})
+    elif rr_bpm <= 20:
+        score += 0
+        details.append({"label": "FR 12-20", "value": "0"})
+    elif rr_bpm <= 24:
+        score += 1
+        details.append({"label": "FR 21-24", "value": "+1"})
+    else:
+        score += 3
+        details.append({"label": "FR >= 25", "value": "+3"})
+
+    if spo2_percent <= 91:
+        score += 3
+        details.append({"label": "SpO2 <= 91%", "value": "+3"})
+    elif spo2_percent <= 93:
+        score += 2
+        details.append({"label": "SpO2 92-93%", "value": "+2"})
+    elif spo2_percent <= 94:
+        score += 1
+        details.append({"label": "SpO2 94%", "value": "+1"})
+    else:
+        score += 0
+        details.append({"label": "SpO2 >= 95%", "value": "0"})
+
+    if oxygen_supplement:
+        score += 2
+        details.append({"label": "O2 suplementario", "value": "+2"})
+
+    if temperature_c <= 35.0:
+        score += 3
+        details.append({"label": "Temp <= 35.0C", "value": "+3"})
+    elif temperature_c <= 36.0:
+        score += 1
+        details.append({"label": "Temp 35.1-36.0C", "value": "+1"})
+    elif temperature_c <= 38.0:
+        score += 0
+        details.append({"label": "Temp 36.1-38.0C", "value": "0"})
+    elif temperature_c <= 39.0:
+        score += 1
+        details.append({"label": "Temp 38.1-39.0C", "value": "+1"})
+    else:
+        score += 2
+        details.append({"label": "Temp >= 39.1C", "value": "+2"})
+
+    if systolic_bp <= 90:
+        score += 3
+        details.append({"label": "PAS <= 90", "value": "+3"})
+    elif systolic_bp <= 100:
+        score += 2
+        details.append({"label": "PAS 91-100", "value": "+2"})
+    elif systolic_bp <= 110:
+        score += 1
+        details.append({"label": "PAS 101-110", "value": "+1"})
+    elif systolic_bp <= 219:
+        score += 0
+        details.append({"label": "PAS 111-219", "value": "0"})
+    else:
+        score += 3
+        details.append({"label": "PAS >= 220", "value": "+3"})
+
+    if hr_bpm <= 40:
+        score += 3
+        details.append({"label": "FC <= 40", "value": "+3"})
+    elif hr_bpm <= 50:
+        score += 1
+        details.append({"label": "FC 41-50", "value": "+1"})
+    elif hr_bpm <= 90:
+        score += 0
+        details.append({"label": "FC 51-90", "value": "0"})
+    elif hr_bpm <= 110:
+        score += 1
+        details.append({"label": "FC 91-110", "value": "+1"})
+    elif hr_bpm <= 130:
+        score += 2
+        details.append({"label": "FC 111-130", "value": "+2"})
+    else:
+        score += 3
+        details.append({"label": "FC >= 131", "value": "+3"})
+
+    if altered_consciousness:
+        score += 3
+        details.append({"label": "Alteracion mental", "value": "+3"})
+
+    if score == 0:
+        interpretation = "Estable — monitoreo habitual"
+        risk_level = "Bajo"
+    elif score <= 4:
+        interpretation = "Enfermedad baja — evaluacion medica"
+        risk_level = "Bajo-Moderado"
+    elif score <= 6:
+        interpretation = "Enfermedad moderada — evaluacion urgente"
+        risk_level = "Moderado"
+    else:
+        interpretation = "Enfermedad alta — riesgo de deterioro"
+        risk_level = "Alto"
+
+    return CalculatorResult(
+        name="news2",
+        label="NEWS2",
+        value=score,
+        unit="/20",
+        interpretation=interpretation,
+        risk_level=risk_level,
+        details=details,
+    )
+
+
+# ─── 17. TIMI Risk Score (ACS) ───────────────────────────────────────────────
+
+
+def calculate_timi(
+    age: int,
+    ecg_changes: bool,
+    angina_severe: bool,
+    aspirin_use: bool,
+    risk_factors_count: int,
+    positive_cardiac_markers: bool,
+) -> CalculatorResult:
+    score = 0
+    details = []
+
+    if age >= 65:
+        score += 3
+        details.append({"label": "Edad >= 65", "value": "+3"})
+    elif age >= 55:
+        score += 1
+        details.append({"label": "Edad 55-64", "value": "+1"})
+
+    if risk_factors_count >= 3:
+        score += 2
+        details.append({"label": ">= 3 factores CV", "value": "+2"})
+    elif risk_factors_count >= 2:
+        score += 1
+        details.append({"label": "2 factores CV", "value": "+1"})
+
+    if aspirin_use:
+        score += 1
+        details.append({"label": "ASA en ultimos 7 dias", "value": "+1"})
+
+    if angina_severe:
+        score += 2
+        details.append({"label": "Angina severa reciente", "value": "+2"})
+
+    if ecg_changes:
+        score += 1
+        details.append({"label": "Cambios ST >= 0.5mm", "value": "+1"})
+
+    if positive_cardiac_markers:
+        score += 1
+        details.append({"label": "Marcadores positivos", "value": "+1"})
+
+    if score == 0:
+        interpretation = "Riesgo muy bajo TIMI —可以考虑 dapartamento"
+        risk_level = "Bajo"
+    elif score <= 2:
+        interpretation = "Riesgo bajo TIMI"
+        risk_level = "Bajo-Moderado"
+    elif score <= 4:
+        interpretation = "Riesgo moderado TIMI"
+        risk_level = "Moderado"
+    else:
+        interpretation = "Riesgo alto TIMI — intervencion invasiva temprana"
+        risk_level = "Alto"
+
+    return CalculatorResult(
+        name="timi",
+        label="TIMI",
+        value=score,
+        unit="/7",
+        interpretation=interpretation,
+        risk_level=risk_level,
+        details=details
+        + [{"label": "Riesgo CV factores", "value": str(risk_factors_count)}],
+    )
+
+
+# ─── 18. HEART Score ───────────────────────────────────────────────────────────
+
+
+def calculate_heart(
+    history_score: int,
+    ecg_score: int,
+    age: int,
+    risk_factors_count: int,
+    troponin_score: int,
+) -> CalculatorResult:
+    score = history_score + ecg_score + age + risk_factors_count + troponin_score
+    details = [
+        {"label": "Historia clinica", "value": str(history_score)},
+        {"label": "ECG", "value": str(ecg_score)},
+        {"label": "Edad", "value": str(age)},
+        {"label": "Factores de riesgo", "value": str(risk_factors_count)},
+        {"label": "Troponina", "value": str(troponin_score)},
+    ]
+
+    if score <= 3:
+        interpretation = "HEART bajo — alta probabilidad de dapartamento seguro"
+        risk_level = "Bajo"
+    elif score <= 6:
+        interpretation = "HEART moderado — observar y investigar"
+        risk_level = "Moderado"
+    else:
+        interpretation = "HEART alto — alto riesgo de MACE a 6 semanas"
+        risk_level = "Alto"
+
+    return CalculatorResult(
+        name="heart",
+        label="HEART",
+        value=score,
+        unit="/10",
+        interpretation=interpretation,
+        risk_level=risk_level,
+        details=details,
+    )
+
+
+# ─── 19. PERC Rule ─────────────────────────────────────────────────────────────
+
+
+def calculate_perc(
+    age_over_50: bool,
+    hr_over_100: bool,
+    spo2_below_95: bool,
+    unilateral_leg_swelling: bool,
+    hemoptysis: bool,
+    surgery_trauma_month: bool,
+    prior_vte: bool,
+    estrogen_use: bool,
+) -> CalculatorResult:
+    score = sum(
+        [
+            age_over_50,
+            hr_over_100,
+            spo2_below_95,
+            unilateral_leg_swelling,
+            hemoptysis,
+            surgery_trauma_month,
+            prior_vte,
+            estrogen_use,
+        ]
+    )
+    details = [
+        {"label": "Edad >= 50", "value": "Si" if age_over_50 else "No"},
+        {"label": "FC > 100 lpm", "value": "Si" if hr_over_100 else "No"},
+        {"label": "SpO2 < 95%", "value": "Si" if spo2_below_95 else "No"},
+        {
+            "label": "Edema unilateral",
+            "value": "Si" if unilateral_leg_swelling else "No",
+        },
+        {"label": "Hemoptisis", "value": "Si" if hemoptysis else "No"},
+        {
+            "label": "Cirugia/trauma 1 mes",
+            "value": "Si" if surgery_trauma_month else "No",
+        },
+        {"label": "VTE previa", "value": "Si" if prior_vte else "No"},
+        {"label": "Uso de estrogenos", "value": "Si" if estrogen_use else "No"},
+    ]
+
+    if score == 0:
+        interpretation = "PERC negativo — исключить PE sin D-dimero"
+        risk_level = "Bajo"
+        recommendation = "Descartar EP clinicamente sin laboratorio"
+    else:
+        interpretation = "PERC positivo — требуется D-dimero"
+        risk_level = "Moderado"
+        recommendation = "Solicitar D-dimero para evaluar"
+
+    return CalculatorResult(
+        name="perc",
+        label="PERC",
+        value=score,
+        unit="/8",
+        interpretation=interpretation,
+        risk_level=risk_level,
+        details=details + [{"label": "Recomendacion", "value": recommendation}],
+    )
+
+
+# ─── 20. Caprini Score (VTE Risk) ─────────────────────────────────────────────
+
+
+def calculate_caprini(
+    age_over_40: bool,
+    age_41_60: bool,
+    age_61_74: bool,
+    age_over_75: bool,
+    bmi_over_25: bool,
+    bmi_over_30: bool,
+    bmi_over_40: bool,
+    prior_vte: bool,
+    cancer_history: bool,
+    surgery_history: bool,
+    bedridden_over_3days: bool,
+    major_surgery_over_45min: bool,
+    varicosity: bool,
+    swolen_legs: bool,
+    pregnancy_postpartum: bool,
+    oral_contraceptive: bool,
+    hormone_replacement: bool,
+    confined_to_chair: bool,
+    inflammatory_bowel: bool,
+    central_venous: bool,
+) -> CalculatorResult:
+    score = 0
+    details = []
+
+    if age_over_75:
+        score += 5
+        details.append({"label": "Edad > 75", "value": "+5"})
+    elif age_61_74:
+        score += 3
+        details.append({"label": "Edad 61-74", "value": "+3"})
+    elif age_41_60:
+        score += 2
+        details.append({"label": "Edad 41-60", "value": "+2"})
+    elif age_over_40:
+        score += 1
+        details.append({"label": "Edad > 40", "value": "+1"})
+
+    if bmi_over_40:
+        score += 6
+        details.append({"label": "BMI > 40", "value": "+6"})
+    elif bmi_over_30:
+        score += 5
+        details.append({"label": "BMI > 30", "value": "+5"})
+    elif bmi_over_25:
+        score += 1
+        details.append({"label": "BMI > 25", "value": "+1"})
+
+    if prior_vte:
+        score += 5
+        details.append({"label": "VTE previa", "value": "+5"})
+
+    if cancer_history:
+        score += 2
+        details.append({"label": "Cancer activo/historial", "value": "+2"})
+
+    if bedridden_over_3days:
+        score += 2
+        details.append({"label": "Bedrest > 3 dias", "value": "+2"})
+
+    if major_surgery_over_45min:
+        score += 2
+        details.append({"label": "Cirugia > 45 min", "value": "+2"})
+
+    if confined_to_chair:
+        score += 2
+        details.append({"label": "Confinado a silla", "value": "+2"})
+
+    if swolen_legs:
+        score += 1
+        details.append({"label": "Piernas hinchadas", "value": "+1"})
+
+    if varicosity:
+        score += 1
+        details.append({"label": "Varicosidad", "value": "+1"})
+
+    if inflammatory_bowel:
+        score += 1
+        details.append({"label": "EII (Crohn/Colitis)", "value": "+1"})
+
+    if central_venous:
+        score += 2
+        details.append({"label": "Cateter venoso central", "value": "+2"})
+
+    if pregnancy_postpartum:
+        score += 1
+        details.append({"label": "Embarazo/posparto", "value": "+1"})
+
+    if oral_contraceptive:
+        score += 1
+        details.append({"label": "Anticonceptivos orales", "value": "+1"})
+
+    if hormone_replacement:
+        score += 1
+        details.append({"label": "TRH", "value": "+1"})
+
+    if score == 0:
+        interpretation = "Riesgo muy bajo VTE"
+        risk_level = "Bajo"
+    elif score <= 2:
+        interpretation = "Riesgo bajo VTE — profilaxis mecГnica"
+        risk_level = "Bajo-Moderado"
+    elif score <= 4:
+        interpretation = "Riesgo moderado VTE — considerar farmacolуgico"
+        risk_level = "Moderado"
+    else:
+        interpretation = "Riesgo alto VTE — profilaxis farmacolуgica obligatoria"
+        risk_level = "Alto"
+
+    return CalculatorResult(
+        name="caprini",
+        label="Caprini",
+        value=score,
+        unit="puntos",
+        interpretation=interpretation,
+        risk_level=risk_level,
+        details=details,
+    )
+
+
+# ─── 21. RCRI — Revised Cardiac Risk Index (Lee) ───────────────────────────────
+
+
+def calculate_rcri(
+    high_risk_surgery: bool,
+    ischemic_heart_disease: bool,
+    chf_history: bool,
+    stroke_tia: bool,
+    diabetes_insulin: bool,
+    creatinine_over_2: bool,
+) -> CalculatorResult:
+    score = sum(
+        [
+            high_risk_surgery,
+            ischemic_heart_disease,
+            chf_history,
+            stroke_tia,
+            diabetes_insulin,
+            creatinine_over_2,
+        ]
+    )
+    details = [
+        {
+            "label": "Cirugia de alto riesgo",
+            "value": "Si" if high_risk_surgery else "No",
+        },
+        {
+            "label": "Cardiopatia isquemica",
+            "value": "Si" if ischemic_heart_disease else "No",
+        },
+        {"label": "ICC historial", "value": "Si" if chf_history else "No"},
+        {"label": "ACV/AIT previo", "value": "Si" if stroke_tia else "No"},
+        {
+            "label": "DM insulinodependiente",
+            "value": "Si" if diabetes_insulin else "No",
+        },
+        {"label": "Creatinina > 2 mg/dL", "value": "Si" if creatinine_over_2 else "No"},
+    ]
+
+    if score == 0:
+        interpretation = "Riesgo cardiaco muy bajo — <1% eventos"
+        risk_level = "Bajo"
+        risk_pct = "<1%"
+    elif score == 1:
+        interpretation = "Riesgo cardiaco bajo — ~1% eventos"
+        risk_level = "Bajo-Moderado"
+        risk_pct = "~1%"
+    elif score == 2:
+        interpretation = "Riesgo cardiaco moderado — ~5% eventos"
+        risk_level = "Moderado"
+        risk_pct = "~5%"
+    else:
+        interpretation = "Riesgo cardiaco alto — >10% eventos"
+        risk_level = "Alto"
+        risk_pct = ">10%"
+
+    return CalculatorResult(
+        name="rcri",
+        label="RCRI",
+        value=score,
+        unit="/6",
+        interpretation=interpretation,
+        risk_level=risk_level,
+        details=details + [{"label": "Riesgo eventos cardiacos", "value": risk_pct}],
+    )
+
+
+# ─── 22. ORBIT Bleeding Score ──────────────────────────────────────────────────
+
+
+def calculate_orbit(
+    age: int,
+    hemoglobin_low: bool,
+    renal_impaired: bool,
+    antiplatelet_use: bool,
+    bleeding_history: bool,
+) -> CalculatorResult:
+    score = 0
+    details = []
+
+    if age >= 75:
+        score += 2
+        details.append({"label": "Edad >= 75", "value": "+2"})
+    elif age >= 65:
+        score += 1
+        details.append({"label": "Edad 65-74", "value": "+1"})
+
+    if hemoglobin_low:
+        score += 2
+        details.append({"label": "Hb baja (<13 v / <12 m)", "value": "+2"})
+
+    if renal_impaired:
+        score += 2
+        details.append({"label": "Funcion renal mala (eGFR <45)", "value": "+2"})
+
+    if antiplatelet_use:
+        score += 1
+        details.append({"label": "Antiagregante plaquetario", "value": "+1"})
+
+    if bleeding_history:
+        score += 2
+        details.append({"label": "Historial de sangrado", "value": "+2"})
+
+    if score == 0:
+        interpretation = "Riesgo de sangrado bajo — anticoagulacion segura"
+        risk_level = "Bajo"
+    elif score <= 2:
+        interpretation = "Riesgo de sangrado moderado — evaluar riesgo/beneficio"
+        risk_level = "Moderado"
+    elif score <= 3:
+        interpretation = "Riesgo de sangrado alto — considerar alternativa"
+        risk_level = "Alto"
+    else:
+        interpretation = "Riesgo de sangrado muy alto — anticoagulacion contraindicada"
+        risk_level = "Muy alto"
+
+    return CalculatorResult(
+        name="orbit",
+        label="ORBIT",
+        value=score,
+        unit="puntos",
+        interpretation=interpretation,
+        risk_level=risk_level,
+        details=details,
+    )
+
+
+register_calculator(
+    CalculatorConfig(
+        id="meld_na",
+        name="MELD-Na",
+        specialty="Hepatologia / Transplante",
+        category="Higado",
+        description="Refinamiento del MELD con sodio serico. Mejor priorizacion para transplante hepatico.",
+        inputs=[
+            CalculatorInput(
+                "age",
+                "Edad",
+                "number",
+                required=True,
+                min_value=1,
+                max_value=120,
+                auto_fill_from_patient="age",
+            ),
+            CalculatorInput(
+                "bilirubin_mgdl",
+                "Bilirrubina Total",
+                "number",
+                required=True,
+                min_value=0.1,
+                max_value=50,
+                step=0.1,
+                default_unit="mg/dL",
+                auto_fill_from_lab="bilirrubina_total",
+            ),
+            CalculatorInput(
+                "inr",
+                "INR",
+                "number",
+                required=True,
+                min_value=0.8,
+                max_value=15,
+                step=0.1,
+                auto_fill_from_lab="inr",
+            ),
+            CalculatorInput(
+                "creatinine_mgdl",
+                "Creatinina",
+                "number",
+                required=True,
+                min_value=0.1,
+                max_value=30,
+                step=0.1,
+                default_unit="mg/dL",
+                auto_fill_from_lab="creatinina",
+            ),
+            CalculatorInput(
+                "sodium_mEqL",
+                "Sodio Serico",
+                "number",
+                required=True,
+                min_value=100,
+                max_value=150,
+                default_unit="mEq/L",
+                auto_fill_from_lab="sodio",
+            ),
+        ],
+        calculate=lambda age,
+        bilirubin_mgdl,
+        inr,
+        creatinine_mgdl,
+        sodium_mEqL: calculate_meld_na(
+            age, bilirubin_mgdl, inr, creatinine_mgdl, sodium_mEqL
+        ),
+        references=["Kim WR. Am J Transplant 2008;8:956-961"],
+    )
+)
+
+register_calculator(
+    CalculatorConfig(
+        id="sofa",
+        name="SOFA",
+        specialty="Medicina Critica / UCI",
+        category="Sepsis",
+        description="Sequential Organ Failure Assessment. Evalua disfuncion organica en sepsis.",
+        inputs=[
+            CalculatorInput(
+                "pao2_fio2",
+                "PaO2/FiO2 ratio",
+                "number",
+                required=True,
+                min_value=50,
+                max_value=500,
+            ),
+            CalculatorInput(
+                "platelets_x1000",
+                "Plaquetas (x1000/uL)",
+                "number",
+                required=True,
+                min_value=1,
+                max_value=800,
+                default_unit="x1000/uL",
+                auto_fill_from_lab="plaquetas",
+            ),
+            CalculatorInput(
+                "bilirubin_mgdl",
+                "Bilirrubina Total",
+                "number",
+                required=True,
+                min_value=0.1,
+                max_value=50,
+                step=0.1,
+                default_unit="mg/dL",
+                auto_fill_from_lab="bilirrubina_total",
+            ),
+            CalculatorInput(
+                "map_mmhg",
+                "Presion Arterial Media (mmHg)",
+                "number",
+                required=True,
+                min_value=20,
+                max_value=200,
+            ),
+            CalculatorInput(
+                "gcs_score",
+                "GCS Score",
+                "number",
+                required=True,
+                min_value=3,
+                max_value=15,
+            ),
+            CalculatorInput(
+                "creatinine_mgdl",
+                "Creatinina",
+                "number",
+                required=True,
+                min_value=0.1,
+                max_value=30,
+                step=0.1,
+                default_unit="mg/dL",
+                auto_fill_from_lab="creatinina",
+            ),
+            CalculatorInput(
+                "on_vasopressors", "Vasopresores en uso", "boolean", required=True
+            ),
+        ],
+        calculate=lambda **kw: calculate_sofa(**kw),
+        references=["Vincent JL. Intensive Care Med 1996;22:707-710"],
+    )
+)
+
+register_calculator(
+    CalculatorConfig(
+        id="news2",
+        name="NEWS2",
+        specialty="Medicina de Emergencia / Enfermeria",
+        category="Signos Vitales",
+        description="National Early Warning Score 2. Deteccion de deterioro clinico en pacientes hospitalizados.",
+        inputs=[
+            CalculatorInput(
+                "rr_bpm",
+                "Frecuencia Respiratoria (/min)",
+                "number",
+                required=True,
+                min_value=4,
+                max_value=60,
+            ),
+            CalculatorInput(
+                "spo2_percent",
+                "SpO2 (%)",
+                "number",
+                required=True,
+                min_value=70,
+                max_value=100,
+            ),
+            CalculatorInput(
+                "oxygen_supplement", "O2 Suplementario", "boolean", required=True
+            ),
+            CalculatorInput(
+                "temperature_c",
+                "Temperatura (C)",
+                "number",
+                required=True,
+                min_value=30,
+                max_value=45,
+                step=0.1,
+            ),
+            CalculatorInput(
+                "systolic_bp",
+                "PAS (mmHg)",
+                "number",
+                required=True,
+                min_value=50,
+                max_value=300,
+            ),
+            CalculatorInput(
+                "hr_bpm",
+                "FC (lpm)",
+                "number",
+                required=True,
+                min_value=20,
+                max_value=250,
+            ),
+            CalculatorInput(
+                "altered_consciousness", "Alteracion Mental", "boolean", required=True
+            ),
+        ],
+        calculate=lambda rr_bpm,
+        spo2_percent,
+        oxygen_supplement,
+        temperature_c,
+        systolic_bp,
+        hr_bpm,
+        altered_consciousness: calculate_news2(
+            rr_bpm,
+            spo2_percent,
+            oxygen_supplement,
+            temperature_c,
+            systolic_bp,
+            hr_bpm,
+            altered_consciousness,
+        ),
+        references=["Royal College of Physicians. NEWS2 2017"],
+    )
+)
+
+register_calculator(
+    CalculatorConfig(
+        id="timi",
+        name="TIMI",
+        specialty="Cardiologia / Emergencia",
+        category="Sindrome Coronario",
+        description="Thrombolysis in Myocardial Infarction risk score. Estratificacion de riesgo en sindrome coronario agudo.",
+        inputs=[
+            CalculatorInput(
+                "age",
+                "Edad",
+                "number",
+                required=True,
+                min_value=1,
+                max_value=120,
+                auto_fill_from_patient="age",
+            ),
+            CalculatorInput(
+                "risk_factors_count",
+                "Factores de riesgo CV",
+                "number",
+                required=True,
+                min_value=0,
+                max_value=7,
+            ),
+            CalculatorInput(
+                "aspirin_use", "ASA ultimos 7 dias", "boolean", required=True
+            ),
+            CalculatorInput(
+                "angina_severe", "Angina severa reciente", "boolean", required=True
+            ),
+            CalculatorInput(
+                "ecg_changes", "Cambios ST >= 0.5mm", "boolean", required=True
+            ),
+            CalculatorInput(
+                "positive_cardiac_markers",
+                "Marcadores positivos (Troponina)",
+                "boolean",
+                required=True,
+            ),
+        ],
+        calculate=lambda age,
+        risk_factors_count,
+        aspirin_use,
+        angina_severe,
+        ecg_changes,
+        positive_cardiac_markers: calculate_timi(
+            age,
+            ecg_changes,
+            angina_severe,
+            aspirin_use,
+            risk_factors_count,
+            positive_cardiac_markers,
+        ),
+        references=["Antman EM. JAMA 2000;283:1711-1717"],
+    )
+)
+
+register_calculator(
+    CalculatorConfig(
+        id="heart",
+        name="HEART",
+        specialty="Medicina de Emergencia / Cardiologia",
+        category="Dolor Toracico",
+        description="Risk stratification for chest pain in the ED. Predice MACE a 6 semanas.",
+        inputs=[
+            CalculatorInput(
+                "history_score",
+                "Historia Clinica",
+                "select",
+                required=True,
+                options=[
+                    {"value": 0, "label": "No sospechosa (0)"},
+                    {"value": 1, "label": "Poco sospechosa (1)"},
+                    {"value": 2, "label": "Moderadamente sospechosa (2)"},
+                ],
+            ),
+            CalculatorInput(
+                "ecg_score",
+                "ECG",
+                "select",
+                required=True,
+                options=[
+                    {"value": 0, "label": "Normal (0)"},
+                    {"value": 1, "label": "No significativo (1)"},
+                    {"value": 2, "label": "Significativo/LBBB nuevo (2)"},
+                ],
+            ),
+            CalculatorInput(
+                "age",
+                "Edad",
+                "number",
+                required=True,
+                min_value=1,
+                max_value=120,
+                auto_fill_from_patient="age",
+            ),
+            CalculatorInput(
+                "risk_factors_count",
+                "Factores de riesgo (HTN, DM, dislipidemia, obesity, tabaquismo, FH)",
+                "number",
+                required=True,
+                min_value=0,
+                max_value=6,
+            ),
+            CalculatorInput(
+                "troponin_score",
+                "Troponina",
+                "select",
+                required=True,
+                options=[
+                    {"value": 0, "label": "<= LSN (0)"},
+                    {"value": 1, "label": "1-3x LSN (1)"},
+                    {"value": 2, "label": ">3x LSN (2)"},
+                ],
+            ),
+        ],
+        calculate=lambda history_score,
+        ecg_score,
+        age,
+        risk_factors_count,
+        troponin_score: calculate_heart(
+            int(history_score),
+            int(ecg_score),
+            int(age),
+            int(risk_factors_count),
+            int(troponin_score),
+        ),
+        references=["Six AJ. Eur Heart J 2008;29:2843-2850"],
+    )
+)
+
+register_calculator(
+    CalculatorConfig(
+        id="perc",
+        name="PERC",
+        specialty="Medicina de Emergencia",
+        category="Embolia Pulmonar",
+        description="Pulmonary Embolism Rule-Out Criteria. Exclusion clinica de EP sin D-dimero.",
+        inputs=[
+            CalculatorInput("age_over_50", "Edad >= 50 anos", "boolean", required=True),
+            CalculatorInput("hr_over_100", "FC > 100 lpm", "boolean", required=True),
+            CalculatorInput("spo2_below_95", "SpO2 < 95%", "boolean", required=True),
+            CalculatorInput(
+                "unilateral_leg_swelling",
+                "Edema unilateral de pierna",
+                "boolean",
+                required=True,
+            ),
+            CalculatorInput("hemoptysis", "Hemoptisis", "boolean", required=True),
+            CalculatorInput(
+                "surgery_trauma_month", "Cirugia/trauma 1 mes", "boolean", required=True
+            ),
+            CalculatorInput("prior_vte", "VTE previa", "boolean", required=True),
+            CalculatorInput(
+                "estrogen_use", "Uso de estrogenos", "boolean", required=True
+            ),
+        ],
+        calculate=lambda age_over_50,
+        hr_over_100,
+        spo2_below_95,
+        unilateral_leg_swelling,
+        hemoptysis,
+        surgery_trauma_month,
+        prior_vte,
+        estrogen_use: calculate_perc(
+            bool(age_over_50),
+            bool(hr_over_100),
+            bool(spo2_below_95),
+            bool(unilateral_leg_swelling),
+            bool(hemoptysis),
+            bool(surgery_trauma_month),
+            bool(prior_vte),
+            bool(estrogen_use),
+        ),
+        references=["Kline JA. Ann Emerg Med 2004;44:603-613"],
+    )
+)
+
+register_calculator(
+    CalculatorConfig(
+        id="caprini",
+        name="Caprini",
+        specialty="Cirugia / Medicina Interna",
+        category="Tromboprofilaxis",
+        description="Caprini VTE Risk Score. Guia profilaxis antitrombotica en pacientes medicos/quirurgicos.",
+        inputs=[
+            CalculatorInput("age_over_40", "Edad > 40", "boolean", required=True),
+            CalculatorInput("age_41_60", "Edad 41-60", "boolean", required=True),
+            CalculatorInput("age_61_74", "Edad 61-74", "boolean", required=True),
+            CalculatorInput("age_over_75", "Edad > 75", "boolean", required=True),
+            CalculatorInput("bmi_over_25", "BMI > 25", "boolean", required=True),
+            CalculatorInput("bmi_over_30", "BMI > 30", "boolean", required=True),
+            CalculatorInput("bmi_over_40", "BMI > 40", "boolean", required=True),
+            CalculatorInput("prior_vte", "VTE previa", "boolean", required=True),
+            CalculatorInput(
+                "cancer_history", "Cancer activo/historial", "boolean", required=True
+            ),
+            CalculatorInput(
+                "surgery_history", "Cirugia mayor en 1 mes", "boolean", required=True
+            ),
+            CalculatorInput(
+                "bedridden_over_3days", "Bedrest > 3 dias", "boolean", required=True
+            ),
+            CalculatorInput(
+                "major_surgery_over_45min", "Cirugia > 45 min", "boolean", required=True
+            ),
+            CalculatorInput("varicosity", "Varicosidad", "boolean", required=True),
+            CalculatorInput(
+                "swolen_legs", "Piernas hinchadas", "boolean", required=True
+            ),
+            CalculatorInput(
+                "pregnancy_postpartum", "Embarazo/posparto", "boolean", required=True
+            ),
+            CalculatorInput(
+                "oral_contraceptive", "Anticonceptivos orales", "boolean", required=True
+            ),
+            CalculatorInput("hormone_replacement", "TRH", "boolean", required=True),
+            CalculatorInput(
+                "confined_to_chair", "Confinado a silla", "boolean", required=True
+            ),
+            CalculatorInput(
+                "inflammatory_bowel", "EII (Crohn/Colitis)", "boolean", required=True
+            ),
+            CalculatorInput(
+                "central_venous", "Cateter venoso central", "boolean", required=True
+            ),
+        ],
+        calculate=lambda age_over_40,
+        age_41_60,
+        age_61_74,
+        age_over_75,
+        bmi_over_25,
+        bmi_over_30,
+        bmi_over_40,
+        prior_vte,
+        cancer_history,
+        surgery_history,
+        bedridden_over_3days,
+        major_surgery_over_45min,
+        varicosity,
+        swolen_legs,
+        pregnancy_postpartum,
+        oral_contraceptive,
+        hormone_replacement,
+        confined_to_chair,
+        inflammatory_bowel,
+        central_venous: calculate_caprini(
+            bool(age_over_40),
+            bool(age_41_60),
+            bool(age_61_74),
+            bool(age_over_75),
+            bool(bmi_over_25),
+            bool(bmi_over_30),
+            bool(bmi_over_40),
+            bool(prior_vte),
+            bool(cancer_history),
+            bool(surgery_history),
+            bool(bedridden_over_3days),
+            bool(major_surgery_over_45min),
+            bool(varicosity),
+            bool(swolen_legs),
+            bool(pregnancy_postpartum),
+            bool(oral_contraceptive),
+            bool(hormone_replacement),
+            bool(confined_to_chair),
+            bool(inflammatory_bowel),
+            bool(central_venous),
+        ),
+        references=["Caprini JA. Chest 2001;120:163-170"],
+    )
+)
+
+register_calculator(
+    CalculatorConfig(
+        id="rcri",
+        name="RCRI",
+        specialty="Anestesiologia / Cirugia",
+        category="Riesgo Perioperatorio",
+        description="Revised Cardiac Risk Index (Lee). Evalua riesgo cardiaco pre-operatorio para cirugia no cardiaca.",
+        inputs=[
+            CalculatorInput(
+                "high_risk_surgery",
+                "Cirugia de alto riesgo (suprainguinal/intraperitoneal/intratoracica)",
+                "boolean",
+                required=True,
+            ),
+            CalculatorInput(
+                "ischemic_heart_disease",
+                "Cardiopatia isquemica",
+                "boolean",
+                required=True,
+            ),
+            CalculatorInput("chf_history", "ICC historial", "boolean", required=True),
+            CalculatorInput("stroke_tia", "ACV/AIT previo", "boolean", required=True),
+            CalculatorInput(
+                "diabetes_insulin", "DM insulinodependiente", "boolean", required=True
+            ),
+            CalculatorInput(
+                "creatinine_over_2", "Creatinina > 2 mg/dL", "boolean", required=True
+            ),
+        ],
+        calculate=lambda high_risk_surgery,
+        ischemic_heart_disease,
+        chf_history,
+        stroke_tia,
+        diabetes_insulin,
+        creatinine_over_2: calculate_rcri(
+            bool(high_risk_surgery),
+            bool(ischemic_heart_disease),
+            bool(chf_history),
+            bool(stroke_tia),
+            bool(diabetes_insulin),
+            bool(creatinine_over_2),
+        ),
+        references=["Lee TH. Circulation 1999;100:1043-1049"],
+    )
+)
+
+register_calculator(
+    CalculatorConfig(
+        id="orbit",
+        name="ORBIT",
+        specialty="Cardiologia / Hematologia",
+        category="Sangrado",
+        description="ORBIT Bleeding Risk Score. Evalua riesgo de sangrado en pacientes con anticoagulacion.",
+        inputs=[
+            CalculatorInput(
+                "age",
+                "Edad",
+                "number",
+                required=True,
+                min_value=1,
+                max_value=120,
+                auto_fill_from_patient="age",
+            ),
+            CalculatorInput(
+                "hemoglobin_low", "Hb baja (<13 v / <12 m)", "boolean", required=True
+            ),
+            CalculatorInput(
+                "renal_impaired",
+                "Funcion renal mala (eGFR <45)",
+                "boolean",
+                required=True,
+            ),
+            CalculatorInput(
+                "antiplatelet_use",
+                "Antiagregante plaquetario",
+                "boolean",
+                required=True,
+            ),
+            CalculatorInput(
+                "bleeding_history", "Historial de sangrado", "boolean", required=True
+            ),
+        ],
+        calculate=lambda age,
+        hemoglobin_low,
+        renal_impaired,
+        antiplatelet_use,
+        bleeding_history: calculate_orbit(
+            int(age),
+            bool(hemoglobin_low),
+            bool(renal_impaired),
+            bool(antiplatelet_use),
+            bool(bleeding_history),
+        ),
+        references=["Sherwood MW. J Am Coll Cardiol 2015;65:2614-2623"],
+    )
+)
+
+
 def get_calculator(id: str) -> CalculatorConfig | None:
     return CALCULATOR_REGISTRY.get(id)
 
