@@ -1,5 +1,5 @@
 // src/pages/Diagnosis/calculators/registry.ts
-import type { CalculatorConfig } from "@/api/diagnosis";
+import type { CalculatorConfig, LabValue } from "@/api/diagnosis";
 
 export interface PatientAutoFill {
   weight?: string;
@@ -45,6 +45,10 @@ export const CATEGORY_ICONS: Record<string, string> = {
   Neurología: "🧠",
   Sepsis: "🦠",
   "Embolia Pulmonar": "🫁",
+  Hígado: "🟤",
+  "Riesgo Cardiovascular": "❤️",
+  UCI: "🏥",
+  Neumonía: "🫁",
 };
 
 export const RISK_COLORS: Record<string, string> = {
@@ -71,6 +75,10 @@ export const CALCULATOR_CATEGORIES = [
   "Neurología",
   "Sepsis",
   "Embolia Pulmonar",
+  "Hígado",
+  "Riesgo Cardiovascular",
+  "UCI",
+  "Neumonía",
 ] as const;
 
 export function groupCalculatorsByCategory(
@@ -83,4 +91,53 @@ export function groupCalculatorsByCategory(
     groups[cat].push(calc);
   }
   return groups;
+}
+
+const LAB_TEST_TO_CALCULATORS: Record<string, string[]> = {
+  creatinina: ["ckd_epi", "meld"],
+  bilirrubina_total: ["meld", "child_pugh"],
+  albumina: ["child_pugh"],
+  inr: ["meld", "child_pugh"],
+  urea: ["curb65"],
+  colesterol_total: ["framingham"],
+  hdl: ["framingham"],
+  hematocrito: ["apache_ii"],
+  leucocitos: ["apache_ii"],
+  sodio: ["apache_ii"],
+  potasio: ["apache_ii"],
+  hemoglobina: [],
+  glucosa: [],
+  plaquetas: [],
+};
+
+export function getSuggestedCalculators(
+  calculators: CalculatorConfig[],
+  labValues: LabValue[]
+): CalculatorConfig[] {
+  const availableTests = new Set(labValues.map((lv) => lv.test_name));
+  const suggested: CalculatorConfig[] = [];
+  const suggestedIds = new Set<string>();
+
+  for (const calc of calculators) {
+    for (const inp of calc.inputs) {
+      const labKey = inp.auto_fill_from_lab;
+      if (labKey && availableTests.has(labKey)) {
+        if (!suggestedIds.has(calc.id)) {
+          suggested.push(calc);
+          suggestedIds.add(calc.id);
+        }
+        break;
+      }
+    }
+  }
+
+  return suggested;
+}
+
+export function buildLabValuesMap(labValues: LabValue[]): Record<string, LabValue> {
+  const map: Record<string, LabValue> = {};
+  for (const lv of labValues) {
+    map[lv.test_name] = lv;
+  }
+  return map;
 }

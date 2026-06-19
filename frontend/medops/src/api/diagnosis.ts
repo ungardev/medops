@@ -14,6 +14,7 @@ export interface CalculatorInput {
   step?: number;
   default_unit?: string;
   auto_fill_from_patient?: string;
+  auto_fill_from_lab?: string;
 }
 
 export interface CalculatorConfig {
@@ -132,4 +133,21 @@ export async function reparseDocument(documentId: number): Promise<ParsedDocumen
     method: "POST",
     body: JSON.stringify({}),
   });
+}
+
+export interface LabValue {
+  test_name: string;
+  value: number;
+  unit: string;
+  reference_range: string | null;
+  is_abnormal: boolean;
+  abnormal_direction: string;
+  confidence: number;
+  document_id: number | null;
+  document_date: string | null;
+  source: string;
+}
+
+export async function getPatientLabValues(patientId: number): Promise<LabValue[]> {
+  return apiFetch<LabValue[]>(`patients/${patientId}/lab-values/`);
 }

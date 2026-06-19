@@ -1,14 +1,15 @@
 // src/pages/Diagnosis/components/CalculatorEngine.tsx
 import { useState } from "react";
-import type { CalculatorConfig, CalculationResult } from "@/api/diagnosis";
+import type { CalculatorConfig, CalculationResult, LabValue } from "@/api/diagnosis";
 import { runCalculation } from "@/api/diagnosis";
 import { getRiskColor } from "../calculators/registry";
-import { Activity, BookOpen, CheckCircle } from "lucide-react";
+import { Activity, BookOpen, CheckCircle, FlaskConical } from "lucide-react";
 
 interface Props {
   calculator: CalculatorConfig;
   patientId: number;
   autoFill?: Record<string, string | undefined> | undefined;
+  labValues?: Record<string, LabValue> | undefined;
   onResult?: (result: CalculationResult) => void;
 }
 
@@ -16,10 +17,24 @@ export default function CalculatorEngine({
   calculator,
   patientId,
   autoFill = {},
+  labValues = {},
   onResult,
 }: Props) {
+  const [labAutoFilled, setLabAutoFilled] = useState<Record<string, boolean>>(() => {
+    const filled: Record<string, boolean> = {};
+    for (const inp of calculator.inputs) {
+      if (inp.type === "number") {
+        const fromPatient = !!(inp.auto_fill_from_patient && autoFill[inp.auto_fill_from_patient] != null);
+        const fromLab = !fromPatient && !!(inp.auto_fill_from_lab && labValues[inp.auto_fill_from_lab] != null);
+        filled[inp.name] = fromLab;
+      }
+    }
+    return filled;
+  });
+
   const [values, setValues] = useState<Record<string, unknown>>(() => {
     const init: Record<string, unknown> = {};
+    const labFilled: Record<string, boolean> = {};
     for (const inp of calculator.inputs) {
       if (inp.type === "boolean") init[inp.name] = false;
       else if (inp.type === "select" && inp.options?.length) init[inp.name] = inp.options[0].value;
@@ -27,8 +42,15 @@ export default function CalculatorEngine({
         const fillVal = autoFill[inp.auto_fill_from_patient] as string;
         if (inp.type === "number") init[inp.name] = parseFloat(fillVal);
         else init[inp.name] = fillVal;
+      } else if (inp.auto_fill_from_lab && inp.type === "number") {
+        const labVal = labValues[inp.auto_fill_from_lab];
+        if (labVal != null) {
+          init[inp.name] = labVal.value;
+          labFilled[inp.name] = true;
+        }
       }
     }
+    setLabAutoFilled(labFilled);
     return init;
   });
 
@@ -73,11 +95,16 @@ export default function CalculatorEngine({
       <div className="space-y-4">
         {calculator.inputs.map((input) => (
           <div key={input.name}>
-            <label className="block text-sm font-medium text-white/70 mb-1.5">
+            <label className="flex items-center gap-1.5 text-sm font-medium text-white/70 mb-1.5">
               {input.label}
               {input.required && <span className="text-red-400 ml-1">*</span>}
               {input.default_unit && (
                 <span className="text-white/30 ml-1 text-xs">({input.default_unit})</span>
+              )}
+              {input.auto_fill_from_lab && (
+                <span title="Valor desde laboratorio" className="text-cyan-400">
+                  <FlaskConical className="h-3 w-3" />
+                </span>
               )}
             </label>
 
@@ -112,23 +139,34 @@ export default function CalculatorEngine({
             )}
 
             {input.type === "number" && (
-              <input
-                type="number"
-                value={
-                  values[input.name] != null ? String(values[input.name]) : ""
-                }
-                onChange={(e) =>
-                  setValues((prev) => ({
-                    ...prev,
-                    [input.name]: e.target.value ? parseFloat(e.target.value) : undefined,
-                  }))
-                }
-                min={input.min_value}
-                max={input.max_value}
-                step={input.step}
-                placeholder={`Ingrese ${input.label.toLowerCase()}`}
-                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
-              />
+              <div className="relative">
+                <input
+                  type="number"
+                  value={
+                    values[input.name] != null ? String(values[input.name]) : ""
+                  }
+                  onChange={(e) =>
+                    setValues((prev) => ({
+                      ...prev,
+                      [input.name]: e.target.value ? parseFloat(e.target.value) : undefined,
+                    }))
+                  }
+                  min={input.min_value}
+                  max={input.max_value}
+                  step={input.step}
+                  placeholder={`Ingrese ${input.label.toLowerCase()}`}
+                  className={`w-full px-3 py-2.5 bg-white/5 border rounded-xl text-white text-sm focus:outline-none focus:ring-1 ${
+                    labAutoFilled[input.name]
+                      ? "border-cyan-500/40 focus:border-cyan-500/50 focus:ring-cyan-500/20"
+                      : "border-white/10 focus:border-blue-500/50 focus:ring-blue-500/20"
+                  }`}
+                />
+                {labAutoFilled[input.name] && input.auto_fill_from_lab && labValues[input.auto_fill_from_lab] && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-cyan-400/70 bg-cyan-500/10 px-1.5 py-0.5 rounded">
+                    lab
+                  </span>
+                )}
+              </div>
             )}
           </div>
         ))}
