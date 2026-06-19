@@ -57,7 +57,12 @@ export interface SavedCalculation {
 }
 
 export async function getCalculatorList(): Promise<CalculatorConfig[]> {
-  return apiFetch<CalculatorConfig[]>(`${ENDPOINT}calculator_list/`);
+  const data = await apiFetch<CalculatorConfig[] | { list?: CalculatorConfig[] }>(
+    `${ENDPOINT}calculator_list/`
+  );
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray((data as any).list)) return (data as any).list;
+  return [];
 }
 
 export async function runCalculation(params: {
@@ -73,7 +78,12 @@ export async function runCalculation(params: {
 }
 
 export async function getPatientCalculations(patientId: number): Promise<SavedCalculation[]> {
-  return apiFetch<SavedCalculation[]>(`${ENDPOINT}?patient=${patientId}`);
+  const data = await apiFetch<SavedCalculation[] | { list?: SavedCalculation[] }>(
+    `${ENDPOINT}?patient=${patientId}`
+  );
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray((data as any).list)) return (data as any).list;
+  return [];
 }
 
 export type Visibility = "doctor_only" | "doctor_institution" | "patient_visible" | "public";
