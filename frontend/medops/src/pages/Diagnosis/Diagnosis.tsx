@@ -13,6 +13,28 @@ import { Calculator as CalcIcon, User, FileText } from "lucide-react";
 
 const SESSION_KEY = "diagnosis_selected_patient";
 
+function StatBadge({
+  icon: Icon,
+  value,
+  label,
+}: {
+  icon: React.ElementType;
+  value: string;
+  label: string;
+}) {
+  return (
+    <div className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg flex flex-col items-center min-w-[88px] hover:border-emerald-500/25 transition-colors">
+      <div className="flex items-center gap-1.5">
+        <Icon className="w-3.5 h-3.5 text-emerald-400" />
+        <span className="text-sm font-semibold text-emerald-400 tracking-tight">{value}</span>
+      </div>
+      <span className="text-[10px] text-white/40 uppercase tracking-wider mt-0.5 font-medium">
+        {label}
+      </span>
+    </div>
+  );
+}
+
 export default function Diagnosis() {
   const [selectedPatient, setSelectedPatient] = useState<PatientRef | null>(null);
   const [patientData, setPatientData] = useState<{
@@ -85,35 +107,33 @@ export default function Diagnosis() {
         ]}
       />
 
-      <div className="bg-white/5 border border-white/15 rounded-xl p-6">
-        <div className="flex items-start justify-between gap-4 mb-4">
-          <div>
-            <h1 className="text-xl font-semibold text-white flex items-center gap-3">
-              <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
-                <CpuChipIcon className="w-5 h-5 text-emerald-400" />
-              </div>
-              Centro de Diagnostico Inteligente
-            </h1>
-            <p className="text-sm text-white/50 mt-1 ml-11">
-              Calculadoras clinicas validadas + OCR con inteligencia artificial
-            </p>
+      <div className="bg-white/5 border border-white/15 rounded-xl p-5 md:p-6">
+        <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
+          <div className="flex-1 flex items-start gap-3 min-w-0">
+            <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex-shrink-0">
+              <CpuChipIcon className="w-5 h-5 text-emerald-400" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl font-semibold text-white truncate">
+                Centro de Diagnostico Inteligente
+              </h1>
+              <p className="text-sm text-white/50 mt-0.5">
+                Calculadoras clinicas validadas + OCR con inteligencia artificial
+              </p>
+            </div>
+          </div>
+
+          <div className="hidden md:flex items-stretch gap-2 border-l border-white/10 pl-6">
+            <StatBadge icon={CalcIcon} value="22" label="calculadoras" />
+            <StatBadge icon={CalcIcon} value="11" label="categorias" />
+            <StatBadge icon={BeakerIcon} value="IA" label="Motor OCR" />
           </div>
         </div>
-        <div className="flex items-center gap-6 ml-11 text-xs text-white/40">
-          <span className="flex items-center gap-1.5">
-            <CalcIcon className="w-3.5 h-3.5 text-emerald-400/60" />
-            22 calculadoras
-          </span>
-          <span className="text-white/20">|</span>
-          <span className="flex items-center gap-1.5">
-            <CalcIcon className="w-3.5 h-3.5 text-emerald-400/60" />
-            11 categorias
-          </span>
-          <span className="text-white/20">|</span>
-          <span className="flex items-center gap-1.5">
-            <BeakerIcon className="w-3.5 h-3.5 text-emerald-400/60" />
-            Motor OCR con IA
-          </span>
+
+        <div className="flex md:hidden flex-wrap gap-2 mt-4 pt-4 border-t border-white/10">
+          <StatBadge icon={CalcIcon} value="22" label="calculadoras" />
+          <StatBadge icon={CalcIcon} value="11" label="categorias" />
+          <StatBadge icon={BeakerIcon} value="IA" label="Motor OCR" />
         </div>
       </div>
 
