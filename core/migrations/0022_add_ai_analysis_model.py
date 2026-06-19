@@ -1,14 +1,10 @@
 # Generated manually for AIAnalysis model — Centro de Diagnóstico Inteligente
 
-import django.db.models.deletion
-import django.db.models.indexes
 from decimal import Decimal
 
-import django.core.validators
 from django.conf import settings
-from django.utils import timezone
-
-import core.models
+from django.db import migrations, models
+import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
