@@ -8,8 +8,8 @@ import DiagnosisCalculators from "./tabs/DiagnosisCalculators";
 import DiagnosisPatient from "./tabs/DiagnosisPatient";
 import DiagnosisDocuments from "./tabs/DiagnosisDocuments";
 import { getPatient } from "@/api/patients";
-import { Calculator, User, FileText, CpuChipIcon, BeakerIcon } from "@heroicons/react/24/outline";
-import { Calculator as CalcIcon } from "lucide-react";
+import { CpuChipIcon, BeakerIcon } from "@heroicons/react/24/outline";
+import { Calculator as CalcIcon, User, FileText } from "lucide-react";
 
 const SESSION_KEY = "diagnosis_selected_patient";
 

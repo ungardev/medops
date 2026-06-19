@@ -6,7 +6,7 @@ import { useUploadDocument } from "@/hooks/patients/useUploadDocument";
 import { useDeleteDocument } from "@/hooks/patients/useDeleteDocument";
 import type { MedicalDocument } from "@/types/documents";
 import { useNotify } from "@/hooks/useNotify";
-import EliteModal from "../components/EliteModal";
+import EliteModal from "../../../components/Common/EliteModal";
 import {
   CloudArrowUpIcon,
   DocumentIcon,
