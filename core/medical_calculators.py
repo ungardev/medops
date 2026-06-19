@@ -4,7 +4,7 @@ FASE 1: 8 calculadoras clínicas validadas
 """
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Optional, Union
 from decimal import Decimal
 
 
@@ -42,7 +42,7 @@ class CalculatorConfig:
     description: str
     inputs: list[CalculatorInput]
     calculate: callable
-    interpret: callable | None = None
+    interpret: Optional[callable] = None
     references: list[str] = field(default_factory=list)
 
 
@@ -474,6 +474,708 @@ def calculate_wells_pe(
     )
 
 
+# ─── 9. MELD — Model for End-Stage Liver Disease ──────────────────────────────
+
+
+def calculate_meld(
+    age: int,
+    bilirubin_mgdl: float,
+    inr: float,
+    creatinine_mgdl: float,
+) -> CalculatorResult:
+    import math
+
+    bili = max(bilirubin_mgdl, 1.0)
+    inr_val = max(inr, 1.0)
+    creat = max(creatinine_mgdl, 1.0)
+
+    meld = (
+        9.57 * math.log(bili) + 3.78 * math.log(inr_val) + 11.2 * math.log(creat) + 6.43
+    )
+    meld = round(meld, 1)
+    meld = max(6.0, min(40.0, meld))
+
+    if meld < 10:
+        interpretation = "Enfermedad hepática temprana —listar para transplante"
+        risk_level = "Bajo"
+    elif meld < 19:
+        interpretation = "Enfermedad hepática moderada — evaluar listado"
+        risk_level = "Moderado"
+    elif meld < 25:
+        interpretation = "Enfermedad avanzada — transplante prioritario"
+        risk_level = "Alto"
+    else:
+        interpretation = "Enfermedad muy avanzada — alto riesgo de mortalidad"
+        risk_level = "Muy alto"
+
+    return CalculatorResult(
+        name="meld",
+        label="MELD",
+        value=meld,
+        unit="puntos",
+        interpretation=interpretation,
+        risk_level=risk_level,
+        details=[
+            {"label": "Bilirrubina", "value": f"{bilirubin_mgdl:.2f} mg/dL"},
+            {"label": "INR", "value": f"{inr:.2f}"},
+            {"label": "Creatinina", "value": f"{creatinine_mgdl:.2f} mg/dL"},
+            {"label": "Edad", "value": f"{age} años"},
+            {"label": "MELD-Na", "value": "Considerar añadir Na sérico"},
+        ],
+    )
+
+
+# ─── 10. Framingham Risk Score — 10-Year CVD ─────────────────────────────────
+
+
+def calculate_framingham(
+    age: int,
+    total_cholesterol: float,
+    hdl_cholesterol: float,
+    systolic_bp: int,
+    bp_treatment: bool,
+    smoking: bool,
+    diabetes: bool,
+    gender: str,
+) -> CalculatorResult:
+    points = 0
+    details = []
+
+    if gender == "M":
+        if age >= 75:
+            points += 12
+            details.append({"label": "Edad 75+", "value": "+12"})
+        elif age >= 70:
+            points += 10
+            details.append({"label": "Edad 70-74", "value": "+10"})
+        elif age >= 65:
+            points += 8
+            details.append({"label": "Edad 65-69", "value": "+8"})
+        elif age >= 60:
+            points += 6
+            details.append({"label": "Edad 60-64", "value": "+6"})
+        elif age >= 55:
+            points += 5
+            details.append({"label": "Edad 55-59", "value": "+5"})
+        elif age >= 50:
+            points += 3
+            details.append({"label": "Edad 50-54", "value": "+3"})
+        elif age >= 45:
+            points += 2
+            details.append({"label": "Edad 45-49", "value": "+2"})
+        else:
+            points += 0
+            details.append({"label": "Edad < 45", "value": "0"})
+
+        if total_cholesterol >= 280:
+            points += 5
+            details.append({"label": "Colesterol total ≥ 280", "value": "+5"})
+        elif total_cholesterol >= 240:
+            points += 3
+            details.append({"label": "Colesterol total 240-279", "value": "+3"})
+        elif total_cholesterol >= 200:
+            points += 1
+            details.append({"label": "Colesterol total 200-239", "value": "+1"})
+        else:
+            details.append({"label": "Colesterol total < 200", "value": "0"})
+
+        if hdl_cholesterol >= 60:
+            points -= 2
+            details.append({"label": "HDL ≥ 60 mg/dL", "value": "-2"})
+        elif hdl_cholesterol >= 50:
+            points += 0
+            details.append({"label": "HDL 50-59 mg/dL", "value": "0"})
+        elif hdl_cholesterol >= 40:
+            points += 1
+            details.append({"label": "HDL 40-49 mg/dL", "value": "+1"})
+        else:
+            points += 2
+            details.append({"label": "HDL < 40 mg/dL", "value": "+2"})
+
+        if bp_treatment:
+            if systolic_bp >= 160:
+                points += 4
+                details.append({"label": "PAS ≥ 160 con tratamiento", "value": "+4"})
+            elif systolic_bp >= 140:
+                points += 3
+                details.append({"label": "PAS 140-159 con tratamiento", "value": "+3"})
+            else:
+                points += 2
+                details.append({"label": "PAS < 140 con tratamiento", "value": "+2"})
+        else:
+            if systolic_bp >= 160:
+                points += 3
+                details.append({"label": "PAS ≥ 160 sin tratamiento", "value": "+3"})
+            elif systolic_bp >= 140:
+                points += 2
+                details.append({"label": "PAS 140-159 sin tratamiento", "value": "+2"})
+            else:
+                points += 0
+                details.append({"label": "PAS < 140 sin tratamiento", "value": "0"})
+
+        if smoking:
+            points += 4
+            details.append({"label": "Fumador activo", "value": "+4"})
+        else:
+            details.append({"label": "No fumador", "value": "0"})
+
+        if diabetes:
+            points += 3
+            details.append({"label": "Diabetes mellitus", "value": "+3"})
+        else:
+            details.append({"label": "Sin diabetes", "value": "0"})
+
+    else:
+        if age >= 75:
+            points += 10
+            details.append({"label": "Edad 75+", "value": "+10"})
+        elif age >= 70:
+            points += 8
+            details.append({"label": "Edad 70-74", "value": "+8"})
+        elif age >= 65:
+            points += 6
+            details.append({"label": "Edad 65-69", "value": "+6"})
+        elif age >= 60:
+            points += 5
+            details.append({"label": "Edad 60-64", "value": "+5"})
+        elif age >= 55:
+            points += 3
+            details.append({"label": "Edad 55-59", "value": "+3"})
+        elif age >= 50:
+            points += 2
+            details.append({"label": "Edad 50-54", "value": "+2"})
+        elif age >= 45:
+            points += 1
+            details.append({"label": "Edad 45-49", "value": "+1"})
+        else:
+            points += 0
+            details.append({"label": "Edad < 45", "value": "0"})
+
+        if total_cholesterol >= 280:
+            points += 5
+            details.append({"label": "Colesterol total ≥ 280", "value": "+5"})
+        elif total_cholesterol >= 240:
+            points += 3
+            details.append({"label": "Colesterol total 240-279", "value": "+3"})
+        elif total_cholesterol >= 200:
+            points += 1
+            details.append({"label": "Colesterol total 200-239", "value": "+1"})
+        else:
+            details.append({"label": "Colesterol total < 200", "value": "0"})
+
+        if hdl_cholesterol >= 60:
+            points -= 2
+            details.append({"label": "HDL ≥ 60 mg/dL", "value": "-2"})
+        elif hdl_cholesterol >= 50:
+            points += 0
+            details.append({"label": "HDL 50-59 mg/dL", "value": "0"})
+        elif hdl_cholesterol >= 40:
+            points += 1
+            details.append({"label": "HDL 40-49 mg/dL", "value": "+1"})
+        else:
+            points += 2
+            details.append({"label": "HDL < 40 mg/dL", "value": "+2"})
+
+        if bp_treatment:
+            if systolic_bp >= 160:
+                points += 4
+                details.append({"label": "PAS ≥ 160 con tratamiento", "value": "+4"})
+            elif systolic_bp >= 140:
+                points += 3
+                details.append({"label": "PAS 140-159 con tratamiento", "value": "+3"})
+            else:
+                points += 2
+                details.append({"label": "PAS < 140 con tratamiento", "value": "+2"})
+        else:
+            if systolic_bp >= 160:
+                points += 3
+                details.append({"label": "PAS ≥ 160 sin tratamiento", "value": "+3"})
+            elif systolic_bp >= 140:
+                points += 2
+                details.append({"label": "PAS 140-159 sin tratamiento", "value": "+2"})
+            else:
+                points += 0
+                details.append({"label": "PAS < 140 sin tratamiento", "value": "0"})
+
+        if smoking:
+            points += 3
+            details.append({"label": "Fumadora activa", "value": "+3"})
+        else:
+            details.append({"label": "No fumadora", "value": "0"})
+
+        if diabetes:
+            points += 3
+            details.append({"label": "Diabetes mellitus", "value": "+3"})
+        else:
+            details.append({"label": "Sin diabetes", "value": "0"})
+
+    risk_10_year = max(1, min(30, _framingham_risk_table(gender, points)))
+
+    if risk_10_year < 10:
+        interpretation = f"Riesgo cardiovascular bajo — {'<10%'}"
+        risk_level = "Bajo"
+    elif risk_10_year < 20:
+        interpretation = f"Riesgo cardiovascular moderado — {'10-20%'}"
+        risk_level = "Moderado"
+    else:
+        interpretation = f"Riesgo cardiovascular alto — {'>20%'}"
+        risk_level = "Alto"
+
+    return CalculatorResult(
+        name="framingham",
+        label="Framingham",
+        value=risk_10_year,
+        unit="%",
+        interpretation=interpretation,
+        risk_level=risk_level,
+        details=details
+        + [
+            {"label": "Puntos totales", "value": str(points)},
+            {
+                "label": "Riesgo 10 años",
+                "value": f"{risk_10_year}%",
+            },
+        ],
+    )
+
+
+def _framingham_risk_table(gender: str, points: int) -> float:
+    table = {
+        "M": {
+            -3: 0.0,
+            -2: 0.0,
+            -1: 0.0,
+            0: 0.0,
+            1: 0.0,
+            2: 0.0,
+            3: 0.0,
+            4: 0.0,
+            5: 0.0,
+            6: 0.0,
+            7: 0.0,
+            8: 0.0,
+            9: 0.0,
+            10: 0.0,
+            11: 0.0,
+            12: 0.0,
+            13: 0.0,
+            14: 0.0,
+            15: 1.0,
+            16: 1.0,
+            17: 1.0,
+            18: 2.0,
+            19: 2.0,
+            20: 3.0,
+            21: 4.0,
+            22: 5.0,
+            23: 6.0,
+            24: 8.0,
+            25: 10.0,
+            26: 12.0,
+            27: 16.0,
+            28: 20.0,
+            29: 25.0,
+            30: 30.0,
+        },
+        "F": {
+            -2: 0.0,
+            -1: 0.0,
+            0: 0.0,
+            1: 0.0,
+            2: 0.0,
+            3: 0.0,
+            4: 0.0,
+            5: 0.0,
+            6: 0.0,
+            7: 0.0,
+            8: 0.0,
+            9: 0.0,
+            10: 0.0,
+            11: 1.0,
+            12: 1.0,
+            13: 1.0,
+            14: 2.0,
+            15: 3.0,
+            16: 4.0,
+            17: 5.0,
+            18: 6.0,
+            19: 8.0,
+            20: 11.0,
+            21: 14.0,
+            22: 17.0,
+            23: 22.0,
+            24: 27.0,
+            25: 30.0,
+        },
+    }
+    return table.get(gender, {}).get(points, 1.0)
+
+
+# ─── 11. APACHE II — ICU Mortality ───────────────────────────────────────────
+
+
+def calculate_apache_ii(
+    age: int,
+    temp_c: float,
+    map_mmhg: int,
+    hr_bpm: int,
+    rr_bpm: int,
+    fio2: int,
+    pao2_mmhg: float,
+    ph_arterial: float,
+    paco2_mmhg: float,
+    sodium_mEqL: int,
+    potassium_mEqL: float,
+    creatinine_mgdl: float,
+    hematocrit_pct: float,
+    wbc_x1000: float,
+    gcs_eye: int,
+    gcs_verbal: int,
+    gcs_motor: int,
+    chronic_health: bool,
+) -> CalculatorResult:
+    gcs = gcs_eye + gcs_verbal + gcs_motor
+
+    if age < 40:
+        age_pts = 0
+    elif age < 60:
+        age_pts = 2
+    elif age < 65:
+        age_pts = 3
+    elif age < 70:
+        age_pts = 4
+    elif age < 75:
+        age_pts = 5
+    else:
+        age_pts = 6
+
+    if map_mmhg < 70:
+        map_pts = 4
+    elif map_mmhg < 80:
+        map_pts = 2
+    elif map_mmhg < 100:
+        map_pts = 0
+    elif map_mmhg < 130:
+        map_pts = 1
+    elif map_mmhg < 140:
+        map_pts = 2
+    else:
+        map_pts = 3
+
+    if fio2 >= 50:
+        aado2 = (fio2 * (713 - paco2_mmhg) - pao2_mmhg) / 100
+        if aado2 < 200:
+            aado2_pts = 0
+        elif aado2 < 350:
+            aado2_pts = 2
+        elif aado2 < 500:
+            aado2_pts = 3
+        else:
+            aado2_pts = 4
+    else:
+        if pao2_mmhg >= 80:
+            aado2_pts = 0
+        elif pao2_mmhg >= 70:
+            aado2_pts = 1
+        elif pao2_mmhg >= 60:
+            aado2_pts = 2
+        else:
+            aado2_pts = 3
+
+    if ph_arterial < 7.15:
+        ph_pts = 4
+    elif ph_arterial < 7.25:
+        ph_pts = 3
+    elif ph_arterial < 7.35:
+        ph_pts = 1
+    else:
+        ph_pts = 0
+
+    if paco2_mmhg < 25:
+        paco2_pts = 4
+    elif paco2_mmhg < 30:
+        paco2_pts = 2
+    elif paco2_mmhg < 45:
+        paco2_pts = 0
+    elif paco2_mmhg < 52:
+        paco2_pts = 1
+    else:
+        paco2_pts = 4
+
+    if sodium_mEqL < 111:
+        na_pts = 4
+    elif sodium_mEqL < 120:
+        na_pts = 3
+    elif sodium_mEqL < 130:
+        na_pts = 2
+    elif sodium_mEqL < 150:
+        na_pts = 0
+    elif sodium_mEqL < 151:
+        na_pts = 1
+    else:
+        na_pts = 4
+
+    if potassium_mEqL < 2.5:
+        k_pts = 4
+    elif potassium_mEqL < 3.0:
+        k_pts = 2
+    elif potassium_mEqL < 3.5:
+        k_pts = 1
+    elif potassium_mEqL < 5.5:
+        k_pts = 0
+    elif potassium_mEqL < 6.0:
+        k_pts = 2
+    else:
+        k_pts = 4
+
+    if creatinine_mgdl < 0.6:
+        creat_pts = 2
+    elif creatinine_mgdl < 1.5:
+        creat_pts = 0
+    elif creatinine_mgdl < 2.0:
+        creat_pts = 2
+    else:
+        creat_pts = 4
+
+    if hematocrit_pct < 30.0:
+        hct_pts = 4
+    elif hematocrit_pct < 35.0:
+        hct_pts = 2
+    elif hematocrit_pct < 46.0:
+        hct_pts = 0
+    else:
+        hct_pts = 2
+
+    if wbc_x1000 < 1.0:
+        wbc_pts = 4
+    elif wbc_x1000 < 3.0:
+        wbc_pts = 2
+    elif wbc_x1000 < 15.0:
+        wbc_pts = 0
+    else:
+        wbc_pts = 2
+
+    apache_score = (
+        age_pts
+        + map_pts
+        + aado2_pts
+        + ph_pts
+        + paco2_pts
+        + na_pts
+        + k_pts
+        + creat_pts
+        + hct_pts
+        + wbc_pts
+        + (15 - gcs)
+    )
+
+    chronic_pts = 5 if chronic_health else 0
+    total_apache = apache_score + chronic_pts
+
+    mortality = _apache_mortality(total_apache)
+
+    if total_apache < 10:
+        interpretation = "ICU bajo riesgo — mortalidad estimada <10%"
+        risk_level = "Bajo"
+    elif total_apache < 20:
+        interpretation = "ICU riesgo moderado — mortalidal {'15-25%'}"
+        risk_level = "Moderado"
+    elif total_apache < 30:
+        interpretation = "ICU alto riesgo — mortalidad {'40-55%'}"
+        risk_level = "Alto"
+    else:
+        interpretation = "ICU muy alto riesgo — mortalidad >{'75%'}"
+        risk_level = "Muy alto"
+
+    return CalculatorResult(
+        name="apache_ii",
+        label="APACHE II",
+        value=total_apache,
+        unit="puntos",
+        interpretation=interpretation,
+        risk_level=risk_level,
+        details=[
+            {"label": "Score AG + Crónicos", "value": str(total_apache)},
+            {"label": "Mortalidad estimada", "value": f"{mortality}%"},
+            {"label": "GCS", "value": f"{gcs}/15"},
+            {"label": "Edad pts", "value": str(age_pts)},
+            {"label": "PA/FiO2 pts", "value": str(aado2_pts)},
+            {"label": "Enfermedad crónica", "value": "Sí" if chronic_health else "No"},
+        ],
+    )
+
+
+def _apache_mortality(score: int) -> int:
+    if score <= 4:
+        return 2
+    elif score <= 9:
+        return 5
+    elif score <= 14:
+        return 8
+    elif score <= 19:
+        return 15
+    elif score <= 24:
+        return 25
+    elif score <= 29:
+        return 40
+    elif score <= 34:
+        return 55
+    elif score <= 39:
+        return 75
+    else:
+        return 90
+
+
+# ─── 12. CURB-65 — Neumonía ───────────────────────────────────────────────────
+
+
+def calculate_curb65(
+    confusion: bool,
+    bun_mgdl: float,
+    rr_over_30: bool,
+    bp_diastolic_under_60: bool,
+    age_over_65: bool,
+) -> CalculatorResult:
+    score = sum(
+        [
+            confusion,
+            bun_mgdl > 19,
+            rr_over_30,
+            bp_diastolic_under_60,
+            age_over_65,
+        ]
+    )
+    details = [
+        {"label": "Confusión aguda", "value": "Sí" if confusion else "No"},
+        {
+            "label": "BUN > 19 mg/dL",
+            "value": f"{'Sí' if bun_mgdl > 19 else 'No'} ({bun_mgdl:.1f})",
+        },
+        {"label": "FR ≥ 30/min", "value": "Sí" if rr_over_30 else "No"},
+        {"label": "PAD < 60 mmHg", "value": "Sí" if bp_diastolic_under_60 else "No"},
+        {"label": "Edad ≥ 65 años", "value": "Sí" if age_over_65 else "No"},
+    ]
+
+    if score == 0:
+        interpretation = "Neumonía leve — tratamiento ambulatorio"
+        risk_level = "Bajo"
+        recommendation = "Antibióticos orales + seguimiento"
+    elif score == 1:
+        interpretation = "Neumonía no severa — considerar alta"
+        risk_level = "Bajo-Moderado"
+        recommendation = "Antibióticos orales o alta temprana"
+    elif score == 2:
+        interpretation = "Neumonía severa — hospitalización"
+        risk_level = "Moderado-Alto"
+        recommendation = "Hospitalización + antibióticos IV"
+    elif score == 3:
+        interpretation = "Neumonía muy severa — UCI posible"
+        risk_level = "Alto"
+        recommendation = "UCI o monitorización estrecha"
+    else:
+        interpretation = "Neumonía crítica — UCI"
+        risk_level = "Muy alto"
+        recommendation = "UCI + soporte ventilatorio"
+
+    return CalculatorResult(
+        name="curb65",
+        label="CURB-65",
+        value=score,
+        unit="/5",
+        interpretation=interpretation,
+        risk_level=risk_level,
+        details=details + [{"label": "Recomendación", "value": recommendation}],
+    )
+
+
+# ─── 13. Child-Pugh — Cirrosis ─────────────────────────────────────────────────
+
+
+def calculate_child_pugh(
+    bilirubin_mgdl: float,
+    albumin_gdL: float,
+    inr: float,
+    ascites: str,
+    encephalopathy: str,
+) -> CalculatorResult:
+    score = 0
+    details = []
+
+    if bilirubin_mgdl < 2.0:
+        score += 1
+        details.append({"label": "Bilirrubina < 2 mg/dL", "value": "+1"})
+    elif bilirubin_mgdl <= 3.0:
+        score += 2
+        details.append({"label": "Bilirrubina 2-3 mg/dL", "value": "+2"})
+    else:
+        score += 3
+        details.append({"label": "Bilirrubina > 3 mg/dL", "value": "+3"})
+
+    if albumin_gdL > 3.5:
+        score += 1
+        details.append({"label": "Albúmina > 3.5 g/dL", "value": "+1"})
+    elif albumin_gdL >= 2.8:
+        score += 2
+        details.append({"label": "Albúmina 2.8-3.5 g/dL", "value": "+2"})
+    else:
+        score += 3
+        details.append({"label": "Albúmina < 2.8 g/dL", "value": "+3"})
+
+    if inr < 1.7:
+        score += 1
+        details.append({"label": "INR < 1.7", "value": "+1"})
+    elif inr <= 2.3:
+        score += 2
+        details.append({"label": "INR 1.7-2.3", "value": "+2"})
+    else:
+        score += 3
+        details.append({"label": "INR > 2.3", "value": "+3"})
+
+    ascites_map = {"none": 1, "mild": 2, "moderate": 3}
+    ascites_pts = ascites_map.get(ascites, 1)
+    score += ascites_pts
+    details.append(
+        {"label": "Ascitis", "value": f"{ascites.capitalize()} ({ascites_pts})"}
+    )
+
+    enceph_map = {"none": 1, "grade1_2": 2, "grade3_4": 3}
+    enceph_pts = enceph_map.get(encephalopathy, 1)
+    score += enceph_pts
+    details.append(
+        {
+            "label": "Encefalopatía",
+            "value": f"{encephalopathy.replace('_', ' ').capitalize()} ({enceph_pts})",
+        }
+    )
+
+    if score <= 6:
+        interpretation = "Child-Pugh A — cirrosis compensada"
+        risk_level = "Bajo"
+        mELD = min(10, 6 + score)
+    elif score <= 9:
+        interpretation = "Child-Pugh B — cirrosis descompensada"
+        risk_level = "Moderado"
+        mELD = 12 + (score - 6) * 2
+    else:
+        interpretation = "Child-Pugh C — cirrosis avanzada"
+        risk_level = "Alto"
+        mELD = min(25, 18 + (score - 10) * 3)
+
+    return CalculatorResult(
+        name="child_pugh",
+        label="Child-Pugh",
+        value=score,
+        unit="puntos",
+        interpretation=interpretation,
+        risk_level=risk_level,
+        details=details
+        + [
+            {"label": "Clasificación", "value": interpretation},
+            {"label": "MELD estimado", "value": f"{mELD:.0f}"},
+        ],
+    )
+
+
 # ─── CALCULATOR REGISTRY ──────────────────────────────────────────────────────
 
 
@@ -848,6 +1550,473 @@ register_calculator(
             bool(malignancy),
         ),
         references=["Wells PS. Ann Intern Med 2001;135:98-107"],
+    )
+)
+
+
+register_calculator(
+    CalculatorConfig(
+        id="meld",
+        name="MELD",
+        specialty="Hepatología / Transplante",
+        category="Hígado",
+        description="Model for End-Stage Liver Disease. Priorización para transplante hepático.",
+        inputs=[
+            CalculatorInput(
+                "age",
+                "Edad",
+                "number",
+                required=True,
+                min_value=1,
+                max_value=120,
+                auto_fill_from_patient="age",
+            ),
+            CalculatorInput(
+                "bilirubin_mgdl",
+                "Bilirrubina Total",
+                "number",
+                required=True,
+                min_value=0.1,
+                max_value=50,
+                step=0.1,
+                default_unit="mg/dL",
+            ),
+            CalculatorInput(
+                "inr",
+                "INR",
+                "number",
+                required=True,
+                min_value=0.8,
+                max_value=15,
+                step=0.1,
+            ),
+            CalculatorInput(
+                "creatinine_mgdl",
+                "Creatinina Sérica",
+                "number",
+                required=True,
+                min_value=0.1,
+                max_value=30,
+                step=0.1,
+                default_unit="mg/dL",
+            ),
+        ],
+        calculate=lambda age, bilirubin_mgdl, inr, creatinine_mgdl: calculate_meld(
+            age, bilirubin_mgdl, inr, creatinine_mgdl
+        ),
+        references=[
+            "Kamath PS. Hepatology 2001;33:464-470",
+            "Wiesner R. Gastroenterology 2003;124:91-96",
+        ],
+    )
+)
+
+
+register_calculator(
+    CalculatorConfig(
+        id="framingham",
+        name="Framingham",
+        specialty="Cardiología / Medicina General",
+        category="Riesgo Cardiovascular",
+        description="Score de riesgo cardiovascular a 10 años. Guía ATP III/NCEP.",
+        inputs=[
+            CalculatorInput(
+                "age",
+                "Edad",
+                "number",
+                required=True,
+                min_value=20,
+                max_value=80,
+                auto_fill_from_patient="age",
+            ),
+            CalculatorInput(
+                "gender",
+                "Sexo",
+                "select",
+                required=True,
+                options=[
+                    {"value": "M", "label": "Masculino"},
+                    {"value": "F", "label": "Femenino"},
+                ],
+                auto_fill_from_patient="gender",
+            ),
+            CalculatorInput(
+                "total_cholesterol",
+                "Colesterol Total",
+                "number",
+                required=True,
+                min_value=100,
+                max_value=400,
+                default_unit="mg/dL",
+            ),
+            CalculatorInput(
+                "hdl_cholesterol",
+                "HDL Colesterol",
+                "number",
+                required=True,
+                min_value=10,
+                max_value=150,
+                default_unit="mg/dL",
+            ),
+            CalculatorInput(
+                "systolic_bp",
+                "Presión Arterial Sistólica",
+                "number",
+                required=True,
+                min_value=80,
+                max_value=250,
+                default_unit="mmHg",
+            ),
+            CalculatorInput(
+                "bp_treatment",
+                "Tratamiento Antihipertensivo",
+                "boolean",
+                required=True,
+            ),
+            CalculatorInput("smoking", "Fumador Activo", "boolean", required=True),
+            CalculatorInput("diabetes", "Diabetes Mellitus", "boolean", required=True),
+        ],
+        calculate=lambda age,
+        total_cholesterol,
+        hdl_cholesterol,
+        systolic_bp,
+        bp_treatment,
+        smoking,
+        diabetes,
+        gender: calculate_framingham(
+            age,
+            total_cholesterol,
+            hdl_cholesterol,
+            systolic_bp,
+            bp_treatment,
+            smoking,
+            diabetes,
+            gender,
+        ),
+        references=[
+            "Wilson PWF. Circulation 1998;97:1837-1847",
+            "NCEP ATP III Guidelines 2001",
+        ],
+    )
+)
+
+
+register_calculator(
+    CalculatorConfig(
+        id="apache_ii",
+        name="APACHE II",
+        specialty="Medicina Crítica / UCI",
+        category="UCI",
+        description="Acute Physiology and Chronic Health Evaluation. Predice mortalidad en UCI.",
+        inputs=[
+            CalculatorInput(
+                "age",
+                "Edad",
+                "number",
+                required=True,
+                min_value=1,
+                max_value=120,
+                auto_fill_from_patient="age",
+            ),
+            CalculatorInput(
+                "temp_c",
+                "Temperatura (°C)",
+                "number",
+                required=True,
+                min_value=30,
+                max_value=45,
+                step=0.1,
+            ),
+            CalculatorInput(
+                "map_mmhg",
+                "Presión Arterial Media (mmHg)",
+                "number",
+                required=True,
+                min_value=20,
+                max_value=250,
+            ),
+            CalculatorInput(
+                "hr_bpm",
+                "Frecuencia Cardíaca (lpm)",
+                "number",
+                required=True,
+                min_value=20,
+                max_value=250,
+            ),
+            CalculatorInput(
+                "rr_bpm",
+                "Frecuencia Respiratoria (/min)",
+                "number",
+                required=True,
+                min_value=4,
+                max_value=60,
+            ),
+            CalculatorInput(
+                "fio2",
+                "FiO2 (%)",
+                "number",
+                required=True,
+                min_value=21,
+                max_value=100,
+            ),
+            CalculatorInput(
+                "pao2_mmhg",
+                "PaO2 (mmHg)",
+                "number",
+                required=True,
+                min_value=30,
+                max_value=600,
+            ),
+            CalculatorInput(
+                "ph_arterial",
+                "pH Arterial",
+                "number",
+                required=True,
+                min_value=6.8,
+                max_value=7.8,
+                step=0.01,
+            ),
+            CalculatorInput(
+                "paco2_mmhg",
+                "PaCO2 (mmHg)",
+                "number",
+                required=True,
+                min_value=10,
+                max_value=100,
+            ),
+            CalculatorInput(
+                "sodium_mEqL",
+                "Sodio (mEq/L)",
+                "number",
+                required=True,
+                min_value=100,
+                max_value=180,
+            ),
+            CalculatorInput(
+                "potassium_mEqL",
+                "Potasio (mEq/L)",
+                "number",
+                required=True,
+                min_value=1.5,
+                max_value=9.0,
+                step=0.1,
+            ),
+            CalculatorInput(
+                "creatinine_mgdl",
+                "Creatinina (mg/dL)",
+                "number",
+                required=True,
+                min_value=0.1,
+                max_value=30,
+                step=0.1,
+            ),
+            CalculatorInput(
+                "hematocrit_pct",
+                "Hematocrito (%)",
+                "number",
+                required=True,
+                min_value=10,
+                max_value=65,
+            ),
+            CalculatorInput(
+                "wbc_x1000",
+                "Leucocitos (×1000/µL)",
+                "number",
+                required=True,
+                min_value=0.1,
+                max_value=100,
+                step=0.1,
+            ),
+            CalculatorInput(
+                "gcs_eye",
+                "GCS — Apertura Ocular",
+                "select",
+                required=True,
+                options=[
+                    {"value": 4, "label": "Espontánea (4)"},
+                    {"value": 3, "label": "Al habla (3)"},
+                    {"value": 2, "label": "Al dolor (2)"},
+                    {"value": 1, "label": "Ninguna (1)"},
+                ],
+            ),
+            CalculatorInput(
+                "gcs_verbal",
+                "GCS — Respuesta Verbal",
+                "select",
+                required=True,
+                options=[
+                    {"value": 5, "label": "Orientada (5)"},
+                    {"value": 4, "label": "Confusa (4)"},
+                    {"value": 3, "label": "Inapropiada (3)"},
+                    {"value": 2, "label": "Sonidos (2)"},
+                    {"value": 1, "label": "Ninguna (1)"},
+                ],
+            ),
+            CalculatorInput(
+                "gcs_motor",
+                "GCS — Respuesta Motora",
+                "select",
+                required=True,
+                options=[
+                    {"value": 6, "label": "Espontánea (6)"},
+                    {"value": 5, "label": "Localiza (5)"},
+                    {"value": 4, "label": "Flexión normal (4)"},
+                    {"value": 3, "label": "Flexión anormal (3)"},
+                    {"value": 2, "label": "Extensión (2)"},
+                    {"value": 1, "label": "Ninguna (1)"},
+                ],
+            ),
+            CalculatorInput(
+                "chronic_health",
+                "Enfermedad Crónica Severa",
+                "boolean",
+                required=True,
+            ),
+        ],
+        calculate=lambda **kw: calculate_apache_ii(**kw),
+        references=["Knaus WA. Crit Care Med 1985;13:818-829"],
+    )
+)
+
+
+register_calculator(
+    CalculatorConfig(
+        id="curb65",
+        name="CURB-65",
+        specialty="Medicina de Emergencia / Neumología",
+        category="Neumonía",
+        description="Severidad de neumonía adquirida en comunidad. Consenso IDSA/ATS.",
+        inputs=[
+            CalculatorInput(
+                "confusion",
+                "Confusión Aguda (nuevo inicio)",
+                "boolean",
+                required=True,
+            ),
+            CalculatorInput(
+                "bun_mgdl",
+                "BUN",
+                "number",
+                required=True,
+                min_value=1,
+                max_value=200,
+                step=0.5,
+                default_unit="mg/dL",
+            ),
+            CalculatorInput(
+                "rr_over_30",
+                "Frecuencia Respiratoria ≥ 30/min",
+                "boolean",
+                required=True,
+            ),
+            CalculatorInput(
+                "bp_diastolic_under_60",
+                "Presión Arterial Diastólica < 60 mmHg",
+                "boolean",
+                required=True,
+            ),
+            CalculatorInput(
+                "age_over_65",
+                "Edad ≥ 65 años",
+                "boolean",
+                required=True,
+                auto_fill_from_patient="age",
+            ),
+        ],
+        calculate=lambda confusion,
+        bun_mgdl,
+        rr_over_30,
+        bp_diastolic_under_60,
+        age_over_65: calculate_curb65(
+            bool(confusion),
+            float(bun_mgdl),
+            bool(rr_over_30),
+            bool(bp_diastolic_under_60),
+            bool(age_over_65),
+        ),
+        references=[
+            "Lim WS. Thorax 2003;58:377-382",
+            "IDSA/ATS Community-Acquired Pneumonia Guidelines 2019",
+        ],
+    )
+)
+
+
+register_calculator(
+    CalculatorConfig(
+        id="child_pugh",
+        name="Child-Pugh",
+        specialty="Hepatología / Gastroenterología",
+        category="Hígado",
+        description="Clasificación de severidad de cirrosis. Evalúa prognóstico pre-transplante.",
+        inputs=[
+            CalculatorInput(
+                "bilirubin_mgdl",
+                "Bilirrubina Total (mg/dL)",
+                "number",
+                required=True,
+                min_value=0.1,
+                max_value=50,
+                step=0.1,
+                default_unit="mg/dL",
+            ),
+            CalculatorInput(
+                "albumin_gdL",
+                "Albúmina Sérica",
+                "number",
+                required=True,
+                min_value=1.0,
+                max_value=6.0,
+                step=0.1,
+                default_unit="g/dL",
+            ),
+            CalculatorInput(
+                "inr",
+                "INR",
+                "number",
+                required=True,
+                min_value=0.8,
+                max_value=15,
+                step=0.1,
+            ),
+            CalculatorInput(
+                "ascites",
+                "Ascitis",
+                "select",
+                required=True,
+                options=[
+                    {"value": "none", "label": "Ninguna"},
+                    {"value": "mild", "label": "Leve"},
+                    {"value": "moderate", "label": "Moderada-Severa"},
+                ],
+            ),
+            CalculatorInput(
+                "encephalopathy",
+                "Encefalopatía Hepática",
+                "select",
+                required=True,
+                options=[
+                    {"value": "none", "label": "Ninguna"},
+                    {"value": "grade1_2", "label": "Grado I-II"},
+                    {"value": "grade3_4", "label": "Grado III-IV"},
+                ],
+            ),
+        ],
+        calculate=lambda bilirubin_mgdl,
+        albumin_gdL,
+        inr,
+        ascites,
+        encephalopathy: calculate_child_pugh(
+            float(bilirubin_mgdl),
+            float(albumin_gdL),
+            float(inr),
+            str(ascites),
+            str(encephalopathy),
+        ),
+        references=[
+            "Child CG. Surgery 1964;55:323-327",
+            "Pugh RNH. Br J Surg 1973;60:646-649",
+        ],
     )
 )
 
