@@ -1,16 +1,36 @@
 // src/pages/Diagnosis/components/CalculatorEngine.tsx
 import { useState } from "react";
-import type { CalculatorConfig, CalculationResult, LabValue } from "@/api/diagnosis";
+import type { CalculatorConfig, CalculationResult, LabValue, SavedCalculation } from "@/api/diagnosis";
 import { runCalculation } from "@/api/diagnosis";
-import { getRiskColor } from "../calculators/registry";
-import { Activity, BookOpen, CheckCircle, FlaskConical } from "lucide-react";
+import { getRiskColor, formatRelativeTime } from "../calculators/registry";
+import { Activity, BookOpen, CheckCircle, FlaskConical, Clock } from "lucide-react";
 
 interface Props {
   calculator: CalculatorConfig;
   patientId: number;
   autoFill?: Record<string, string | undefined> | undefined;
   labValues?: Record<string, LabValue> | undefined;
+  lastSavedResult?: SavedCalculation | null | undefined;
   onResult?: (result: CalculationResult) => void;
+}
+
+function DetailRow({ label, value, isAbnormal }: { label: string; value: string; isAbnormal?: boolean }) {
+  return (
+    <div className="flex justify-between text-xs">
+      <span className="text-white/40">{label}</span>
+      <span className={isAbnormal ? "text-amber-400 font-medium" : "text-white/70"}>{value}</span>
+    </div>
+  );
+}
+
+const ABNORMAL_LAB_KEYS = ["bilirrubina", "creatinina", "urea", "glucosa", "colesterol", "hdl", "ldl", "triglicerid"];
+
+function isAbnormalLabValue(label: string): boolean {
+  const lower = label.toLowerCase();
+  for (const key of ABNORMAL_LAB_KEYS) {
+    if (lower.includes(key)) return true;
+  }
+  return false;
 }
 
 export default function CalculatorEngine({
@@ -18,6 +38,7 @@ export default function CalculatorEngine({
   patientId,
   autoFill = {},
   labValues = {},
+  lastSavedResult,
   onResult,
 }: Props) {
   const [labAutoFilled, setLabAutoFilled] = useState<Record<string, boolean>>(() => {
@@ -91,6 +112,20 @@ export default function CalculatorEngine({
           </span>
         </div>
       </div>
+
+      {lastSavedResult && (
+        <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 flex items-start gap-2">
+          <Clock className="h-4 w-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-xs text-emerald-300 font-medium">Último resultado guardado</p>
+            <p className="text-sm text-white/70 mt-0.5">
+              <span className="text-emerald-400 font-bold text-base">{lastSavedResult.result_value}</span>
+              {lastSavedResult.result_unit && <span className="text-white/40 ml-1">{lastSavedResult.result_unit}</span>}
+              {" "}· {formatRelativeTime(lastSavedResult.created_at)}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-4">
         {calculator.inputs.map((input) => (
@@ -173,8 +208,8 @@ export default function CalculatorEngine({
       </div>
 
       {error && (
-        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-300 text-sm">
-          {error}
+        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-300 text-sm flex items-center gap-2">
+          <span className="text-red-400">{error}</span>
         </div>
       )}
 
@@ -205,10 +240,12 @@ export default function CalculatorEngine({
           {result.details && result.details.length > 0 && (
             <div className="pt-3 border-t border-white/5 space-y-1">
               {result.details.map((d, i) => (
-                <div key={i} className="flex justify-between text-xs">
-                  <span className="text-white/40">{d.label}</span>
-                  <span className="text-white/70">{d.value}</span>
-                </div>
+                <DetailRow
+                  key={i}
+                  label={d.label}
+                  value={d.value}
+                  isAbnormal={isAbnormalLabValue(d.label)}
+                />
               ))}
             </div>
           )}
@@ -218,7 +255,7 @@ export default function CalculatorEngine({
       <button
         onClick={handleCalculate}
         disabled={loading || !allRequiredFilled}
-        className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-white/10 disabled:text-white/30 text-white text-sm font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
+        className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-white/10 disabled:text-white/30 text-white text-sm font-medium rounded-xl transition-all duration-150 flex items-center justify-center gap-2 active:scale-[0.98]"
       >
         {loading ? (
           <>

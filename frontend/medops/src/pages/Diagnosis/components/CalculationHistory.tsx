@@ -1,22 +1,11 @@
 // src/pages/Diagnosis/components/CalculationHistory.tsx
 import { SavedCalculation } from "@/api/diagnosis";
-import { getRiskColor } from "../calculators/registry";
-import { Clock, User } from "lucide-react";
+import { getRiskColor, formatRelativeTime } from "../calculators/registry";
+import { Clock, User, Activity } from "lucide-react";
 
 interface Props {
   calculations: SavedCalculation[];
   loading?: boolean;
-}
-
-function formatDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("es-VE", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 }
 
 export default function CalculationHistory({ calculations, loading }: Props) {
@@ -24,8 +13,16 @@ export default function CalculationHistory({ calculations, loading }: Props) {
     return (
       <div className="space-y-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="animate-pulse">
-            <div className="h-20 bg-white/5 rounded-xl" />
+          <div key={i} className="animate-pulse space-y-2">
+            <div className="flex justify-between">
+              <div className="h-4 w-32 bg-white/5 rounded" />
+              <div className="h-4 w-16 bg-white/5 rounded" />
+            </div>
+            <div className="h-8 w-24 bg-white/5 rounded" />
+            <div className="grid grid-cols-2 gap-1">
+              <div className="h-3 w-full bg-white/5 rounded" />
+              <div className="h-3 w-full bg-white/5 rounded" />
+            </div>
           </div>
         ))}
       </div>
@@ -34,8 +31,12 @@ export default function CalculationHistory({ calculations, loading }: Props) {
 
   if (calculations.length === 0) {
     return (
-      <div className="text-center py-8 text-white/40 text-sm">
-        No hay cálculos registrados para este paciente
+      <div className="text-center py-10">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-white/5 mb-3">
+          <Activity className="h-6 w-6 text-white/20" />
+        </div>
+        <p className="text-white/40 text-sm">No hay cálculos registrados para este paciente</p>
+        <p className="text-white/20 text-xs mt-1">Los cálculos que ejecutes aparecerán aquí</p>
       </div>
     );
   }
@@ -45,14 +46,14 @@ export default function CalculationHistory({ calculations, loading }: Props) {
       {calculations.map((calc) => (
         <div
           key={calc.id}
-          className="bg-white/5 border border-white/10 rounded-xl p-4 hover:border-white/20 transition-colors"
+          className="bg-white/5 border border-white/10 rounded-xl p-4 hover:border-white/20 transition-all duration-150"
         >
           <div className="flex items-start justify-between mb-2">
             <div>
               <div className="text-sm font-medium text-white">{calc.calculator_name}</div>
-              <div className="flex items-center gap-1 text-xs text-white/40 mt-0.5">
+              <div className="flex items-center gap-1.5 text-xs text-white/40 mt-0.5">
                 <Clock className="h-3 w-3" />
-                {formatDate(calc.created_at)}
+                {formatRelativeTime(calc.created_at)}
               </div>
             </div>
             {calc.risk_level && (
