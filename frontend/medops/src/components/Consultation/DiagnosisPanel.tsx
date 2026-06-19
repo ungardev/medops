@@ -38,9 +38,9 @@ const STATUS_OPTIONS: { value: DiagnosisStatus; label: string }[] = [
   { value: "ruled_out", label: "Descartado" },
   { value: "chronic", label: "Crónico / Pre-existente" },
 ];
-const CATALOG_OPTIONS: { value: CatalogType; label: string; icon: string }[] = [
-  { value: "icd11", label: "CIE-11", icon: "🏥" },
-  { value: "snomed", label: "SNOMED CT", icon: "🔬" },
+const CATALOG_OPTIONS: { value: CatalogType; label: string }[] = [
+  { value: "icd11", label: "CIE-11" },
+  { value: "snomed", label: "SNOMED CT" },
 ];
 const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnly, appointmentId }) => {
   const [query, setQuery] = useState("");
@@ -192,7 +192,7 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
                       : "bg-white/5 text-white/70 border border-white/10 hover:text-white/90"
                   }`}
                 >
-                  {opt.icon} {opt.label}
+                  {opt.label}
                 </button>
               ))}
             </div>

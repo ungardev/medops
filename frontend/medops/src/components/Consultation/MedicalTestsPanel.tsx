@@ -145,7 +145,7 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                 >
                   <option value="">-- Seleccionar examen --</option>
                   
-                  <optgroup label="🔬 Hematología">
+                  <optgroup label="Hematología">
                     <option value="hemogram">Hemograma Completo</option>
                     <option value="hemoglobin">Hemoglobina / Hematocrito</option>
                     <option value="platelets">Conteo de Plaquetas</option>
@@ -155,7 +155,7 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="peripheral-smear">Frotis de Sangre Periférica</option>
                     <option value="bone_marrow">Aspirado de Médula Ósea</option>
                   </optgroup>
-                  <optgroup label="🧪 Bioquímica">
+                  <optgroup label="Bioquímica">
                     <option value="glucose">Glucemia</option>
                     <option value="glucose_2h">Glucemia Post-Prandial (2h)</option>
                     <option value="glycated_hgb">Hemoglobina Glicosilada (HbA1c)</option>
@@ -178,21 +178,21 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="bilirubin">Bilirrubinas</option>
                     <option value="creatinine_clearance">Depuración de Creatinina</option>
                   </optgroup>
-                  <optgroup label="🚽 Uroanálisis">
+                  <optgroup label="Uroanálisis">
                     <option value="urinalysis">Uroanálisis Completo</option>
                     <option value="urine_culture">Urocultivo</option>
                     <option value="urine_24h">Orina 24 Horas</option>
                     <option value="urine_protein">Proteinuria 24h</option>
                     <option value="urine_microalbumin">Microalbuminuria</option>
                   </optgroup>
-                  <optgroup label="💩 Heces">
+                  <optgroup label="Heces">
                     <option value="stool_routine">Examen de Heces</option>
                     <option value="stool_occult">Sangre Oculta en Heces</option>
                     <option value="stool_parasites">Parasitológico en Heces</option>
                     <option value="stool_culture">Coprocultivo</option>
                     <option value="stool_elisa">Antígeno en Heces (ELISA)</option>
                   </optgroup>
-                  <optgroup label="🦠 Microbiología">
+                  <optgroup label="Microbiología">
                     <option value="blood_culture">Hemocultivo</option>
                     <option value="wound_culture">Cultivo de Herida</option>
                     <option value="throat_culture">Exudado Faríngeo</option>
@@ -209,7 +209,7 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="fungus_culture">Cultivo de Hongos</option>
                     <option value="mycobacteria">Micobacterias (BK)</option>
                   </optgroup>
-                  <optgroup label="🛡️ Inmunología">
+                  <optgroup label="Inmunología">
                     <option value="hiv_test">Prueba VIH (ELISA/Rápida)</option>
                     <option value="hepatitis_panel">Panel Hepatitis (A/B/C)</option>
                     <option value="autoimmune_panel">Panel Autoinmune (ANA/ENA)</option>
@@ -221,7 +221,7 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="immunoglobulins">Inmunoglobulinas (IgG/IgA/IgM)</option>
                     <option value="complement">Complemento (C3/C4)</option>
                   </optgroup>
-                  <optgroup label="📊 Hormonas">
+                  <optgroup label="Hormonas">
                     <option value="cortisol">Cortisol</option>
                     <option value="acth">ACTH</option>
                     <option value="growth_hormone">Hormona de Crecimiento</option>
@@ -234,7 +234,7 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="insulin">Insulina</option>
                     <option value="peptide_c">Péptido C</option>
                   </optgroup>
-                  <optgroup label="☢️ Rayos X">
+                  <optgroup label="Rayos X">
                     <option value="xray_chest">Radiografía de Tórax</option>
                     <option value="xray_abdomen">Radiografía de Abdomen</option>
                     <option value="xray_bone">Radiografía Ósea</option>
@@ -248,7 +248,7 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="xray_dental">Radiografía Dental</option>
                     <option value="xray_contrast">Radiografía con Contraste</option>
                   </optgroup>
-                  <optgroup label="🔊 Ecografía">
+                  <optgroup label="Ecografía">
                     <option value="ultrasound_abdo">Ecografía Abdominal</option>
                     <option value="ultrasound_pelvic">Ecografía Pélvica</option>
                     <option value="ultrasound_thyroid">Ecografía Tiroidea</option>
@@ -261,7 +261,7 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="ultrasound_soft_tissue">Ecografía de Partes Blandas</option>
                     <option value="ultrasound_joint">Ecografía Articular</option>
                   </optgroup>
-                  <optgroup label="🖥️ Tomografía (TC)">
+                  <optgroup label="Tomografía (TC)">
                     <option value="ct_head">TC de Cráneo</option>
                     <option value="ct_brain_angio">TC Cerebral con Angio</option>
                     <option value="ct_abdomen">TC Abdominal</option>
@@ -273,7 +273,7 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="ct_cardiac">TC Cardíaca</option>
                     <option value="ct_angio">TC Angiografía</option>
                   </optgroup>
-                  <optgroup label="🧲 Resonancia (RM)">
+                  <optgroup label="Resonancia (RM)">
                     <option value="mri_brain">RM Cerebral</option>
                     <option value="mri_spine">RM de Columna</option>
                     <option value="mri_joint">RM Articular</option>
@@ -284,7 +284,7 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="mri_prostate">RM Prostática</option>
                     <option value="mri_breast">RM Mamaria</option>
                   </optgroup>
-                  <optgroup label="📸 Imagen Otros">
+                  <optgroup label="Imagen Otros">
                     <option value="mammography">Mamografía</option>
                     <option value="mammography_3d">Tomosíntesis Mamaria</option>
                     <option value="densitometry">Densitometría Ósea</option>
@@ -299,7 +299,7 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="lung_scan">Gammagrafía Pulmonar</option>
                     <option value="renal_scan">Gammagrafía Renal</option>
                   </optgroup>
-                  <optgroup label="❤️ Cardiología">
+                  <optgroup label="Cardiología">
                     <option value="ecg_12lead">ECG 12 Derivaciones</option>
                     <option value="ecg_holter">Holter 24h</option>
                     <option value="ecg_event">Monitoreo de Eventos</option>
@@ -311,7 +311,7 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="tilt_test">Prueba de Mesa Inclinada</option>
                     <option value="abi">Índice Tobillo-Brazo</option>
                   </optgroup>
-                  <optgroup label="🫁 Neumología">
+                  <optgroup label="Neumología">
                     <option value="spirometry">Espirometría</option>
                     <option value="spirometry_post">Espirometría Post-Broncodilatador</option>
                     <option value="plethysmography">Pletismografía</option>
@@ -320,7 +320,7 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="capnography">Capnografía</option>
                     <option value="diffusion_capacity">Capacidad de Difusión</option>
                   </optgroup>
-                  <optgroup label="🧠 Neurología">
+                  <optgroup label="Neurología">
                     <option value="eeg">Electroencefalograma</option>
                     <option value="eeg_video">Video-EEG</option>
                     <option value="emg">Electromiografía</option>
@@ -330,7 +330,7 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="baep">Potenciales Evocados Auditivos</option>
                     <option value="sep">Potenciales Evocados Somatosensoriales</option>
                   </optgroup>
-                  <optgroup label="🔍 Endoscopía">
+                  <optgroup label="Endoscopía">
                     <option value="endoscopy_ugi">Endoscopía Alta (EGD)</option>
                     <option value="colonoscopy">Colonoscopía</option>
                     <option value="colonoscopy_virtual">Colonoscopía Virtual</option>
@@ -344,7 +344,7 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="laparoscopy">Laparoscopía Diagnóstica</option>
                     <option value="arthroscopy">Artroscopía</option>
                   </optgroup>
-                  <optgroup label="👁️ Oftalmología">
+                  <optgroup label="Oftalmología">
                     <option value="visual_acuity">Agudeza Visual</option>
                     <option value="tonometry">Tonometría</option>
                     <option value="oct_eye">OCT Ocular</option>
@@ -357,7 +357,7 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="biometry">Biometría Ocular</option>
                     <option value="color_vision">Test de Visión de Colores</option>
                   </optgroup>
-                  <optgroup label="👂 Otorrinolaringología">
+                  <optgroup label="Otorrinolaringología">
                     <option value="audiometry">Audiometría</option>
                     <option value="audiometry_speech">Audiometría con Logoaudiometría</option>
                     <option value="tympanometry">Timpanometría</option>
@@ -367,7 +367,7 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="laryngoscopy">Laringoscopía</option>
                     <option value="vestibular_test">Pruebas Vestibulares</option>
                   </optgroup>
-                  <optgroup label="🤰 Gineco-Obstetricia">
+                  <optgroup label="Gineco-Obstetricia">
                     <option value="papanicolaou">Papanicolaou</option>
                     <option value="colposcopy">Colposcopía</option>
                     <option value="hysteroscopy">Histeroscopía</option>
@@ -377,7 +377,7 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="biophysical_profile">Perfil Biofísico Fetal</option>
                     <option value="semen_analysis">Espermatograma</option>
                   </optgroup>
-                  <optgroup label="🔬 Procedimientos Especiales">
+                  <optgroup label="Procedimientos Especiales">
                     <option value="biopsy">Biopsia</option>
                     <option value="biopsy_skin">Biopsia de Piel</option>
                     <option value="biopsy_bone">Biopsia Ósea</option>
@@ -392,7 +392,7 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="arthrocentesis">Artrocentesis</option>
                     <option value="bonemarrow_biopsy">Biopsia de Médula Ósea</option>
                   </optgroup>
-                  <optgroup label="🧬 Genética">
+                  <optgroup label="Genética">
                     <option value="genetic_test">Prueba Genética</option>
                     <option value="karyotype">Cariotipo</option>
                     <option value="fish">FISH</option>
@@ -401,13 +401,13 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="paternity_test">Prueba de Paternidad</option>
                     <option value="pharmacogenomics">Farmacogenómica</option>
                   </optgroup>
-                  <optgroup label="⚠️ Toxicología">
+                  <optgroup label="Toxicología">
                     <option value="drug_screen">Tamizaje de Drogas</option>
                     <option value="alcohol_test">Prueba de Alcohol</option>
                     <option value="heavy_metals">Metales Pesados</option>
                     <option value="therapeutic_drug">Monitoreo de Fármacos</option>
                   </optgroup>
-                  <optgroup label="📋 Otros">
+                  <optgroup label="Otros">
                     <option value="pregnancy_test">Prueba de Embarazo</option>
                     <option value="sweat_test">Test del Sudor</option>
                     <option value="mantoux">Prueba de Mantoux (PPD)</option>

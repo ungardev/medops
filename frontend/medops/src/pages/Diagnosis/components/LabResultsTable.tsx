@@ -8,10 +8,10 @@ interface Props {
   readOnly?: boolean;
 }
 
-const DIRECTION_ICONS: Record<string, string> = {
-  high: "🔴",
-  low: "🔵",
-  normal: "🟢",
+const DIRECTION_COLORS: Record<string, string> = {
+  high: "bg-red-500",
+  low: "bg-blue-500",
+  normal: "bg-emerald-500",
 };
 
 const DIRECTION_LABELS: Record<string, string> = {
@@ -68,7 +68,7 @@ export default function LabResultsTable({ values, onChange, readOnly = false }: 
                       type="number"
                       value={current.value}
                       onChange={e => handleChange(idx, "value", parseFloat(e.target.value) || 0)}
-                      className="w-20 bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-right text-white text-sm focus:outline-none focus:border-blue-500/50"
+                      className="w-20 bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-right text-white text-sm focus:outline-none focus:border-emerald-500/50"
                     />
                   )}
                   {val.unit && (
@@ -77,13 +77,13 @@ export default function LabResultsTable({ values, onChange, readOnly = false }: 
                 </td>
                 <td className="py-2.5 px-3 text-center">
                   <div className="flex items-center justify-center gap-1.5">
-                    <span className="text-base">{DIRECTION_ICONS[current.abnormal_direction]}</span>
+                    <div className={`w-2.5 h-2.5 rounded-full ${DIRECTION_COLORS[current.abnormal_direction] ?? 'bg-white/30'}`} />
                     {val.confidence < 0.7 && (
                       <span
                         className="text-[10px] px-1 py-0.5 bg-amber-500/20 text-amber-300 rounded"
                         title={`Confianza OCR: ${(val.confidence * 100).toFixed(0)}%`}
                       >
-                        ⚠️
+                        !
                       </span>
                     )}
                     <span className="text-xs text-white/50">
@@ -106,7 +106,7 @@ export default function LabResultsTable({ values, onChange, readOnly = false }: 
 
       {values.some(v => v.confidence < 0.7) && (
         <div className="mt-2 text-xs text-amber-400 flex items-center gap-1 px-3">
-          ⚠️ Algunos valores tienen baja confianza de OCR — verificar antes de guardar
+          ! Algunos valores tienen baja confianza de OCR — verificar antes de guardar
         </div>
       )}
     </div>

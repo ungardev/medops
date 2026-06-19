@@ -132,7 +132,7 @@ export default function DocumentUploadModal({
             <select
               value={category}
               onChange={e => setCategory(e.target.value)}
-              className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500/50"
+              className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500/50"
             >
               {CATEGORY_OPTIONS.map(o => (
                 <option key={o.value} value={o.value} className="bg-slate-900">
@@ -149,7 +149,7 @@ export default function DocumentUploadModal({
             <select
               value={visibility}
               onChange={e => setVisibility(e.target.value as Visibility)}
-              className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500/50"
+              className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500/50"
             >
               {VISIBILITY_OPTIONS.map(o => (
                 <option key={o.value} value={o.value} className="bg-slate-900">
@@ -169,7 +169,7 @@ export default function DocumentUploadModal({
             value={description}
             onChange={e => setDescription(e.target.value)}
             placeholder="Descripción del documento..."
-            className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500/50"
+            className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500/50"
           />
         </div>
 
@@ -178,7 +178,7 @@ export default function DocumentUploadModal({
             type="checkbox"
             checked={runOcr}
             onChange={e => setRunOcr(e.target.checked)}
-            className="w-4 h-4 rounded border-white/20 bg-white/5 text-blue-500 focus:ring-blue-500/30"
+            className="w-4 h-4 rounded border-white/20 bg-white/5 text-emerald-500 focus:ring-emerald-500/30"
           />
           <span className="text-sm text-white/70">
             Ejecutar OCR y extraer valores de laboratorio
@@ -193,7 +193,7 @@ export default function DocumentUploadModal({
           <div className="space-y-4">
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <div className="h-8 w-8 border-2 border-blue-500/30 border-t-blue-400 rounded-full animate-spin" />
+                <div className="h-8 w-8 border-2 border-emerald-500/30 border-t-emerald-400 rounded-full animate-spin" />
                 <span className="ml-3 text-white/50 text-sm">
                   Procesando documento con OCR...
                 </span>
@@ -215,7 +215,7 @@ export default function DocumentUploadModal({
               <button
                 onClick={handleSave}
                 disabled={loading || !file}
-                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-white/10 disabled:text-white/30 text-white text-sm font-medium rounded-xl transition-colors flex items-center gap-2"
+                className="px-5 py-2.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-sm font-medium rounded-xl transition-colors flex items-center gap-2 disabled:bg-white/10 disabled:text-white/30"
               >
                 {loading ? (
                   <>

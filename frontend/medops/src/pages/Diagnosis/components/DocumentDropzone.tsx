@@ -95,26 +95,26 @@ export default function DocumentDropzone({
         className={`
           relative cursor-pointer rounded-xl border-2 border-dashed p-6 text-center
           transition-all duration-200
-          ${disabled ? "opacity-50 cursor-not-allowed" : "hover:border-blue-500/50 hover:bg-white/5"}
-          ${isDragActive && !isDragReject ? "border-blue-500 bg-blue-500/5" : ""}
+          ${disabled ? "opacity-50 cursor-not-allowed" : "hover:border-emerald-500/50 hover:bg-white/5"}
+          ${isDragActive && !isDragReject ? "border-emerald-500 bg-emerald-500/5" : ""}
           ${isDragReject ? "border-red-500 bg-red-500/5" : "border-white/10"}
         `}
       >
         <input {...getInputProps()} />
 
-        <ArrowUpTrayIcon className={`h-10 w-10 mx-auto mb-3 ${isDragActive ? "text-blue-400" : "text-white/30"}`} />
+        <ArrowUpTrayIcon className={`h-10 w-10 mx-auto mb-3 ${isDragActive ? "text-emerald-400" : "text-white/30"}`} />
 
         {isDragReject ? (
           <div className="text-sm text-red-400">
             Tipo de archivo no soportado
           </div>
         ) : isDragActive ? (
-          <div className="text-sm text-blue-400">
+          <div className="text-sm text-emerald-400">
             Suelta el archivo aquí
           </div>
         ) : (
           <div className="text-sm text-white/50">
-            <span className="text-blue-400 font-medium">Haz click o arrastra</span>{" "}
+            <span className="text-emerald-400 font-medium">Haz click o arrastra</span>{" "}
             un archivo PDF, PNG o JPG (máx. {(maxSize / 1024 / 1024).toFixed(0)}MB)
           </div>
         )}

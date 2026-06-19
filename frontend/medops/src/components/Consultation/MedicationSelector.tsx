@@ -115,19 +115,19 @@ export default function MedicationSelector({
   };
   const getPresentationIcon = (presentation: string): string => {
     switch (presentation?.toLowerCase()) {
-      case 'tablet': return '💊';
-      case 'capsule': return '💊';
-      case 'injection': return '💉';
-      case 'syrup': return '🧪';
-      case 'solution': return '🧴';
-      case 'cream': return '🧴';
-      case 'drop': return '💧';
-      case 'suspension': return '🍶';
-      case 'ointment': return '🫙';
-      case 'gel': return '🧴';
-      case 'inhaler': return '🫁';
-      case 'powder': return '⚗️';
-      default: return '💊';
+      case 'tablet': return '';
+      case 'capsule': return '';
+      case 'injection': return '';
+      case 'syrup': return '';
+      case 'solution': return '';
+      case 'cream': return '';
+      case 'drop': return '';
+      case 'suspension': return '';
+      case 'ointment': return '';
+      case 'gel': return '';
+      case 'inhaler': return '';
+      case 'powder': return '';
+      default: return '';
     }
   };
   const isCatalogMatch = !!valueCatalogId;
@@ -184,7 +184,8 @@ export default function MedicationSelector({
               className="w-full text-left px-4 py-3 hover:bg-emerald-500/10 flex items-center justify-between group/item border-b border-white/5 last:border-b-0"
             >
               <div className="flex items-center gap-3">
-                <span className="text-xl">{getPresentationIcon(med.presentation)}</span>
+                <div className="w-5 h-5 rounded bg-white/10 flex items-center justify-center flex-shrink-0">
+                </div>
                 <div className="flex flex-col">
                   <span className="text-[12px] font-medium text-white/80 group-hover/item:text-emerald-400 transition-colors">
                     {med.name}
@@ -225,7 +226,8 @@ export default function MedicationSelector({
                   className="w-full text-left px-4 py-3 hover:bg-emerald-500/10 flex items-start justify-between group/item border-b border-white/5 last:border-b-0 transition-colors"
                 >
                   <div className="flex items-start gap-3 flex-1">
-                    <span className="text-xl mt-0.5">{getPresentationIcon(med.presentation)}</span>
+                    <div className="w-5 h-5 rounded bg-white/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    </div>
                     <div className="flex flex-col gap-1 flex-1">
                       <span className="text-[12px] font-medium text-white/80 group-hover/item:text-emerald-400 transition-colors leading-tight">
                         {highlightText(med.name, searchTerm)}

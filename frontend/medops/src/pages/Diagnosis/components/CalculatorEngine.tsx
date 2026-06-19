@@ -153,7 +153,7 @@ export default function CalculatorEngine({
                   }
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-white/10 peer-focus:outline-none peer-focus:ring-1 peer-focus:ring-blue-500/30 rounded-full peer peer-checked:after:translate-x-4 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white/40 peer-checked:bg-blue-500/50 peer-checked:after:bg-blue-400 after:rounded-full after:h-5 after:w-5 after:transition-all" />
+                <div className="w-11 h-6 bg-white/10 peer-focus:outline-none peer-focus:ring-1 peer-focus:ring-emerald-500/30 rounded-full peer peer-checked:after:translate-x-4 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white/40 peer-checked:bg-emerald-500/50 peer-checked:after:bg-emerald-400 after:rounded-full after:h-5 after:w-5 after:transition-all" />
               </label>
             )}
 
@@ -163,7 +163,7 @@ export default function CalculatorEngine({
                 onChange={(e) =>
                   setValues((prev) => ({ ...prev, [input.name]: e.target.value }))
                 }
-                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
+                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20"
               >
                 {input.options.map((opt) => (
                   <option key={String(opt.value)} value={String(opt.value)} className="bg-slate-900">
@@ -193,7 +193,7 @@ export default function CalculatorEngine({
                   className={`w-full px-3 py-2.5 bg-white/5 border rounded-xl text-white text-sm focus:outline-none focus:ring-1 ${
                     labAutoFilled[input.name]
                       ? "border-cyan-500/40 focus:border-cyan-500/50 focus:ring-cyan-500/20"
-                      : "border-white/10 focus:border-blue-500/50 focus:ring-blue-500/20"
+                      : "border-white/10 focus:border-emerald-500/50 focus:ring-emerald-500/20"
                   }`}
                 />
                 {labAutoFilled[input.name] && input.auto_fill_from_lab && labValues[input.auto_fill_from_lab] && (
@@ -255,7 +255,7 @@ export default function CalculatorEngine({
       <button
         onClick={handleCalculate}
         disabled={loading || !allRequiredFilled}
-        className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-white/10 disabled:text-white/30 text-white text-sm font-medium rounded-xl transition-all duration-150 flex items-center justify-center gap-2 active:scale-[0.98]"
+        className="w-full py-3 bg-emerald-500/15 hover:bg-emerald-500/25 disabled:bg-white/10 disabled:text-white/30 border border-emerald-500/25 text-emerald-400 text-sm font-medium rounded-xl transition-all duration-150 flex items-center justify-center gap-2 active:scale-[0.98]"
       >
         {loading ? (
           <>
