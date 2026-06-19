@@ -3086,6 +3086,126 @@ def reparse_document(request, document_id=None):
         return Response({"error": f"Error re-procesando: {str(e)}"}, status=500)
 
 
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def analyze_document(request, document_id=None):
+    """
+    POST /api/documents/{document_id}/analyze/
+
+    Ejecuta análisis de IA (Gemini) sobre el texto OCR de un documento.
+    Persiste el resultado en AIAnalysis para auditoría.
+
+    Body (JSON):
+    - model: str (opcional, default gemini-2.5-flash)
+    - analysis_mode: str (opcional, default full)
+
+    Returns: AIAnalysisSerializer
+    """
+    try:
+        doc = MedicalDocument.objects.select_related("patient").get(pk=document_id)
+    except MedicalDocument.DoesNotExist:
+        return Response({"error": "Documento no encontrado"}, status=404)
+
+    if not hasattr(request.user, "doctor_profile"):
+        return Response(
+            {"error": "Solo doctores pueden analizar documentos con IA"}, status=403
+        )
+
+    if not doc.ocr_extracted_text:
+        return Response(
+            {
+                "error": (
+                    "El documento no tiene texto OCR. "
+                    "Ejecuta /documents/{id}/reparse/ primero."
+                )
+            },
+            status=400,
+        )
+
+    model = request.data.get("model", "gemini-2.5-flash")
+    analysis_mode = request.data.get("analysis_mode", "full")
+
+    try:
+        from core.services.medical_analysis_service import get_medical_analysis_service
+
+        service = get_medical_analysis_service()
+        analysis = service.analyze_document(
+            document=doc,
+            performed_by=request.user,
+            model=model,
+            analysis_mode=analysis_mode,
+        )
+
+        serializer = AIAnalysisSerializer(analysis)
+        return Response(serializer.data, status=201)
+
+    except TimeoutError as e:
+        logger.error(f"Gemini timeout for document {document_id}: {e}")
+        return Response(
+            {"error": "Timeout del modelo de IA. Intenta de nuevo."}, status=504
+        )
+    except ValueError as e:
+        return Response({"error": str(e)}, status=400)
+    except Exception as e:
+        logger.exception(f"Error en analyze_document: {e}")
+        return Response({"error": f"Error en análisis de IA: {str(e)}"}, status=500)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_document_analysis(request, document_id=None):
+    """
+    GET /api/documents/{document_id}/analysis/
+
+    Devuelve el último análisis de IA de un documento.
+    """
+    try:
+        doc = MedicalDocument.objects.get(pk=document_id)
+    except MedicalDocument.DoesNotExist:
+        return Response({"error": "Documento no encontrado"}, status=404)
+
+    if not hasattr(request.user, "doctor_profile"):
+        return Response({"error": "Solo doctores"}, status=403)
+
+    from core.services.medical_analysis_service import get_medical_analysis_service
+
+    service = get_medical_analysis_service()
+    analysis = service.get_latest_analysis(doc)
+
+    if not analysis:
+        return Response({"error": "No hay análisis para este documento"}, status=404)
+
+    serializer = AIAnalysisSerializer(analysis)
+    return Response(serializer.data)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_patient_analyses(request, patient_id=None):
+    """
+    GET /api/patients/{patient_id}/ai-analyses/
+
+    Devuelve los últimos análisis de IA de un paciente.
+    """
+    try:
+        patient = Patient.objects.get(pk=patient_id)
+    except Patient.DoesNotExist:
+        return Response({"error": "Paciente no encontrado"}, status=404)
+
+    if not hasattr(request.user, "doctor_profile"):
+        return Response({"error": "Solo doctores"}, status=403)
+
+    limit = int(request.query_params.get("limit", 20))
+
+    from core.services.medical_analysis_service import get_medical_analysis_service
+
+    service = get_medical_analysis_service()
+    analyses = service.get_patient_analyses(patient, limit=limit)
+
+    serializer = AIAnalysisSerializer(analyses, many=True)
+    return Response({"analyses": serializer.data})
+
+
 @api_view(["GET"])
 def notifications_api(request):
     """

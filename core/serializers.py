@@ -10,6 +10,7 @@ from .models import (
     Treatment,
     Prescription,
     MedicalDocument,
+    AIAnalysis,
     GeneticPredisposition,
     ChargeOrder,
     ChargeItem,
@@ -2325,6 +2326,62 @@ class MedicalDocumentReadSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.file.url)
             return obj.file.url
         return None
+
+
+class AIAnalysisSerializer(serializers.ModelSerializer):
+    """
+    Serializer para el modelo AIAnalysis — Centro de Diagnóstico Inteligente.
+    Devuelve el análisis estructurado generado por IA (Gemini).
+    """
+
+    performed_by_name = serializers.CharField(
+        source="performed_by.get_full_name", read_only=True, default=None
+    )
+    document_description = serializers.CharField(
+        source="document.description", read_only=True, default=None
+    )
+    document_category = serializers.CharField(
+        source="document.category", read_only=True
+    )
+    icd_codes_count = serializers.SerializerMethodField()
+    abnormal_flags_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AIAnalysis
+        fields = [
+            "id",
+            "document",
+            "document_description",
+            "document_category",
+            "patient",
+            "model_used",
+            "analysis_mode",
+            "clinical_summary",
+            "interpretation",
+            "suggested_icd_codes",
+            "abnormal_lab_flags",
+            "drug_mentions",
+            "raw_response",
+            "reasoning_trace",
+            "confidence_score",
+            "tokens_used",
+            "estimated_cost_usd",
+            "latency_ms",
+            "prompt_tokens",
+            "completion_tokens",
+            "performed_by",
+            "performed_by_name",
+            "performed_at",
+            "icd_codes_count",
+            "abnormal_flags_count",
+        ]
+        read_only_fields = fields
+
+    def get_icd_codes_count(self, obj) -> int:
+        return len(obj.suggested_icd_codes) if obj.suggested_icd_codes else 0
+
+    def get_abnormal_flags_count(self, obj) -> int:
+        return len(obj.abnormal_lab_flags) if obj.abnormal_lab_flags else 0
 
 
 class MedicalDocumentVerificationSerializer(serializers.ModelSerializer):

@@ -162,3 +162,87 @@ export async function getPatientLabValues(patientId: number): Promise<LabValue[]
   const data = await apiFetch<{ list: LabValue[] }>(`patients/${patientId}/lab-values/`);
   return data.list ?? [];
 }
+
+export interface AICodeSuggestion {
+  code: string;
+  description: string;
+  confidence: number;
+  justification: string;
+}
+
+export interface AbnormalLabFlag {
+  test: string;
+  value: string;
+  unit: string;
+  reference_range: string | null;
+  is_abnormal: boolean;
+  direction: "high" | "low" | "normal";
+  severity: "critical" | "warning" | "mild" | "normal";
+}
+
+export interface DrugMention {
+  name: string;
+  dosage: string | null;
+  route: string | null;
+  frequency: string | null;
+}
+
+export interface AIAnalysisResult {
+  id: number;
+  document: number;
+  document_description: string | null;
+  document_category: string;
+  patient: number;
+  model_used: string;
+  analysis_mode: string;
+  clinical_summary: string | null;
+  interpretation: string | null;
+  suggested_icd_codes: AICodeSuggestion[];
+  abnormal_lab_flags: AbnormalLabFlag[];
+  drug_mentions: DrugMention[];
+  raw_response: Record<string, unknown>;
+  reasoning_trace: string | null;
+  confidence_score: number | null;
+  tokens_used: number;
+  estimated_cost_usd: string;
+  latency_ms: number;
+  prompt_tokens: number;
+  completion_tokens: number;
+  performed_by: number | null;
+  performed_by_name: string | null;
+  performed_at: string;
+  icd_codes_count: number;
+  abnormal_flags_count: number;
+}
+
+export async function analyzeDocument(
+  documentId: number,
+  model?: string,
+  analysisMode?: string
+): Promise<AIAnalysisResult> {
+  return apiFetch<AIAnalysisResult>(`documents/${documentId}/analyze/`, {
+    method: "POST",
+    body: JSON.stringify({
+      model: model || "gemini-2.5-flash",
+      analysis_mode: analysisMode || "full",
+    }),
+  });
+}
+
+export async function getDocumentAnalysis(documentId: number): Promise<AIAnalysisResult | null> {
+  try {
+    return await apiFetch<AIAnalysisResult>(`documents/${documentId}/analysis/`);
+  } catch {
+    return null;
+  }
+}
+
+export async function getPatientAnalyses(
+  patientId: number,
+  limit: number = 20
+): Promise<{ analyses: AIAnalysisResult[] }> {
+  return apiFetch<{ analyses: AIAnalysisResult[] }>(
+    `patients/${patientId}/ai-analyses/?limit=${limit}`
+  );
+}
+

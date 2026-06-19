@@ -14,7 +14,10 @@ import {
   ArrowTopRightOnSquareIcon,
   BeakerIcon,
   ShieldCheckIcon,
+  SparklesIcon,
 } from "@heroicons/react/24/outline";
+import { useDocumentAnalysisForExpand, useAnalyzeDocument } from "@/hooks/patients/useDocumentAnalysis";
+import AIAnalysisPanel from "../components/AIAnalysisPanel";
 
 interface Props {
   patient: PatientRef;
@@ -67,6 +70,11 @@ export default function DiagnosisDocuments({ patient }: Props) {
   const [visibility, setVisibility] = useState<"patient_visible" | "doctor_only" | "doctor_institution" | "public">("patient_visible");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<MedicalDocument | null>(null);
+  const [expandedDocId, setExpandedDocId] = useState<number | null>(null);
+  const [analyzingDocId, setAnalyzingDocId] = useState<number | null>(null);
+
+  const { analysis: currentAnalysis, isFetching: isFetchingAnalysis } = useDocumentAnalysisForExpand(expandedDocId);
+  const analyzeDoc = useAnalyzeDocument(patient.id);
 
   useEffect(() => {
     if (uploadDocument.isSuccess) {
@@ -77,7 +85,25 @@ export default function DiagnosisDocuments({ patient }: Props) {
     }
     if (deleteDocument.isSuccess) notify.success("Documento eliminado");
     if (deleteDocument.isError) notify.error("No se pudo eliminar el documento");
-  }, [uploadDocument.isSuccess, deleteDocument.isSuccess, deleteDocument.isError]);
+    if (analyzeDoc.isSuccess && analyzingDocId !== null) {
+      notify.success("Analisis completado");
+      setAnalyzingDocId(null);
+      setExpandedDocId(analyzingDocId);
+    }
+    if (analyzeDoc.isError) {
+      notify.error("Error en el analisis IA");
+      setAnalyzingDocId(null);
+    }
+  }, [uploadDocument.isSuccess, deleteDocument.isSuccess, deleteDocument.isError, analyzeDoc.isSuccess, analyzeDoc.isError]);
+
+  useEffect(() => {
+    if (!expandedDocId) return;
+    if (analyzingDocId !== null) return;
+    if (isFetchingAnalysis) return;
+    if (currentAnalysis !== null) return;
+    setAnalyzingDocId(expandedDocId);
+    analyzeDoc.mutate({ documentId: expandedDocId });
+  }, [expandedDocId, isFetchingAnalysis, currentAnalysis, analyzingDocId]);
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -250,6 +276,21 @@ export default function DiagnosisDocuments({ patient }: Props) {
                         <ArrowTopRightOnSquareIcon className="w-5 h-5" />
                       </a>
                     )}
+                    {hasOCR && (
+                      <button
+                        onClick={() => {
+                          if (expandedDocId === d.id) {
+                            setExpandedDocId(null);
+                          } else {
+                            setExpandedDocId(d.id);
+                          }
+                        }}
+                        className="p-2 text-white/50 hover:text-emerald-400 rounded-xl hover:bg-white/5 transition-colors"
+                        title="Analizar con IA"
+                      >
+                        <SparklesIcon className="w-5 h-5" />
+                      </button>
+                    )}
                     <button
                       onClick={() => handleDeleteClick(d)}
                       disabled={deleteDocument.isPending}
@@ -265,6 +306,27 @@ export default function DiagnosisDocuments({ patient }: Props) {
           })
         )}
       </div>
+
+      {expandedDocId && (
+        <div className="mt-4">
+          <div className="text-xs text-white/30 mb-2 uppercase tracking-wider">
+            Analisis IA — Documento #{expandedDocId}
+          </div>
+          {isFetchingAnalysis || analyzingDocId !== null ? (
+            <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-8 flex flex-col items-center justify-center gap-3">
+              <div className="w-6 h-6 border-2 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin" />
+              <span className="text-sm text-emerald-400/70">
+                {analyzingDocId !== null ? "Analizando con IA..." : "Cargando analisis..."}
+              </span>
+            </div>
+          ) : currentAnalysis ? (
+            <AIAnalysisPanel
+              analysis={currentAnalysis}
+              onClose={() => setExpandedDocId(null)}
+            />
+          ) : null}
+        </div>
+      )}
 
       <div className="pt-4 border-t border-white/10 flex items-center gap-2">
         <ShieldCheckIcon className="w-5 h-5 text-emerald-400/50" />

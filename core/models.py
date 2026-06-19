@@ -1762,6 +1762,111 @@ class MedicalDocument(models.Model):
         super().save(*args, **kwargs)
 
 
+class AIAnalysis(models.Model):
+    """
+    Centro de Diagnóstico Inteligente — Análisis de documentos médicos con IA.
+    Almacena el resultado del análisis de Gemini sobre OCR de documentos clínicos.
+    """
+
+    MODELS_CHOICES = [
+        ("gemini-2.5-flash", "Gemini 2.5 Flash"),
+        ("gemini-3.5-flash", "Gemini 3.5 Flash"),
+        ("gemini-3.1-flash-lite", "Gemini 3.1 Flash Lite"),
+    ]
+    ANALYSIS_MODE_CHOICES = [
+        ("summary", "Resumen Clínico"),
+        ("full", "Análisis Completo"),
+        ("icd_suggestion", "Sugerencia ICD-11"),
+        ("lab_interpretation", "Interpretación de Lab"),
+    ]
+
+    document = models.ForeignKey(
+        MedicalDocument,
+        on_delete=models.CASCADE,
+        related_name="ai_analyses",
+    )
+    patient = models.ForeignKey(
+        "Patient",
+        on_delete=models.CASCADE,
+        related_name="ai_analyses",
+    )
+
+    model_used = models.CharField(max_length=50, choices=MODELS_CHOICES)
+    analysis_mode = models.CharField(max_length=30, choices=ANALYSIS_MODE_CHOICES)
+
+    clinical_summary = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Resumen ejecutivo del documento en lenguaje natural",
+    )
+    interpretation = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Interpretación clínica de valores de laboratorio",
+    )
+
+    suggested_icd_codes = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Lista de códigos ICD-11 sugeridos con justificación [{code, description, confidence, justification}]",
+    )
+    abnormal_lab_flags = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Banderas de valores anormales [{test, value, unit, is_abnormal, direction, severity}]",
+    )
+    drug_mentions = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Medicamentos mencionados en el documento [{name, dosage, route, frequency}]",
+    )
+
+    raw_response = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Respuesta cruda del modelo LLM para auditoría",
+    )
+    reasoning_trace = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Traza de razonamiento del modelo para transparencia",
+    )
+
+    confidence_score = models.FloatField(
+        null=True, blank=True, help_text="Puntuación de confianza del análisis (0-1)"
+    )
+    tokens_used = models.PositiveIntegerField(default=0)
+    estimated_cost_usd = models.DecimalField(
+        max_digits=8, decimal_places=6, default=Decimal("0.000000")
+    )
+    latency_ms = models.PositiveIntegerField(default=0)
+
+    prompt_tokens = models.PositiveIntegerField(default=0)
+    completion_tokens = models.PositiveIntegerField(default=0)
+
+    performed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="ai_analyses_performed",
+    )
+    performed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Análisis de IA"
+        verbose_name_plural = "Análisis de IA"
+        ordering = ["-performed_at"]
+        indexes = [
+            models.Index(fields=["document", "-performed_at"]),
+            models.Index(fields=["patient", "-performed_at"]),
+            models.Index(fields=["model_used"]),
+        ]
+
+    def __str__(self):
+        return f"AIAnalysis {self.id} — {self.document.description or self.document.category} ({self.performed_at})"
+
+
 class ChargeOrder(models.Model):
     STATUS_CHOICES = [
         ("open", "Open"),
