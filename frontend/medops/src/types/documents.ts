@@ -13,8 +13,12 @@ export type DocumentCategory =
   | "medical_referral"
   | "medical_report"
   | "external_study"
+  | "lab_result"
+  | "imaging_report"
+  | "diagnostic_analysis"
   | "other";
 export type DocumentSource = "system_generated" | "user_uploaded";
+export type DocumentVisibility = "doctor_only" | "doctor_institution" | "patient_visible" | "public";
 // =====================================================
 // DOCUMENTO MÉDICO
 // =====================================================
@@ -37,6 +41,18 @@ export interface MedicalDocument {
   source: DocumentSource;
   source_display?: string;
   origin_panel?: string | null;
+
+  // Visibilidad (FASE 2)
+  visibility?: DocumentVisibility;
+  is_diagnostic_analysis?: boolean;
+  is_clinical_research?: boolean;
+  contains_phi?: boolean;
+
+  // OCR (FASE 2)
+  ocr_extracted_text?: string | null;
+  ocr_confidence_score?: number | null;
+  parsed_metadata?: Record<string, unknown>;
+  ocr_processed_at?: string | null;
   
   // Archivo
   description?: string | null;

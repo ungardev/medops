@@ -74,3 +74,62 @@ export async function runCalculation(params: {
 export async function getPatientCalculations(patientId: number): Promise<SavedCalculation[]> {
   return apiFetch<SavedCalculation[]>(`${ENDPOINT}?patient=${patientId}`);
 }
+
+export type Visibility = "doctor_only" | "doctor_institution" | "patient_visible" | "public";
+
+export interface ParsedLabValue {
+  test_name: string;
+  value: number;
+  unit: string;
+  reference_range: string | null;
+  is_abnormal: boolean;
+  abnormal_direction: string;
+  confidence: number;
+  test_type: string | null;
+}
+
+export interface ParsedDocument {
+  raw_text: string;
+  confidence_score: number;
+  document_type: string;
+  lab_values: ParsedLabValue[];
+  patient_name_extracted: string | null;
+  date_extracted: string | null;
+  parsing_warnings: string[];
+}
+
+export async function parseDocumentPreview(file: File): Promise<ParsedDocument> {
+  const formData = new FormData();
+  formData.append("file", file);
+  return apiFetch<ParsedDocument>("documents/parse-preview/", {
+    method: "POST",
+    body: formData,
+  });
+}
+
+export async function uploadDiagnosticDocument(params: {
+  patientId: number;
+  file: File;
+  description: string;
+  category: string;
+  visibility: Visibility;
+  run_ocr: boolean;
+}): Promise<unknown> {
+  const formData = new FormData();
+  formData.append("file", params.file);
+  formData.append("description", params.description);
+  formData.append("category", params.category);
+  formData.append("visibility", params.visibility);
+  formData.append("run_ocr", String(params.run_ocr));
+  return apiFetch<unknown>(`patients/${params.patientId}/upload-document/`, {
+    method: "POST",
+    body: formData,
+  });
+}
+
+export async function reparseDocument(documentId: number): Promise<ParsedDocument> {
+  return apiFetch<ParsedDocument>(`documents/${documentId}/reparse/`, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}

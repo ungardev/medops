@@ -6,8 +6,9 @@ import PatientContextBanner from "./components/PatientContextBanner";
 import DisclaimerBanner from "./components/DisclaimerBanner";
 import DiagnosisCalculators from "./tabs/DiagnosisCalculators";
 import DiagnosisPatient from "./tabs/DiagnosisPatient";
+import DiagnosisDocuments from "./tabs/DiagnosisDocuments";
 import { getPatient } from "@/api/patients";
-import { Calculator, User } from "lucide-react";
+import { Calculator, User, FileText } from "lucide-react";
 
 const SESSION_KEY = "diagnosis_selected_patient";
 
@@ -19,7 +20,7 @@ export default function Diagnosis() {
     birthdate?: string | null;
     gender?: string | null;
   } | null>(null);
-  const [activeTab, setActiveTab] = useState<"calculators" | "patient">("calculators");
+  const [activeTab, setActiveTab] = useState<"calculators" | "documents" | "patient">("calculators");
   const [patientError, setPatientError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -61,6 +62,11 @@ export default function Diagnosis() {
       id: "calculators" as const,
       label: "Calculadoras",
       icon: Calculator,
+    },
+    {
+      id: "documents" as const,
+      label: "Documentos",
+      icon: FileText,
     },
     {
       id: "patient" as const,
@@ -121,6 +127,8 @@ export default function Diagnosis() {
               patientData={patientData ?? undefined}
             />
           )}
+
+          {activeTab === "documents" && <DiagnosisDocuments patient={selectedPatient} />}
 
           {activeTab === "patient" && <DiagnosisPatient patient={selectedPatient} />}
         </>
