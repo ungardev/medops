@@ -101,7 +101,7 @@ export default function Diagnosis() {
         </div>
         <div className="flex items-center gap-6 ml-11 text-xs text-white/40">
           <span className="flex items-center gap-1.5">
-            <Calculator className="w-3.5 h-3.5 text-emerald-400/60" />
+            <CalcIcon className="w-3.5 h-3.5 text-emerald-400/60" />
             22 calculadoras
           </span>
           <span className="text-white/20">|</span>
