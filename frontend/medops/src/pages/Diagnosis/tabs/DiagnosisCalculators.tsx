@@ -75,9 +75,9 @@ export default function DiagnosisCalculators({ patient, patientData }: Props) {
       getPatientCalculations(patient.id),
     ])
       .then(([calcs, labs, calcsHistory]) => {
-        setCalculators(calcs);
-        setLabValues(labs);
-        setRecentCalcs(calcsHistory.slice(0, 50));
+        setCalculators(calcs ?? []);
+        setLabValues(labs ?? []);
+        setRecentCalcs((calcsHistory ?? []).slice(0, 50));
       })
       .catch(() => {
         setError("No se pudieron cargar las calculadoras");

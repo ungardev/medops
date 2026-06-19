@@ -114,6 +114,7 @@ export function getSuggestedCalculators(
   calculators: CalculatorConfig[],
   labValues: LabValue[]
 ): CalculatorConfig[] {
+  if (!calculators || !labValues) return [];
   const availableTests = new Set(labValues.map((lv) => lv.test_name));
   const suggested: CalculatorConfig[] = [];
   const suggestedIds = new Set<string>();
@@ -135,6 +136,7 @@ export function getSuggestedCalculators(
 }
 
 export function buildLabValuesMap(labValues: LabValue[]): Record<string, LabValue> {
+  if (!labValues) return {};
   const map: Record<string, LabValue> = {};
   for (const lv of labValues) {
     map[lv.test_name] = lv;

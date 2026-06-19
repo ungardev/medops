@@ -149,5 +149,6 @@ export interface LabValue {
 }
 
 export async function getPatientLabValues(patientId: number): Promise<LabValue[]> {
-  return apiFetch<LabValue[]>(`patients/${patientId}/lab-values/`);
+  const data = await apiFetch<{ list: LabValue[] }>(`patients/${patientId}/lab-values/`);
+  return data.list ?? [];
 }
