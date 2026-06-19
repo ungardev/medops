@@ -20,6 +20,7 @@ class CalculatorInput:
     step: float | None = None
     default_unit: str | None = None
     auto_fill_from_patient: str | None = None
+    auto_fill_from_lab: str | None = None
 
 
 @dataclass
@@ -1404,6 +1405,7 @@ register_calculator(
                 max_value=30,
                 step=0.1,
                 default_unit="mg/dL",
+                auto_fill_from_lab="creatinina",
             ),
         ],
         calculate=lambda age, gender, creatinine_mgdl: calculate_ckd_epi(
@@ -1580,6 +1582,7 @@ register_calculator(
                 max_value=50,
                 step=0.1,
                 default_unit="mg/dL",
+                auto_fill_from_lab="bilirrubina_total",
             ),
             CalculatorInput(
                 "inr",
@@ -1589,6 +1592,7 @@ register_calculator(
                 min_value=0.8,
                 max_value=15,
                 step=0.1,
+                auto_fill_from_lab="inr",
             ),
             CalculatorInput(
                 "creatinine_mgdl",
@@ -1599,6 +1603,7 @@ register_calculator(
                 max_value=30,
                 step=0.1,
                 default_unit="mg/dL",
+                auto_fill_from_lab="creatinina",
             ),
         ],
         calculate=lambda age, bilirubin_mgdl, inr, creatinine_mgdl: calculate_meld(
@@ -1648,6 +1653,7 @@ register_calculator(
                 min_value=100,
                 max_value=400,
                 default_unit="mg/dL",
+                auto_fill_from_lab="colesterol_total",
             ),
             CalculatorInput(
                 "hdl_cholesterol",
@@ -1657,6 +1663,7 @@ register_calculator(
                 min_value=10,
                 max_value=150,
                 default_unit="mg/dL",
+                auto_fill_from_lab="hdl",
             ),
             CalculatorInput(
                 "systolic_bp",
@@ -1791,6 +1798,7 @@ register_calculator(
                 required=True,
                 min_value=100,
                 max_value=180,
+                auto_fill_from_lab="sodio",
             ),
             CalculatorInput(
                 "potassium_mEqL",
@@ -1800,6 +1808,7 @@ register_calculator(
                 min_value=1.5,
                 max_value=9.0,
                 step=0.1,
+                auto_fill_from_lab="potasio",
             ),
             CalculatorInput(
                 "creatinine_mgdl",
@@ -1809,6 +1818,7 @@ register_calculator(
                 min_value=0.1,
                 max_value=30,
                 step=0.1,
+                auto_fill_from_lab="creatinina",
             ),
             CalculatorInput(
                 "hematocrit_pct",
@@ -1817,6 +1827,7 @@ register_calculator(
                 required=True,
                 min_value=10,
                 max_value=65,
+                auto_fill_from_lab="hematocrito",
             ),
             CalculatorInput(
                 "wbc_x1000",
@@ -1826,6 +1837,7 @@ register_calculator(
                 min_value=0.1,
                 max_value=100,
                 step=0.1,
+                auto_fill_from_lab="leucocitos",
             ),
             CalculatorInput(
                 "gcs_eye",
@@ -1902,6 +1914,7 @@ register_calculator(
                 max_value=200,
                 step=0.5,
                 default_unit="mg/dL",
+                auto_fill_from_lab="urea",
             ),
             CalculatorInput(
                 "rr_over_30",
@@ -1959,6 +1972,7 @@ register_calculator(
                 max_value=50,
                 step=0.1,
                 default_unit="mg/dL",
+                auto_fill_from_lab="bilirrubina_total",
             ),
             CalculatorInput(
                 "albumin_gdL",
@@ -1969,6 +1983,7 @@ register_calculator(
                 max_value=6.0,
                 step=0.1,
                 default_unit="g/dL",
+                auto_fill_from_lab="albumina",
             ),
             CalculatorInput(
                 "inr",
@@ -1978,6 +1993,7 @@ register_calculator(
                 min_value=0.8,
                 max_value=15,
                 step=0.1,
+                auto_fill_from_lab="inr",
             ),
             CalculatorInput(
                 "ascites",
@@ -2048,6 +2064,7 @@ def serialize_calculator(config: CalculatorConfig) -> dict[str, Any]:
                 "step": inp.step,
                 "default_unit": inp.default_unit,
                 "auto_fill_from_patient": inp.auto_fill_from_patient,
+                "auto_fill_from_lab": inp.auto_fill_from_lab,
             }
             for inp in config.inputs
         ],

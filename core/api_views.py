@@ -559,6 +559,63 @@ class PatientViewSet(viewsets.ModelViewSet):
             logger.error(f"Error en documents: {str(e)}")
             return Response({"error": str(e)}, status=500)
 
+    @action(detail=True, methods=["get"])
+    def lab_values(self, request, pk=None):
+        """
+        GET /api/patients/{pk}/lab-values/
+        Extrae valores de laboratorio desde MedicalDocuments con category=lab_result.
+        Retorna el valor más reciente por cada test_type.
+        """
+        try:
+            patient = self.get_object()
+
+            queryset = (
+                MedicalDocument.objects.filter(
+                    patient=patient,
+                    category="lab_result",
+                )
+                .exclude(parsed_metadata__isnull=True)
+                .exclude(parsed_metadata__exact={})
+                .order_by("-uploaded_at")
+            )
+
+            user = request.user
+            if hasattr(user, "patient_profile"):
+                queryset = queryset.filter(visibility__in=["patient_visible", "public"])
+
+            latest_by_test: dict[str, dict] = {}
+            for doc in queryset:
+                meta = doc.parsed_metadata or {}
+                lab_values = meta.get("lab_values", [])
+                if not isinstance(lab_values, list):
+                    continue
+                for lv in lab_values:
+                    test_name = lv.get("test_name", "unknown")
+                    if test_name not in latest_by_test:
+                        latest_by_test[test_name] = {
+                            "test_name": test_name,
+                            "value": lv.get("value"),
+                            "unit": lv.get("unit"),
+                            "reference_range": lv.get("reference_range"),
+                            "is_abnormal": lv.get("is_abnormal", False),
+                            "abnormal_direction": lv.get(
+                                "abnormal_direction", "normal"
+                            ),
+                            "confidence": lv.get("confidence", 0),
+                            "document_id": doc.id,
+                            "document_date": doc.uploaded_at.isoformat()
+                            if doc.uploaded_at
+                            else None,
+                            "source": "parsed",
+                        }
+
+            values = list(latest_by_test.values())
+            values.sort(key=lambda x: x["test_name"])
+            return Response({"list": values})
+        except Exception as e:
+            logger.error(f"Error en lab_values: {str(e)}")
+            return Response({"error": str(e)}, status=500)
+
     def delete_document(self, request, pk=None, document_id=None):
         """
         DELETE /api/patients/{pk}/documents/{document_id}/

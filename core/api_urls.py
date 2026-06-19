@@ -382,6 +382,11 @@ urlpatterns = [
         PatientViewSet.as_view({"get": "profile"}),
         name="patient-clinical-profile-api",
     ),
+    path(
+        "patients/<int:pk>/lab-values/",
+        PatientViewSet.as_view({"get": "lab_values"}),
+        name="patient-lab-values-api",
+    ),
     path("appointments/search/", appointment_search_api, name="appointment-search-api"),
     path(
         "appointments/today/",
