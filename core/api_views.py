@@ -4,7 +4,9 @@ from rest_framework.decorators import (
     permission_classes,
     authentication_classes,
     action,
+    parser_classes,
 )
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.conf import settings
 from rest_framework.authtoken.models import Token
@@ -530,6 +532,7 @@ class PatientViewSet(viewsets.ModelViewSet):
         """
         GET /api/patients/{pk}/documents/
         Retorna todos los documentos del paciente, opcionalmente filtrados por cita.
+        Filtra por visibilidad: patient_visible + public para PatientUser.
         """
         try:
             patient = self.get_object()
@@ -540,6 +543,10 @@ class PatientViewSet(viewsets.ModelViewSet):
                 .select_related("appointment", "doctor", "institution", "diagnosis")
                 .order_by("-uploaded_at")
             )
+
+            user = request.user
+            if hasattr(user, "patient_profile"):
+                queryset = queryset.filter(visibility__in=["patient_visible", "public"])
 
             if appointment_id:
                 queryset = queryset.filter(appointment_id=appointment_id)
@@ -1024,31 +1031,42 @@ class MedicalDocumentViewSet(UnifiedPatientDoctorAccessMixin, viewsets.ModelView
             "patient", "appointment", "doctor", "institution", "diagnosis"
         )
 
-        # Obtener el doctor desde la request
-        doctor = getattr(self.request.user, "doctor_profile", None)
+        user = self.request.user
 
-        # Si es doctor, aplicar filtro de seguridad
-        if doctor:
-            # Excepciones: siempre mostrar documentos externos/subidos por usuario
-            # (exámenes de laboratorios, estudios externos, etc.)
-            exceptions = Q(source="user_uploaded") | Q(category="external_study")
-
-            # Filtrar: documentos del doctor O excepciones
-            # doctor__isnull=True cubre documentos sin médico asignado
-            queryset = queryset.filter(
-                Q(doctor=doctor) | Q(doctor__isnull=True) | exceptions
+        if hasattr(user, "doctor_profile"):
+            doctor = user.doctor_profile
+            if doctor:
+                exceptions = Q(source="user_uploaded") | Q(category="external_study")
+                queryset = queryset.filter(
+                    Q(doctor=doctor) | Q(doctor__isnull=True) | exceptions
+                )
+        elif hasattr(user, "patient_profile"):
+            patient_user = user.patient_profile
+            linked_ids = list(
+                PatientFamilyLink.objects.filter(
+                    patient_user=patient_user, status="active"
+                ).values_list("patient_id", flat=True)
             )
+            linked_ids.append(patient_user.patient_id)
+            queryset = queryset.filter(
+                patient_id__in=linked_ids,
+                visibility__in=["patient_visible", "public"],
+            )
+        else:
+            queryset = queryset.none()
 
-        # Filtros existentes
         patient_id = self.request.query_params.get("patient")
         appointment_id = self.request.query_params.get("appointment")
+        visibility = self.request.query_params.get("visibility")
 
         if patient_id:
             queryset = queryset.filter(patient_id=patient_id)
         if appointment_id:
             queryset = queryset.filter(appointment_id=appointment_id)
+        if visibility:
+            queryset = queryset.filter(visibility=visibility)
 
-        return queryset.order_by("-created_at")
+        return queryset.order_by("-uploaded_at")
 
     def list(self, request, *args, **kwargs):
         """
@@ -2799,6 +2817,216 @@ def reports_export_api(request):
 @api_view(["GET"])
 def documents_api(request):
     return Response([])
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def parse_document_preview(request):
+    """
+    POST /api/documents/parse-preview/
+
+    Sube un archivo, ejecuta OCR + lab parsing, retorna el resultado
+    SIN guardar en la base de datos. Útil para previsualizar antes de confirmar.
+
+    Form (multipart):
+    - file: archivo PDF o imagen
+    - mime_type_override (opcional): fuerza el tipo MIME
+
+    Returns: ParsedDocument dict
+    """
+    if "file" not in request.FILES:
+        return Response({"error": "Se requiere campo 'file'"}, status=400)
+
+    uploaded_file = request.FILES["file"]
+    file_bytes = uploaded_file.read()
+    mime_type = uploaded_file.content_type or "application/octet-stream"
+
+    if len(file_bytes) > 10 * 1024 * 1024:
+        return Response({"error": "El archivo excede el límite de 10MB"}, status=400)
+
+    try:
+        from core.services.document_parser import DocumentParserService
+
+        parser = DocumentParserService()
+        result = parser.parse(file_bytes, mime_type, uploaded_file.name)
+
+        return Response(
+            {
+                "raw_text": result.raw_text,
+                "confidence_score": result.confidence_score,
+                "document_type": result.document_type,
+                "lab_values": result.lab_values,
+                "patient_name_extracted": result.patient_name_extracted,
+                "date_extracted": result.date_extracted,
+                "parsing_warnings": result.parsing_warnings,
+            },
+            status=201,
+        )
+    except Exception as e:
+        logger.error(f"Error en parse_document_preview: {str(e)}")
+        return Response({"error": f"Error procesando documento: {str(e)}"}, status=500)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser])
+def upload_diagnostic_document(request, pk=None):
+    """
+    POST /api/patients/{pk}/upload-document/
+
+    Sube un documento con OCR automático y guarda en MedicalDocument.
+    Fields (multipart):
+    - file: File
+    - description: str
+    - category: str
+    - visibility: str (default "doctor_only")
+    - run_ocr: bool (default True)
+    """
+    if "file" not in request.FILES:
+        return Response({"error": "Se requiere campo 'file'"}, status=400)
+
+    uploaded_file = request.FILES["file"]
+    file_bytes = uploaded_file.read()
+    mime_type = uploaded_file.content_type or "application/octet-stream"
+
+    if len(file_bytes) > 10 * 1024 * 1024:
+        return Response({"error": "El archivo excede el límite de 10MB"}, status=400)
+
+    description = request.data.get("description", "")
+    category = request.data.get("category", "diagnostic_analysis")
+    visibility = request.data.get("visibility", "doctor_only")
+    run_ocr = request.data.get("run_ocr", "true").lower() == "true"
+
+    try:
+        patient = Patient.objects.get(pk=pk)
+    except Patient.DoesNotExist:
+        return Response({"error": "Paciente no encontrado"}, status=404)
+
+    doctor = getattr(request.user, "doctor_profile", None)
+    if not doctor:
+        return Response(
+            {"error": "Solo doctores pueden subir documentos de diagnóstico"},
+            status=403,
+        )
+
+    r2_url = None
+    try:
+        from core.utils.r2_storage import upload_diagnostic_document as upload_to_r2
+
+        r2_url = upload_to_r2(file_bytes, patient.id, uploaded_file.name, mime_type)
+    except Exception as e:
+        logger.warning(f"R2 upload failed in upload_diagnostic_document: {e}")
+
+    ocr_extracted_text = None
+    ocr_confidence_score = None
+    parsed_metadata = None
+    document_type = "unknown"
+
+    if run_ocr:
+        try:
+            from core.services.document_parser import DocumentParserService
+
+            parser = DocumentParserService()
+            parsed = parser.parse(file_bytes, mime_type, uploaded_file.name)
+            ocr_extracted_text = parsed.raw_text
+            ocr_confidence_score = parsed.confidence_score
+            parsed_metadata = {
+                "lab_values": parsed.lab_values,
+                "document_type": parsed.document_type,
+                "patient_name_extracted": parsed.patient_name_extracted,
+                "date_extracted": parsed.date_extracted,
+                "parsing_warnings": parsed.parsing_warnings,
+            }
+            document_type = parsed.document_type
+        except Exception as e:
+            logger.error(f"OCR processing failed: {e}")
+
+    doc = MedicalDocument.objects.create(
+        patient=patient,
+        doctor=doctor,
+        institution=doctor.institution,
+        category=category,
+        description=description,
+        file=uploaded_file,
+        mime_type=mime_type,
+        size_bytes=len(file_bytes),
+        visibility=visibility,
+        is_diagnostic_analysis=True,
+        contains_phi=True,
+        ocr_extracted_text=ocr_extracted_text,
+        ocr_confidence_score=ocr_confidence_score,
+        parsed_metadata=parsed_metadata or {},
+        uploaded_by=request.user,
+        source="user_uploaded",
+    )
+
+    if r2_url:
+        doc.file_url = r2_url
+        doc.save(update_fields=["file_url"])
+
+    return Response(
+        MedicalDocumentReadSerializer(doc, context={"request": request}).data,
+        status=201,
+    )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def reparse_document(request, document_id=None):
+    """
+    POST /api/documents/{document_id}/reparse/
+
+    Re-ejecuta OCR en un documento existente.
+    """
+    try:
+        doc = MedicalDocument.objects.get(pk=document_id)
+    except MedicalDocument.DoesNotExist:
+        return Response({"error": "Documento no encontrado"}, status=404)
+
+    if not hasattr(request.user, "doctor_profile"):
+        return Response(
+            {"error": "Solo doctores pueden re-procesar documentos"}, status=403
+        )
+
+    if not doc.file:
+        return Response({"error": "El documento no tiene archivo asociado"}, status=400)
+
+    try:
+        file_bytes = doc.file.read()
+        mime_type = doc.mime_type or "application/octet-stream"
+
+        from core.services.document_parser import DocumentParserService
+
+        parser = DocumentParserService()
+        parsed = parser.parse(file_bytes, mime_type, doc.file.name)
+
+        doc.ocr_extracted_text = parsed.raw_text
+        doc.ocr_confidence_score = parsed.confidence_score
+        doc.parsed_metadata = {
+            "lab_values": parsed.lab_values,
+            "document_type": parsed.document_type,
+            "patient_name_extracted": parsed.patient_name_extracted,
+            "date_extracted": parsed.date_extracted,
+            "parsing_warnings": parsed.parsing_warnings,
+        }
+        from django.utils import timezone
+
+        doc.ocr_processed_at = timezone.now()
+        doc.save(
+            update_fields=[
+                "ocr_extracted_text",
+                "ocr_confidence_score",
+                "parsed_metadata",
+                "ocr_processed_at",
+            ]
+        )
+
+        return Response(
+            MedicalDocumentReadSerializer(doc, context={"request": request}).data
+        )
+    except Exception as e:
+        logger.error(f"Reprocess document failed: {e}")
+        return Response({"error": f"Error re-procesando: {str(e)}"}, status=500)
 
 
 @api_view(["GET"])

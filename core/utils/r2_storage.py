@@ -202,6 +202,31 @@ def upload_medical_document(
     return client.upload_file(file_content, object_key, "application/pdf")
 
 
+def upload_diagnostic_document(
+    file_content: bytes,
+    patient_id: int,
+    filename: str,
+    content_type: str = "application/pdf",
+) -> Optional[str]:
+    """
+    Upload documentos del Centro de Diagnóstico Inteligente a R2.
+    Path: diagnosis/{patient_id}/{year}/{month}/{uuid}.{ext}
+    Separado de medical_documents/... para fácil cleanup y reporting.
+    """
+    from datetime import datetime as dt
+    import uuid
+
+    client = get_r2_client()
+    if client is None:
+        return None
+
+    ext = filename.split(".")[-1] if "." in filename else "pdf"
+    date_path = dt.now().strftime("%Y/%m")
+    object_key = f"diagnosis/{patient_id}/{date_path}/{uuid.uuid4()}.{ext}"
+
+    return client.upload_file(file_content, object_key, content_type)
+
+
 def upload_medical_report_pdf(
     file_content: bytes, report_id: int, filename: str
 ) -> Optional[str]:

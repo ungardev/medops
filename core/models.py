@@ -1525,7 +1525,17 @@ class DocumentCategory(models.TextChoices):
     MEDICAL_REFERRAL = "medical_referral", "Referencia Médica"
     MEDICAL_REPORT = "medical_report", "Informe Médico General"
     EXTERNAL_STUDY = "external_study", "Estudio Externo (Laboratorio/Imagen)"
+    LAB_RESULT = "lab_result", "Resultado de Laboratorio"
+    IMAGING_REPORT = "imaging_report", "Reporte de Imagen"
+    DIAGNOSTIC_ANALYSIS = "diagnostic_analysis", "Análisis Diagnóstico"
     OTHER = "other", "Otro"
+
+
+class DocumentVisibility(models.TextChoices):
+    DOCTOR_ONLY = "doctor_only", "Solo Médico"
+    DOCTOR_INSTITUTION = "doctor_institution", "Médico + Institución"
+    PATIENT_VISIBLE = "patient_visible", "Visible para Paciente"
+    PUBLIC = "public", "Compartido"
 
 
 class DocumentSource(models.TextChoices):
@@ -1591,6 +1601,26 @@ class MedicalDocument(models.Model):
         null=True,
         help_text="Módulo de origen: prescriptions, tests, etc.",
     )
+    # === Control de Visibilidad ===
+    visibility = models.CharField(
+        max_length=20,
+        choices=DocumentVisibility.choices,
+        default=DocumentVisibility.PATIENT_VISIBLE,
+        db_index=True,
+        help_text="Controla visibilidad entre Doctor y Patient Portal",
+    )
+    is_diagnostic_analysis = models.BooleanField(
+        default=False,
+        help_text="Marcado por Centro de Diagnóstico Inteligente (OCR/calculadoras)",
+    )
+    is_clinical_research = models.BooleanField(
+        default=False,
+        help_text="Marcado para investigación clínica agregada",
+    )
+    contains_phi = models.BooleanField(
+        default=True,
+        help_text="Contiene Protected Health Information",
+    )
     # Archivo y Metadatos Técnicos
     file = models.FileField(
         upload_to="medical_documents/%Y/%m/%d/",
@@ -1602,6 +1632,35 @@ class MedicalDocument(models.Model):
     size_bytes = models.PositiveIntegerField(editable=False, null=True)
     checksum_sha256 = models.CharField(
         max_length=64, editable=False, blank=True, null=True
+    )
+    file_hash = models.CharField(
+        max_length=64,
+        blank=True,
+        null=True,
+        db_index=True,
+        help_text="SHA256 para deduplicación de archivos",
+    )
+
+    # === OCR y Parsing (Centro de Diagnóstico Inteligente) ===
+    ocr_extracted_text = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Texto extraído por OCR (solo visible para médico)",
+    )
+    ocr_confidence_score = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="Confianza promedio del OCR (0-1)",
+    )
+    parsed_metadata = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Valores estructurados extraídos: lab values, dates, names",
+    )
+    ocr_processed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Última vez que se ejecutó OCR",
     )
 
     # Información de Validez y Auditoría
@@ -1644,12 +1703,10 @@ class MedicalDocument(models.Model):
             models.Index(fields=["patient", "category"]),
             models.Index(fields=["audit_code"]),
             models.Index(fields=["uploaded_at"]),
-            models.Index(
-                fields=["doctor", "category"]
-            ),  # NUEVO: Optimización para reportes por médico
-            models.Index(
-                fields=["institution", "category"]
-            ),  # NUEVO: Optimización para reportes por sede
+            models.Index(fields=["visibility"]),
+            models.Index(fields=["is_diagnostic_analysis"]),
+            models.Index(fields=["doctor", "category"]),
+            models.Index(fields=["institution", "category"]),
         ]
 
     def __str__(self):

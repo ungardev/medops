@@ -1136,19 +1136,31 @@ class MedicalDocumentWriteSerializer(serializers.ModelSerializer):
             "mime_type",
             "size_bytes",
             "checksum_sha256",
+            # Visibilidad
+            "visibility",
+            "is_diagnostic_analysis",
+            "is_clinical_research",
+            "contains_phi",
+            # OCR
+            "ocr_extracted_text",
+            "ocr_confidence_score",
+            "parsed_metadata",
         ]
-        read_only_fields = ["id", "mime_type", "size_bytes", "checksum_sha256"]
+        read_only_fields = [
+            "id",
+            "mime_type",
+            "size_bytes",
+            "checksum_sha256",
+            "ocr_extracted_text",
+            "ocr_confidence_score",
+            "parsed_metadata",
+        ]
 
     def validate(self, attrs):
-        """
-        Validación de Integridad Clínica: Asegura que el documento
-        esté anclado al contexto médico correcto.
-        """
         category = attrs.get("category")
         appointment = attrs.get("appointment")
         diagnosis = attrs.get("diagnosis")
 
-        # Regla de Oro: Documentos clínicos requieren una Cita
         clinical_types = [
             "prescription",
             "treatment",
@@ -1163,7 +1175,6 @@ class MedicalDocumentWriteSerializer(serializers.ModelSerializer):
                 }
             )
 
-        # Regla de Precisión: Recetas y Tratamientos requieren un Diagnóstico
         if category in ["prescription", "treatment"] and not diagnosis:
             raise serializers.ValidationError(
                 {
@@ -1174,26 +1185,20 @@ class MedicalDocumentWriteSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        """
-        Inyección de metadatos de auditoría y seguridad.
-        """
         request = self.context.get("request")
         file = validated_data.get("file")
 
         if file:
-            # 1. Metadatos automáticos del archivo
             validated_data["mime_type"] = getattr(
                 file, "content_type", "application/octet-stream"
             )
             validated_data["size_bytes"] = file.size
 
-            # 2. Generar Checksum SHA256 (Pilar de No Repudio)
             sha256 = hashlib.sha256()
             for chunk in file.chunks():
                 sha256.update(chunk)
             validated_data["checksum_sha256"] = sha256.hexdigest()
 
-        # 3. Datos de Auditoría
         if request and request.user.is_authenticated:
             validated_data["uploaded_by"] = request.user
             validated_data["source"] = "user_uploaded"
@@ -2258,6 +2263,11 @@ class MedicalDocumentReadSerializer(serializers.ModelSerializer):
             "source",
             "source_display",
             "origin_panel",
+            # Visibilidad (FASE 2)
+            "visibility",
+            "is_diagnostic_analysis",
+            "is_clinical_research",
+            "contains_phi",
             # Archivo
             "description",
             "file",
@@ -2275,6 +2285,11 @@ class MedicalDocumentReadSerializer(serializers.ModelSerializer):
             "uploaded_at",
             "uploaded_by_name",
             "generated_by_name",
+            # OCR / Parsing (FASE 2)
+            "ocr_extracted_text",
+            "ocr_confidence_score",
+            "parsed_metadata",
+            "ocr_processed_at",
         ]
 
     def get_doctor(self, obj):

@@ -93,6 +93,9 @@ from .api_views import (
     current_consultation_api,
     appointment_detail_api,
     documents_api,
+    parse_document_preview,
+    upload_diagnostic_document,
+    reparse_document,
     search,
     appointment_search_api,
     chargeorder_search_api,
@@ -491,6 +494,21 @@ urlpatterns = [
     path("pdf/generate/", generate_professional_pdf, name="generate-professional-pdf"),
     path("pdf/verify-weasyprint/", verify_weasyprint_output, name="verify-weasyprint"),
     path("documents/", documents_api, name="documents-api"),
+    path(
+        "documents/parse-preview/",
+        parse_document_preview,
+        name="document-parse-preview",
+    ),
+    path(
+        "patients/<int:pk>/upload-document/",
+        upload_diagnostic_document,
+        name="patient-upload-document",
+    ),
+    path(
+        "documents/<int:document_id>/reparse/",
+        reparse_document,
+        name="document-reparse",
+    ),
     path("icd/search/", icd_search_api, name="icd-search-api"),
     path("snomed/search/", snomed_search_api, name="snomed-search-api"),
     # --- Payments URLs (EXISTENTES + NUEVAS) ---
