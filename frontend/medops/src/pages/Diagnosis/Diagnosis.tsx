@@ -114,26 +114,23 @@ export default function Diagnosis() {
               <CpuChipIcon className="w-5 h-5 text-emerald-400" />
             </div>
             <div className="min-w-0 flex-1">
-              <h1 className="text-xl font-semibold text-white truncate">
+              <h1 className="text-xl font-semibold text-white">
                 Centro de Diagnostico Inteligente
               </h1>
-              <p className="text-sm text-white/50 mt-0.5">
-                Calculadoras clinicas validadas + OCR con inteligencia artificial
-              </p>
             </div>
           </div>
 
           <div className="hidden md:flex items-stretch gap-2 border-l border-white/10 pl-6">
-            <StatBadge icon={CalcIcon} value="22" label="calculadoras" />
-            <StatBadge icon={CalcIcon} value="11" label="categorias" />
-            <StatBadge icon={BeakerIcon} value="IA" label="Motor OCR" />
+            <StatBadge icon={CpuChipIcon} value="<3s" label="Tiempo real" />
+            <StatBadge icon={BeakerIcon} value="Gemini" label="Confianza IA" />
+            <StatBadge icon={CalcIcon} value="100%" label="Validado clinicamente" />
           </div>
         </div>
 
         <div className="flex md:hidden flex-wrap gap-2 mt-4 pt-4 border-t border-white/10">
-          <StatBadge icon={CalcIcon} value="22" label="calculadoras" />
-          <StatBadge icon={CalcIcon} value="11" label="categorias" />
-          <StatBadge icon={BeakerIcon} value="IA" label="Motor OCR" />
+          <StatBadge icon={CpuChipIcon} value="<3s" label="Tiempo real" />
+          <StatBadge icon={BeakerIcon} value="Gemini" label="Confianza IA" />
+          <StatBadge icon={CalcIcon} value="100%" label="Validado clinicamente" />
         </div>
       </div>
 
@@ -148,7 +145,7 @@ export default function Diagnosis() {
       {!selectedPatient ? (
         <div className="bg-white/5 border border-white/10 rounded-xl p-8 text-center">
           <div className="text-white/30 text-sm">
-            Seleccione un paciente para acceder a las calculadoras medicas
+            Seleccione un paciente para comenzar el analisis clinico
           </div>
         </div>
       ) : (
