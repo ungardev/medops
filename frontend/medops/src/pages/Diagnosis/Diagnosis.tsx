@@ -8,32 +8,10 @@ import DiagnosisCalculators from "./tabs/DiagnosisCalculators";
 import DiagnosisPatient from "./tabs/DiagnosisPatient";
 import DiagnosisDocuments from "./tabs/DiagnosisDocuments";
 import { getPatient } from "@/api/patients";
-import { CpuChipIcon, BeakerIcon } from "@heroicons/react/24/outline";
+import { CpuChipIcon } from "@heroicons/react/24/outline";
 import { Calculator as CalcIcon, User, FileText } from "lucide-react";
 
 const SESSION_KEY = "diagnosis_selected_patient";
-
-function StatBadge({
-  icon: Icon,
-  value,
-  label,
-}: {
-  icon: React.ElementType;
-  value: string;
-  label: string;
-}) {
-  return (
-    <div className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg flex flex-col items-center min-w-[88px] hover:border-emerald-500/25 transition-colors">
-      <div className="flex items-center gap-1.5">
-        <Icon className="w-3.5 h-3.5 text-emerald-400" />
-        <span className="text-sm font-semibold text-emerald-400 tracking-tight">{value}</span>
-      </div>
-      <span className="text-[10px] text-white/40 uppercase tracking-wider mt-0.5 font-medium">
-        {label}
-      </span>
-    </div>
-  );
-}
 
 export default function Diagnosis() {
   const [selectedPatient, setSelectedPatient] = useState<PatientRef | null>(null);
@@ -108,29 +86,13 @@ export default function Diagnosis() {
       />
 
       <div className="bg-white/5 border border-white/15 rounded-xl p-5 md:p-6">
-        <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
-          <div className="flex-1 flex items-start gap-3 min-w-0">
-            <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex-shrink-0">
-              <CpuChipIcon className="w-5 h-5 text-emerald-400" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h1 className="text-xl font-semibold text-white">
-                Centro de Diagnostico Inteligente
-              </h1>
-            </div>
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex-shrink-0">
+            <CpuChipIcon className="w-5 h-5 text-emerald-400" />
           </div>
-
-          <div className="hidden md:flex items-stretch gap-2 border-l border-white/10 pl-6">
-            <StatBadge icon={CpuChipIcon} value="<3s" label="Tiempo real" />
-            <StatBadge icon={BeakerIcon} value="Gemini" label="Confianza IA" />
-            <StatBadge icon={CalcIcon} value="100%" label="Validado clinicamente" />
-          </div>
-        </div>
-
-        <div className="flex md:hidden flex-wrap gap-2 mt-4 pt-4 border-t border-white/10">
-          <StatBadge icon={CpuChipIcon} value="<3s" label="Tiempo real" />
-          <StatBadge icon={BeakerIcon} value="Gemini" label="Confianza IA" />
-          <StatBadge icon={CalcIcon} value="100%" label="Validado clinicamente" />
+          <h1 className="text-xl font-semibold text-white">
+            Centro de Diagnostico Inteligente
+          </h1>
         </div>
       </div>
 

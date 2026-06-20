@@ -113,7 +113,7 @@ export default function AIAnalysisPanel({ analysis, onClose }: Props) {
             <div className="flex items-center gap-3 text-xs text-white/40 mt-0.5">
               <span className="flex items-center gap-1">
                 <BeakerIcon className="w-3 h-3" />
-                {analysis.model_used}
+                MEDOPZ AI
               </span>
               <span>{(analysis.latency_ms / 1000).toFixed(1)}s</span>
               <span>{analysis.tokens_used} tokens</span>
